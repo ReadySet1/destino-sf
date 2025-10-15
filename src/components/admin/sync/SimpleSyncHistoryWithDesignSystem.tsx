@@ -35,20 +35,22 @@ export function SimpleSyncHistoryWithDesignSystem({ refreshTrigger }: SimpleSync
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch('/api/admin/sync/history?limit=10&days=30');
-      
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to fetch sync history (${response.status}): ${errorText || response.statusText}`);
+        throw new Error(
+          `Failed to fetch sync history (${response.status}): ${errorText || response.statusText}`
+        );
       }
-      
+
       const data = await response.json();
-      
+
       if (data.error) {
         throw new Error(data.error);
       }
-      
+
       setHistory(data.history || []);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -71,7 +73,7 @@ export function SimpleSyncHistoryWithDesignSystem({ refreshTrigger }: SimpleSync
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
   };
 
@@ -95,15 +97,31 @@ export function SimpleSyncHistoryWithDesignSystem({ refreshTrigger }: SimpleSync
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Successful</Badge>;
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800">
+            Successful
+          </Badge>
+        );
       case 'FAILED':
         return <Badge variant="danger">Failed</Badge>;
       case 'RUNNING':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Running</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            Running
+          </Badge>
+        );
       case 'PENDING':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+            Pending
+          </Badge>
+        );
       case 'CANCELLED':
-        return <Badge variant="outline" className="bg-gray-100 text-gray-600">Cancelled</Badge>;
+        return (
+          <Badge variant="outline" className="bg-gray-100 text-gray-600">
+            Cancelled
+          </Badge>
+        );
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
@@ -122,11 +140,9 @@ export function SimpleSyncHistoryWithDesignSystem({ refreshTrigger }: SimpleSync
     return (
       <FormStack spacing={4}>
         <div className="text-center py-4 space-y-3">
-          <div className="text-red-600 text-sm">
-            Error loading sync history: {error}
-          </div>
-          <FormButton 
-            variant="secondary" 
+          <div className="text-red-600 text-sm">Error loading sync history: {error}</div>
+          <FormButton
+            variant="secondary"
             onClick={fetchHistory}
             disabled={isLoading}
             leftIcon={isLoading ? <RefreshCw className="animate-spin" /> : FormIcons.refresh}
@@ -139,34 +155,24 @@ export function SimpleSyncHistoryWithDesignSystem({ refreshTrigger }: SimpleSync
   }
 
   if (history.length === 0 && !isLoading) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        No recent synchronizations
-      </div>
-    );
+    return <div className="text-center text-gray-500 py-8">No recent synchronizations</div>;
   }
 
   return (
     <FormStack spacing={4}>
-      {history.map((record) => (
+      {history.map(record => (
         <div
           key={record.syncId}
           className="flex items-start justify-between p-6 rounded-lg border bg-white hover:bg-gray-50 transition-colors shadow-sm"
         >
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
-              {getStatusIcon(record.status)}
-            </div>
+            <div className="flex-shrink-0 mt-1">{getStatusIcon(record.status)}</div>
             <div className="space-y-2">
               <div className="font-semibold text-base text-gray-900">
                 {formatTime(record.startTime)}
               </div>
               <div className="space-y-1">
-                {record.message && (
-                  <div className="text-sm text-gray-600">
-                    {record.message}
-                  </div>
-                )}
+                {record.message && <div className="text-sm text-gray-600">{record.message}</div>}
                 {record.duration && (
                   <div className="text-xs text-gray-500 font-medium">
                     Duration: {record.duration}s
@@ -178,12 +184,11 @@ export function SimpleSyncHistoryWithDesignSystem({ refreshTrigger }: SimpleSync
           <div className="flex flex-col items-end gap-3">
             {record.summary && (
               <span className="text-sm text-gray-600 font-medium">
-                {record.summary.syncedProducts > 0 
+                {record.summary.syncedProducts > 0
                   ? `${record.summary.syncedProducts} synced`
                   : record.summary.skippedProducts > 0
                     ? `${record.summary.skippedProducts} up to date`
-                    : '0 synced'
-                }
+                    : '0 synced'}
               </span>
             )}
             {getStatusBadge(record.status)}

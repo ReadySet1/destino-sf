@@ -6,18 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Play, 
-  Pause, 
-  RefreshCw, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Play,
+  Pause,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
   Clock,
   Settings,
   Activity,
   Zap,
   TrendingUp,
-  Database
+  Database,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -60,7 +60,7 @@ export default function JobManagementPage() {
     try {
       const response = await fetch('/api/admin/jobs/status');
       if (!response.ok) throw new Error('Failed to load job status');
-      
+
       const data = await response.json();
       setJobStatus(data.status);
     } catch (error) {
@@ -73,7 +73,7 @@ export default function JobManagementPage() {
     try {
       const response = await fetch('/api/admin/jobs/history');
       if (!response.ok) throw new Error('Failed to load job history');
-      
+
       const data = await response.json();
       setJobHistory(data.history || []);
     } catch (error) {
@@ -89,7 +89,7 @@ export default function JobManagementPage() {
       await Promise.all([loadJobStatus(), loadJobHistory()]);
       setIsLoading(false);
     };
-    
+
     loadData();
   }, []);
 
@@ -108,22 +108,21 @@ export default function JobManagementPage() {
     setIsTriggering(true);
     try {
       const response = await fetch('/api/admin/jobs/trigger', {
-        method: 'POST'
+        method: 'POST',
       });
-      
+
       if (!response.ok) throw new Error('Failed to trigger job');
-      
+
       const result = await response.json();
       toast.success('Job triggered successfully', {
-        description: `Processed ${result.processed} items`
+        description: `Processed ${result.processed} items`,
       });
-      
+
       // Refresh status after a delay
       setTimeout(() => {
         loadJobStatus();
         loadJobHistory();
       }, 2000);
-
     } catch (error) {
       console.error('Error triggering job:', error);
       toast.error('Failed to trigger job');
@@ -136,11 +135,11 @@ export default function JobManagementPage() {
   const emergencyStop = async () => {
     try {
       const response = await fetch('/api/admin/jobs/stop', {
-        method: 'POST'
+        method: 'POST',
       });
-      
+
       if (!response.ok) throw new Error('Failed to stop job');
-      
+
       toast.success('Job stopped successfully');
       loadJobStatus();
     } catch (error) {
@@ -183,9 +182,7 @@ export default function JobManagementPage() {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">Status</p>
-                <p className="text-lg font-semibold">
-                  {jobStatus?.isRunning ? 'Running' : 'Idle'}
-                </p>
+                <p className="text-lg font-semibold">{jobStatus?.isRunning ? 'Running' : 'Idle'}</p>
               </div>
             </div>
           </CardContent>
@@ -199,9 +196,7 @@ export default function JobManagementPage() {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">Success Rate</p>
-                <p className="text-lg font-semibold">
-                  {jobStatus?.stats.successRate.toFixed(1)}%
-                </p>
+                <p className="text-lg font-semibold">{jobStatus?.stats.successRate.toFixed(1)}%</p>
               </div>
             </div>
           </CardContent>
@@ -215,9 +210,7 @@ export default function JobManagementPage() {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">Total Runs</p>
-                <p className="text-lg font-semibold">
-                  {jobStatus?.stats.totalRuns || 0}
-                </p>
+                <p className="text-lg font-semibold">{jobStatus?.stats.totalRuns || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -232,7 +225,9 @@ export default function JobManagementPage() {
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">Avg Duration</p>
                 <p className="text-lg font-semibold">
-                  {jobStatus?.stats.avgDuration ? `${(jobStatus.stats.avgDuration / 1000).toFixed(1)}s` : 'N/A'}
+                  {jobStatus?.stats.avgDuration
+                    ? `${(jobStatus.stats.avgDuration / 1000).toFixed(1)}s`
+                    : 'N/A'}
                 </p>
               </div>
             </div>
@@ -252,9 +247,14 @@ export default function JobManagementPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Badge 
-                  variant={jobStatus.health === 'healthy' ? 'default' : 
-                          jobStatus.health === 'warning' ? 'warning' : 'danger'}
+                <Badge
+                  variant={
+                    jobStatus.health === 'healthy'
+                      ? 'default'
+                      : jobStatus.health === 'warning'
+                        ? 'warning'
+                        : 'danger'
+                  }
                   className="text-sm"
                 >
                   {jobStatus.health === 'healthy' && <CheckCircle className="h-4 w-4 mr-1" />}
@@ -262,7 +262,7 @@ export default function JobManagementPage() {
                   {jobStatus.health === 'error' && <AlertTriangle className="h-4 w-4 mr-1" />}
                   {jobStatus.health.charAt(0).toUpperCase() + jobStatus.health.slice(1)}
                 </Badge>
-                
+
                 {jobStatus.lastRun && (
                   <span className="text-sm text-gray-600">
                     Last run: {format(new Date(jobStatus.lastRun), 'MMM d, yyyy HH:mm:ss')}
@@ -285,11 +285,7 @@ export default function JobManagementPage() {
                 </Button>
 
                 {jobStatus.isRunning && (
-                  <Button
-                    onClick={emergencyStop}
-                    variant="destructive"
-                    size="sm"
-                  >
+                  <Button onClick={emergencyStop} variant="destructive" size="sm">
                     <Pause className="h-4 w-4 mr-2" />
                     Emergency Stop
                   </Button>
@@ -321,17 +317,24 @@ export default function JobManagementPage() {
             {jobHistory.length === 0 ? (
               <p className="text-center text-gray-500 py-8">No job history available</p>
             ) : (
-              jobHistory.map((job) => (
+              jobHistory.map(job => (
                 <div key={job.id} className="border rounded-lg p-4 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Badge
-                        variant={job.status === 'completed' ? 'success' :
-                                job.status === 'failed' ? 'danger' : 'outline'}
+                        variant={
+                          job.status === 'completed'
+                            ? 'success'
+                            : job.status === 'failed'
+                              ? 'danger'
+                              : 'outline'
+                        }
                       >
                         {job.status === 'completed' && <CheckCircle className="h-4 w-4 mr-1" />}
                         {job.status === 'failed' && <AlertTriangle className="h-4 w-4 mr-1" />}
-                        {job.status === 'running' && <RefreshCw className="h-4 w-4 mr-1 animate-spin" />}
+                        {job.status === 'running' && (
+                          <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                        )}
                         {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
                       </Badge>
 
@@ -353,9 +356,7 @@ export default function JobManagementPage() {
                             Duration: {(job.result.duration / 1000).toFixed(1)}s
                           </p>
                           {job.result.errors > 0 && (
-                            <p className="text-sm text-red-600">
-                              {job.result.errors} errors
-                            </p>
+                            <p className="text-sm text-red-600">{job.result.errors} errors</p>
                           )}
                         </>
                       )}

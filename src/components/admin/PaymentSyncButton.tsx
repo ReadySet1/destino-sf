@@ -1,6 +1,6 @@
 /**
  * Payment Sync Button Component
- * 
+ *
  * Provides a user-friendly interface for triggering manual payment
  * synchronization with customizable parameters and real-time feedback.
  */
@@ -13,24 +13,18 @@ import { type SquareEnvironment } from '@/types/webhook';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  RefreshCw, 
-  Zap, 
-  CheckCircle, 
-  AlertTriangle,
-  Settings
-} from 'lucide-react';
+import { RefreshCw, Zap, CheckCircle, AlertTriangle, Settings } from 'lucide-react';
 
 interface PaymentSyncButtonProps {
   className?: string;
@@ -38,17 +32,17 @@ interface PaymentSyncButtonProps {
   onSyncComplete?: (result: any) => void;
 }
 
-export function PaymentSyncButton({ 
-  className, 
+export function PaymentSyncButton({
+  className,
   environment = 'production',
-  onSyncComplete 
+  onSyncComplete,
 }: PaymentSyncButtonProps) {
   const { triggerSync, isLoading, error } = usePaymentSync();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [syncParams, setSyncParams] = useState({
     lookbackMinutes: 60,
     environment: environment,
-    forceSync: false
+    forceSync: false,
   });
   const [lastSyncResult, setLastSyncResult] = useState<any>(null);
 
@@ -57,12 +51,11 @@ export function PaymentSyncButton({
       const result = await triggerSync({
         lookbackMinutes: 60,
         environment,
-        forceSync: false
+        forceSync: false,
       });
-      
+
       setLastSyncResult(result);
       onSyncComplete?.(result);
-      
     } catch (error) {
       console.error('Quick sync failed:', error);
     }
@@ -71,11 +64,10 @@ export function PaymentSyncButton({
   const handleAdvancedSync = async () => {
     try {
       const result = await triggerSync(syncParams);
-      
+
       setLastSyncResult(result);
       setIsDialogOpen(false);
       onSyncComplete?.(result);
-      
     } catch (error) {
       console.error('Advanced sync failed:', error);
     }
@@ -85,12 +77,7 @@ export function PaymentSyncButton({
     <div className={className}>
       <div className="flex items-center gap-2">
         {/* Quick Sync Button */}
-        <Button 
-          onClick={handleQuickSync}
-          disabled={isLoading}
-          variant="default"
-          size="sm"
-        >
+        <Button onClick={handleQuickSync} disabled={isLoading} variant="default" size="sm">
           {isLoading ? (
             <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
           ) : (
@@ -107,7 +94,7 @@ export function PaymentSyncButton({
               Advanced
             </Button>
           </DialogTrigger>
-          
+
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Advanced Payment Sync</DialogTitle>
@@ -115,7 +102,7 @@ export function PaymentSyncButton({
                 Configure payment synchronization parameters for precise control.
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               {/* Lookback Minutes */}
               <div className="space-y-2">
@@ -126,10 +113,12 @@ export function PaymentSyncButton({
                   min="1"
                   max="1440"
                   value={syncParams.lookbackMinutes}
-                  onChange={(e) => setSyncParams(prev => ({
-                    ...prev,
-                    lookbackMinutes: parseInt(e.target.value) || 60
-                  }))}
+                  onChange={e =>
+                    setSyncParams(prev => ({
+                      ...prev,
+                      lookbackMinutes: parseInt(e.target.value) || 60,
+                    }))
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   How far back to search for payments (1-1440 minutes)
@@ -142,10 +131,12 @@ export function PaymentSyncButton({
                 <select
                   id="environment"
                   value={syncParams.environment}
-                  onChange={(e) => setSyncParams(prev => ({
-                    ...prev,
-                    environment: e.target.value as SquareEnvironment
-                  }))}
+                  onChange={e =>
+                    setSyncParams(prev => ({
+                      ...prev,
+                      environment: e.target.value as SquareEnvironment,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-input rounded-md text-sm"
                 >
                   <option value="production">Production</option>
@@ -158,10 +149,12 @@ export function PaymentSyncButton({
                 <Checkbox
                   id="forceSync"
                   checked={syncParams.forceSync}
-                  onCheckedChange={(checked) => setSyncParams(prev => ({
-                    ...prev,
-                    forceSync: !!checked
-                  }))}
+                  onCheckedChange={checked =>
+                    setSyncParams(prev => ({
+                      ...prev,
+                      forceSync: !!checked,
+                    }))
+                  }
                 />
                 <Label htmlFor="forceSync" className="text-sm">
                   Force sync existing payments
@@ -173,17 +166,14 @@ export function PaymentSyncButton({
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-2 pt-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setIsDialogOpen(false)}
                   disabled={isLoading}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  onClick={handleAdvancedSync}
-                  disabled={isLoading}
-                >
+                <Button onClick={handleAdvancedSync} disabled={isLoading}>
                   {isLoading ? (
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
@@ -208,7 +198,7 @@ export function PaymentSyncButton({
       {/* Last Sync Result */}
       {lastSyncResult && (
         <div className="mt-4">
-          <Alert variant={lastSyncResult.success ? "default" : "destructive"}>
+          <Alert variant={lastSyncResult.success ? 'default' : 'destructive'}>
             {lastSyncResult.success ? (
               <CheckCircle className="h-4 w-4" />
             ) : (
@@ -217,16 +207,14 @@ export function PaymentSyncButton({
             <AlertDescription>
               <div className="space-y-1">
                 <p>
-                  <strong>Sync {lastSyncResult.success ? 'completed' : 'failed'}:</strong> {' '}
-                  {lastSyncResult.summary.paymentsFound} found, {' '}
+                  <strong>Sync {lastSyncResult.success ? 'completed' : 'failed'}:</strong>{' '}
+                  {lastSyncResult.summary.paymentsFound} found,{' '}
                   {lastSyncResult.summary.paymentsProcessed} processed
-                  {lastSyncResult.summary.paymentsFailed > 0 && 
-                    `, ${lastSyncResult.summary.paymentsFailed} failed`
-                  }
+                  {lastSyncResult.summary.paymentsFailed > 0 &&
+                    `, ${lastSyncResult.summary.paymentsFailed} failed`}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Duration: {lastSyncResult.summary.duration}ms | {' '}
-                  Sync ID: {lastSyncResult.syncId}
+                  Duration: {lastSyncResult.summary.duration}ms | Sync ID: {lastSyncResult.syncId}
                 </p>
                 {lastSyncResult.details.errors.length > 0 && (
                   <p className="text-xs text-red-600">

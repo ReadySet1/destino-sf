@@ -18,16 +18,8 @@ const spacingClasses = {
 /**
  * Vertical stack container with consistent spacing
  */
-export function FormStack({ 
-  children, 
-  spacing = 8,
-  className = '' 
-}: FormStackProps) {
+export function FormStack({ children, spacing = 8, className = '' }: FormStackProps) {
   const stackClasses = `${spacingClasses[spacing]} ${className}`;
 
-  return (
-    <div className={stackClasses}>
-      {children}
-    </div>
-  );
+  return <div className={stackClasses}>{children}</div>;
 }

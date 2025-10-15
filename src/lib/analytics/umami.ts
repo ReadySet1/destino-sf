@@ -1,6 +1,6 @@
 /**
  * Umami Analytics Integration for Destino SF
- * 
+ *
  * This module provides TypeScript-safe Umami analytics tracking
  * with proper types and utilities for custom event tracking.
  */
@@ -21,7 +21,7 @@ export interface UmamiEventData {
 }
 
 // Predefined event types for type safety
-export type UmamiEventType = 
+export type UmamiEventType =
   | 'page_view'
   | 'button_click'
   | 'form_submit'
@@ -71,10 +71,7 @@ export const isUmamiLoaded = (): boolean => {
  * @param eventName - The name of the event to track
  * @param eventData - Optional data to send with the event
  */
-export const trackEvent = (
-  eventName: UmamiEventType,
-  eventData?: UmamiEventData
-): void => {
+export const trackEvent = (eventName: UmamiEventType, eventData?: UmamiEventData): void => {
   if (!isUmamiLoaded()) {
     if (process.env.NODE_ENV === 'development') {
       console.log('[Umami] Event would be tracked:', eventName, eventData);

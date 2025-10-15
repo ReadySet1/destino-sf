@@ -11,6 +11,7 @@
    - Foreign keys to `products` and `profiles`
 
 2. **Prisma Schema** - `AvailabilityRule` model exists:
+
    ```prisma
    model AvailabilityRule {
      id                String      @id @default(uuid())
@@ -56,6 +57,7 @@ The current system shows availability state in the products table, but **no inte
 **Goal:** Make the "Availability" column interactive with a popover showing all rules with toggle switches.
 
 **Current behavior:**
+
 ```tsx
 // Line 490-536 in products/page.tsx
 <td className="px-6 py-4 whitespace-nowrap">
@@ -66,6 +68,7 @@ The current system shows availability state in the products table, but **no inte
 ```
 
 **Desired behavior:**
+
 ```tsx
 <td className="px-6 py-4 whitespace-nowrap">
   <RuleQuickToggle
@@ -81,6 +84,7 @@ The current system shows availability state in the products table, but **no inte
 **File:** `src/components/admin/products/RuleQuickToggle.tsx`
 
 **Features:**
+
 - Shows button with current state badge + rule count
 - Clicking opens a Popover with:
   - List of all rules for this product
@@ -92,6 +96,7 @@ The current system shows availability state in the products table, but **no inte
 - Toast notifications for success/error
 
 **API Integration:**
+
 - Fetch rules: `GET /api/availability?productId={id}`
 - Toggle rule: `PUT /api/availability/{ruleId}` with `{ enabled: true/false }`
 - Uses existing endpoints - NO NEW API NEEDED!
@@ -103,6 +108,7 @@ The current system shows availability state in the products table, but **no inte
 **New Component:** `src/components/admin/products/BulkRuleActions.tsx`
 
 **Features:**
+
 - Checkbox selection in table rows
 - Bulk action bar when products selected
 - "Manage Rules" button opens modal with:
@@ -116,6 +122,7 @@ The current system shows availability state in the products table, but **no inte
 **File:** `src/app/(dashboard)/admin/products/page.tsx`
 
 **Changes needed:**
+
 1. Add checkbox column for bulk selection
 2. Replace static availability badges with `<RuleQuickToggle />`
 3. Add bulk action bar component
@@ -125,6 +132,7 @@ The current system shows availability state in the products table, but **no inte
 ## Implementation Plan
 
 ### Phase 1: Core Toggle Component (MVP)
+
 **Priority: HIGH - User's immediate need**
 
 1. ✅ Verify existing API endpoints work for toggle operations
@@ -137,10 +145,12 @@ The current system shows availability state in the products table, but **no inte
 4. Test toggle functionality
 
 **Files to create/modify:**
+
 - `src/components/admin/products/RuleQuickToggle.tsx` (NEW)
 - `src/app/(dashboard)/admin/products/page.tsx` (MODIFY - replace badges)
 
 ### Phase 2: Bulk Operations
+
 **Priority: MEDIUM**
 
 1. Add checkbox column to products table
@@ -150,11 +160,13 @@ The current system shows availability state in the products table, but **no inte
 5. Add selection state management
 
 **Files to create/modify:**
+
 - `src/components/admin/products/BulkRuleActions.tsx` (NEW)
 - `src/components/admin/products/BulkRuleModal.tsx` (NEW)
 - `src/app/(dashboard)/admin/products/page.tsx` (MODIFY - add checkboxes)
 
 ### Phase 3: Polish & Enhancements
+
 **Priority: LOW**
 
 1. Add audit logging for toggle actions
@@ -166,13 +178,17 @@ The current system shows availability state in the products table, but **no inte
 ## Key Architecture Decisions
 
 ### ✅ No New Database Tables Needed
+
 The plan's suggested `product_availability_rule_status` junction table is **NOT needed** because:
+
 - Rules are already per-product (have `productId`)
 - Rules already have `enabled` boolean
 - Current schema supports the feature
 
 ### ✅ No New API Endpoints Needed
+
 Existing endpoints already support everything we need:
+
 - `GET /api/availability?productId={id}` - Get product's rules
 - `PUT /api/availability/{ruleId}` - Toggle `enabled` field
 - `POST /api/availability/bulk` - Bulk updates
@@ -180,6 +196,7 @@ Existing endpoints already support everything we need:
 We just need to **use** these endpoints from the products table!
 
 ### ✅ Reuse Existing Components
+
 - Use Radix UI `Popover` for dropdown
 - Use existing `Switch` component for toggles
 - Use existing `Badge` components for state display
@@ -237,14 +254,17 @@ We just need to **use** these endpoints from the products table!
 ## Files Summary
 
 ### New Files (3)
+
 1. `src/components/admin/products/RuleQuickToggle.tsx`
 2. `src/components/admin/products/BulkRuleActions.tsx`
 3. `src/components/admin/products/BulkRuleModal.tsx`
 
 ### Modified Files (1)
+
 1. `src/app/(dashboard)/admin/products/page.tsx`
 
 ### No Changes Needed
+
 - Database schema ✅
 - API routes ✅
 - Types ✅
@@ -253,6 +273,7 @@ We just need to **use** these endpoints from the products table!
 ---
 
 **Total Estimated Effort:** 4-6 hours
+
 - Phase 1 (MVP): 2-3 hours
 - Phase 2 (Bulk): 1-2 hours
 - Phase 3 (Polish): 1 hour

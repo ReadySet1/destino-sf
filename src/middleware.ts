@@ -2,8 +2,6 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { applyRateLimit, shouldBypassInDevelopment } from '@/middleware/rate-limit';
 
-
-
 /**
  * Add enhanced security headers to response
  */
@@ -76,13 +74,14 @@ export async function middleware(request: NextRequest) {
   addSecurityHeaders(response, pathname);
 
   // Consolidated authentication check for protected routes
-  const needsAuth = pathname.startsWith('/admin') || 
-                   pathname.startsWith('/protected') || 
-                   pathname.startsWith('/account/') || 
-                   pathname.startsWith('/user/') ||
-                   pathname.startsWith('/api/availability') || // Add availability API routes
-                   pathname.startsWith('/api/admin/'); // Add other admin API routes
-  
+  const needsAuth =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/protected') ||
+    pathname.startsWith('/account/') ||
+    pathname.startsWith('/user/') ||
+    pathname.startsWith('/api/availability') || // Add availability API routes
+    pathname.startsWith('/api/admin/'); // Add other admin API routes
+
   if (needsAuth) {
     try {
       const supabase = createServerClient(
@@ -134,7 +133,7 @@ export async function middleware(request: NextRequest) {
     } catch (error) {
       console.error('Auth middleware error:', error);
       response.headers.set('X-Auth-Error', 'true');
-      
+
       // For admin/protected routes, redirect to sign-in on auth errors
       if (pathname.startsWith('/admin') || pathname.startsWith('/protected')) {
         return NextResponse.redirect(new URL('/sign-in', request.url));

@@ -12,7 +12,9 @@ interface BaseButtonProps {
   className?: string;
 }
 
-interface ButtonProps extends BaseButtonProps, Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children'> {
+interface ButtonProps
+  extends BaseButtonProps,
+    Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children'> {
   href?: never;
 }
 
@@ -41,19 +43,20 @@ const sizes = {
  * Standard form button with consistent styling
  * Can be rendered as button or Link component
  */
-export function FormButton({ 
-  children, 
-  variant = 'primary', 
+export function FormButton({
+  children,
+  variant = 'primary',
   size = 'md',
   leftIcon,
   rightIcon,
   className = '',
-  ...props 
+  ...props
 }: FormButtonProps) {
-  const baseClasses = "inline-flex items-center justify-center border rounded-lg shadow-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200";
+  const baseClasses =
+    'inline-flex items-center justify-center border rounded-lg shadow-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200';
   const variantClasses = variants[variant];
   const sizeClasses = sizes[size];
-  
+
   const buttonClasses = `${baseClasses} ${variantClasses} ${sizeClasses} ${className}`;
 
   const content = (

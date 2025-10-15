@@ -270,7 +270,10 @@ function isCateringCategory(name: string): boolean {
 }
 
 // Enhanced function to get or create a category with proper upsert logic
-async function getOrCreateCategoryByName(name: string, squareId?: string): Promise<{ id: string; name: string }> {
+async function getOrCreateCategoryByName(
+  name: string,
+  squareId?: string
+): Promise<{ id: string; name: string }> {
   try {
     // Generate the slug first
     const slug = createSlug(name);
@@ -283,7 +286,9 @@ async function getOrCreateCategoryByName(name: string, squareId?: string): Promi
       });
 
       if (categoryBySquareId) {
-        logger.debug(`Found existing category by Square ID ${squareId}: "${categoryBySquareId.name}"`);
+        logger.debug(
+          `Found existing category by Square ID ${squareId}: "${categoryBySquareId.name}"`
+        );
         return categoryBySquareId;
       }
     }
@@ -355,7 +360,7 @@ async function getOrCreateCategoryByName(name: string, squareId?: string): Promi
       }
     } catch (upsertError) {
       const error = upsertError as { code?: string; meta?: { target?: string[] } };
-      
+
       if (error.code === 'P2002') {
         // Still getting unique constraint violation, try alternative approaches
         const field = error.meta?.target?.[0];
@@ -364,10 +369,7 @@ async function getOrCreateCategoryByName(name: string, squareId?: string): Promi
         // Try to find by name one more time (might have been created between checks)
         const retryCategory = await prisma.category.findFirst({
           where: {
-            OR: [
-              { name: { equals: name, mode: 'insensitive' } },
-              { slug }
-            ]
+            OR: [{ name: { equals: name, mode: 'insensitive' } }, { slug }],
           },
         });
 
@@ -380,7 +382,7 @@ async function getOrCreateCategoryByName(name: string, squareId?: string): Promi
         const timestamp = Date.now();
         const uniqueName = `${name}`;
         const uniqueSlug = `${slug}-${timestamp}`;
-        
+
         category = await prisma.category.create({
           data: {
             name: uniqueName,
@@ -575,7 +577,9 @@ export async function syncSquareProducts(): Promise<SyncResult> {
           logger.info(
             `Found ${cateringCategories.length} catering categories: ${JSON.stringify(cateringCategories)}`
           );
-          logger.info('Catering items will be synced to products table as part of main sync (unified approach)');
+          logger.info(
+            'Catering items will be synced to products table as part of main sync (unified approach)'
+          );
         } else {
           logger.warn('No CATERING categories found in Square data!');
         }
@@ -621,14 +625,14 @@ export async function syncSquareProducts(): Promise<SyncResult> {
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             const itemName = squareItem.item_data?.name || 'Unknown Item';
-            
+
             // Enhanced error logging with context
             logger.error(`❌ Error processing item "${itemName}" (${squareItem.id}):`, {
               error: errorMessage,
               squareId: squareItem.id,
               itemName,
               categoryId: squareItem.item_data?.categories?.[0]?.id,
-              hasNutrition: !!squareItem.item_data?.food_and_beverage_details
+              hasNutrition: !!squareItem.item_data?.food_and_beverage_details,
             });
 
             // Check if it's a critical error or can be retried
@@ -645,15 +649,15 @@ export async function syncSquareProducts(): Promise<SyncResult> {
         const concurrentBatches = chunkArray(batchPromises, MAX_CONCURRENT_REQUESTS);
         for (const concurrentBatch of concurrentBatches) {
           const batchResults = await Promise.allSettled(concurrentBatch);
-          
+
           // Log batch completion status
-          const successes = batchResults.filter(result => 
-            result.status === 'fulfilled' && result.value?.success
+          const successes = batchResults.filter(
+            result => result.status === 'fulfilled' && result.value?.success
           ).length;
           const failures = batchResults.length - successes;
-          
+
           logger.debug(`Batch results: ${successes} succeeded, ${failures} failed`);
-          
+
           // Small delay between concurrent groups
           await new Promise(resolve => setTimeout(resolve, 50));
         }
@@ -671,7 +675,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       // Optimized archive logic: Use bulk operations instead of individual queries
       try {
         logger.info('Starting optimized archive logic for products not in Square...');
-        
+
         // Get all active Square IDs from our database
         const dbSquareIds = await prisma.product.findMany({
           where: {
@@ -788,7 +792,10 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       message: `Products synced successfully with nutrition facts support`,
       syncedProducts: syncedCount,
       totalItems: validSquareIds.length,
-      successRate: validSquareIds.length > 0 ? ((syncedCount / validSquareIds.length) * 100).toFixed(1) + '%' : '0%',
+      successRate:
+        validSquareIds.length > 0
+          ? ((syncedCount / validSquareIds.length) * 100).toFixed(1) + '%'
+          : '0%',
       errors: errors.length > 0 ? errors : undefined,
       debugInfo: debugInfo,
     };
@@ -798,7 +805,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       synced: syncedCount,
       total: validSquareIds.length,
       errors: errors.length,
-      successRate: syncSummary.successRate
+      successRate: syncSummary.successRate,
     });
 
     if (errors.length > 0) {
@@ -851,9 +858,10 @@ async function processSquareItem(
   const rawDescription = itemData.description_html || itemData.description;
 
   // DEBUG: Log description fields for specific products
-  const isDebugProduct = itemName.toLowerCase().includes('acorn') ||
-                        itemName.toLowerCase().includes('alfajor') ||
-                        itemName.toLowerCase().includes('empanada');
+  const isDebugProduct =
+    itemName.toLowerCase().includes('acorn') ||
+    itemName.toLowerCase().includes('alfajor') ||
+    itemName.toLowerCase().includes('empanada');
 
   if (isDebugProduct) {
     logger.info(`🔍 DEBUG Syncing: ${itemName}`, {
@@ -902,28 +910,31 @@ async function processSquareItem(
   if (categoryIdFromItem) {
     // Use CategoryMapper instead of creating by name
     const { default: CategoryMapper } = await import('./category-mapper');
-    
+
     // Try to get mapped category name
-    const mappedCategoryName = CategoryMapper.getLegacyLocalCategory(categoryIdFromItem) ||
-                              CategoryMapper.getLocalCategory(categoryIdFromItem);
-    
+    const mappedCategoryName =
+      CategoryMapper.getLegacyLocalCategory(categoryIdFromItem) ||
+      CategoryMapper.getLocalCategory(categoryIdFromItem);
+
     if (mappedCategoryName) {
       // Find existing category by Square ID first, then by name
       let category = await prisma.category.findFirst({
         where: {
-          OR: [
-            { squareId: categoryIdFromItem },
-            { name: mappedCategoryName }
-          ]
-        }
+          OR: [{ squareId: categoryIdFromItem }, { name: mappedCategoryName }],
+        },
       });
 
       if (!category) {
         // Use the enhanced getOrCreateCategoryByName function instead of direct create
         try {
-          const categoryResult = await getOrCreateCategoryByName(mappedCategoryName, categoryIdFromItem);
+          const categoryResult = await getOrCreateCategoryByName(
+            mappedCategoryName,
+            categoryIdFromItem
+          );
           categoryId = categoryResult.id;
-          logger.info(`Created/found category: ${mappedCategoryName} with Square ID: ${categoryIdFromItem}`);
+          logger.info(
+            `Created/found category: ${mappedCategoryName} with Square ID: ${categoryIdFromItem}`
+          );
         } catch (categoryError) {
           logger.error(`Failed to create category ${mappedCategoryName}:`, categoryError);
           // Fallback to default category
@@ -935,11 +946,16 @@ async function processSquareItem(
         try {
           await prisma.category.update({
             where: { id: category.id },
-            data: { squareId: categoryIdFromItem }
+            data: { squareId: categoryIdFromItem },
           });
-          logger.info(`Updated category ${mappedCategoryName} with Square ID: ${categoryIdFromItem}`);
+          logger.info(
+            `Updated category ${mappedCategoryName} with Square ID: ${categoryIdFromItem}`
+          );
         } catch (updateError) {
-          logger.warn(`Could not update category ${mappedCategoryName} with Square ID:`, updateError);
+          logger.warn(
+            `Could not update category ${mappedCategoryName} with Square ID:`,
+            updateError
+          );
         }
       }
 
@@ -947,7 +963,9 @@ async function processSquareItem(
         categoryId = category.id;
       }
       categoryName = mappedCategoryName;
-      logger.debug(`Assigned item "${itemName}" to category "${categoryName}" (${categoryId}) via CategoryMapper`);
+      logger.debug(
+        `Assigned item "${itemName}" to category "${categoryName}" (${categoryId}) via CategoryMapper`
+      );
     } else {
       // Fallback to original logic for unmapped categories
       const categoryObject = categoryMap.get(categoryIdFromItem);
@@ -963,7 +981,9 @@ async function processSquareItem(
             return await getOrCreateCategoryByName(categoryName, categoryIdFromItem);
           });
           categoryId = category.id;
-          logger.debug(`Assigned item "${itemName}" to category "${categoryName}" (${categoryId}) via fallback`);
+          logger.debug(
+            `Assigned item "${itemName}" to category "${categoryName}" (${categoryId}) via fallback`
+          );
         } catch (categoryError) {
           logger.error(`Error getting/creating category for "${itemName}":`, categoryError);
           categoryId = defaultCategory.id;
@@ -996,10 +1016,11 @@ async function processSquareItem(
   const availableOnline = itemData.available_online ?? true;
   const presentAtAllLocations = itemData.present_at_all_locations ?? true;
   const isNotDeleted = !item.is_deleted;
-  
+
   // Product should be active if it's not deleted, available online, and present at locations
-  const shouldBeActive = isNotDeleted && availableOnline && presentAtAllLocations && visibility !== 'PRIVATE';
-  
+  const shouldBeActive =
+    isNotDeleted && availableOnline && presentAtAllLocations && visibility !== 'PRIVATE';
+
   // Log visibility status for debugging
   if (!shouldBeActive) {
     const reasons = [];
@@ -1106,14 +1127,15 @@ async function handleUniqueConstraintViolation(
   baseSlug: string
 ): Promise<void> {
   const itemName = item.item_data?.name || '';
-  
+
   // Calculate shouldBeActive within this function
   const itemData = item.item_data;
   const visibility = itemData?.visibility || 'PUBLIC';
   const availableOnline = itemData?.available_online ?? true;
   const presentAtAllLocations = itemData?.present_at_all_locations ?? true;
   const isNotDeleted = !item.is_deleted;
-  const shouldBeActive = isNotDeleted && availableOnline && presentAtAllLocations && visibility !== 'PRIVATE';
+  const shouldBeActive =
+    isNotDeleted && availableOnline && presentAtAllLocations && visibility !== 'PRIVATE';
   const constraintField = createError.meta?.target?.[0];
   logger.warn(`Constraint violation on ${constraintField} for item ${itemName}`);
 
@@ -1299,7 +1321,7 @@ function extractNutritionInfo(item: SquareCatalogObject): {
   } = {};
 
   const foodAndBeverageDetails = item.item_data?.food_and_beverage_details;
-  
+
   if (foodAndBeverageDetails) {
     logger.debug(`Found nutrition info for item ${item.item_data?.name}:`, foodAndBeverageDetails);
 
@@ -1309,26 +1331,44 @@ function extractNutritionInfo(item: SquareCatalogObject): {
     }
 
     // Extract dietary preferences
-    if (foodAndBeverageDetails.dietary_preferences && foodAndBeverageDetails.dietary_preferences.length > 0) {
+    if (
+      foodAndBeverageDetails.dietary_preferences &&
+      foodAndBeverageDetails.dietary_preferences.length > 0
+    ) {
       nutritionInfo.dietaryPreferences = foodAndBeverageDetails.dietary_preferences;
     }
 
     // Extract ingredients
     if (foodAndBeverageDetails.ingredients) {
       nutritionInfo.ingredients = foodAndBeverageDetails.ingredients;
-      
+
       // Extract allergens from ingredients text if present
       // Common allergen keywords to look for
       const commonAllergens = [
-        'dairy', 'milk', 'eggs', 'wheat', 'gluten', 'soy', 'nuts', 'peanuts', 
-        'tree nuts', 'almonds', 'walnuts', 'cashews', 'pistachios', 'hazelnuts',
-        'shellfish', 'fish', 'sesame', 'sulfites'
+        'dairy',
+        'milk',
+        'eggs',
+        'wheat',
+        'gluten',
+        'soy',
+        'nuts',
+        'peanuts',
+        'tree nuts',
+        'almonds',
+        'walnuts',
+        'cashews',
+        'pistachios',
+        'hazelnuts',
+        'shellfish',
+        'fish',
+        'sesame',
+        'sulfites',
       ];
-      
-      const foundAllergens = commonAllergens.filter(allergen => 
+
+      const foundAllergens = commonAllergens.filter(allergen =>
         foodAndBeverageDetails.ingredients!.toLowerCase().includes(allergen.toLowerCase())
       );
-      
+
       if (foundAllergens.length > 0) {
         nutritionInfo.allergens = foundAllergens;
       }
@@ -1597,7 +1637,9 @@ export async function syncCateringItemsWithSquare(
   allProducts?: SquareCatalogObject[],
   allCategories?: SquareCatalogObject[]
 ): Promise<{ updated: number; skipped: number; errors: number; imagesUpdated: number }> {
-  logger.info('🚫 syncCateringItemsWithSquare is deprecated - using unified products-only approach');
+  logger.info(
+    '🚫 syncCateringItemsWithSquare is deprecated - using unified products-only approach'
+  );
   return { updated: 0, skipped: 0, errors: 0, imagesUpdated: 0 };
 }
 
@@ -1760,7 +1802,7 @@ export async function syncProductOrderingFromSquare(): Promise<{
 
     // Optimize: Use bulk operations instead of individual updates
     const productsToUpdate: Array<{ id: string; ordinal: bigint }> = [];
-    
+
     for (const product of dbProducts) {
       if (!product.squareId) {
         results.skipped++;
@@ -1790,9 +1832,9 @@ export async function syncProductOrderingFromSquare(): Promise<{
     // Perform bulk update if there are products to update
     if (productsToUpdate.length > 0) {
       logger.info(`Performing bulk update for ${productsToUpdate.length} products...`);
-      
+
       // Use transaction for bulk update to ensure consistency
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async tx => {
         for (const productUpdate of productsToUpdate) {
           await tx.product.update({
             where: { id: productUpdate.id },

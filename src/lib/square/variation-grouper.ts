@@ -1,6 +1,6 @@
 /**
  * Square Variation Grouper
- * 
+ *
  * Detects and groups Square items that are size variations of the same product
  * (e.g., "Cheese & Charcuterie Platter - Small" and "Cheese & Charcuterie Platter - Large")
  */
@@ -48,10 +48,10 @@ export class VariationGrouper {
   static detectSizePattern(name: string): { baseName: string; size?: string } {
     // Common size patterns we see in Square
     const sizePatterns = [
-      / - (Small|Large|Regular|Medium)$/i,           // "Product - Small"
-      / \((Small|Large|Regular|Medium)\)$/i,         // "Product (Small)"
-      /\s+(Small|Large|Regular|Medium)$/i,           // "Product Small"
-      /(Small|Large|Regular|Medium)\s*-\s*(.+)$/i,   // "Small - Product"
+      / - (Small|Large|Regular|Medium)$/i, // "Product - Small"
+      / \((Small|Large|Regular|Medium)\)$/i, // "Product (Small)"
+      /\s+(Small|Large|Regular|Medium)$/i, // "Product Small"
+      /(Small|Large|Regular|Medium)\s*-\s*(.+)$/i, // "Small - Product"
     ];
 
     for (const pattern of sizePatterns) {
@@ -59,13 +59,13 @@ export class VariationGrouper {
       if (match) {
         const size = match[1];
         let baseName = name.replace(pattern, '').trim();
-        
+
         // Clean up any trailing dashes or spaces
         baseName = baseName.replace(/\s*-\s*$/, '').trim();
-        
+
         return {
           baseName,
-          size: size.toLowerCase()
+          size: size.toLowerCase(),
         };
       }
     }
@@ -80,8 +80,8 @@ export class VariationGrouper {
   static normalizeProductName(name: string): string {
     return name
       .toLowerCase()
-      .replace(/[^\w\s]/g, ' ')        // Replace punctuation with spaces
-      .replace(/\s+/g, ' ')            // Normalize multiple spaces
+      .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
+      .replace(/\s+/g, ' ') // Normalize multiple spaces
       .trim();
   }
 
@@ -89,26 +89,29 @@ export class VariationGrouper {
    * Group Square items by their base product, detecting size variations
    */
   static groupVariations(items: SquareItem[]): GroupedProduct[] {
-    const groups = new Map<string, {
-      baseName: string;
-      category: string;
-      categoryId: string;
-      variations: ProductVariation[];
-      images: Set<string>;
-    }>();
+    const groups = new Map<
+      string,
+      {
+        baseName: string;
+        category: string;
+        categoryId: string;
+        variations: ProductVariation[];
+        images: Set<string>;
+      }
+    >();
 
     // First pass: group items by normalized base name
     items.forEach(item => {
       const { baseName, size } = this.detectSizePattern(item.name);
       const normalizedBaseName = this.normalizeProductName(baseName);
-      
+
       if (!groups.has(normalizedBaseName)) {
         groups.set(normalizedBaseName, {
           baseName: baseName, // Use the original case version
           category: item.categoryName,
           categoryId: item.categoryId,
           variations: [],
-          images: new Set()
+          images: new Set(),
         });
       }
 
@@ -123,7 +126,7 @@ export class VariationGrouper {
         imageUrl: item.imageUrl,
         description: item.description,
         servingSize: item.servingSize,
-        squareVariantId: item.id
+        squareVariantId: item.id,
       });
 
       // Track images for selecting best base image
@@ -135,7 +138,7 @@ export class VariationGrouper {
     // Second pass: convert to GroupedProduct format
     return Array.from(groups.entries()).map(([normalizedName, group]) => {
       // Sort variations by size (Small -> Regular -> Large)
-      const sizeOrder = { 'small': 1, 'regular': 2, 'medium': 2, 'large': 3 };
+      const sizeOrder = { small: 1, regular: 2, medium: 2, large: 3 };
       const sortedVariations = group.variations.sort((a, b) => {
         const orderA = sizeOrder[a.size as keyof typeof sizeOrder] || 2;
         const orderB = sizeOrder[b.size as keyof typeof sizeOrder] || 2;
@@ -148,10 +151,11 @@ export class VariationGrouper {
         // Prefer image from Large size, then Regular, then any
         const largeVariation = sortedVariations.find(v => v.size === 'large');
         const regularVariation = sortedVariations.find(v => v.size === 'regular');
-        
-        baseImageUrl = largeVariation?.imageUrl || 
-                      regularVariation?.imageUrl || 
-                      sortedVariations.find(v => v.imageUrl)?.imageUrl;
+
+        baseImageUrl =
+          largeVariation?.imageUrl ||
+          regularVariation?.imageUrl ||
+          sortedVariations.find(v => v.imageUrl)?.imageUrl;
       }
 
       return {
@@ -160,7 +164,7 @@ export class VariationGrouper {
         category: group.category,
         categoryId: group.categoryId,
         variations: sortedVariations,
-        hasMultipleSizes: sortedVariations.length > 1
+        hasMultipleSizes: sortedVariations.length > 1,
       };
     });
   }
@@ -194,10 +198,10 @@ export class VariationGrouper {
    */
   static getSizeDisplayName(size: string): string {
     const sizeMap: Record<string, string> = {
-      'small': 'Small',
-      'regular': 'Regular',
-      'medium': 'Medium', 
-      'large': 'Large'
+      small: 'Small',
+      regular: 'Regular',
+      medium: 'Medium',
+      large: 'Large',
     };
 
     return sizeMap[size.toLowerCase()] || size;
@@ -221,15 +225,13 @@ export class VariationGrouper {
     shouldMerge: boolean;
   }> {
     const grouped = this.groupVariations(items);
-    
+
     return grouped
       .filter(group => group.hasMultipleSizes)
       .map(group => ({
         baseName: group.baseName,
-        duplicates: items.filter(item => 
-          group.variations.some(v => v.id === item.id)
-        ),
-        shouldMerge: true
+        duplicates: items.filter(item => group.variations.some(v => v.id === item.id)),
+        shouldMerge: true,
       }));
   }
 }

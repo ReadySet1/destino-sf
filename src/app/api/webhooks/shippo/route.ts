@@ -169,10 +169,10 @@ async function handleTrackUpdated(data: any): Promise<void> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   console.log('Received Shippo webhook request');
-  
+
   // Start timing for performance monitoring
   const startTime = Date.now();
-  
+
   try {
     // Read and parse the request body
     const payload: ShippoWebhookPayload = await request.json();
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Basic security: Check if this is a test webhook
     if (payload.test === true) {
       console.log('🧪 Test webhook received - processing normally');
-      
+
       // For test webhooks, we'll process them but be more lenient with database operations
       // This prevents errors from invalid test data while still testing the webhook flow
     }
@@ -189,29 +189,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Basic webhook validation
     if (!payload.event || !payload.data) {
       console.error('❌ Invalid webhook payload structure');
-      return NextResponse.json(
-        { error: 'Invalid webhook payload structure' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid webhook payload structure' }, { status: 400 });
     }
 
     // Log webhook details for debugging
     console.log(`📦 Processing Shippo webhook: ${payload.event}`);
     console.log(`🆔 Object ID: ${payload.data?.object_id || 'N/A'}`);
     console.log(`📊 Test mode: ${payload.test}`);
-    
+
     // Additional validation for test webhooks
     if (payload.test === true) {
       console.log('🔍 Test webhook detected - applying additional validation rules');
-      
+
       // Check if test data has realistic values
       if (payload.data?.object_id && payload.data.object_id.includes('test')) {
         console.log('✅ Test object ID format detected');
       }
-      
-      if (payload.data?.tracking_number && 
-          (payload.data.tracking_number.includes('SHIPPO_') || 
-           payload.data.tracking_number.includes('TEST_'))) {
+
+      if (
+        payload.data?.tracking_number &&
+        (payload.data.tracking_number.includes('SHIPPO_') ||
+          payload.data.tracking_number.includes('TEST_'))
+      ) {
         console.log('✅ Test tracking number format detected');
       }
     }
@@ -248,19 +247,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Always return 200 to acknowledge receipt (prevents Shippo retries)
     return NextResponse.json(
-      { 
-        received: true, 
+      {
+        received: true,
         processed: true,
         processing_time_ms: processingTime,
-        event: payload.event
-      }, 
+        event: payload.event,
+      },
       { status: 200 }
     );
-
   } catch (error: unknown) {
     const processingTime = Date.now() - startTime;
     console.error('❌ Critical error processing Shippo webhook:', error);
-    
+
     let errorMessage = 'Internal Server Error';
     if (error instanceof SyntaxError) {
       errorMessage = 'Invalid JSON payload';
@@ -270,14 +268,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Return 200 even on critical errors to prevent Shippo retries
     // This is important because Shippo will retry failed webhooks
-    console.error(`🔴 Returning 200 despite error to prevent Shippo retries. Processing time: ${processingTime}ms`);
-    
+    console.error(
+      `🔴 Returning 200 despite error to prevent Shippo retries. Processing time: ${processingTime}ms`
+    );
+
     return NextResponse.json(
-      { 
+      {
         error: `Webhook processing failed: ${errorMessage}`,
         received: true,
         processed: false,
-        processing_time_ms: processingTime
+        processing_time_ms: processingTime,
       },
       { status: 200 }
     );

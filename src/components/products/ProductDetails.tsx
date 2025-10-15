@@ -10,7 +10,21 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { useCartStore } from '@/store/cart';
 import { useCartAlertStore } from '@/components/ui/cart-alert';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Clock, Thermometer, Leaf, Users, Eye, Star, Heart, Zap, Award, CheckCircle, ShieldCheck, Sparkles } from 'lucide-react';
+import {
+  ChevronDown,
+  Clock,
+  Thermometer,
+  Leaf,
+  Users,
+  Eye,
+  Star,
+  Heart,
+  Zap,
+  Award,
+  CheckCircle,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { TrustSignalCard, TrustSignalCardSkeleton } from '@/components/products/TrustSignalCard';
 import { getTrustSignalsArray, type TrustSignalsConfig } from '@/types/trust-signals';
 import {
@@ -354,18 +368,18 @@ const useProductTypeBadges = (productType: string | null | undefined) => {
 // Icon mapping function
 const getIconComponent = (iconName: string) => {
   const iconMap: Record<string, any> = {
-    'leaf': Leaf,
-    'clock': Clock,
-    'thermometer': Thermometer,
-    'users': Users,
-    'eye': Eye,
-    'star': Star,
-    'heart': Heart,
-    'zap': Zap,
-    'award': Award,
+    leaf: Leaf,
+    clock: Clock,
+    thermometer: Thermometer,
+    users: Users,
+    eye: Eye,
+    star: Star,
+    heart: Heart,
+    zap: Zap,
+    award: Award,
     'check-circle': CheckCircle,
     'shield-check': ShieldCheck,
-    'sparkles': Sparkles,
+    sparkles: Sparkles,
   };
   return iconMap[iconName] || Leaf;
 };
@@ -391,7 +405,20 @@ const getProductHighlights = (product: Product, badges: ProductTypeBadge | null)
     // Add expected delivery date if available
     if (product.preorderEndDate) {
       const endDate = new Date(product.preorderEndDate);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       const formattedDate = `${months[endDate.getMonth()]} ${endDate.getDate()}`;
       highlights.push({
         icon: <Clock className="w-4 h-4" style={{ color: defaultTextColor }} />,
@@ -541,7 +568,6 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const productType = (product as any).productType || null;
   const { badges, loading: badgesLoading } = useProductTypeBadges(productType);
 
-
   // Ensure product exists and has required fields before rendering
   if (!product || !product.id || !product.name) {
     return (
@@ -567,7 +593,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const productName = product.name;
   const isActive = product.active ?? true;
   const stock: number = 999; // Explicitly type as number
-  
+
   // Use availability utilities
   const availabilityState = getEffectiveAvailabilityState(product);
   const buttonConfig = getAddToCartButtonConfig(product);
@@ -594,12 +620,11 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   }
 
   const handleAddToCart = () => {
-    
     // Check if product can be added to cart
     if (!productCanAddToCart) {
       return;
     }
-    
+
     if (productIsPreOrder) {
       // For pre-order items, show a special confirmation dialog
       const preorderMessage = formatPreorderMessage(product);
@@ -607,7 +632,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         return;
       }
     }
-    
+
     const priceToAdd =
       typeof displayPrice === 'object' && displayPrice !== null && 'toNumber' in displayPrice
         ? displayPrice.toNumber()
@@ -627,7 +652,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     const alertMessage = productIsPreOrder
       ? `${quantity} ${productName}${selectedVariant ? ` (${selectedVariant.name})` : ''} has been pre-ordered and added to your cart.`
       : `${quantity} ${productName}${selectedVariant ? ` (${selectedVariant.name})` : ''} has been added to your cart.`;
-    
+
     showAlert(alertMessage);
   };
 
@@ -712,7 +737,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                     className="flex items-center gap-2 backdrop-blur-md border border-white/30 px-4 py-2 rounded-full shadow-lg"
                     style={{
                       backgroundColor: `${highlight.bgColor}e6`, // Add 90% opacity
-                      color: highlight.textColor
+                      color: highlight.textColor,
                     }}
                   >
                     <span className="w-4 h-4">{highlight.icon}</span>
@@ -778,7 +803,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                   <div
                     className="text-gray-600 mb-8 text-lg"
                     dangerouslySetInnerHTML={{
-                      __html: sanitizeProductDescription(product.description)
+                      __html: sanitizeProductDescription(product.description),
                     }}
                   />
                 )}
@@ -844,11 +869,18 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                   <button
                     onClick={handleAddToCart}
                     className={`h-10 px-6 rounded-full text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${buttonConfig.className}`}
-                    disabled={buttonConfig.disabled || (!isActive && !productCanAddToCart) || stock === 0}
+                    disabled={
+                      buttonConfig.disabled || (!isActive && !productCanAddToCart) || stock === 0
+                    }
                     aria-label={buttonConfig.ariaLabel}
                   >
                     {buttonConfig.icon === 'cart' && (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -858,7 +890,12 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
                       </svg>
                     )}
                     {buttonConfig.icon === 'preorder' && (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"

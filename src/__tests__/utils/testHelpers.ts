@@ -3,18 +3,18 @@ import { mockPrismaClient, mockSupabaseClient, mockSquareClient } from '@/__mock
 export function setupMocks() {
   // Reset all mocks
   jest.clearAllMocks();
-  
+
   // Setup default mock implementations
   mockPrismaClient.order.create.mockResolvedValue({
     id: 'order-123',
     status: 'PENDING',
-    total: 25.00,
+    total: 25.0,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
 
   mockPrismaClient.product.findMany.mockResolvedValue([
-    { id: 'prod-1', name: 'Test Product', price: 10.00, available: true },
+    { id: 'prod-1', name: 'Test Product', price: 10.0, available: true },
   ]);
 
   return {

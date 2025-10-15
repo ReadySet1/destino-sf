@@ -27,7 +27,11 @@ import {
   getAvailabilityBadge,
   formatPreorderMessage,
 } from '@/lib/availability/utils';
-import { sanitizeProductDescription, htmlToPlainText, truncateHtmlDescription } from '@/lib/utils/product-description';
+import {
+  sanitizeProductDescription,
+  htmlToPlainText,
+  truncateHtmlDescription,
+} from '@/lib/utils/product-description';
 
 interface ProductCardProps {
   product: Product;
@@ -95,7 +99,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const { addItem } = useCartStore();
   const { showAlert } = useCartAlertStore();
-  
+
   const displayPrice = product.price;
 
   // Check if product should be rendered using the availability utils
@@ -118,7 +122,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       isPreorder: product.isPreorder,
       itemState: product.itemState,
       buttonText: buttonConfig.text,
-      badgeText: badge?.text
+      badgeText: badge?.text,
     });
   }
 
@@ -170,7 +174,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     const alertMessage = isPreOrder(product)
       ? `1 ${product.name} has been pre-ordered and added to your cart.`
       : `1 ${product.name} has been added to your cart.`;
-    
+
     showAlert(alertMessage);
   };
 
@@ -204,10 +208,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Badges */}
           <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
             {badge?.show && (
-              <span className={cn(
-                "px-2 py-1 text-xs font-semibold rounded shadow-sm flex items-center gap-1",
-                badge.className
-              )}>
+              <span
+                className={cn(
+                  'px-2 py-1 text-xs font-semibold rounded shadow-sm flex items-center gap-1',
+                  badge.className
+                )}
+              >
                 {badge.icon === 'calendar' && <Calendar className="w-3 h-3" />}
                 {badge.icon === 'eye' && <Eye className="w-3 h-3" />}
                 {badge.text}
@@ -227,7 +233,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div
           className="text-sm text-gray-600 line-clamp-2 flex-grow mb-4"
           dangerouslySetInnerHTML={{
-            __html: getShortDescription(product.name, product.description || undefined)
+            __html: getShortDescription(product.name, product.description || undefined),
           }}
         />
 
@@ -237,7 +243,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
             <button
               className={cn(
-                "font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center gap-2",
+                'font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center gap-2',
                 buttonConfig.className
               )}
               onClick={handleAddToCart}

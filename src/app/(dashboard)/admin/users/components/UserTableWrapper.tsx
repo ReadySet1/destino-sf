@@ -25,14 +25,14 @@ interface UserTableWrapperProps {
   onSendInvite: (formData: FormData) => Promise<void>;
 }
 
-export default function UserTableWrapper({ 
-  users, 
+export default function UserTableWrapper({
+  users,
   currentUserId,
-  sortKey, 
+  sortKey,
   sortDirection,
   onDelete,
   onEdit,
-  onSendInvite
+  onSendInvite,
 }: UserTableWrapperProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,7 +45,7 @@ export default function UserTableWrapper({
   };
 
   return (
-    <ResponsiveUsersTable 
+    <ResponsiveUsersTable
       users={users}
       currentUserId={currentUserId}
       onSort={handleSort}

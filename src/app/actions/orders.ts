@@ -579,7 +579,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
 
   // --- Calculate Totals using Decimal.js with Tax Exemptions ---
   let subtotal = new Decimal(0);
-  
+
   // Fetch product details with categories for tax calculation
   const productIds = items.map(item => item.id);
   const productsWithCategories = await prisma.product.findMany({
@@ -604,15 +604,17 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
 
   // Get tax rate from store settings
   const taxRateDecimal = await getTaxRate();
-  
+
   // Calculate tax using exemption logic - only catering items are taxable
   const itemsForTaxCalculation = items.map(item => {
     const product = productMap.get(item.id);
     return {
-      product: product ? {
-        category: product.category,
-        name: product.name,
-      } : undefined,
+      product: product
+        ? {
+            category: product.category,
+            name: product.name,
+          }
+        : undefined,
       price: item.price,
       quantity: item.quantity,
     };
@@ -627,15 +629,20 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   const shippingCostDecimal = new Decimal(shippingCostCents).dividedBy(100);
 
   // Get delivery fee for local delivery orders
-  const deliveryFeeDecimal = fulfillment.method === 'local_delivery' && fulfillment.deliveryFee 
-    ? new Decimal(fulfillment.deliveryFee)
-    : new Decimal(0);
+  const deliveryFeeDecimal =
+    fulfillment.method === 'local_delivery' && fulfillment.deliveryFee
+      ? new Decimal(fulfillment.deliveryFee)
+      : new Decimal(0);
 
-  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal).plus(deliveryFeeDecimal);
+  const totalBeforeFee = subtotal
+    .plus(taxAmount)
+    .plus(shippingCostDecimal)
+    .plus(deliveryFeeDecimal);
   // Skip service fee for CASH payments
-  const serviceFeeAmount = paymentMethod === 'CASH' 
-    ? new Decimal(0) 
-    : totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
+  const serviceFeeAmount =
+    paymentMethod === 'CASH'
+      ? new Decimal(0)
+      : totalBeforeFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
   const finalTotal = totalBeforeFee.plus(serviceFeeAmount);
 
   if (process.env.NODE_ENV === 'development') {
@@ -709,9 +716,10 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   let dbOrder: { id: string } | null = null;
   try {
     // Calculate delivery fee for database storage
-    const deliveryFeeForDb = fulfillment.method === 'local_delivery' && fulfillment.deliveryFee 
-      ? new Decimal(fulfillment.deliveryFee) 
-      : new Decimal(0);
+    const deliveryFeeForDb =
+      fulfillment.method === 'local_delivery' && fulfillment.deliveryFee
+        ? new Decimal(fulfillment.deliveryFee)
+        : new Decimal(0);
 
     const orderInputData: Prisma.OrderCreateInput = {
       // Connect profile using userId if ID exists
@@ -775,7 +783,9 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
         // Don't fail the order creation if alert fails
       }
     } else {
-      console.log(`Order ${dbOrder.id} created with ${paymentMethod} payment - alert will be sent after payment confirmation`);
+      console.log(
+        `Order ${dbOrder.id} created with ${paymentMethod} payment - alert will be sent after payment confirmation`
+      );
     }
   } catch (error: any) {
     console.error('Database Error creating order:', error);
@@ -792,12 +802,13 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
 
   // --- Square API Interaction ---
   const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
-  
+
   // Use the correct location ID based on environment
-  const locationId = squareEnv === 'sandbox' 
-    ? 'LMV06M1ER6HCC'                         // Use Default Test Account sandbox location ID
-    : process.env.SQUARE_LOCATION_ID;         // Use production location ID
-    
+  const locationId =
+    squareEnv === 'sandbox'
+      ? 'LMV06M1ER6HCC' // Use Default Test Account sandbox location ID
+      : process.env.SQUARE_LOCATION_ID; // Use production location ID
+
   const accessToken =
     squareEnv === 'sandbox'
       ? process.env.SQUARE_SANDBOX_TOKEN
@@ -860,7 +871,11 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     }
 
     // Add delivery fee as a line item if applicable
-    if (fulfillment.method === 'local_delivery' && fulfillment.deliveryFee && fulfillment.deliveryFee > 0) {
+    if (
+      fulfillment.method === 'local_delivery' &&
+      fulfillment.deliveryFee &&
+      fulfillment.deliveryFee > 0
+    ) {
       squareLineItems.push({
         name: `Delivery Fee (${fulfillment.deliveryZone || 'Local'})`,
         quantity: '1',
@@ -936,18 +951,19 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       };
     } else if (fulfillment.method === 'nationwide_shipping' && fulfillment.shippingAddress) {
       const address = fulfillment.shippingAddress;
-      
+
       // Validate that recipient name is provided for shipping orders
       if (!address.recipientName || !address.recipientName.trim()) {
         console.error('❌ Order creation failed: Missing recipient name for shipping address');
         return {
           success: false,
-          error: 'Recipient name is required for shipping orders. Please provide a complete shipping address.',
+          error:
+            'Recipient name is required for shipping orders. Please provide a complete shipping address.',
           checkoutUrl: null,
           orderId: null,
         };
       }
-      
+
       squareFulfillment = {
         type: 'SHIPMENT',
         shipment_details: {
@@ -1047,7 +1063,10 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     };
 
     // Sanitize the Square request body to remove any invalid fields
-    const sanitizedSquareRequestBody = safeSquareOrderPayload(squareRequestBody, 'createOrderAndGenerateCheckoutUrl');
+    const sanitizedSquareRequestBody = safeSquareOrderPayload(
+      squareRequestBody,
+      'createOrderAndGenerateCheckoutUrl'
+    );
 
     console.log('Calling Square Create Payment Link API...');
     const paymentLinkUrl = `${BASE_URL}/v2/online-checkout/payment-links`;
@@ -1209,7 +1228,7 @@ export async function createManualPaymentOrder(formData: {
 
   // --- Calculate Totals using Decimal.js with Tax Exemptions ---
   let subtotal = new Decimal(0);
-  
+
   // Fetch product details with categories for tax calculation
   const productIds = items.map(item => item.id);
   const productsWithCategories = await prisma.product.findMany({
@@ -1234,15 +1253,17 @@ export async function createManualPaymentOrder(formData: {
 
   // Get tax rate from store settings
   const taxRateDecimal = await getTaxRate();
-  
+
   // Calculate tax using exemption logic - only catering items are taxable
   const itemsForTaxCalculation = items.map(item => {
     const product = productMap.get(item.id);
     return {
-      product: product ? {
-        category: product.category,
-        name: product.name,
-      } : undefined,
+      product: product
+        ? {
+            category: product.category,
+            name: product.name,
+          }
+        : undefined,
       price: item.price,
       quantity: item.quantity,
     };
@@ -1253,13 +1274,17 @@ export async function createManualPaymentOrder(formData: {
   const shippingCostCents =
     fulfillment.method === 'nationwide_shipping' ? fulfillment.shippingCost : 0;
   const shippingCostDecimal = new Decimal(shippingCostCents).dividedBy(100);
-  
-  // Get delivery fee for local delivery orders (manual payment)
-  const deliveryFeeDecimal = fulfillment.method === 'local_delivery' && fulfillment.deliveryFee 
-    ? new Decimal(fulfillment.deliveryFee)
-    : new Decimal(0);
 
-  const totalBeforeFee = subtotal.plus(taxAmount).plus(shippingCostDecimal).plus(deliveryFeeDecimal);
+  // Get delivery fee for local delivery orders (manual payment)
+  const deliveryFeeDecimal =
+    fulfillment.method === 'local_delivery' && fulfillment.deliveryFee
+      ? new Decimal(fulfillment.deliveryFee)
+      : new Decimal(0);
+
+  const totalBeforeFee = subtotal
+    .plus(taxAmount)
+    .plus(shippingCostDecimal)
+    .plus(deliveryFeeDecimal);
   // Cash orders do not have convenience fees (only credit card orders do)
   const serviceFeeAmount = new Decimal(0);
   const finalTotal = totalBeforeFee.plus(serviceFeeAmount);
@@ -1270,7 +1295,9 @@ export async function createManualPaymentOrder(formData: {
     `Manual Payment - Calculated Shipping: ${shippingCostDecimal.toFixed(2)} (Cents: ${shippingCostCents})`
   );
   console.log(`Manual Payment - Calculated Delivery Fee: ${deliveryFeeDecimal.toFixed(2)}`);
-  console.log(`Manual Payment - Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)} (Cash orders have no convenience fee)`);
+  console.log(
+    `Manual Payment - Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)} (Cash orders have no convenience fee)`
+  );
   console.log(`Manual Payment - Calculated Final Total: ${finalTotal.toFixed(2)}`);
 
   // --- Prepare Fulfillment DB Data ---

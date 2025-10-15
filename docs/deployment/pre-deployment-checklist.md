@@ -253,14 +253,14 @@ pnpm test:e2e:mobile
 
 ### Technical Sign-off
 
-- [ ] **Lead Developer**: ******\_\_\_****** Date: **\_\_\_**
-- [ ] **QA Engineer**: ******\_\_\_****** Date: **\_\_\_**
-- [ ] **DevOps Engineer**: ******\_\_\_****** Date: **\_\_\_**
+- [ ] **Lead Developer**: **\*\***\_\_\_**\*\*** Date: **\_\_\_**
+- [ ] **QA Engineer**: **\*\***\_\_\_**\*\*** Date: **\_\_\_**
+- [ ] **DevOps Engineer**: **\*\***\_\_\_**\*\*** Date: **\_\_\_**
 
 ### Business Sign-off
 
-- [ ] **Product Owner**: ******\_\_\_****** Date: **\_\_\_**
-- [ ] **Business Stakeholder**: ******\_\_\_****** Date: **\_\_\_**
+- [ ] **Product Owner**: **\*\***\_\_\_**\*\*** Date: **\_\_\_**
+- [ ] **Business Stakeholder**: **\*\***\_\_\_**\*\*** Date: **\_\_\_**
 
 ---
 
@@ -268,9 +268,9 @@ pnpm test:e2e:mobile
 
 **Deployment Status**: ⚪ Pending / 🟢 Go / 🔴 No-Go
 
-**Decision Date**: ******\_\_\_******
+**Decision Date**: **\*\***\_\_\_**\*\***
 
-**Decision Maker**: ******\_\_\_******
+**Decision Maker**: **\*\***\_\_\_**\*\***
 
 **Notes**:
 

@@ -2,7 +2,7 @@
 
 /**
  * Emergency Restore Script for Incorrectly Archived Products
- * 
+ *
  * This script identifies and restores products that were incorrectly archived
  * due to the Square sync archive logic bug.
  */
@@ -32,10 +32,10 @@ async function checkIfExistsInSquare(squareId: string): Promise<boolean> {
       query: {
         exact_query: {
           attribute_name: 'id',
-          attribute_value: squareId
-        }
+          attribute_value: squareId,
+        },
       },
-      limit: 1
+      limit: 1,
     });
 
     return !!(response.result.objects && response.result.objects.length > 0);
@@ -50,13 +50,13 @@ async function checkIfExistsInSquare(squareId: string): Promise<boolean> {
  */
 async function getAllActiveSquareProductIds(): Promise<Set<string>> {
   const allSquareIds = new Set<string>();
-  
+
   try {
     logger.info('🔍 Fetching ALL active Square product IDs...');
-    
+
     // Get ALL categories (both CATERING and CORE PRODUCTS)
     const allCategories = Object.entries(LEGACY_CATEGORY_MAPPINGS);
-    
+
     for (const [squareId, categoryName] of allCategories) {
       try {
         const response = await searchCatalogObjects({
@@ -64,11 +64,11 @@ async function getAllActiveSquareProductIds(): Promise<Set<string>> {
           query: {
             exact_query: {
               attribute_name: 'category_id',
-              attribute_value: squareId
-            }
+              attribute_value: squareId,
+            },
           },
           limit: 100,
-          include_related_objects: false // We only need IDs
+          include_related_objects: false, // We only need IDs
         });
 
         if (response.result.objects) {
@@ -78,13 +78,15 @@ async function getAllActiveSquareProductIds(): Promise<Set<string>> {
             }
           }
         }
-        
-        logger.info(`✅ Category "${categoryName}": found ${response.result.objects?.length || 0} items`);
+
+        logger.info(
+          `✅ Category "${categoryName}": found ${response.result.objects?.length || 0} items`
+        );
       } catch (error) {
         logger.error(`❌ Failed to fetch items for category "${categoryName}":`, error);
       }
     }
-    
+
     logger.info(`📊 Total active Square products: ${allSquareIds.size}`);
     return allSquareIds;
   } catch (error) {
@@ -100,27 +102,27 @@ async function findRecentlyArchivedProducts(hours: number = 24): Promise<Archive
   logger.info(`🔍 Looking for products archived in the last ${hours} hours...`);
 
   const cutoffDate = new Date(Date.now() - hours * 60 * 60 * 1000);
-  
+
   const archivedProducts = await prisma.product.findMany({
     where: {
       active: false,
       updatedAt: {
-        gte: cutoffDate
+        gte: cutoffDate,
       },
       squareId: {
-        not: ''
-      }
+        not: '',
+      },
     },
     include: {
       category: {
         select: {
-          name: true
-        }
-      }
+          name: true,
+        },
+      },
     },
     orderBy: {
-      updatedAt: 'desc'
-    }
+      updatedAt: 'desc',
+    },
   });
 
   logger.info(`📦 Found ${archivedProducts.length} recently archived products with Square IDs`);
@@ -131,7 +133,7 @@ async function findRecentlyArchivedProducts(hours: number = 24): Promise<Archive
     squareId: product.squareId || '',
     categoryName: product.category?.name || 'Uncategorized',
     archivedAt: product.updatedAt,
-    existsInSquare: false // Will be checked later
+    existsInSquare: false, // Will be checked later
   }));
 }
 
@@ -147,13 +149,13 @@ async function verifyArchivedProducts(
   if (useIndividualChecks) {
     // Check each product individually (slower but more reliable)
     logger.info('📞 Using individual Square API calls for verification...');
-    
+
     for (let i = 0; i < archivedProducts.length; i++) {
       const product = archivedProducts[i];
       logger.info(`   Checking ${i + 1}/${archivedProducts.length}: ${product.name}...`);
-      
+
       product.existsInSquare = await checkIfExistsInSquare(product.squareId);
-      
+
       // Add small delay to avoid rate limits
       if (i < archivedProducts.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -162,9 +164,9 @@ async function verifyArchivedProducts(
   } else {
     // Bulk verification (faster)
     logger.info('📋 Using bulk Square API call for verification...');
-    
+
     const activeSquareIds = await getAllActiveSquareProductIds();
-    
+
     for (const product of archivedProducts) {
       product.existsInSquare = activeSquareIds.has(product.squareId);
     }
@@ -181,7 +183,9 @@ async function verifyArchivedProducts(
   if (stillExistInSquare.length > 0) {
     logger.info(`\n🚨 Incorrectly archived products:`);
     for (const product of stillExistInSquare) {
-      logger.info(`   • "${product.name}" (${product.categoryName}) - archived at ${product.archivedAt.toISOString()}`);
+      logger.info(
+        `   • "${product.name}" (${product.categoryName}) - archived at ${product.archivedAt.toISOString()}`
+      );
     }
   }
 
@@ -195,7 +199,9 @@ async function restoreIncorrectlyArchivedProducts(
   productsToRestore: ArchivedProduct[],
   dryRun: boolean = true
 ): Promise<void> {
-  logger.info(`\n${dryRun ? '🧪 DRY RUN' : '🔧 EXECUTING'}: Restoring incorrectly archived products...`);
+  logger.info(
+    `\n${dryRun ? '🧪 DRY RUN' : '🔧 EXECUTING'}: Restoring incorrectly archived products...`
+  );
 
   if (productsToRestore.length === 0) {
     logger.info('✅ No products need to be restored!');
@@ -207,15 +213,17 @@ async function restoreIncorrectlyArchivedProducts(
 
   for (const product of productsToRestore) {
     try {
-      logger.info(`   ${dryRun ? 'Would restore' : 'Restoring'}: "${product.name}" (Square ID: ${product.squareId})`);
-      
+      logger.info(
+        `   ${dryRun ? 'Would restore' : 'Restoring'}: "${product.name}" (Square ID: ${product.squareId})`
+      );
+
       if (!dryRun) {
         await prisma.product.update({
           where: { id: product.id },
           data: {
             active: true,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
         restoredCount++;
       }
@@ -226,7 +234,9 @@ async function restoreIncorrectlyArchivedProducts(
   }
 
   logger.info(`\n📊 Restore Summary:`);
-  logger.info(`   • Products ${dryRun ? 'would be' : ''} restored: ${dryRun ? productsToRestore.length : restoredCount}`);
+  logger.info(
+    `   • Products ${dryRun ? 'would be' : ''} restored: ${dryRun ? productsToRestore.length : restoredCount}`
+  );
   logger.info(`   • Errors: ${errorCount}`);
 }
 
@@ -242,8 +252,8 @@ async function generateRestorationReport(): Promise<void> {
   const archivedWithSquareId = await prisma.product.count({
     where: {
       active: false,
-      squareId: { not: '' }
-    }
+      squareId: { not: '' },
+    },
   });
 
   // Group archived products by category
@@ -251,18 +261,18 @@ async function generateRestorationReport(): Promise<void> {
     by: ['categoryId'],
     where: { active: false },
     _count: { id: true },
-    orderBy: { _count: { id: 'desc' } }
+    orderBy: { _count: { id: 'desc' } },
   });
 
   const categoryDetails = await Promise.all(
-    archivedByCategory.map(async (group) => {
+    archivedByCategory.map(async group => {
       const category = await prisma.category.findUnique({
         where: { id: group.categoryId },
-        select: { name: true }
+        select: { name: true },
       });
       return {
         categoryName: category?.name || 'Unknown',
-        count: group._count.id
+        count: group._count.id,
       };
     })
   );
@@ -288,16 +298,16 @@ async function main() {
   try {
     const args = process.argv.slice(2);
     const dryRun = !args.includes('--execute');
-    const hours = args.includes('--hours') 
-      ? parseInt(args[args.indexOf('--hours') + 1]) || 24 
-      : 24;
+    const hours = args.includes('--hours') ? parseInt(args[args.indexOf('--hours') + 1]) || 24 : 24;
     const individualChecks = args.includes('--individual-checks');
 
     logger.info('🚀 Emergency Product Restoration Script');
     logger.info(`⚙️ Configuration:`);
     logger.info(`   • Mode: ${dryRun ? 'DRY RUN' : 'EXECUTE'}`);
     logger.info(`   • Time window: ${hours} hours`);
-    logger.info(`   • Verification method: ${individualChecks ? 'Individual API calls' : 'Bulk verification'}`);
+    logger.info(
+      `   • Verification method: ${individualChecks ? 'Individual API calls' : 'Bulk verification'}`
+    );
 
     if (dryRun) {
       logger.info('\n🧪 Running in DRY RUN mode. Use --execute to apply changes.');
@@ -305,7 +315,7 @@ async function main() {
 
     // Step 1: Find recently archived products
     const recentlyArchived = await findRecentlyArchivedProducts(hours);
-    
+
     if (recentlyArchived.length === 0) {
       logger.info('✅ No recently archived products found!');
       await generateRestorationReport();
@@ -314,17 +324,16 @@ async function main() {
 
     // Step 2: Verify which ones still exist in Square
     const incorrectlyArchived = await verifyArchivedProducts(recentlyArchived, individualChecks);
-    
+
     // Step 3: Restore incorrectly archived products
     await restoreIncorrectlyArchivedProducts(incorrectlyArchived, dryRun);
-    
+
     // Step 4: Generate final report
     if (!dryRun) {
       await generateRestorationReport();
     }
-    
+
     logger.info('\n✅ Emergency restoration completed!');
-    
   } catch (error) {
     logger.error('❌ Error during emergency restoration:', error);
     process.exit(1);
@@ -338,9 +347,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { 
-  findRecentlyArchivedProducts, 
-  verifyArchivedProducts, 
+export {
+  findRecentlyArchivedProducts,
+  verifyArchivedProducts,
   restoreIncorrectlyArchivedProducts,
-  checkIfExistsInSquare 
+  checkIfExistsInSquare,
 };

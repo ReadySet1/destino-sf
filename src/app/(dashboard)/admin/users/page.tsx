@@ -59,7 +59,9 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
   const searchQuery = (searchParamsResolved?.search || '').trim();
   const roleFilter = searchParamsResolved?.role || 'all';
   const sortField = searchParamsResolved?.sort || 'email';
-  const sortDirection = (searchParamsResolved?.direction === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc';
+  const sortDirection = (searchParamsResolved?.direction === 'desc' ? 'desc' : 'asc') as
+    | 'asc'
+    | 'desc';
 
   const itemsPerPage = 20;
   const skip = Math.max(0, (currentPage - 1) * itemsPerPage);
@@ -113,27 +115,28 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
 
     // Optimized: Fetch users with order counts using robust connection management
     const usersFromDb = await withRetry(
-      () => prisma.profile.findMany({
-        where: userWhere,
-        orderBy,
-        skip,
-        take: itemsPerPage,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          phone: true,
-          role: true,
-          created_at: true,
-          // Use _count instead of including all order records
-          _count: {
-            select: {
-              orders: true,
-              cateringOrders: true,
+      () =>
+        prisma.profile.findMany({
+          where: userWhere,
+          orderBy,
+          skip,
+          take: itemsPerPage,
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true,
+            role: true,
+            created_at: true,
+            // Use _count instead of including all order records
+            _count: {
+              select: {
+                orders: true,
+                cateringOrders: true,
+              },
             },
           },
-        },
-      }),
+        }),
       3, // maxRetries
       'Fetch users with order counts'
     );
@@ -169,81 +172,81 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
 
     logger.info(`Found ${users.length} users for display (page ${currentPage}/${totalPages})`);
 
-  // Server action to handle the form submission for deletion
-  async function handleDelete(formData: FormData) {
-    'use server';
+    // Server action to handle the form submission for deletion
+    async function handleDelete(formData: FormData) {
+      'use server';
 
-    const id = formData.get('id') as string;
+      const id = formData.get('id') as string;
 
-    if (!id) {
-      logger.error('Delete button submitted without user ID.');
-      return;
-    }
-
-    logger.info(`Handling delete request for user: ${id}`);
-
-    const result = await deleteUserAction(id);
-
-    if (result.success) {
-      logger.info(`Successfully deleted user ${id}. Revalidating path /admin/users.`);
-      revalidatePath('/admin/users');
-    } else {
-      logger.error(`Failed to delete user ${id}: ${result.error}`);
-    }
-  }
-
-  // Server action to handle password setup invitation
-  async function handleSendPasswordSetup(formData: FormData) {
-    'use server';
-
-    const id = formData.get('id') as string;
-
-    if (!id) {
-      logger.error('Send password setup submitted without user ID.');
-      return;
-    }
-
-    logger.info(`Handling password setup invitation for user: ${id}`);
-
-    const result = await resendPasswordSetupAction(id);
-
-    if (result.success) {
-      logger.info(
-        `Successfully sent password setup invitation for user ${id}. Revalidating path /admin/users.`
-      );
-      revalidatePath('/admin/users');
-    } else {
-      logger.error(`Failed to send password setup invitation for user ${id}: ${result.error}`);
-    }
-  }
-
-  async function editUser(formData: FormData) {
-    'use server';
-
-    const id = formData.get('id') as string;
-
-    if (!id) {
-      return;
-    }
-
-    try {
-      // Redirect to the edit page for this user
-      return redirect(`/admin/users/${id}`);
-    } catch (error) {
-      // Don't log redirect "errors" as they're normal
-      if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
-        // This is actually a redirect, not an error
-        throw error;
+      if (!id) {
+        logger.error('Delete button submitted without user ID.');
+        return;
       }
 
-      console.error('Error navigating to edit user:', error);
-      if (error instanceof Error) {
-        throw new Error(error.message);
+      logger.info(`Handling delete request for user: ${id}`);
+
+      const result = await deleteUserAction(id);
+
+      if (result.success) {
+        logger.info(`Successfully deleted user ${id}. Revalidating path /admin/users.`);
+        revalidatePath('/admin/users');
       } else {
-        throw new Error('Failed to navigate to edit user. An unexpected error occurred.');
+        logger.error(`Failed to delete user ${id}: ${result.error}`);
       }
     }
-  }
+
+    // Server action to handle password setup invitation
+    async function handleSendPasswordSetup(formData: FormData) {
+      'use server';
+
+      const id = formData.get('id') as string;
+
+      if (!id) {
+        logger.error('Send password setup submitted without user ID.');
+        return;
+      }
+
+      logger.info(`Handling password setup invitation for user: ${id}`);
+
+      const result = await resendPasswordSetupAction(id);
+
+      if (result.success) {
+        logger.info(
+          `Successfully sent password setup invitation for user ${id}. Revalidating path /admin/users.`
+        );
+        revalidatePath('/admin/users');
+      } else {
+        logger.error(`Failed to send password setup invitation for user ${id}: ${result.error}`);
+      }
+    }
+
+    async function editUser(formData: FormData) {
+      'use server';
+
+      const id = formData.get('id') as string;
+
+      if (!id) {
+        return;
+      }
+
+      try {
+        // Redirect to the edit page for this user
+        return redirect(`/admin/users/${id}`);
+      } catch (error) {
+        // Don't log redirect "errors" as they're normal
+        if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+          // This is actually a redirect, not an error
+          throw error;
+        }
+
+        console.error('Error navigating to edit user:', error);
+        if (error instanceof Error) {
+          throw new Error(error.message);
+        } else {
+          throw new Error('Failed to navigate to edit user. An unexpected error occurred.');
+        }
+      }
+    }
 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -257,10 +260,7 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
         <div className="space-y-10 mt-8">
           {/* Action Buttons */}
           <FormActions>
-            <FormButton
-              href="/admin/users/new"
-              leftIcon={FormIcons.plus}
-            >
+            <FormButton href="/admin/users/new" leftIcon={FormIcons.plus}>
               Add User
             </FormButton>
           </FormActions>
@@ -279,7 +279,7 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
             </div>
           ) : (
             <>
-              <UserTableWrapper 
+              <UserTableWrapper
                 users={users}
                 currentUserId={currentUserId}
                 sortKey={sortField}
@@ -313,8 +313,8 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
         search: searchQuery,
         role: roleFilter,
         sort: sortField,
-        direction: sortDirection
-      }
+        direction: sortDirection,
+      },
     };
 
     if (error instanceof Error) {
@@ -330,7 +330,7 @@ export default async function UsersPage({ params, searchParams }: UserPageProps)
     // Log both the original error and our formatted info
     console.error('[USERS_PAGE_ERROR]', error);
     logger.error('Error fetching users:', errorInfo);
-    
+
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <FormHeader

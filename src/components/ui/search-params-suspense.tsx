@@ -14,9 +14,5 @@ const DefaultFallback = () => (
 );
 
 export function SearchParamsSuspense({ children, fallback }: SearchParamsSuspenseProps) {
-  return (
-    <Suspense fallback={fallback || <DefaultFallback />}>
-      {children}
-    </Suspense>
-  );
-} 
+  return <Suspense fallback={fallback || <DefaultFallback />}>{children}</Suspense>;
+}

@@ -46,33 +46,51 @@ export default function DeliveryZoneDebugger({ className }: DeliveryZoneDebugger
 
     console.log = (...args) => {
       originalLog(...args);
-      const message = args.map(arg => 
-        typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)
-      ).join(' ');
-      
-      if (message.includes('delivery') || message.includes('zone') || message.includes('🔄') || message.includes('✅') || message.includes('❌')) {
+      const message = args
+        .map(arg => (typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)))
+        .join(' ');
+
+      if (
+        message.includes('delivery') ||
+        message.includes('zone') ||
+        message.includes('🔄') ||
+        message.includes('✅') ||
+        message.includes('❌')
+      ) {
         addLog('info', message);
       }
     };
 
     console.error = (...args) => {
       originalError(...args);
-      const message = args.map(arg => 
-        typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)
-      ).join(' ');
-      
-      if (message.includes('delivery') || message.includes('zone') || message.includes('🔄') || message.includes('✅') || message.includes('❌')) {
+      const message = args
+        .map(arg => (typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)))
+        .join(' ');
+
+      if (
+        message.includes('delivery') ||
+        message.includes('zone') ||
+        message.includes('🔄') ||
+        message.includes('✅') ||
+        message.includes('❌')
+      ) {
         addLog('error', message);
       }
     };
 
     console.warn = (...args) => {
       originalWarn(...args);
-      const message = args.map(arg => 
-        typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)
-      ).join(' ');
-      
-      if (message.includes('delivery') || message.includes('zone') || message.includes('🔄') || message.includes('✅') || message.includes('❌')) {
+      const message = args
+        .map(arg => (typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)))
+        .join(' ');
+
+      if (
+        message.includes('delivery') ||
+        message.includes('zone') ||
+        message.includes('🔄') ||
+        message.includes('✅') ||
+        message.includes('❌')
+      ) {
         addLog('warning', message);
       }
     };
@@ -94,18 +112,21 @@ export default function DeliveryZoneDebugger({ className }: DeliveryZoneDebugger
     window.fetch = async (...args) => {
       const currentRequestId = ++requestId;
       const [url, options] = args;
-      
+
       // Only monitor delivery zone requests
       if (typeof url === 'string' && url.includes('/api/admin/delivery-zones')) {
         const startTime = Date.now();
-        
-        setLogs(prev => [{
-          id: `req-${currentRequestId}`,
-          timestamp: new Date(),
-          type: 'info',
-          message: `📡 API Request: ${options?.method || 'GET'} ${url}`,
-          data: { method: options?.method, url, body: options?.body },
-        }, ...prev.slice(0, 49)]);
+
+        setLogs(prev => [
+          {
+            id: `req-${currentRequestId}`,
+            timestamp: new Date(),
+            type: 'info',
+            message: `📡 API Request: ${options?.method || 'GET'} ${url}`,
+            data: { method: options?.method, url, body: options?.body },
+          },
+          ...prev.slice(0, 49),
+        ]);
 
         try {
           const response = await originalFetch(...args);
@@ -114,33 +135,39 @@ export default function DeliveryZoneDebugger({ className }: DeliveryZoneDebugger
 
           const responseClone = response.clone();
           let responseData;
-          
+
           try {
             responseData = await responseClone.json();
           } catch {
             responseData = 'Non-JSON response';
           }
 
-          setLogs(prev => [{
-            id: `resp-${currentRequestId}`,
-            timestamp: new Date(),
-            type: response.ok ? 'success' : 'error',
-            message: `📡 API Response: ${response.status} ${response.statusText} (${duration}ms)`,
-            data: { status: response.status, duration, data: responseData },
-          }, ...prev.slice(0, 49)]);
+          setLogs(prev => [
+            {
+              id: `resp-${currentRequestId}`,
+              timestamp: new Date(),
+              type: response.ok ? 'success' : 'error',
+              message: `📡 API Response: ${response.status} ${response.statusText} (${duration}ms)`,
+              data: { status: response.status, duration, data: responseData },
+            },
+            ...prev.slice(0, 49),
+          ]);
 
           return response;
         } catch (error) {
           const endTime = Date.now();
           const duration = endTime - startTime;
 
-          setLogs(prev => [{
-            id: `err-${currentRequestId}`,
-            timestamp: new Date(),
-            type: 'error',
-            message: `📡 API Error: ${error instanceof Error ? error.message : 'Unknown error'} (${duration}ms)`,
-            data: { error, duration },
-          }, ...prev.slice(0, 49)]);
+          setLogs(prev => [
+            {
+              id: `err-${currentRequestId}`,
+              timestamp: new Date(),
+              type: 'error',
+              message: `📡 API Error: ${error instanceof Error ? error.message : 'Unknown error'} (${duration}ms)`,
+              data: { error, duration },
+            },
+            ...prev.slice(0, 49),
+          ]);
 
           throw error;
         }
@@ -207,17 +234,10 @@ export default function DeliveryZoneDebugger({ className }: DeliveryZoneDebugger
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm">Delivery Zone Debugger</CardTitle>
             <div className="flex items-center gap-2">
-              <Badge 
-                variant={isMonitoring ? "default" : "secondary"}
-                className="text-xs"
-              >
+              <Badge variant={isMonitoring ? 'default' : 'secondary'} className="text-xs">
                 {isMonitoring ? 'Monitoring' : 'Paused'}
               </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsVisible(false)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setIsVisible(false)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -231,12 +251,7 @@ export default function DeliveryZoneDebugger({ className }: DeliveryZoneDebugger
             >
               {isMonitoring ? 'Pause' : 'Start'} Monitoring
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearLogs}
-              className="text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={clearLogs} className="text-xs">
               Clear Logs
             </Button>
           </div>
@@ -256,18 +271,12 @@ export default function DeliveryZoneDebugger({ className }: DeliveryZoneDebugger
                       <Badge className={`text-xs ${getLogBadgeColor(log.type)}`}>
                         {log.type.toUpperCase()}
                       </Badge>
-                      <span className="text-gray-500">
-                        {log.timestamp.toLocaleTimeString()}
-                      </span>
+                      <span className="text-gray-500">{log.timestamp.toLocaleTimeString()}</span>
                     </div>
-                    <div className="font-mono text-xs break-words">
-                      {log.message}
-                    </div>
+                    <div className="font-mono text-xs break-words">{log.message}</div>
                     {log.data && (
                       <details className="mt-1">
-                        <summary className="cursor-pointer text-gray-600">
-                          Data
-                        </summary>
+                        <summary className="cursor-pointer text-gray-600">Data</summary>
                         <pre className="text-xs bg-gray-50 p-1 rounded mt-1 overflow-auto">
                           {JSON.stringify(log.data, null, 2)}
                         </pre>
@@ -282,4 +291,4 @@ export default function DeliveryZoneDebugger({ className }: DeliveryZoneDebugger
       </Card>
     </div>
   );
-} 
+}

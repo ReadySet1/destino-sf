@@ -45,7 +45,9 @@ function getSquareClient(): SquareClient {
   const accessToken = process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
 
   if (!accessToken) {
-    throw new Error('Square access token not configured. Set SQUARE_PRODUCTION_TOKEN or SQUARE_ACCESS_TOKEN.');
+    throw new Error(
+      'Square access token not configured. Set SQUARE_PRODUCTION_TOKEN or SQUARE_ACCESS_TOKEN.'
+    );
   }
 
   return new SquareClient({
@@ -79,7 +81,9 @@ async function fetchAndCreateOrderFromSquare(squareOrderId: string): Promise<str
 
     // Extract order details from Square order
     const orderStatus = mapSquareStateToOrderStatus(squareOrder.state || 'OPEN');
-    const totalAmount = squareOrder.totalMoney?.amount ? Number(squareOrder.totalMoney.amount) / 100 : 0;
+    const totalAmount = squareOrder.totalMoney?.amount
+      ? Number(squareOrder.totalMoney.amount) / 100
+      : 0;
 
     // Extract customer information
     const customerId = squareOrder.customerId || null;
@@ -108,7 +112,8 @@ async function fetchAndCreateOrderFromSquare(squareOrderId: string): Promise<str
         email: customerEmail,
         phone: customerPhone,
         fulfillmentType: fulfillmentType,
-        paymentStatus: squareOrder.state === 'COMPLETED' ? PaymentStatus.PAID : PaymentStatus.PENDING,
+        paymentStatus:
+          squareOrder.state === 'COMPLETED' ? PaymentStatus.PAID : PaymentStatus.PENDING,
         paymentMethod: 'SQUARE',
         rawData: {
           order: squareOrder,
@@ -178,8 +183,12 @@ export async function handleOrderCreated(payload: SquareWebhookPayload): Promise
 
   if (recentCateringCheck) {
     console.log(`⚠️ [WEBHOOK-HANDLERS] Recent catering activity detected.`);
-    console.log(`⚠️ [WEBHOOK-HANDLERS] Skipping order creation for ${data.id} to prevent phantom orders.`);
-    console.log(`⚠️ [WEBHOOK-HANDLERS] This webhook is likely for a catering order being processed.`);
+    console.log(
+      `⚠️ [WEBHOOK-HANDLERS] Skipping order creation for ${data.id} to prevent phantom orders.`
+    );
+    console.log(
+      `⚠️ [WEBHOOK-HANDLERS] This webhook is likely for a catering order being processed.`
+    );
     return;
   }
 
@@ -206,8 +215,12 @@ export async function handleOrderCreated(payload: SquareWebhookPayload): Promise
       throw updateError;
     }
   } else {
-    console.log(`⚠️ [WEBHOOK-HANDLERS] Order ${data.id} not found. Skipping creation to prevent phantom orders.`);
-    console.log(`⚠️ [WEBHOOK-HANDLERS] Orders should only be created by the checkout flow, not webhooks.`);
+    console.log(
+      `⚠️ [WEBHOOK-HANDLERS] Order ${data.id} not found. Skipping creation to prevent phantom orders.`
+    );
+    console.log(
+      `⚠️ [WEBHOOK-HANDLERS] Orders should only be created by the checkout flow, not webhooks.`
+    );
     return;
   }
 
@@ -276,12 +289,16 @@ export async function handleOrderUpdated(payload: SquareWebhookPayload): Promise
 
   try {
     // First, check if the order exists to prevent race conditions
-    const currentOrder = await withRetry(async () => {
-      return await prisma.order.findUnique({
-        where: { squareOrderId: data.id },
-        select: { status: true },
-      });
-    }, 3, 'findOrderForExistence');
+    const currentOrder = await withRetry(
+      async () => {
+        return await prisma.order.findUnique({
+          where: { squareOrderId: data.id },
+          select: { status: true },
+        });
+      },
+      3,
+      'findOrderForExistence'
+    );
 
     // If order doesn't exist, skip processing and wait for order.created webhook
     if (!currentOrder) {
@@ -294,12 +311,16 @@ export async function handleOrderUpdated(payload: SquareWebhookPayload): Promise
     // Get the previous status for status change alerts
     const previousStatus = currentOrder.status;
 
-    await withRetry(async () => {
-      return await prisma.order.update({
-        where: { squareOrderId: data.id },
-        data: updateData, // Apply updates (only includes status if terminal)
-      });
-    }, 3, 'updateOrderData');
+    await withRetry(
+      async () => {
+        return await prisma.order.update({
+          where: { squareOrderId: data.id },
+          data: updateData, // Apply updates (only includes status if terminal)
+        });
+      },
+      3,
+      'updateOrderData'
+    );
 
     // Send status change alert for terminal states (COMPLETED, CANCELLED)
     if (updateData.status && previousStatus !== updateData.status) {
@@ -411,16 +432,27 @@ export async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayloa
               where: { id: createdOrderId },
               data: updatePayload,
             });
-            console.log(`✅ [UPSERT-FIX] Fulfillment update applied to newly created order ${createdOrderId}`);
+            console.log(
+              `✅ [UPSERT-FIX] Fulfillment update applied to newly created order ${createdOrderId}`
+            );
           } catch (retryError: any) {
-            console.error(`❌ [UPSERT-FIX] Failed to apply fulfillment update to created order:`, retryError);
+            console.error(
+              `❌ [UPSERT-FIX] Failed to apply fulfillment update to created order:`,
+              retryError
+            );
             // Don't throw - at least we created the order
           }
         } else {
-          console.error(`❌ [UPSERT-FIX] Failed to fetch/create order ${squareOrderId} from Square.`);
-          console.error(`⚠️ [UPSERT-FIX] This fulfillment update will be retried via webhook queue.`);
+          console.error(
+            `❌ [UPSERT-FIX] Failed to fetch/create order ${squareOrderId} from Square.`
+          );
+          console.error(
+            `⚠️ [UPSERT-FIX] This fulfillment update will be retried via webhook queue.`
+          );
           // Re-throw to trigger webhook retry
-          throw new Error(`Order ${squareOrderId} not found and could not be fetched from Square API`);
+          throw new Error(
+            `Order ${squareOrderId} not found and could not be fetched from Square API`
+          );
         }
       } else {
         console.error(`❌ Error updating order ${squareOrderId}:`, error);
@@ -667,16 +699,22 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
 
   try {
     // Check for catering order first with retry logic
-    const cateringOrder = await withRetry(async () => {
-      return await prisma.cateringOrder.findUnique({
-        where: { squareOrderId },
-        select: { id: true, paymentStatus: true, status: true },
-      });
-    }, 3, 'findCateringOrder');
+    const cateringOrder = await withRetry(
+      async () => {
+        return await prisma.cateringOrder.findUnique({
+          where: { squareOrderId },
+          select: { id: true, paymentStatus: true, status: true },
+        });
+      },
+      3,
+      'findCateringOrder'
+    );
 
     if (cateringOrder) {
       console.log(`🔍 [WEBHOOK-FIX] Detected catering order with squareOrderId ${squareOrderId}`);
-      console.log(`🔍 [WEBHOOK-FIX] Current catering order status: ${cateringOrder.status}, payment status: ${cateringOrder.paymentStatus}`);
+      console.log(
+        `🔍 [WEBHOOK-FIX] Current catering order status: ${cateringOrder.status}, payment status: ${cateringOrder.paymentStatus}`
+      );
 
       let updatedPaymentStatus: Prisma.CateringOrderUpdateInput['paymentStatus'] = 'PENDING';
       let updatedOrderStatus: Prisma.CateringOrderUpdateInput['status'] | undefined;
@@ -688,11 +726,15 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELED') {
         updatedPaymentStatus = 'FAILED';
         updatedOrderStatus = 'CANCELLED';
-        console.log(`🔍 [WEBHOOK-FIX] Mapping ${paymentStatus} payment to FAILED status for catering order`);
+        console.log(
+          `🔍 [WEBHOOK-FIX] Mapping ${paymentStatus} payment to FAILED status for catering order`
+        );
       } else if (paymentStatus === 'REFUNDED') {
         updatedPaymentStatus = 'REFUNDED';
         updatedOrderStatus = 'CANCELLED';
-        console.log(`🔍 [WEBHOOK-FIX] Mapping REFUNDED payment to REFUNDED status for catering order`);
+        console.log(
+          `🔍 [WEBHOOK-FIX] Mapping REFUNDED payment to REFUNDED status for catering order`
+        );
       }
 
       const cateringUpdateData: Prisma.CateringOrderUpdateInput = {
@@ -703,12 +745,16 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
         cateringUpdateData.status = updatedOrderStatus;
       }
 
-      await withRetry(async () => {
-        return await prisma.cateringOrder.update({
-          where: { id: cateringOrder.id },
-          data: cateringUpdateData,
-        });
-      }, 3, 'updateCateringOrder');
+      await withRetry(
+        async () => {
+          return await prisma.cateringOrder.update({
+            where: { id: cateringOrder.id },
+            data: cateringUpdateData,
+          });
+        },
+        3,
+        'updateCateringOrder'
+      );
 
       console.log(
         `✅ Successfully updated catering order ${cateringOrder.id} to payment status ${updatedPaymentStatus} (Event: ${eventId})`
@@ -717,35 +763,51 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     }
 
     // Find regular order with retry logic
-    const order = await withRetry(async () => {
-      return await prisma.order.findUnique({
-        where: { squareOrderId: squareOrderId },
-        select: {
-          id: true,
-          status: true,
-          paymentStatus: true,
-          fulfillmentType: true,
-          shippingRateId: true,
-        },
-      });
-    }, 3, 'findRegularOrder');
+    const order = await withRetry(
+      async () => {
+        return await prisma.order.findUnique({
+          where: { squareOrderId: squareOrderId },
+          select: {
+            id: true,
+            status: true,
+            paymentStatus: true,
+            fulfillmentType: true,
+            shippingRateId: true,
+          },
+        });
+      },
+      3,
+      'findRegularOrder'
+    );
 
     if (!order) {
-      console.warn(`🔍 [WEBHOOK-FIX] Order with squareOrderId ${squareOrderId} not found for payment update.`);
-      console.warn(`🔍 [WEBHOOK-FIX] This means the order creation webhook may not have been processed yet.`);
+      console.warn(
+        `🔍 [WEBHOOK-FIX] Order with squareOrderId ${squareOrderId} not found for payment update.`
+      );
+      console.warn(
+        `🔍 [WEBHOOK-FIX] This means the order creation webhook may not have been processed yet.`
+      );
       return;
     }
 
-    console.log(`🔍 [WEBHOOK-FIX] Found regular order ${order.id} for payment ${squarePaymentId} (Event: ${payload.event_id})`);
-    console.log(`🔍 [WEBHOOK-FIX] Current regular order status: ${order.status}, payment status: ${order.paymentStatus}`);
+    console.log(
+      `🔍 [WEBHOOK-FIX] Found regular order ${order.id} for payment ${squarePaymentId} (Event: ${payload.event_id})`
+    );
+    console.log(
+      `🔍 [WEBHOOK-FIX] Current regular order status: ${order.status}, payment status: ${order.paymentStatus}`
+    );
 
     // Check if this event was already processed to prevent duplicates
-    const existingPayment = await withRetry(async () => {
-      return await prisma.payment.findUnique({
-        where: { squarePaymentId: squarePaymentId },
-        select: { id: true, rawData: true, status: true },
-      });
-    }, 3, 'findExistingPayment');
+    const existingPayment = await withRetry(
+      async () => {
+        return await prisma.payment.findUnique({
+          where: { squarePaymentId: squarePaymentId },
+          select: { id: true, rawData: true, status: true },
+        });
+      },
+      3,
+      'findExistingPayment'
+    );
 
     if (existingPayment?.rawData && typeof existingPayment.rawData === 'object') {
       const rawData = existingPayment.rawData as any;
@@ -773,7 +835,9 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     }
 
     const updatedPaymentStatus = mapSquarePaymentStatus(paymentStatus);
-    console.log(`🔍 [WEBHOOK-FIX] Payment status mapping: ${paymentStatus} → ${updatedPaymentStatus} (Event: ${payload.event_id})`);
+    console.log(
+      `🔍 [WEBHOOK-FIX] Payment status mapping: ${paymentStatus} → ${updatedPaymentStatus} (Event: ${payload.event_id})`
+    );
 
     // Update order status only if payment is newly PAID
     const updatedOrderStatus =
@@ -781,64 +845,76 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
         ? OrderStatus.PROCESSING
         : order.status;
 
-    console.log(`🔍 [WEBHOOK-FIX] Order status update: ${order.status} → ${updatedOrderStatus} (Event: ${payload.event_id})`);
-    console.log(`🔍 [WEBHOOK-FIX] Payment status update: ${order.paymentStatus} → ${updatedPaymentStatus} (Event: ${payload.event_id})`);
-    
+    console.log(
+      `🔍 [WEBHOOK-FIX] Order status update: ${order.status} → ${updatedOrderStatus} (Event: ${payload.event_id})`
+    );
+    console.log(
+      `🔍 [WEBHOOK-FIX] Payment status update: ${order.paymentStatus} → ${updatedPaymentStatus} (Event: ${payload.event_id})`
+    );
+
     if (order.paymentStatus === 'PENDING' && updatedPaymentStatus === 'PAID') {
-      console.log(`🎉 [WEBHOOK-FIX] *** CRITICAL FIX WORKING *** Payment status changing from PENDING to PAID for order ${order.id}!`);
+      console.log(
+        `🎉 [WEBHOOK-FIX] *** CRITICAL FIX WORKING *** Payment status changing from PENDING to PAID for order ${order.id}!`
+      );
     }
 
     // Use transaction to update both order and payment atomically
-    await withRetry(async () => {
-      return await prisma.$transaction(async (tx) => {
-        // Update the order with detailed logging
-        console.log(`💾 Updating order ${order.id} in database...`);
-        const orderUpdateData: Prisma.OrderUpdateInput = {
-          paymentStatus: updatedPaymentStatus,
-          status: updatedOrderStatus,
-          updatedAt: new Date(),
-        };
+    await withRetry(
+      async () => {
+        return await prisma.$transaction(async tx => {
+          // Update the order with detailed logging
+          console.log(`💾 Updating order ${order.id} in database...`);
+          const orderUpdateData: Prisma.OrderUpdateInput = {
+            paymentStatus: updatedPaymentStatus,
+            status: updatedOrderStatus,
+            updatedAt: new Date(),
+          };
 
-        // Include tip amount if present
-        if (tipAmount > 0) {
-          orderUpdateData.gratuityAmount = tipAmount / 100; // Convert from cents to dollars
-          console.log(`💵 Capturing tip amount: $${tipAmount / 100} for order ${order.id}`);
-        }
+          // Include tip amount if present
+          if (tipAmount > 0) {
+            orderUpdateData.gratuityAmount = tipAmount / 100; // Convert from cents to dollars
+            console.log(`💵 Capturing tip amount: $${tipAmount / 100} for order ${order.id}`);
+          }
 
-        await tx.order.update({
-          where: { id: order.id },
-          data: orderUpdateData,
+          await tx.order.update({
+            where: { id: order.id },
+            data: orderUpdateData,
+          });
+          console.log(
+            `✅ Order ${order.id} updated in database with paymentStatus: ${updatedPaymentStatus}`
+          );
+
+          // Upsert the payment record with event deduplication
+          await tx.payment.upsert({
+            where: { squarePaymentId: squarePaymentId },
+            update: {
+              status: updatedPaymentStatus,
+              rawData: {
+                ...paymentData,
+                lastProcessedEventId: payload.event_id,
+                lastUpdated: new Date().toISOString(),
+              } as unknown as Prisma.InputJsonValue,
+              updatedAt: new Date(),
+            },
+            create: {
+              squarePaymentId: squarePaymentId,
+              orderId: order.id,
+              amount: paymentData?.amount_money?.amount || 0,
+              status: updatedPaymentStatus,
+              rawData: {
+                ...paymentData,
+                lastProcessedEventId: payload.event_id,
+                lastUpdated: new Date().toISOString(),
+              } as unknown as Prisma.InputJsonValue,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          });
         });
-        console.log(`✅ Order ${order.id} updated in database with paymentStatus: ${updatedPaymentStatus}`);
-
-      // Upsert the payment record with event deduplication
-      await tx.payment.upsert({
-        where: { squarePaymentId: squarePaymentId },
-        update: {
-          status: updatedPaymentStatus,
-          rawData: {
-            ...paymentData,
-            lastProcessedEventId: payload.event_id,
-            lastUpdated: new Date().toISOString(),
-          } as unknown as Prisma.InputJsonValue,
-          updatedAt: new Date(),
-        },
-        create: {
-          squarePaymentId: squarePaymentId,
-          orderId: order.id,
-          amount: paymentData?.amount_money?.amount || 0,
-          status: updatedPaymentStatus,
-          rawData: {
-            ...paymentData,
-            lastProcessedEventId: payload.event_id,
-            lastUpdated: new Date().toISOString(),
-          } as unknown as Prisma.InputJsonValue,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        });
-      });
-    }, 3, 'updateOrderAndPayment');
+      },
+      3,
+      'updateOrderAndPayment'
+    );
 
     console.log(
       `✅ [WEBHOOK-FIX] Order ${order.id} and Payment ${squarePaymentId} updated successfully!`
@@ -848,7 +924,9 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     );
 
     if (updatedPaymentStatus === 'PAID') {
-      console.log(`🎉 [WEBHOOK-FIX] *** FIX SUCCESSFUL *** Order ${order.id} is now PAID and will show as paid in admin!`);
+      console.log(
+        `🎉 [WEBHOOK-FIX] *** FIX SUCCESSFUL *** Order ${order.id} is now PAID and will show as paid in admin!`
+      );
     }
 
     // Send new order alert when payment is confirmed (DES-55)
@@ -908,15 +986,24 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       }
     }
   } catch (error: any) {
-    console.error(`❌ CRITICAL ERROR in handlePaymentUpdated for payment ${squarePaymentId} (Event: ${eventId}):`, error);
-    
+    console.error(
+      `❌ CRITICAL ERROR in handlePaymentUpdated for payment ${squarePaymentId} (Event: ${eventId}):`,
+      error
+    );
+
     // Enhanced error logging for different types of database errors
     if (error.code === 'P2025') {
-      console.error(`🔍 Record not found error for payment ${squarePaymentId}, order ${squareOrderId} (Event: ${eventId}) - the order might have been deleted or never created`);
+      console.error(
+        `🔍 Record not found error for payment ${squarePaymentId}, order ${squareOrderId} (Event: ${eventId}) - the order might have been deleted or never created`
+      );
     } else if (error.code === 'P2002') {
-      console.error(`🔍 Unique constraint violation for payment ${squarePaymentId} (Event: ${eventId}) - possible duplicate processing`);
+      console.error(
+        `🔍 Unique constraint violation for payment ${squarePaymentId} (Event: ${eventId}) - possible duplicate processing`
+      );
     } else if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
-      console.error(`🔍 Database connection error for payment ${squarePaymentId} (Event: ${eventId}) - this will trigger webhook retry`);
+      console.error(
+        `🔍 Database connection error for payment ${squarePaymentId} (Event: ${eventId}) - this will trigger webhook retry`
+      );
     } else {
       console.error(`🔍 Unexpected error for payment ${squarePaymentId} (Event: ${eventId}):`, {
         message: error.message,
@@ -924,7 +1011,7 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
         stack: error.stack?.substring(0, 500),
       });
     }
-    
+
     // Re-throw the error to trigger webhook retry
     throw error;
   }

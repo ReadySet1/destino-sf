@@ -19,10 +19,11 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   }
 
   const adminProfile = await withRetry(
-    () => prisma.profile.findUnique({
-      where: { id: user.id },
-      select: { role: true },
-    }),
+    () =>
+      prisma.profile.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      }),
     3,
     'isUserAdmin profile lookup'
   );
@@ -30,10 +31,7 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   return adminProfile?.role === 'ADMIN';
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient();
 
@@ -60,13 +58,14 @@ export async function PATCH(
 
     // Update the product's product_type
     const updatedProduct = await withRetry(
-      () => prisma.product.update({
-        where: { id },
-        data: {
-          productType: product_type,
-          updatedAt: new Date(),
-        },
-      }),
+      () =>
+        prisma.product.update({
+          where: { id },
+          data: {
+            productType: product_type,
+            updatedAt: new Date(),
+          },
+        }),
       3,
       'update product type'
     );
@@ -80,10 +79,7 @@ export async function PATCH(
 
     // Handle not found error
     if ((error as any)?.code === 'P2025') {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

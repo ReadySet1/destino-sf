@@ -67,10 +67,12 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
             <span className="hidden sm:block truncate">{item.name}</span>
           </h3>
           <p className="text-sm text-gray-600 mb-2">${item.price.toFixed(2)} / each</p>
-          
+
           {/* Mobile: Show total price prominently */}
           <div className="block sm:hidden">
-            <p className="text-lg font-bold text-destino-charcoal">${(item.price * item.quantity).toFixed(2)}</p>
+            <p className="text-lg font-bold text-destino-charcoal">
+              ${(item.price * item.quantity).toFixed(2)}
+            </p>
           </div>
         </div>
 
@@ -84,15 +86,17 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
       <div className="flex items-center justify-between sm:justify-end pt-3 sm:pt-0 border-t border-destino-cream/50 sm:border-t-0">
         {/* Quantity Stepper */}
         <div className="flex items-center">
-          <span className="text-sm font-medium text-destino-charcoal mr-3 sm:hidden">Quantity:</span>
+          <span className="text-sm font-medium text-destino-charcoal mr-3 sm:hidden">
+            Quantity:
+          </span>
           <QuantityStepper value={item.quantity} min={1} max={20} onChange={onUpdateQuantity} />
         </div>
 
         {/* Remove Button - Larger touch target for mobile */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onRemove} 
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRemove}
           className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 sm:px-2 sm:py-2 transition-all duration-200 hover:shadow-sm"
           title="Remove item"
         >

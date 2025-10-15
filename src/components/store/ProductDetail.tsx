@@ -176,7 +176,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
               <div
                 className="text-gray-700"
                 dangerouslySetInnerHTML={{
-                  __html: sanitizeProductDescription(product.description)
+                  __html: sanitizeProductDescription(product.description),
                 }}
               />
             </div>

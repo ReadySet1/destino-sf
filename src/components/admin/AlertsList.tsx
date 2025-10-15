@@ -53,13 +53,8 @@ export function AlertsList({ alerts }: AlertsListProps) {
   return (
     <div className="space-y-3">
       {alerts.map((alert, index) => (
-        <div
-          key={index}
-          className="flex items-start space-x-3 p-3 border rounded-lg"
-        >
-          <div className="flex-shrink-0 mt-0.5">
-            {getAlertIcon(alert.type)}
-          </div>
+        <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
+          <div className="flex-shrink-0 mt-0.5">{getAlertIcon(alert.type)}</div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <Badge variant={getAlertVariant(alert.type)} className="mb-1">

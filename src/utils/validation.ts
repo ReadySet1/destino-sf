@@ -42,9 +42,11 @@ export const validateOrderId = (orderId: string | null): string | null => {
   // Handle Square redirect corruption: extract valid UUID if it's at the beginning
   if (decodedOrderId.length > 36) {
     console.warn(`Order ID appears to be corrupted with extra data: ${decodedOrderId}`);
-    
+
     // Try to extract the UUID from the beginning of the string
-    const uuidMatch = decodedOrderId.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i);
+    const uuidMatch = decodedOrderId.match(
+      /^([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i
+    );
     if (uuidMatch) {
       const extractedUuid = uuidMatch[1];
       console.log(`Extracted valid UUID from corrupted order ID: ${extractedUuid}`);

@@ -191,7 +191,9 @@ export async function generateTestDashboard(metrics: TestMetrics): Promise<strin
         
         <div class="section">
             <h2>🔥 Critical Path Status</h2>
-            ${metrics.criticalPaths.map(path => `
+            ${metrics.criticalPaths
+              .map(
+                path => `
                 <div class="critical-path ${path.status}">
                     <div>
                         <strong>${path.name}</strong>
@@ -201,12 +203,16 @@ export async function generateTestDashboard(metrics: TestMetrics): Promise<strin
                     </div>
                     <div class="test-status ${path.status}">${path.status}</div>
                 </div>
-            `).join('')}
+            `
+              )
+              .join('')}
         </div>
         
         <div class="section">
             <h2>📋 Test File Details</h2>
-            ${metrics.testFiles.map(file => `
+            ${metrics.testFiles
+              .map(
+                file => `
                 <div class="test-file">
                     <div>
                         <strong>${file.name}</strong>
@@ -216,7 +222,9 @@ export async function generateTestDashboard(metrics: TestMetrics): Promise<strin
                     </div>
                     <div class="test-status ${file.status}">${file.status}</div>
                 </div>
-            `).join('')}
+            `
+              )
+              .join('')}
         </div>
         
         <div class="section">
@@ -283,17 +291,20 @@ function getCoverageClass(coverage: number): string {
 /**
  * Save dashboard to file
  */
-export async function saveDashboard(metrics: TestMetrics, outputPath: string = './coverage/test-dashboard.html'): Promise<void> {
+export async function saveDashboard(
+  metrics: TestMetrics,
+  outputPath: string = './coverage/test-dashboard.html'
+): Promise<void> {
   try {
     const html = await generateTestDashboard(metrics);
     const dir = path.dirname(outputPath);
-    
+
     try {
       await fs.access(dir);
     } catch {
       await fs.mkdir(dir, { recursive: true });
     }
-    
+
     await fs.writeFile(outputPath, html, 'utf-8');
     console.log(`✅ Test dashboard saved to: ${outputPath}`);
   } catch (error) {
@@ -336,7 +347,7 @@ export async function generateDashboardFromJest(
       console.warn('⚠️ Coverage file not found, using default values');
     }
 
-    // Try to load test results  
+    // Try to load test results
     try {
       const testContent = await fs.readFile(testResultsPath, 'utf-8');
       testResults = JSON.parse(testContent);
@@ -358,7 +369,7 @@ export async function generateDashboardFromJest(
       testFiles: (testResults.testResults || []).map((file: any) => ({
         name: path.basename(file.name || 'unknown'),
         path: file.name || '',
-        status: file.status === 'passed' ? 'passed' as const : 'failed' as const,
+        status: file.status === 'passed' ? ('passed' as const) : ('failed' as const),
         tests: file.numPassingTests + file.numFailingTests,
         duration: file.perfStats?.end - file.perfStats?.start || 0,
       })),

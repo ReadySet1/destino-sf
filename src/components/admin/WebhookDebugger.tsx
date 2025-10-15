@@ -1,6 +1,6 @@
 /**
  * Webhook Debugger Component
- * 
+ *
  * Advanced debugging panel for webhook signature validation issues.
  * Provides detailed information about webhook configuration, recent failures,
  * and troubleshooting guidance.
@@ -11,27 +11,21 @@
 import React, { useState, useEffect } from 'react';
 import { useWebhookStatus } from '@/hooks/useWebhookStatus';
 import { type SquareEnvironment } from '@/types/webhook';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Bug, 
-  Key, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Bug,
+  Key,
+  AlertTriangle,
+  CheckCircle,
   XCircle,
   Copy,
   RefreshCw,
   Eye,
-  EyeOff
+  EyeOff,
 } from 'lucide-react';
 
 interface WebhookDebuggerProps {
@@ -42,16 +36,16 @@ export function WebhookDebugger({ className }: WebhookDebuggerProps) {
   const [configVisible, setConfigVisible] = useState(false);
   const [webhookHealth, setWebhookHealth] = useState<any>(null);
   const [isLoadingHealth, setIsLoadingHealth] = useState(false);
-  
+
   const { data: webhookStatus, error } = useWebhookStatus({
-    refreshIntervalMs: 60000 // 1 minute refresh for debugging
+    refreshIntervalMs: 60000, // 1 minute refresh for debugging
   });
 
   const checkWebhookHealth = async () => {
     setIsLoadingHealth(true);
     try {
       const response = await fetch('/api/webhooks/square', {
-        method: 'GET'
+        method: 'GET',
       });
       const health = await response.json();
       setWebhookHealth(health);
@@ -79,8 +73,8 @@ export function WebhookDebugger({ className }: WebhookDebuggerProps) {
               Advanced debugging tools for webhook signature validation
             </CardDescription>
           </div>
-          
-          <Button 
+
+          <Button
             onClick={checkWebhookHealth}
             disabled={isLoadingHealth}
             variant="outline"
@@ -94,7 +88,7 @@ export function WebhookDebugger({ className }: WebhookDebuggerProps) {
           </Button>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         <Tabs defaultValue="status" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -103,36 +97,33 @@ export function WebhookDebugger({ className }: WebhookDebuggerProps) {
             <TabsTrigger value="failures">Failures</TabsTrigger>
             <TabsTrigger value="troubleshoot">Troubleshoot</TabsTrigger>
           </TabsList>
-          
+
           {/* Status Tab */}
           <TabsContent value="status" className="space-y-4">
-            <ConfigurationStatus 
+            <ConfigurationStatus
               health={webhookHealth}
               webhookStatus={webhookStatus}
               isLoading={isLoadingHealth}
             />
           </TabsContent>
-          
+
           {/* Configuration Tab */}
           <TabsContent value="config" className="space-y-4">
-            <ConfigurationPanel 
+            <ConfigurationPanel
               health={webhookHealth}
               configVisible={configVisible}
               onToggleVisibility={() => setConfigVisible(!configVisible)}
             />
           </TabsContent>
-          
+
           {/* Failures Tab */}
           <TabsContent value="failures" className="space-y-4">
             <FailureAnalysis webhookStatus={webhookStatus} />
           </TabsContent>
-          
+
           {/* Troubleshooting Tab */}
           <TabsContent value="troubleshoot" className="space-y-4">
-            <TroubleshootingGuide 
-              health={webhookHealth}
-              webhookStatus={webhookStatus}
-            />
+            <TroubleshootingGuide health={webhookHealth} webhookStatus={webhookStatus} />
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -185,23 +176,22 @@ function ConfigurationStatus({ health, webhookStatus, isLoading }: any) {
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm">Success Rate</span>
-              <Badge variant={webhookStatus?.successRate > 95 ? "default" : "danger"}>
+              <Badge variant={webhookStatus?.successRate > 95 ? 'default' : 'danger'}>
                 {webhookStatus?.successRate.toFixed(1)}%
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Avg Latency</span>
-              <Badge variant={webhookStatus?.averageLatency < 200 ? "default" : "secondary"}>
+              <Badge variant={webhookStatus?.averageLatency < 200 ? 'default' : 'secondary'}>
                 {webhookStatus?.averageLatency || 0}ms
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Last Webhook</span>
               <span className="text-xs text-muted-foreground">
-                {webhookStatus?.lastWebhookTime ? 
-                  new Date(webhookStatus.lastWebhookTime).toLocaleString() :
-                  'No recent activity'
-                }
+                {webhookStatus?.lastWebhookTime
+                  ? new Date(webhookStatus.lastWebhookTime).toLocaleString()
+                  : 'No recent activity'}
               </span>
             </div>
           </CardContent>
@@ -242,26 +232,23 @@ function ConfigurationPanel({ health, configVisible, onToggleVisibility }: any) 
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm">Show Configuration</span>
-            <Button
-              onClick={onToggleVisibility}
-              variant="ghost"
-              size="sm"
-            >
-              {configVisible ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
+            <Button onClick={onToggleVisibility} variant="ghost" size="sm">
+              {configVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </Button>
           </div>
-          
+
           {configVisible && health && (
             <div className="space-y-2 text-xs font-mono bg-muted p-3 rounded">
               <div>NODE_ENV: {health.environment?.node_env}</div>
               <div>VERCEL: {health.environment?.vercel ? 'Yes' : 'No'}</div>
               <div>VERCEL_ENV: {health.environment?.vercel_env || 'N/A'}</div>
-              <div>Production Secret: {health.environment?.has_production_secret ? '✅ Set' : '❌ Missing'}</div>
-              <div>Sandbox Secret: {health.environment?.has_sandbox_secret ? '✅ Set' : '❌ Missing'}</div>
+              <div>
+                Production Secret:{' '}
+                {health.environment?.has_production_secret ? '✅ Set' : '❌ Missing'}
+              </div>
+              <div>
+                Sandbox Secret: {health.environment?.has_sandbox_secret ? '✅ Set' : '❌ Missing'}
+              </div>
             </div>
           )}
         </CardContent>
@@ -279,9 +266,7 @@ function ConfigurationPanel({ health, configVisible, onToggleVisibility }: any) 
                 <CheckCircle className="w-3 h-3 text-green-500" />
                 <span className="text-xs">{fix.replace(/_/g, ' ')}</span>
               </div>
-            )) || (
-              <p className="text-xs text-muted-foreground">No fix information available</p>
-            )}
+            )) || <p className="text-xs text-muted-foreground">No fix information available</p>}
           </div>
         </CardContent>
       </Card>
@@ -294,7 +279,7 @@ function ConfigurationPanel({ health, configVisible, onToggleVisibility }: any) 
  */
 function FailureAnalysis({ webhookStatus }: any) {
   const failedWebhooks = webhookStatus?.recentWebhooks?.filter((w: any) => !w.success) || [];
-  
+
   return (
     <div className="space-y-4">
       {failedWebhooks.length === 0 ? (
@@ -313,7 +298,7 @@ function FailureAnalysis({ webhookStatus }: any) {
               {failedWebhooks.length} webhook(s) failed validation in recent activity.
             </AlertDescription>
           </Alert>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Failed Webhook Details</CardTitle>
@@ -346,31 +331,31 @@ function FailureAnalysis({ webhookStatus }: any) {
 function TroubleshootingGuide({ health, webhookStatus }: any) {
   const generateTroubleshootingSteps = () => {
     const steps: string[] = [];
-    
+
     if (!health?.configuration?.production_ready) {
       steps.push('Set SQUARE_WEBHOOK_SECRET environment variable for production');
     }
-    
+
     if (!health?.configuration?.sandbox_ready) {
       steps.push('Set SQUARE_WEBHOOK_SECRET_SANDBOX environment variable for testing');
     }
-    
+
     if (webhookStatus?.successRate < 90) {
       steps.push('Check webhook secrets for trailing newlines or special characters');
       steps.push('Verify Square webhook configuration points to the correct URL');
       steps.push('Test signature validation with recent webhook payloads');
     }
-    
+
     if (webhookStatus?.averageLatency > 300) {
       steps.push('Check database connection pool and query performance');
       steps.push('Monitor server resource usage during webhook processing');
     }
-    
+
     if (steps.length === 0) {
       steps.push('System appears to be working correctly');
       steps.push('Monitor alerts for any emerging issues');
     }
-    
+
     return steps;
   };
 
@@ -385,7 +370,7 @@ function TroubleshootingGuide({ health, webhookStatus }: any) {
           Follow these steps to diagnose and resolve webhook issues.
         </AlertDescription>
       </Alert>
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">Recommended Actions</CardTitle>
@@ -410,7 +395,7 @@ function TroubleshootingGuide({ health, webhookStatus }: any) {
           <CardTitle className="text-sm">Quick Tests</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <Button 
+          <Button
             onClick={() => window.open('/api/webhooks/square', '_blank')}
             variant="outline"
             size="sm"
@@ -418,8 +403,8 @@ function TroubleshootingGuide({ health, webhookStatus }: any) {
           >
             Test Webhook Health Endpoint
           </Button>
-          
-          <Button 
+
+          <Button
             onClick={() => window.open('/api/admin/webhook-dashboard', '_blank')}
             variant="outline"
             size="sm"
@@ -438,10 +423,19 @@ function TroubleshootingGuide({ health, webhookStatus }: any) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-xs">
-              <div><strong>Version:</strong> {health.version}</div>
-              <div><strong>Node Environment:</strong> {health.environment?.node_env}</div>
-              <div><strong>Vercel Environment:</strong> {health.environment?.vercel_env || 'Not Vercel'}</div>
-              <div><strong>Health Status:</strong> {health.health?.overall || 'Unknown'}</div>
+              <div>
+                <strong>Version:</strong> {health.version}
+              </div>
+              <div>
+                <strong>Node Environment:</strong> {health.environment?.node_env}
+              </div>
+              <div>
+                <strong>Vercel Environment:</strong>{' '}
+                {health.environment?.vercel_env || 'Not Vercel'}
+              </div>
+              <div>
+                <strong>Health Status:</strong> {health.health?.overall || 'Unknown'}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -457,7 +451,7 @@ function StatusBadge({ status }: { status: boolean | undefined }) {
   if (status === undefined) {
     return <Badge variant="secondary">Unknown</Badge>;
   }
-  
+
   return status ? (
     <Badge variant="default" className="bg-green-100 text-green-800">
       <CheckCircle className="w-3 h-3 mr-1" />

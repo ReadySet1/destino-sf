@@ -7,6 +7,7 @@ The Orders API handles order creation, retrieval, and management for both regula
 ## Customer Endpoints
 
 ### Create Order
+
 ```http
 POST /api/orders
 Authorization: Bearer <user_token>
@@ -37,6 +38,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```typescript
 interface CreateOrderResponse {
   success: boolean;
@@ -72,12 +74,14 @@ interface Order {
 ```
 
 ### Get User Orders
+
 ```http
 GET /api/orders
 Authorization: Bearer <user_token>
 ```
 
 **Query Parameters:**
+
 - `status` (string): Filter by order status
 - `limit` (number): Number of orders to return (default: 10)
 - `page` (number): Page number for pagination
@@ -85,17 +89,20 @@ Authorization: Bearer <user_token>
 - `endDate` (string): Filter orders until this date
 
 **Example:**
+
 ```http
 GET /api/orders?status=delivered&limit=5&page=1
 ```
 
 ### Get Single Order
+
 ```http
 GET /api/orders/{orderId}
 Authorization: Bearer <user_token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -143,6 +150,7 @@ Authorization: Bearer <user_token>
 ```
 
 ### Cancel Order
+
 ```http
 POST /api/orders/{orderId}/cancel
 Authorization: Bearer <user_token>
@@ -154,6 +162,7 @@ Content-Type: application/json
 ```
 
 ### Reorder Previous Order
+
 ```http
 POST /api/orders/{orderId}/reorder
 Authorization: Bearer <user_token>
@@ -162,12 +171,14 @@ Authorization: Bearer <user_token>
 ## Admin Endpoints
 
 ### Get All Orders (Admin Only)
+
 ```http
 GET /api/admin/orders
 Authorization: Bearer <admin_token>
 ```
 
 **Query Parameters:**
+
 - `status` (string): Filter by order status
 - `customerId` (string): Filter by customer
 - `isCateringOrder` (boolean): Filter catering orders
@@ -178,6 +189,7 @@ Authorization: Bearer <admin_token>
 - `sortOrder` (string): Sort direction (asc, desc)
 
 ### Update Order Status (Admin Only)
+
 ```http
 PATCH /api/orders/{orderId}/status
 Authorization: Bearer <admin_token>
@@ -190,14 +202,16 @@ Content-Type: application/json
 ```
 
 **Valid Status Transitions:**
+
 - `pending` → `confirmed`
-- `confirmed` → `in_preparation`  
+- `confirmed` → `in_preparation`
 - `in_preparation` → `ready_for_pickup`
 - `ready_for_pickup` → `out_for_delivery`
 - `out_for_delivery` → `delivered`
 - Any status → `cancelled` (with reason)
 
 ### Archive Order (Admin Only)
+
 ```http
 POST /api/orders/{orderId}/archive
 Authorization: Bearer <admin_token>
@@ -209,17 +223,20 @@ Content-Type: application/json
 ```
 
 ### Get Order Analytics (Admin Only)
+
 ```http
 GET /api/admin/orders/analytics
 Authorization: Bearer <admin_token>
 ```
 
 **Query Parameters:**
+
 - `startDate` (string): Start date for analytics
 - `endDate` (string): End date for analytics
 - `groupBy` (string): Group results by (day, week, month)
 
 **Response:**
+
 ```typescript
 interface OrderAnalytics {
   totalOrders: number;
@@ -245,19 +262,20 @@ interface OrderAnalytics {
 ```typescript
 enum OrderStatus {
   PENDING = 'pending',
-  CONFIRMED = 'confirmed', 
+  CONFIRMED = 'confirmed',
   IN_PREPARATION = 'in_preparation',
   READY_FOR_PICKUP = 'ready_for_pickup',
   OUT_FOR_DELIVERY = 'out_for_delivery',
   DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
-  REFUNDED = 'refunded'
+  REFUNDED = 'refunded',
 }
 ```
 
 ## Webhooks
 
 ### Order Status Updates
+
 Orders API sends webhooks for status changes to configured endpoints:
 
 ```json
@@ -275,6 +293,7 @@ Orders API sends webhooks for status changes to configured endpoints:
 ## Error Responses
 
 ### Common Error Codes
+
 - `ORDER_NOT_FOUND`: Order does not exist
 - `INVALID_ORDER_STATUS`: Invalid status transition
 - `INSUFFICIENT_PERMISSIONS`: Access denied
@@ -283,6 +302,7 @@ Orders API sends webhooks for status changes to configured endpoints:
 - `INVALID_DELIVERY_ADDRESS`: Address validation failed
 
 ### Example Error Response
+
 ```json
 {
   "success": false,

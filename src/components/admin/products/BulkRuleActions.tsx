@@ -20,7 +20,7 @@ export function BulkRuleActions({
   productNames,
   onClearSelection,
   onSuccess,
-  className
+  className,
 }: BulkRuleActionsProps) {
   const [showModal, setShowModal] = useState(false);
 
@@ -32,7 +32,7 @@ export function BulkRuleActions({
     <>
       <div
         className={cn(
-          "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-2",
+          'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-2',
           className
         )}
       >

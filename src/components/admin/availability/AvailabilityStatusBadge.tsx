@@ -18,12 +18,12 @@ interface AvailabilityStatusBadgeProps {
 export function AvailabilityStatusBadge({
   state,
   size = 'md',
-  className
+  className,
 }: AvailabilityStatusBadgeProps) {
   const sizeClasses = {
     sm: 'text-xs px-2 py-0.5',
     md: 'text-xs px-2 py-1',
-    lg: 'text-sm px-3 py-1.5'
+    lg: 'text-sm px-3 py-1.5',
   };
 
   return (

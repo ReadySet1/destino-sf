@@ -28,11 +28,11 @@ export const revalidate = 0;
 
 export default async function FeaturePage({ searchParams }: PageProps) {
   const params = await searchParams;
-  
+
   const items = await prisma.feature.findMany({
     // ... query
   });
-  
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <FormHeader
@@ -40,14 +40,14 @@ export default async function FeaturePage({ searchParams }: PageProps) {
         description="Manage features"
         backUrl="/admin"
       />
-      
+
       <div className="space-y-8 mt-8">
         <FormActions>
           <FormButton href="/admin/features/new" leftIcon={FormIcons.plus}>
             Add Feature
           </FormButton>
         </FormActions>
-        
+
         {/* Content */}
       </div>
     </div>
@@ -74,7 +74,7 @@ import {
   FormStack,
   FormActions,
   FormButton,
-  FormIcons
+  FormIcons,
 } from '@/components/ui/form';
 
 // Database
@@ -107,7 +107,7 @@ import { logger } from '@/utils/logger';
 ```typescript
 <FormContainer>
   <FormHeader title="Title" description="Description" backUrl="/admin" />
-  
+
   <form className="space-y-10">
     <FormSection title="Section" icon={FormIcons.info}>
       <FormStack spacing={6}>
@@ -116,7 +116,7 @@ import { logger } from '@/utils/logger';
         </FormField>
       </FormStack>
     </FormSection>
-    
+
     <FormActions>
       <FormButton variant="secondary" href="/admin">Cancel</FormButton>
       <FormButton type="submit" leftIcon={FormIcons.save}>Save</FormButton>
@@ -128,12 +128,12 @@ import { logger } from '@/utils/logger';
 ### FormSection Variants
 
 ```typescript
-variant="default"  // Gray - General info
-variant="blue"     // Blue - Integrations
-variant="green"    // Green - Uploads/media
-variant="purple"   // Purple - Settings
-variant="amber"    // Amber - Warnings
-variant="indigo"   // Indigo - Advanced
+variant = 'default'; // Gray - General info
+variant = 'blue'; // Blue - Integrations
+variant = 'green'; // Green - Uploads/media
+variant = 'purple'; // Purple - Settings
+variant = 'amber'; // Amber - Warnings
+variant = 'indigo'; // Indigo - Advanced
 ```
 
 ### FormIcons
@@ -156,11 +156,11 @@ FormIcons.check     FormIcons.warning   FormIcons.shield
 
 export async function createItemAction(formData: FormData) {
   const name = formData.get('name') as string;
-  
+
   if (!name) {
     return { success: false, error: 'Name required' };
   }
-  
+
   try {
     await prisma.item.create({ data: { name } });
     revalidatePath('/admin/items');
@@ -177,9 +177,9 @@ export async function createItemAction(formData: FormData) {
 ```typescript
 export async function deleteItemAction(formData: FormData) {
   'use server';
-  
+
   const id = formData.get('id') as string;
-  
+
   try {
     await prisma.item.delete({ where: { id } });
     revalidatePath('/admin/items');
@@ -203,14 +203,14 @@ export async function deleteItemAction(formData: FormData) {
 export function ItemFilters({ currentSearch }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const handleChange = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
     value ? params.set(key, value) : params.delete(key);
     params.delete('page');
     router.push(`?${params.toString()}`);
   };
-  
+
   return (
     <input
       defaultValue={currentSearch}
@@ -228,14 +228,14 @@ export function ItemFilters({ currentSearch }: Props) {
 export function TableWrapper({ items, onAction }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const handleSort = (key: string, direction: 'asc' | 'desc') => {
     const params = new URLSearchParams(searchParams);
     params.set('sort', key);
     params.set('direction', direction);
     router.push(`?${params.toString()}`);
   };
-  
+
   return <Table items={items} onSort={handleSort} onAction={onAction} />;
 }
 ```
@@ -254,7 +254,7 @@ function StatusBadge({ status }: { status: string }) {
     inactive: 'bg-gray-100 text-gray-800',
     failed: 'bg-red-100 text-red-800',
   };
-  
+
   return (
     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colors[status]}`}>
       {status.toUpperCase()}
@@ -404,38 +404,38 @@ interface ItemData {
 ### Container Spacing
 
 ```typescript
-className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+className = 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8';
 ```
 
 ### Card/Section
 
 ```typescript
-className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+className = 'bg-white rounded-xl shadow-sm border border-gray-200 p-6';
 ```
 
 ### Button Variants
 
 ```typescript
-variant="default"     // Primary indigo
-variant="secondary"   // Gray outline
-variant="destructive" // Red
-variant="outline"     // Outline
-variant="ghost"       // Transparent
+variant = 'default'; // Primary indigo
+variant = 'secondary'; // Gray outline
+variant = 'destructive'; // Red
+variant = 'outline'; // Outline
+variant = 'ghost'; // Transparent
 ```
 
 ### Grid Layouts
 
 ```typescript
-className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
 ```
 
 ### Responsive Classes
 
 ```typescript
-className="hidden md:block"           // Hide on mobile
-className="block md:hidden"           // Show only on mobile
-className="text-sm md:text-base"     // Responsive text
-className="px-4 sm:px-6 lg:px-8"     // Responsive padding
+className = 'hidden md:block'; // Hide on mobile
+className = 'block md:hidden'; // Show only on mobile
+className = 'text-sm md:text-base'; // Responsive text
+className = 'px-4 sm:px-6 lg:px-8'; // Responsive padding
 ```
 
 ---
@@ -445,7 +445,7 @@ className="px-4 sm:px-6 lg:px-8"     // Responsive padding
 ### Server-Side
 
 ```typescript
-const name = (formData.get('name') as string || '').trim();
+const name = ((formData.get('name') as string) || '').trim();
 
 if (!name) {
   return { success: false, error: 'Name required' };
@@ -474,12 +474,12 @@ try {
   redirect('/admin/items?status=success');
 } catch (error) {
   logger.error('Operation failed:', error);
-  
+
   // Check for redirect errors (these are normal)
   if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
     throw error;
   }
-  
+
   redirect(`/admin/items?status=error&message=${encodeURIComponent('Failed')}`);
 }
 ```
@@ -611,7 +611,6 @@ const sorted = useMemo(() => {
 ---
 
 **See also:**
+
 - [Complete Design Patterns Guide](./ADMIN_COMPONENT_DESIGN_PATTERNS.md)
 - [Form System Documentation](/src/components/ui/form/README.md)
-
-

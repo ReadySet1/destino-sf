@@ -1,6 +1,6 @@
 // Common mocks for all tests
 export const mockPrismaClient = {
-  $transaction: jest.fn((fn) => fn()),
+  $transaction: jest.fn(fn => fn()),
   $disconnect: jest.fn(),
   $connect: jest.fn(),
   order: {

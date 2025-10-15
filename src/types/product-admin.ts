@@ -40,7 +40,7 @@ export interface ReorderResponse {
   updatedCount?: number;
 }
 
-export type ReorderStrategy = 
+export type ReorderStrategy =
   | 'ALPHABETICAL'
   | 'PRICE_ASC'
   | 'PRICE_DESC'

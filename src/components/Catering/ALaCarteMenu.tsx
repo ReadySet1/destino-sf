@@ -148,7 +148,6 @@ export const ALaCarteMenu: React.FC<ALaCarteMenuProps> = ({
 
   return (
     <div className="w-full">
-
       <div className="space-y-12">
         {sectionsToShow.map(([categoryName, categoryItems], index) => (
           <motion.div
@@ -288,10 +287,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ item }) => {
     const sanitizedHtml = sanitizeProductDescription(desc);
 
     return (
-      <div
-        className="text-sm md:text-base"
-        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-      />
+      <div className="text-sm md:text-base" dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
     );
   };
 
@@ -474,7 +470,7 @@ const ServiceAddOnsSection: React.FC<{ activeCategory: string }> = ({ activeCate
                     <div
                       className="text-gray-600 text-sm"
                       dangerouslySetInnerHTML={{
-                        __html: sanitizeProductDescription(addOn.description)
+                        __html: sanitizeProductDescription(addOn.description),
                       }}
                     />
                   </div>

@@ -1,6 +1,6 @@
 /**
  * Square Archive Handler
- * 
+ *
  * Handles archiving products that are removed from Square
  */
 
@@ -27,7 +27,7 @@ export async function archiveRemovedSquareProducts(
   const result: ArchiveResult = {
     archived: 0,
     errors: 0,
-    archivedItems: []
+    archivedItems: [],
   };
 
   try {
@@ -43,16 +43,16 @@ export async function archiveRemovedSquareProducts(
         },
         NOT: [
           // Condition 2: AND the squareId should NOT be an empty string
-          { squareId: '' }
-        ]
+          { squareId: '' },
+        ],
       },
       include: {
         category: {
           select: {
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     if (removedProducts.length === 0) {
@@ -65,25 +65,23 @@ export async function archiveRemovedSquareProducts(
     // Batch archive all removed products for better performance
     try {
       const archiveStartTime = Date.now();
-      
+
       // Use updateMany for batch operation - much faster than individual updates
       const updateResult = await prisma.product.updateMany({
         where: {
           active: true,
           squareId: {
-            notIn: validSquareIds
+            notIn: validSquareIds,
           },
-          NOT: [
-            { squareId: '' }
-          ]
+          NOT: [{ squareId: '' }],
         },
         data: {
           active: false,
           isArchived: true,
           archivedAt: new Date(),
           archivedReason: 'removed_from_square',
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
 
       const archiveTime = Date.now() - archiveStartTime;
@@ -94,11 +92,13 @@ export async function archiveRemovedSquareProducts(
         id: product.id,
         name: product.name,
         squareId: product.squareId || '',
-        category: product.category?.name || 'Uncategorized'
+        category: product.category?.name || 'Uncategorized',
       }));
 
-      logger.info(`✅ Batch archived ${result.archived} products in ${archiveTime}ms (${Math.round(archiveTime/1000)}s)`);
-      
+      logger.info(
+        `✅ Batch archived ${result.archived} products in ${archiveTime}ms (${Math.round(archiveTime / 1000)}s)`
+      );
+
       // Log first few archived items for verification
       if (result.archivedItems.length > 0) {
         logger.info(`📋 Sample archived products:`);
@@ -109,11 +109,10 @@ export async function archiveRemovedSquareProducts(
           logger.info(`   • ... and ${result.archivedItems.length - 5} more`);
         }
       }
-
     } catch (error) {
       result.errors++;
       logger.error(`❌ Failed to batch archive products:`, error);
-      
+
       // Fallback to individual updates if batch fails
       logger.info('🔄 Falling back to individual updates...');
       for (const product of removedProducts) {
@@ -125,15 +124,15 @@ export async function archiveRemovedSquareProducts(
               isArchived: true,
               archivedAt: new Date(),
               archivedReason: 'removed_from_square',
-              updatedAt: new Date()
-            }
+              updatedAt: new Date(),
+            },
           });
 
           result.archivedItems.push({
             id: product.id,
             name: product.name,
             squareId: product.squareId || '',
-            category: product.category?.name || 'Uncategorized'
+            category: product.category?.name || 'Uncategorized',
           });
 
           result.archived++;
@@ -173,10 +172,10 @@ export async function getArchivedProductsCount(): Promise<{
       include: {
         category: {
           select: {
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     const byCategory: Record<string, number> = {};
@@ -193,7 +192,7 @@ export async function getArchivedProductsCount(): Promise<{
     return {
       total: archivedProducts.length,
       byCategory,
-      byReason
+      byReason,
     };
   } catch (error) {
     logger.error('❌ Error getting archived products count:', error);
@@ -209,8 +208,8 @@ export async function restoreArchivedProduct(squareId: string): Promise<boolean>
     const archivedProduct = await prisma.product.findFirst({
       where: {
         squareId,
-        isArchived: true // Use dedicated archive field
-      }
+        isArchived: true, // Use dedicated archive field
+      },
     });
 
     if (archivedProduct) {
@@ -221,8 +220,8 @@ export async function restoreArchivedProduct(squareId: string): Promise<boolean>
           isArchived: false,
           archivedAt: null,
           archivedReason: null,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
 
       logger.info(`🔄 Restored archived product: "${archivedProduct.name}" (${squareId})`);

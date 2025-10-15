@@ -5,7 +5,12 @@ import { CateringPackages } from '@/components/Catering';
 import { BoxedLunchMenu } from '@/components/Catering/BoxedLunchMenu';
 import { AppetizerPackageSelector } from '@/components/Catering/AppetizerPackageSelector';
 import { ALaCarteMenu } from '@/components/Catering/ALaCarteMenu';
-import { CateringPackage, CateringItem, getAppetizerPackageItems, getDessertItems } from '@/types/catering';
+import {
+  CateringPackage,
+  CateringItem,
+  getAppetizerPackageItems,
+  getDessertItems,
+} from '@/types/catering';
 import { logger } from '@/utils/logger';
 
 interface CateringMenuTabsProps {
@@ -34,10 +39,10 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
       try {
         setIsLoadingAppetizers(true);
         logger.info('🍴 Fetching appetizer items for catering page...');
-        
+
         const response = await fetch('/api/catering/appetizers');
         const data = await response.json();
-        
+
         if (data.success) {
           setAppetizerItems(data.items);
           logger.info(`✅ Successfully loaded ${data.items.length} appetizer items`);
@@ -62,10 +67,10 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
       try {
         setIsLoadingBuffet(true);
         logger.info('🍽️ Fetching buffet items for catering page...');
-        
+
         const response = await fetch('/api/catering/buffet');
         const data = await response.json();
-        
+
         if (data.success) {
           setBuffetItems(data.items);
           logger.info(`✅ Successfully loaded ${data.items.length} buffet items`);
@@ -90,10 +95,10 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
       try {
         setIsLoadingLunch(true);
         logger.info('🥪 Fetching lunch items for catering page...');
-        
+
         const response = await fetch('/api/catering/lunch');
         const data = await response.json();
-        
+
         if (data.success) {
           setLunchItems(data.items);
           logger.info(`✅ Successfully loaded ${data.items.length} lunch items`);
@@ -125,7 +130,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
             key={tab.id}
             type="button"
             onClick={() => handleTabClick(tab.id)}
-            onTouchEnd={(e) => {
+            onTouchEnd={e => {
               e.preventDefault();
               handleTabClick(tab.id);
             }}
@@ -148,20 +153,22 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
           <div>
             {/* Appetizer Packages */}
             <div className="mb-12">
-                          <AppetizerPackageSelector
-              packages={cateringPackages.filter(pkg => pkg.name.includes('Appetizer Selection'))}
-              availableItems={getAppetizerPackageItems(appetizerItems)}
-              isLoading={isLoadingAppetizers}
-            />
+              <AppetizerPackageSelector
+                packages={cateringPackages.filter(pkg => pkg.name.includes('Appetizer Selection'))}
+                availableItems={getAppetizerPackageItems(appetizerItems)}
+                isLoading={isLoadingAppetizers}
+              />
             </div>
 
             {/* Share Platters Section */}
             <div className="border-t pt-12">
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Catering- Share Platters</h3>
-                <p className="text-gray-600">Perfect for sharing with groups - available in small and large portions</p>
+                <p className="text-gray-600">
+                  Perfect for sharing with groups - available in small and large portions
+                </p>
               </div>
-              <ALaCarteMenu 
+              <ALaCarteMenu
                 items={appetizerItems.filter(item => item.category === 'SHARE PLATTER')}
               />
             </div>
@@ -172,7 +179,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Catering- Desserts</h3>
                 <p className="text-gray-600">Sweet endings to perfect your catering experience</p>
               </div>
-              <ALaCarteMenu 
+              <ALaCarteMenu
                 items={appetizerItems.filter(item => item.category === 'DESSERT')}
                 isDessertSection={true}
               />
@@ -193,11 +200,8 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
         {activeTab === 'buffet' && !isLoadingBuffet && (
           <div>
             {/* Buffet Items */}
-            <ALaCarteMenu 
-              items={buffetItems}
-              activeCategory="buffet"
-            />
-            
+            <ALaCarteMenu items={buffetItems} activeCategory="buffet" />
+
             {/* Desserts Section */}
             {!isLoadingAppetizers && getDessertItems(appetizerItems).length > 0 && (
               <div className="border-t pt-12 mt-12">
@@ -205,7 +209,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Catering - Desserts</h3>
                   <p className="text-gray-600">Complete your buffet with our delicious desserts</p>
                 </div>
-                <ALaCarteMenu 
+                <ALaCarteMenu
                   items={getDessertItems(appetizerItems)}
                   activeCategory="buffet"
                   showServiceAddOns={false}
@@ -224,9 +228,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
 
         {activeTab === 'buffet' && !isLoadingBuffet && buffetItems.length === 0 && (
           <div className="text-center py-8">
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              Buffet Menu Coming Soon
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Buffet Menu Coming Soon</h3>
             <p className="text-gray-600">
               Our buffet options are being prepared. Please check back soon or contact us directly.
             </p>
@@ -235,10 +237,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
 
         {activeTab === 'lunch' && !isLoadingLunch && (
           <div>
-            <ALaCarteMenu 
-              items={lunchItems}
-              activeCategory="lunch"
-            />
+            <ALaCarteMenu items={lunchItems} activeCategory="lunch" />
           </div>
         )}
 
@@ -251,9 +250,7 @@ const CateringMenuTabs: React.FC<CateringMenuTabsProps> = ({ cateringPackages })
 
         {activeTab === 'lunch' && !isLoadingLunch && lunchItems.length === 0 && (
           <div className="text-center py-8">
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              Lunch Menu Coming Soon
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Lunch Menu Coming Soon</h3>
             <p className="text-gray-600">
               Our lunch options are being prepared. Please check back soon or contact us directly.
             </p>

@@ -149,7 +149,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const searchResponse = await squareClient.catalogApi.searchCatalogObjects(searchRequest as any);
+      const searchResponse = await squareClient.catalogApi.searchCatalogObjects(
+        searchRequest as any
+      );
       const items = searchResponse.result?.objects || [];
 
       if (items.length === 0) {
@@ -231,7 +233,9 @@ export async function GET(request: NextRequest) {
       data: {
         name: item?.item_data?.name || product.name,
         description:
-          item?.item_data?.description !== null ? item?.item_data?.description : product.description,
+          item?.item_data?.description !== null
+            ? item?.item_data?.description
+            : product.description,
         price: basePrice,
         images: imageUrls.length > 0 ? imageUrls : product.images,
         updatedAt: new Date(),

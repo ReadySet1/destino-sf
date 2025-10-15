@@ -10,10 +10,10 @@ export async function GET(request: NextRequest) {
     // Handle build time fallback
     if (isBuildTime()) {
       logger.info('Build-time detected: Using fallback data');
-      return NextResponse.json({ 
-        success: true, 
-        data: [], 
-        note: 'Fallback data used due to build-time constraints' 
+      return NextResponse.json({
+        success: true,
+        data: [],
+        note: 'Fallback data used due to build-time constraints',
       });
     }
 

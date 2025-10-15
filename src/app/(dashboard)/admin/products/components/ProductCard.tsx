@@ -45,20 +45,13 @@ export function ProductCard({ product, showArchiveButton = true }: ProductCardPr
         {/* Product Image */}
         {productImage && (
           <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-            <Image
-              src={productImage}
-              alt={product.name}
-              fill
-              className="object-cover"
-            />
+            <Image src={productImage} alt={product.name} fill className="object-cover" />
           </div>
         )}
 
         {/* Product Details */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg text-gray-900 truncate">
-            {product.name}
-          </h3>
+          <h3 className="font-semibold text-lg text-gray-900 truncate">{product.name}</h3>
 
           {product.category && (
             <p className="text-sm text-gray-500 mt-1">{product.category.name}</p>
@@ -104,8 +97,6 @@ function ArchiveBadge({ reason }: { reason: string | null }) {
   const badge = badges[reason as keyof typeof badges] || badges.manual;
 
   return (
-    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${badge.color}`}>
-      Archived
-    </span>
+    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${badge.color}`}>Archived</span>
   );
 }

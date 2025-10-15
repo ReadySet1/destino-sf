@@ -6,15 +6,12 @@ import React from 'react';
 /**
  * Capitalizes text while preserving dashes and special formatting
  * Handles cases like "beet-jicama" → "Beet-Jicama"
- * 
+ *
  * @param text - The text to capitalize
  * @param preserveAcronyms - Whether to preserve all-caps acronyms (default: true)
  * @returns Properly capitalized text
  */
-export const capitalizeWithDashes = (
-  text: string, 
-  preserveAcronyms: boolean = true
-): string => {
+export const capitalizeWithDashes = (text: string, preserveAcronyms: boolean = true): string => {
   if (!text || text.trim().length === 0) {
     return text;
   }
@@ -54,7 +51,7 @@ export const capitalizeWithDashes = (
 /**
  * Formats product descriptions with bold/italic for specific keywords
  * Keywords like "GF", "Vegan", "Veggie" get bold formatting
- * 
+ *
  * @param description - The description text
  * @returns Description with markdown-style formatting
  */
@@ -67,7 +64,7 @@ export const formatDescriptionKeywords = (description: string): string => {
   const boldKeywords = [
     'GF',
     'Gluten-Free',
-    'Vegan', 
+    'Vegan',
     'Vegetarian',
     'Veggie',
     'Organic',
@@ -92,7 +89,7 @@ export const formatDescriptionKeywords = (description: string): string => {
 /**
  * Renders markdown-style formatted text to React components
  * Converts **bold** and *italic* markers to appropriate HTML
- * 
+ *
  * @param text - Text with markdown formatting
  * @returns JSX with formatted text
  */
@@ -128,11 +125,7 @@ export const renderFormattedText = (text: string): React.ReactNode => {
     } else if (match[3]) {
       // Italic text (*text*)
       parts.push(
-        React.createElement(
-          'em',
-          { key: `italic-${keyCounter++}`, className: 'italic' },
-          match[3]
-        )
+        React.createElement('em', { key: `italic-${keyCounter++}`, className: 'italic' }, match[3])
       );
     }
 
@@ -150,7 +143,7 @@ export const renderFormattedText = (text: string): React.ReactNode => {
 /**
  * Extracts formatting from Square API HTML descriptions
  * Some Square API responses may include HTML tags
- * 
+ *
  * @param htmlString - HTML string from Square API
  * @returns Plain text with markdown formatting
  */
@@ -163,13 +156,13 @@ export const extractSquareFormatting = (htmlString: string): string => {
 
   // Convert HTML bold to markdown
   formatted = formatted.replace(/<(strong|b)>(.*?)<\/(strong|b)>/gi, '**$2**');
-  
+
   // Convert HTML italic to markdown
   formatted = formatted.replace(/<(em|i)>(.*?)<\/(em|i)>/gi, '*$2*');
-  
+
   // Remove other HTML tags
   formatted = formatted.replace(/<[^>]*>/g, '');
-  
+
   // Decode HTML entities
   formatted = formatted
     .replace(/&amp;/g, '&')
@@ -184,7 +177,7 @@ export const extractSquareFormatting = (htmlString: string): string => {
 /**
  * Auto-formats common food description patterns
  * Applies consistent formatting to descriptions
- * 
+ *
  * @param description - Raw description text
  * @returns Formatted description
  */
@@ -208,7 +201,7 @@ export const autoFormatFoodDescription = (description: string): string => {
     if (trimmed.length === 0) return trimmed;
     return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
   });
-  
+
   if (parts.length > 1) {
     formatted = parts.join(' / ');
   }
@@ -219,7 +212,7 @@ export const autoFormatFoodDescription = (description: string): string => {
 /**
  * Validates and normalizes product names
  * Ensures consistent formatting across the site
- * 
+ *
  * @param name - Product name
  * @returns Normalized product name
  */
@@ -233,11 +226,11 @@ export const normalizeProductName = (name: string): string => {
 
   // Handle special cases
   const specialCases: Record<string, string> = {
-    'empanada': 'Empanada',
-    'alfajor': 'Alfajor',
-    'alfajores': 'Alfajores',
+    empanada: 'Empanada',
+    alfajor: 'Alfajor',
+    alfajores: 'Alfajores',
     'dulce de leche': 'Dulce de Leche',
-    'chimichurri': 'Chimichurri',
+    chimichurri: 'Chimichurri',
   };
 
   // Apply special case replacements (case-insensitive)
@@ -252,7 +245,7 @@ export const normalizeProductName = (name: string): string => {
 /**
  * Applies all formatting rules to a product description
  * Use this as the main entry point for description formatting
- * 
+ *
  * @param description - Raw description from database
  * @param options - Formatting options
  * @returns Fully formatted description
@@ -271,11 +264,7 @@ export const formatProductDescription = (
     return '';
   }
 
-  const {
-    highlightKeywords = true,
-    autoFormat = true,
-    extractHtml = true,
-  } = options;
+  const { highlightKeywords = true, autoFormat = true, extractHtml = true } = options;
 
   let formatted = description;
 

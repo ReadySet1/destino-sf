@@ -1,6 +1,6 @@
 /**
  * Square Categories API Endpoint
- * 
+ *
  * Fetches all available categories from Square catalog for category selection
  */
 
@@ -11,7 +11,7 @@ import { prisma, withRetry } from '@/lib/db-unified';
 
 /**
  * GET /api/square/categories
- * 
+ *
  * Fetches all categories from Square catalog
  * Requires admin authentication
  */
@@ -19,7 +19,10 @@ export async function GET(request: NextRequest) {
   try {
     // Check authentication and admin role
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -32,7 +35,7 @@ export async function GET(request: NextRequest) {
     try {
       const profile = await prisma.profile.findUnique({
         where: { id: user.id },
-        select: { role: true }
+        select: { role: true },
       });
 
       if (!profile || profile.role !== 'ADMIN') {
@@ -43,10 +46,7 @@ export async function GET(request: NextRequest) {
       }
     } catch (dbError) {
       console.error('Database error checking admin role:', dbError);
-      return NextResponse.json(
-        { success: false, error: 'Database error' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
     }
 
     // Fetch categories from Square using MCP API
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     const requestBody = {
       object_types: ['CATEGORY'],
       include_deleted_objects: false,
-      limit: 1000  // Get all categories
+      limit: 1000, // Get all categories
     };
 
     // For now, we'll need to use the existing Square API implementation
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       .map((obj: any) => ({
         id: obj.id,
         name: obj.category_data.name,
-        present_at_all_locations: obj.present_at_all_locations || false
+        present_at_all_locations: obj.present_at_all_locations || false,
       }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
@@ -79,15 +79,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      categories
+      categories,
     });
-
   } catch (error) {
     logger.error('❌ Error fetching Square categories:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error'
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

@@ -50,13 +50,13 @@ export class ResilientPaymentProcessor {
   private readonly timeout = 30000; // 30 seconds
   private readonly circuitBreakerThreshold = 5;
   private readonly circuitBreakerResetTime = 60000; // 1 minute
-  
+
   private paymentsApi: any;
   private circuitBreaker: CircuitBreakerState = {
     failures: 0,
     lastFailure: null,
     state: 'CLOSED',
-    nextAttempt: null
+    nextAttempt: null,
   };
 
   constructor() {
@@ -80,50 +80,49 @@ export class ResilientPaymentProcessor {
           category: 'SYSTEM_ERROR',
           detail: 'Payment system temporarily unavailable due to high failure rate',
           retryable: true,
-          retry_after_ms: this.getCircuitBreakerResetTime()
+          retry_after_ms: this.getCircuitBreakerResetTime(),
         },
         attempts: 0,
-        total_duration_ms: Date.now() - startTime
+        total_duration_ms: Date.now() - startTime,
       };
     }
 
     // Attempt payment with retries
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       attempts++;
-      
+
       try {
         // Add idempotency key for each attempt
         const idempotencyKey = this.generateIdempotencyKey(request, attempt);
-        
+
         // Process payment with timeout
         const result = await this.processWithTimeout(request, idempotencyKey);
-        
+
         // Track success metrics
         const duration = Date.now() - startTime;
         await this.logPaymentMetrics(result, attempts, duration, true);
-        
+
         // Reset circuit breaker on success
         this.resetCircuitBreaker();
-        
+
         return {
           success: true,
           payment: result,
           payment_id: result.id,
           attempts,
-          total_duration_ms: duration
+          total_duration_ms: duration,
         };
-
       } catch (error) {
         const paymentError = this.parsePaymentError(error);
         lastError = paymentError;
-        
+
         await this.handlePaymentError(paymentError, attempt, request);
-        
+
         // Check if we should retry
         if (!this.shouldRetry(paymentError, attempt)) {
           break;
         }
-        
+
         // Wait before retry (unless it's the last attempt)
         if (attempt < this.maxRetries - 1) {
           const delay = this.calculateRetryDelay(attempt, paymentError);
@@ -136,7 +135,7 @@ export class ResilientPaymentProcessor {
     const duration = Date.now() - startTime;
     await this.logPaymentMetrics(null, attempts, duration, false);
     await this.alertPaymentFailure(request, lastError!);
-    
+
     // Update circuit breaker
     this.recordFailure();
 
@@ -144,17 +143,14 @@ export class ResilientPaymentProcessor {
       success: false,
       error: lastError!,
       attempts,
-      total_duration_ms: duration
+      total_duration_ms: duration,
     };
   }
 
   /**
    * Process payment with timeout protection
    */
-  private async processWithTimeout(
-    request: PaymentRequest, 
-    idempotencyKey: string
-  ): Promise<any> {
+  private async processWithTimeout(request: PaymentRequest, idempotencyKey: string): Promise<any> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -164,7 +160,7 @@ export class ResilientPaymentProcessor {
         idempotencyKey,
         amountMoney: {
           amount: BigInt(Math.round(request.amount * 100)), // Convert to cents
-          currency: request.currency.toUpperCase()
+          currency: request.currency.toUpperCase(),
         },
         locationId: request.location_id || process.env.SQUARE_LOCATION_ID,
         orderId: request.order_id,
@@ -173,20 +169,21 @@ export class ResilientPaymentProcessor {
         appFeeMoney: undefined, // Could be configured for marketplace scenarios
         delayCapture: false,
         autocomplete: true,
-        externalDetails: request.metadata ? {
-          type: 'OTHER',
-          source: JSON.stringify(request.metadata)
-        } : undefined
+        externalDetails: request.metadata
+          ? {
+              type: 'OTHER',
+              source: JSON.stringify(request.metadata),
+            }
+          : undefined,
       };
 
       const { result } = await this.paymentsApi.createPayment(squareRequest);
-      
+
       if (!result.payment) {
         throw new Error('Payment creation failed - no payment object returned');
       }
 
       return result.payment;
-
     } finally {
       clearTimeout(timeoutId);
     }
@@ -212,7 +209,7 @@ export class ResilientPaymentProcessor {
         category: 'NETWORK_ERROR',
         detail: 'Payment request timed out',
         retryable: true,
-        retry_after_ms: 2000
+        retry_after_ms: 2000,
       };
     }
 
@@ -223,7 +220,7 @@ export class ResilientPaymentProcessor {
         category: 'NETWORK_ERROR',
         detail: 'Network connection error',
         retryable: true,
-        retry_after_ms: 1000
+        retry_after_ms: 1000,
       };
     }
 
@@ -235,7 +232,7 @@ export class ResilientPaymentProcessor {
         category: squareError.category || 'API_ERROR',
         detail: squareError.detail || 'Unknown Square API error',
         retryable: this.isRetryableSquareError(squareError.code),
-        retry_after_ms: this.getRetryAfterMs(squareError.code)
+        retry_after_ms: this.getRetryAfterMs(squareError.code),
       };
     }
 
@@ -244,7 +241,7 @@ export class ResilientPaymentProcessor {
       code: 'UNKNOWN_ERROR',
       category: 'SYSTEM_ERROR',
       detail: error.message || 'Unknown payment processing error',
-      retryable: false
+      retryable: false,
     };
   }
 
@@ -258,9 +255,9 @@ export class ResilientPaymentProcessor {
       'GATEWAY_TIMEOUT',
       'REQUEST_TIMEOUT',
       'RATE_LIMITED',
-      'TEMPORARY_REDIRECT'
+      'TEMPORARY_REDIRECT',
     ];
-    
+
     const nonRetryableCodes = [
       'INVALID_REQUEST_ERROR',
       'AUTHENTICATION_ERROR',
@@ -270,7 +267,7 @@ export class ResilientPaymentProcessor {
       'VERIFY_CVV_FAILURE',
       'VERIFY_AVS_FAILURE',
       'CARD_EXPIRED',
-      'INSUFFICIENT_FUNDS'
+      'INSUFFICIENT_FUNDS',
     ];
 
     if (nonRetryableCodes.includes(errorCode)) {
@@ -299,10 +296,10 @@ export class ResilientPaymentProcessor {
    */
   private calculateRetryDelay(attempt: number, error: PaymentError): number {
     const baseDelay = error.retry_after_ms || this.retryDelays[attempt] || 4000;
-    
+
     // Add jitter to prevent thundering herd
     const jitter = Math.random() * 1000;
-    
+
     return baseDelay + jitter;
   }
 
@@ -383,12 +380,12 @@ export class ResilientPaymentProcessor {
       {
         success: success.toString(),
         attempts: attempts.toString(),
-        circuit_breaker_state: this.circuitBreaker.state
+        circuit_breaker_state: this.circuitBreaker.state,
       },
       {
         payment_id: payment?.id,
         amount: payment?.amountMoney?.amount?.toString(),
-        currency: payment?.amountMoney?.currency
+        currency: payment?.amountMoney?.currency,
       }
     );
 
@@ -413,12 +410,12 @@ export class ResilientPaymentProcessor {
         error_code: error.code,
         error_category: error.category,
         attempt: (attempt + 1).toString(),
-        retryable: error.retryable.toString()
+        retryable: error.retryable.toString(),
       },
       {
         order_id: request.order_id,
         amount: request.amount,
-        currency: request.currency
+        currency: request.currency,
       }
     );
 
@@ -428,14 +425,11 @@ export class ResilientPaymentProcessor {
       category: error.category,
       detail: error.detail,
       retryable: error.retryable,
-      order_id: request.order_id
+      order_id: request.order_id,
     });
   }
 
-  private async alertPaymentFailure(
-    request: PaymentRequest,
-    error: PaymentError
-  ): Promise<void> {
+  private async alertPaymentFailure(request: PaymentRequest, error: PaymentError): Promise<void> {
     // In production, integrate with alerting system
     if (process.env.NODE_ENV === 'production') {
       console.error('🚨 CRITICAL: Payment processing failed after all retries', {
@@ -443,7 +437,7 @@ export class ResilientPaymentProcessor {
         error_code: error.code,
         error_detail: error.detail,
         amount: request.amount,
-        currency: request.currency
+        currency: request.currency,
       });
 
       // Could integrate with:
@@ -470,14 +464,14 @@ export class ResilientPaymentProcessor {
         state: this.circuitBreaker.state,
         failures: this.circuitBreaker.failures,
         last_failure: this.circuitBreaker.lastFailure,
-        next_attempt: this.circuitBreaker.nextAttempt
+        next_attempt: this.circuitBreaker.nextAttempt,
       },
       configuration: {
         max_retries: this.maxRetries,
         timeout_ms: this.timeout,
         circuit_breaker_threshold: this.circuitBreakerThreshold,
-        circuit_breaker_reset_time_ms: this.circuitBreakerResetTime
-      }
+        circuit_breaker_reset_time_ms: this.circuitBreakerResetTime,
+      },
     };
   }
 }

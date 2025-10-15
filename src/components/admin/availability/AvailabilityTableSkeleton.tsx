@@ -20,7 +20,7 @@ interface AvailabilityTableSkeletonProps {
  */
 export function AvailabilityTableSkeleton({
   rows = 5,
-  columns = 7
+  columns = 7,
 }: AvailabilityTableSkeletonProps) {
   return (
     <div className="bg-white shadow-md rounded-lg overflow-hidden">

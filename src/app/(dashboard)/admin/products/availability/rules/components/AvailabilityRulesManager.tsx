@@ -8,19 +8,9 @@ import { FormSection } from '@/components/ui/form/FormSection';
 import { AvailabilityFilters } from '@/components/admin/availability/AvailabilityFilters';
 import { AvailabilityForm } from '@/components/admin/availability/AvailabilityForm';
 import { RuleCard } from './RuleCard';
-import {
-  Trash2,
-  Calendar,
-  ListFilter,
-  Loader2,
-  Layers,
-} from 'lucide-react';
+import { Trash2, Calendar, ListFilter, Loader2, Layers } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  AvailabilityState,
-  RuleType,
-  type AvailabilityRule,
-} from '@/types/availability';
+import { AvailabilityState, RuleType, type AvailabilityRule } from '@/types/availability';
 import { cn } from '@/lib/utils';
 
 interface ProductInfo {
@@ -78,16 +68,12 @@ export function AvailabilityRulesManager({
       const rulesArray = rulesData.success ? rulesData.data : [];
 
       // Load products info
-      const productsResponse = await fetch(
-        '/api/products?onlyActive=false&excludeCatering=true'
-      );
+      const productsResponse = await fetch('/api/products?onlyActive=false&excludeCatering=true');
       if (!productsResponse.ok) {
         throw new Error('Failed to load products');
       }
       const productsData = await productsResponse.json();
-      const productsArray = Array.isArray(productsData)
-        ? productsData
-        : productsData.data || [];
+      const productsArray = Array.isArray(productsData) ? productsData : productsData.data || [];
 
       // Create products map for quick lookup
       const productsMap = new Map<string, ProductInfo>();
@@ -133,7 +119,10 @@ export function AvailabilityRulesManager({
 
   const toggleRuleEnabled = async (rule: AvailabilityRule) => {
     try {
-      console.log('[AvailabilityRulesManager] Toggling rule', { ruleId: rule.id, currentEnabled: rule.enabled });
+      console.log('[AvailabilityRulesManager] Toggling rule', {
+        ruleId: rule.id,
+        currentEnabled: rule.enabled,
+      });
 
       const ruleData = {
         productId: rule.productId,
@@ -207,9 +196,7 @@ export function AvailabilityRulesManager({
 
     try {
       await Promise.all(
-        selectedRules.map(ruleId =>
-          fetch(`/api/availability/${ruleId}`, { method: 'DELETE' })
-        )
+        selectedRules.map(ruleId => fetch(`/api/availability/${ruleId}`, { method: 'DELETE' }))
       );
 
       toast.success(`Successfully deleted ${selectedRules.length} rules`);
@@ -360,9 +347,10 @@ export function AvailabilityRulesManager({
             <div>
               <p className="text-sm text-gray-600">High Priority</p>
               <p className="text-2xl font-bold text-gray-900">
-                {Array.from(aggregatedRules.values()).filter(
-                  rules => rules[0].priority >= 70
-                ).length}
+                {
+                  Array.from(aggregatedRules.values()).filter(rules => rules[0].priority >= 70)
+                    .length
+                }
               </p>
             </div>
           </div>
@@ -375,9 +363,7 @@ export function AvailabilityRulesManager({
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {rules.length === 0
-                ? 'No availability rules found'
-                : 'No rules match your filters'}
+              {rules.length === 0 ? 'No availability rules found' : 'No rules match your filters'}
             </h3>
             <p className="text-sm text-gray-500 mb-6">
               {rules.length === 0
@@ -385,7 +371,11 @@ export function AvailabilityRulesManager({
                 : 'Try adjusting your search or filter criteria'}
             </p>
             {rules.length === 0 && (
-              <Button onClick={() => window.location.href = '/admin/products/availability/rules?action=create'}>
+              <Button
+                onClick={() =>
+                  (window.location.href = '/admin/products/availability/rules?action=create')
+                }
+              >
                 Create Your First Rule
               </Button>
             )}

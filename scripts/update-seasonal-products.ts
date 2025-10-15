@@ -39,10 +39,7 @@ const SEASONAL_COOKIES: ProductUpdate[] = [
   },
 ];
 
-const PRODUCTS_TO_REMOVE = [
-  "Valentine's Day Cookie",
-  'Empanadas Combo',
-];
+const PRODUCTS_TO_REMOVE = ["Valentine's Day Cookie", 'Empanadas Combo'];
 
 async function updateSeasonalCookies() {
   console.log('🍪 Updating seasonal cookie display settings...\n');
@@ -180,8 +177,7 @@ async function main() {
   }
 }
 
-main()
-  .catch(error => {
-    console.error('Fatal error:', error);
-    process.exit(1);
-  });
+main().catch(error => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});

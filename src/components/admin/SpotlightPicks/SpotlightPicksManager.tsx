@@ -167,7 +167,9 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
             <CheckCircle className="h-5 w-5 text-blue-600" />
             Spotlight Picks Statistics
           </CardTitle>
-          <p className="text-sm text-gray-600">Overview of your current spotlight pick configuration</p>
+          <p className="text-sm text-gray-600">
+            Overview of your current spotlight pick configuration
+          </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-6">
@@ -215,7 +217,9 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
             <CheckCircle className="h-5 w-5 text-green-600" />
             Spotlight Pick Positions
           </CardTitle>
-          <p className="text-sm text-gray-600">Configure which products appear in each of the 4 spotlight positions on your homepage</p>
+          <p className="text-sm text-gray-600">
+            Configure which products appear in each of the 4 spotlight positions on your homepage
+          </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 gap-6">
@@ -239,7 +243,9 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
             <AlertCircle className="h-5 w-5 text-purple-600" />
             How to Use Spotlight Picks
           </CardTitle>
-          <p className="text-sm text-gray-600">Guidelines for managing your featured products effectively</p>
+          <p className="text-sm text-gray-600">
+            Guidelines for managing your featured products effectively
+          </p>
         </CardHeader>
         <CardContent>
           <div className="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
@@ -248,14 +254,24 @@ export function SpotlightPicksManager({ initialPicks }: SpotlightPicksManagerPro
                 <Eye className="h-5 w-5 text-purple-400" />
               </div>
               <div className="ml-3">
-                <h4 className="text-sm font-semibold text-purple-900 mb-2">
-                  Best Practices
-                </h4>
+                <h4 className="text-sm font-semibold text-purple-900 mb-2">Best Practices</h4>
                 <ul className="text-sm text-purple-800 space-y-1">
-                  <li>• <strong>Product Selection:</strong> Choose an existing product to feature in each position</li>
-                  <li>• <strong>Automatic Content:</strong> Product details (title, description, image, price) are automatically used</li>
-                  <li>• <strong>Flexible Positioning:</strong> Any position can be left empty if you want fewer than 4 picks</li>
-                  <li>• <strong>Live Updates:</strong> Changes are reflected immediately on your homepage</li>
+                  <li>
+                    • <strong>Product Selection:</strong> Choose an existing product to feature in
+                    each position
+                  </li>
+                  <li>
+                    • <strong>Automatic Content:</strong> Product details (title, description,
+                    image, price) are automatically used
+                  </li>
+                  <li>
+                    • <strong>Flexible Positioning:</strong> Any position can be left empty if you
+                    want fewer than 4 picks
+                  </li>
+                  <li>
+                    • <strong>Live Updates:</strong> Changes are reflected immediately on your
+                    homepage
+                  </li>
                 </ul>
               </div>
             </div>

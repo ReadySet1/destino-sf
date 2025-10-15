@@ -26,11 +26,17 @@ export default async function AccountPage() {
                 <User className="h-12 w-12 text-white" />
               </div>
             </div>
-            <h1 className="mb-4 text-3xl font-bold text-destino-charcoal">Welcome to Your Account</h1>
+            <h1 className="mb-4 text-3xl font-bold text-destino-charcoal">
+              Welcome to Your Account
+            </h1>
             <p className="mb-8 text-gray-600">
               Please sign in to access your account and order history.
             </p>
-            <Button asChild size="lg" className="bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
+            <Button
+              asChild
+              size="lg"
+              className="bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            >
               <Link href="/sign-in">Sign In</Link>
             </Button>
           </div>
@@ -47,24 +53,24 @@ export default async function AccountPage() {
     // Get user data from middleware headers to avoid extra auth call
     const userId = user.id;
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    
+
     // Single optimized query using raw SQL for better performance
     const [profileResult, orderStats] = await Promise.all([
       prisma.profile.findUnique({
         where: { id: userId },
       }),
       // Use raw SQL for faster aggregation with proper UUID casting
-      prisma.$queryRaw<Array<{totalCount: bigint, recentCount: bigint}>>`
+      prisma.$queryRaw<Array<{ totalCount: bigint; recentCount: bigint }>>`
         SELECT 
           (SELECT COUNT(*) FROM "orders" WHERE "userId" = ${userId}::uuid) +
           (SELECT COUNT(*) FROM "catering_orders" WHERE "customerId" = ${userId}::uuid) as "totalCount",
           (SELECT COUNT(*) FROM "orders" WHERE "userId" = ${userId}::uuid AND "createdAt" >= ${thirtyDaysAgo}) +
           (SELECT COUNT(*) FROM "catering_orders" WHERE "customerId" = ${userId}::uuid AND "createdAt" >= ${thirtyDaysAgo}) as "recentCount"
-      `
+      `,
     ]);
 
     profile = profileResult;
-    
+
     if (orderStats && orderStats.length > 0) {
       orderCount = Number(orderStats[0].totalCount);
       recentOrders = Number(orderStats[0].recentCount);
@@ -104,7 +110,9 @@ export default async function AccountPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-white/95 backdrop-blur-sm border-destino-yellow/30 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-destino-charcoal">Total Orders</CardTitle>
+              <CardTitle className="text-sm font-medium text-destino-charcoal">
+                Total Orders
+              </CardTitle>
               <Package className="h-4 w-4 text-destino-orange" />
             </CardHeader>
             <CardContent>
@@ -115,7 +123,9 @@ export default async function AccountPage() {
 
           <Card className="bg-white/95 backdrop-blur-sm border-destino-orange/30 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-destino-charcoal">Recent Orders</CardTitle>
+              <CardTitle className="text-sm font-medium text-destino-charcoal">
+                Recent Orders
+              </CardTitle>
               <Clock className="h-4 w-4 text-destino-orange" />
             </CardHeader>
             <CardContent>
@@ -126,7 +136,9 @@ export default async function AccountPage() {
 
           <Card className="bg-white/95 backdrop-blur-sm border-green-300/30 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-destino-charcoal">Account Status</CardTitle>
+              <CardTitle className="text-sm font-medium text-destino-charcoal">
+                Account Status
+              </CardTitle>
               <User className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
@@ -199,7 +211,9 @@ export default async function AccountPage() {
                   <User className="h-5 w-5 text-destino-orange" />
                   Profile Information
                 </CardTitle>
-                <CardDescription className="text-gray-600">Manage your account details and preferences</CardDescription>
+                <CardDescription className="text-gray-600">
+                  Manage your account details and preferences
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <AccountProfile
@@ -223,7 +237,9 @@ export default async function AccountPage() {
                       <Package className="h-5 w-5 text-destino-orange" />
                       Recent Orders
                     </CardTitle>
-                    <CardDescription className="text-gray-600">Your recent orders and their status</CardDescription>
+                    <CardDescription className="text-gray-600">
+                      Your recent orders and their status
+                    </CardDescription>
                   </div>
                   <Button
                     asChild
@@ -246,7 +262,10 @@ export default async function AccountPage() {
         <div className="mt-8 text-center bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50">
           <p className="text-sm text-gray-600">
             Need help?{' '}
-            <Link href="/contact" className="text-destino-orange hover:text-destino-charcoal font-medium transition-colors hover:no-underline">
+            <Link
+              href="/contact"
+              className="text-destino-orange hover:text-destino-charcoal font-medium transition-colors hover:no-underline"
+            >
               Contact our support team
             </Link>
           </p>

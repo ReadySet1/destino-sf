@@ -42,7 +42,7 @@ export default async function ArchivedProductsPage({ searchParams }: ArchivedPro
   if (searchQuery) {
     where.name = {
       contains: searchQuery,
-      mode: 'insensitive'
+      mode: 'insensitive',
     };
   }
 
@@ -57,7 +57,7 @@ export default async function ArchivedProductsPage({ searchParams }: ArchivedPro
       category: true,
     },
     orderBy: {
-      archivedAt: 'desc'
+      archivedAt: 'desc',
     },
     skip: (currentPage - 1) * itemsPerPage,
     take: itemsPerPage,
@@ -113,11 +113,7 @@ export default async function ArchivedProductsPage({ searchParams }: ArchivedPro
 
         {/* Actions */}
         <FormActions>
-          <FormButton
-            variant="secondary"
-            href="/admin/products"
-            leftIcon={FormIcons.package}
-          >
+          <FormButton variant="secondary" href="/admin/products" leftIcon={FormIcons.package}>
             View Active Products
           </FormButton>
         </FormActions>
@@ -128,21 +124,13 @@ export default async function ArchivedProductsPage({ searchParams }: ArchivedPro
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  showArchiveButton={true}
-                />
+              {products.map(product => (
+                <ProductCard key={product.id} product={product} showArchiveButton={true} />
               ))}
             </div>
 
             {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                searchParams={params}
-              />
+              <Pagination currentPage={currentPage} totalPages={totalPages} searchParams={params} />
             )}
           </>
         )}

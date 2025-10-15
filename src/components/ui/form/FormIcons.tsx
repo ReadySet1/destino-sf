@@ -21,7 +21,7 @@ import {
   ShoppingBag,
   List,
   Calendar,
-  Upload
+  Upload,
 } from 'lucide-react';
 
 // Icon components for form components
@@ -50,4 +50,4 @@ export const FormIcons = {
   upload: <Upload className="w-full h-full" />,
 } as const;
 
-export type FormIconType = typeof FormIcons[keyof typeof FormIcons];
+export type FormIconType = (typeof FormIcons)[keyof typeof FormIcons];

@@ -21,7 +21,7 @@ export async function safeCateringApiOperation<T>(
       success: true,
       items: fallbackData,
       count: Array.isArray(fallbackData) ? fallbackData.length : 0,
-      note: 'Fallback data used due to build-time constraints'
+      note: 'Fallback data used due to build-time constraints',
     });
   }
 
@@ -39,29 +39,31 @@ export async function safeCateringApiOperation<T>(
     if (process.env.API_DEBUG === 'true') {
       logger.info(`✅ ${operationName} completed successfully`);
     }
-    
-    return NextResponse.json({
-      success: true,
-      items: result,
-      count: Array.isArray(result) ? result.length : 0,
-    }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-        'X-Data-Timestamp': new Date().toISOString(),
+
+    return NextResponse.json(
+      {
+        success: true,
+        items: result,
+        count: Array.isArray(result) ? result.length : 0,
       },
-    });
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+          'X-Data-Timestamp': new Date().toISOString(),
+        },
+      }
+    );
   } catch (error) {
     logger.error(`❌ Failed ${operationName}:`, error);
-    
+
     // Check if it's a connection error
-    const isConnectionError = 
-      error instanceof Error && (
-        error.message.includes("Can't reach database server") ||
+    const isConnectionError =
+      error instanceof Error &&
+      (error.message.includes("Can't reach database server") ||
         error.message.includes('Connection terminated') ||
         error.message.includes('timeout') ||
         error.message.includes('ECONNRESET') ||
-        error.message.includes('ECONNREFUSED')
-      );
+        error.message.includes('ECONNREFUSED'));
 
     if (isConnectionError) {
       logger.warn(`🔄 Database connection failed for ${operationName}, using fallback data`);
@@ -69,7 +71,7 @@ export async function safeCateringApiOperation<T>(
         success: true,
         items: fallbackData,
         count: Array.isArray(fallbackData) ? fallbackData.length : 0,
-        note: 'Fallback data used due to database connection issues'
+        note: 'Fallback data used due to database connection issues',
       });
     }
 
@@ -94,19 +96,21 @@ export function isConnectionError(error: Error): boolean {
     "Can't reach database server",
     'Connection terminated',
     'ECONNRESET',
-    'ECONNREFUSED', 
+    'ECONNREFUSED',
     'ETIMEDOUT',
     'timeout',
     'Engine is not yet connected',
     'Socket timeout',
     'Connection pool timeout',
     'Timed out fetching a new connection',
-    'Response from the Engine was empty'
+    'Response from the Engine was empty',
   ];
-  
+
   const connectionCodes = ['P1001', 'P1008', 'P2024'];
-  
-  return connectionErrorPatterns.some(pattern => 
-    error.message.toLowerCase().includes(pattern.toLowerCase())
-  ) || connectionCodes.includes((error as any).code);
+
+  return (
+    connectionErrorPatterns.some(pattern =>
+      error.message.toLowerCase().includes(pattern.toLowerCase())
+    ) || connectionCodes.includes((error as any).code)
+  );
 }

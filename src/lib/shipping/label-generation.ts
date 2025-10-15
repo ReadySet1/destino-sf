@@ -10,18 +10,20 @@ export interface ShippingLabelResult {
   error?: string;
 }
 
-export async function createShippingLabel(params: CreateShippingLabelParams): Promise<ShippingLabelResult> {
+export async function createShippingLabel(
+  params: CreateShippingLabelParams
+): Promise<ShippingLabelResult> {
   try {
     const { ShippoClientManager } = await import('@/lib/shippo/client');
     const shippoClient = ShippoClientManager.getInstance();
-    
+
     if (!shippoClient) {
       return {
         success: false,
-        error: 'Shippo client not available'
+        error: 'Shippo client not available',
       };
     }
-    
+
     // Note: This is a placeholder for transaction creation
     // The actual Shippo SDK v2.15+ API structure may be different
     // This would need to be updated based on the actual Shippo v2.15+ documentation
@@ -34,20 +36,21 @@ export async function createShippingLabel(params: CreateShippingLabelParams): Pr
       return {
         success: true,
         labelUrl: transaction.label_url,
-        trackingNumber: transaction.tracking_number
+        trackingNumber: transaction.tracking_number,
       };
     } else {
-      const errorMessage = transaction?.messages?.map((m: any) => m.text).join(', ') || 
-                          `Transaction failed with status: ${transaction?.status}`;
+      const errorMessage =
+        transaction?.messages?.map((m: any) => m.text).join(', ') ||
+        `Transaction failed with status: ${transaction?.status}`;
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create shipping label'
+      error: error instanceof Error ? error.message : 'Failed to create shipping label',
     };
   }
 }

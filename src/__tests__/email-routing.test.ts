@@ -92,4 +92,4 @@ describe('Email Routing Logic', () => {
       expect(recipient).toBe('ealanis@readysetllc.com');
     });
   });
-}); 
+});

@@ -34,8 +34,8 @@ async function debugWebhookOrder() {
             amount: true,
             status: true,
             createdAt: true,
-          }
-        }
+          },
+        },
       },
     });
 
@@ -52,11 +52,13 @@ async function debugWebhookOrder() {
         createdAt: regularOrder.createdAt,
         updatedAt: regularOrder.updatedAt,
       });
-      
+
       console.log('💳 Associated payments:', regularOrder.payments);
-      
+
       // Check if payment exists
-      const existingPayment = regularOrder.payments.find(p => p.squarePaymentId === SQUARE_PAYMENT_ID);
+      const existingPayment = regularOrder.payments.find(
+        p => p.squarePaymentId === SQUARE_PAYMENT_ID
+      );
       if (existingPayment) {
         console.log('✅ Payment already exists:', existingPayment);
       } else {
@@ -106,8 +108,8 @@ async function debugWebhookOrder() {
     const similarOrders = await prisma.order.findMany({
       where: {
         squareOrderId: {
-          contains: '9FhNm5NYhy6yi5jmU1z3tnz'
-        }
+          contains: '9FhNm5NYhy6yi5jmU1z3tnz',
+        },
       },
       select: {
         id: true,
@@ -127,8 +129,8 @@ async function debugWebhookOrder() {
     const similarCateringOrders = await prisma.cateringOrder.findMany({
       where: {
         squareOrderId: {
-          contains: '9FhNm5NYhy6yi5jmU1z3tnz'
-        }
+          contains: '9FhNm5NYhy6yi5jmU1z3tnz',
+        },
       },
       select: {
         id: true,
@@ -197,8 +199,8 @@ async function debugWebhookOrder() {
             squareOrderId: true,
             status: true,
             paymentStatus: true,
-          }
-        }
+          },
+        },
       },
     });
 
@@ -207,7 +209,6 @@ async function debugWebhookOrder() {
     } else {
       console.log('❌ No payment found with Square Payment ID:', SQUARE_PAYMENT_ID);
     }
-
   } catch (error) {
     console.error('❌ Database error:', error);
   } finally {
@@ -218,4 +219,4 @@ async function debugWebhookOrder() {
 // Run if this file is executed directly
 debugWebhookOrder().catch(console.error);
 
-export { debugWebhookOrder }; 
+export { debugWebhookOrder };

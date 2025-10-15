@@ -57,14 +57,14 @@ export interface Product {
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Nutrition fields
   calories?: number | null;
   dietaryPreferences?: string[];
   ingredients?: string | null;
   allergens?: string[];
   nutritionFacts?: Prisma.JsonValue | null;
-  
+
   // Availability fields for pre-order and seasonal items
   visibility?: string | null;
   isAvailable?: boolean;
@@ -76,7 +76,7 @@ export interface Product {
   itemState?: string | null;
   availabilityMeta?: Prisma.JsonValue | null;
   customAttributes?: Prisma.JsonValue | null;
-  
+
   // Relations
   orderItems?: OrderItem[];
   category?: Category;
@@ -169,7 +169,7 @@ export interface Category {
   metadata?: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   products?: Product[];
 }
@@ -222,7 +222,7 @@ export interface Variant {
   metadata?: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   orderItems?: OrderItem[];
   product?: Product;
@@ -230,7 +230,7 @@ export interface Variant {
 
 // Variant types with Prisma payloads
 export type VariantWithProduct = Prisma.VariantGetPayload<{
-  include: { 
+  include: {
     product: {
       include: {
         category: true;
@@ -288,7 +288,7 @@ export interface Order {
   metadata?: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   profile?: Profile | null;
   address?: Address | null;
@@ -312,7 +312,7 @@ export interface OrderItem {
   specialInstructions?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   order?: Order;
   product?: Product;
@@ -332,7 +332,7 @@ export interface Payment {
   metadata?: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   order?: Order;
 }
@@ -512,7 +512,7 @@ export interface Address {
   metadata?: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   user?: Profile;
   orders?: Order[];
@@ -542,12 +542,12 @@ export interface CreateAddressInput {
 
 // Utility types for better type inference
 export type ModelWithId<T> = T & { id: string };
-export type ModelWithTimestamps<T> = T & { 
-  createdAt: Date; 
-  updatedAt: Date; 
+export type ModelWithTimestamps<T> = T & {
+  createdAt: Date;
+  updatedAt: Date;
 };
-export type ModelWithSoftDelete<T> = T & { 
-  deletedAt?: Date | null; 
+export type ModelWithSoftDelete<T> = T & {
+  deletedAt?: Date | null;
 };
 
 // Pagination types
@@ -606,13 +606,13 @@ export interface SerializableDecimal {
 }
 
 export type DecimalJSON<T> = {
-  [K in keyof T]: T[K] extends Decimal 
-    ? SerializableDecimal 
+  [K in keyof T]: T[K] extends Decimal
+    ? SerializableDecimal
     : T[K] extends Decimal | null
-    ? SerializableDecimal | null
-    : T[K] extends Decimal | undefined
-    ? SerializableDecimal | undefined
-    : T[K];
+      ? SerializableDecimal | null
+      : T[K] extends Decimal | undefined
+        ? SerializableDecimal | undefined
+        : T[K];
 };
 
 // Enhanced repository pattern types

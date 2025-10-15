@@ -6,9 +6,11 @@
 **Sprint/Milestone**: Database Stability
 
 ## Problem Statement
+
 Square webhooks are failing with database connection errors including "Engine is not yet connected" and "getInstance is undefined". This is causing webhook processing failures and preventing order status updates. The issue appears to be related to Prisma connection management in a Vercel serverless environment with Supabase pooler.
 
 ## Success Criteria
+
 - [x] All Square webhooks process successfully without database errors
 - [x] Database connections are properly managed and reused
 - [x] Connection pool doesn't exhaust under webhook load
@@ -18,6 +20,7 @@ Square webhooks are failing with database connection errors including "Engine is
 ## 🔍 Root Cause Analysis
 
 ### Current Issues
+
 1. **Connection Pool Exhaustion**: Using Supabase pooler with improper connection management
 2. **Prisma Client Lifecycle**: Client not properly initialized/destroyed in serverless
 3. **Race Conditions**: Multiple webhooks creating competing database connections
@@ -28,6 +31,7 @@ Square webhooks are failing with database connection errors including "Engine is
 ### Phase 1: Fix Database Connection Management (Day 1)
 
 #### 1.1 Create Optimized Prisma Client for Webhooks
+
 ```typescript
 // src/lib/db/webhook-connection.ts
 import { PrismaClient } from '@prisma/client';
@@ -47,9 +51,7 @@ const webhookPrismaClientSingleton = () => {
         url: process.env.DATABASE_URL,
       },
     },
-    log: process.env.NODE_ENV === 'development' 
-      ? ['error', 'warn'] 
-      : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     errorFormat: 'minimal',
   });
 };
@@ -100,6 +102,7 @@ export async function webhookTransaction<T>(
 ```
 
 #### 1.2 Update Connection String for Pooling
+
 ```typescript
 // .env.local and production environment
 # Use Supabase pooler with proper parameters
@@ -112,6 +115,7 @@ DIRECT_DATABASE_URL="postgresql://[user]:[password]@aws-0-us-west-1.data.supabas
 ### Phase 2: Implement Retry Logic (Day 1-2)
 
 #### 2.1 Create Webhook-Specific Retry Wrapper
+
 ```typescript
 // src/lib/db/webhook-retry.ts
 interface RetryOptions {
@@ -133,46 +137,46 @@ export async function withWebhookRetry<T>(
   const factor = options?.factor ?? 2;
 
   let lastError: any;
-  
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       // Ensure connection before each attempt
       await ensureWebhookConnection();
-      
+
       const result = await operation();
-      
+
       if (attempt > 1) {
         console.log(`✅ ${operationName} succeeded on attempt ${attempt}`);
       }
-      
+
       return result;
     } catch (error: any) {
       lastError = error;
-      
+
       // Check if error is retryable
-      const isRetryable = 
+      const isRetryable =
         error.code === 'P1001' || // Can't reach database
         error.code === 'P1002' || // Database timeout
         error.code === 'P2024' || // Pool timeout
         error.message?.includes('Engine is not yet connected') ||
         error.message?.includes('Cannot read properties of undefined');
-      
+
       if (!isRetryable || attempt === maxAttempts) {
         console.error(`❌ ${operationName} failed after ${attempt} attempts:`, error);
         throw error;
       }
-      
+
       const delay = Math.min(initialDelay * Math.pow(factor, attempt - 1), maxDelay);
       console.warn(`⚠️ ${operationName} attempt ${attempt} failed, retrying in ${delay}ms...`);
-      
+
       if (options?.onRetry) {
         options.onRetry(error, attempt);
       }
-      
+
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError;
 }
 ```
@@ -180,27 +184,32 @@ export async function withWebhookRetry<T>(
 ### Phase 3: Update Webhook Route Handler (Day 2)
 
 #### 3.1 Refactor Route to Use New Connection Management
+
 ```typescript
 // src/app/api/webhooks/square/route.ts
-import { webhookPrisma, ensureWebhookConnection, withWebhookRetry } from '@/lib/db/webhook-connection';
+import {
+  webhookPrisma,
+  ensureWebhookConnection,
+  withWebhookRetry,
+} from '@/lib/db/webhook-connection';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   let connectionClosed = false;
-  
+
   try {
     // Ensure connection at start
     await ensureWebhookConnection();
-    
+
     // Read and validate webhook
     const bodyText = await request.text();
     const payload = JSON.parse(bodyText);
-    
+
     // Quick validation
     const isValid = await quickValidation(bodyText, request.headers);
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid' }, { status: 400 });
     }
-    
+
     // Store in queue with retry
     await withWebhookRetry(
       async () => {
@@ -217,13 +226,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       'store-webhook-queue',
       { maxAttempts: 3 }
     );
-    
+
     // Return immediate acknowledgment
     return NextResponse.json({ received: true }, { status: 200 });
-    
   } catch (error) {
     console.error('❌ Webhook processing failed:', error);
-    
+
     // Capture error for monitoring
     await errorMonitor.captureWebhookError(
       error,
@@ -231,10 +239,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { path: request.url },
       request.headers.get('x-square-event-id')
     );
-    
+
     // Return 200 to prevent Square retries
     return NextResponse.json({ received: true, error: true }, { status: 200 });
-    
   } finally {
     // Clean up connection if not already closed
     if (!connectionClosed && webhookPrisma) {
@@ -252,41 +259,42 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 ### Phase 4: Optimize Webhook Handlers (Day 2-3)
 
 #### 4.1 Update Individual Event Handlers
+
 ```typescript
 // Example: Update handleOrderCreated
 async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
   const squareOrderId = data.id;
-  
+
   console.log('🆕 Processing order.created event:', squareOrderId);
-  
+
   // Use webhook-specific Prisma instance with retry
   const cateringOrder = await withWebhookRetry(
     async () => {
       return webhookPrisma.cateringOrder.findUnique({
         where: { squareOrderId },
-        select: { 
-          id: true, 
-          email: true, 
-          status: true 
+        select: {
+          id: true,
+          email: true,
+          status: true,
         },
       });
     },
     'find-catering-order',
-    { 
+    {
       maxAttempts: 5,
       initialDelay: 200,
       onRetry: (error, attempt) => {
         console.log(`Retry ${attempt} for catering order lookup: ${error.message}`);
-      }
+      },
     }
   );
-  
+
   if (cateringOrder) {
     console.log(`✅ Found catering order ${cateringOrder.id}, skipping regular order creation`);
     return;
   }
-  
+
   // Continue with regular order processing...
 }
 ```
@@ -294,6 +302,7 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
 ### Phase 5: Add Connection Pool Monitoring (Day 3)
 
 #### 5.1 Create Health Check Endpoint
+
 ```typescript
 // src/app/api/health/database/route.ts
 import { webhookPrisma } from '@/lib/db/webhook-connection';
@@ -305,10 +314,10 @@ export async function GET() {
     const startTime = Date.now();
     await webhookPrisma.$queryRaw`SELECT 1`;
     const queryTime = Date.now() - startTime;
-    
+
     // Get connection pool metrics (if available)
     const metrics = await webhookPrisma.$metrics?.json();
-    
+
     return NextResponse.json({
       status: 'healthy',
       queryTime: `${queryTime}ms`,
@@ -317,7 +326,7 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error('Database health check failed:', error);
-    
+
     return NextResponse.json(
       {
         status: 'unhealthy',
@@ -334,6 +343,7 @@ export async function GET() {
 ### Phase 6: Environment Configuration (Day 3-4)
 
 #### 6.1 Update Vercel Environment Variables
+
 ```bash
 # Production settings for Vercel
 DATABASE_URL="${{ secrets.SUPABASE_POOLER_URL }}?pgbouncer=true&connection_limit=1"
@@ -347,6 +357,7 @@ WEBHOOK_RETRY_ATTEMPTS=3
 ```
 
 #### 6.2 Update Prisma Schema
+
 ```prisma
 // prisma/schema.prisma
 datasource db {
@@ -373,7 +384,7 @@ model WebhookQueue {
   processedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   @@index([status, createdAt])
   @@index([eventType])
 }
@@ -382,22 +393,27 @@ model WebhookQueue {
 ### Phase 7: Testing & Monitoring (Day 4-5)
 
 #### 7.1 Create Test Script
+
 ```typescript
 // scripts/test-webhook-connection.ts
-import { webhookPrisma, ensureWebhookConnection, withWebhookRetry } from '../src/lib/db/webhook-connection';
+import {
+  webhookPrisma,
+  ensureWebhookConnection,
+  withWebhookRetry,
+} from '../src/lib/db/webhook-connection';
 
 async function testConnection() {
   console.log('🔍 Testing webhook database connection...');
-  
+
   try {
     // Test 1: Basic connection
     await ensureWebhookConnection();
     console.log('✅ Basic connection successful');
-    
+
     // Test 2: Simple query
     const result = await webhookPrisma.$queryRaw`SELECT NOW()`;
     console.log('✅ Query successful:', result);
-    
+
     // Test 3: Retry logic
     let attemptCount = 0;
     await withWebhookRetry(
@@ -412,13 +428,13 @@ async function testConnection() {
       { maxAttempts: 5 }
     );
     console.log('✅ Retry logic working (succeeded on attempt', attemptCount + ')');
-    
+
     // Test 4: Transaction
-    await webhookPrisma.$transaction(async (tx) => {
+    await webhookPrisma.$transaction(async tx => {
       const count = await tx.webhookQueue.count();
       console.log('✅ Transaction successful, queue count:', count);
     });
-    
+
     console.log('🎉 All tests passed!');
   } catch (error) {
     console.error('❌ Test failed:', error);
@@ -432,6 +448,7 @@ testConnection();
 ```
 
 #### 7.2 Add Monitoring Dashboard
+
 ```typescript
 // src/app/admin/webhook-health/page.tsx
 'use client';
@@ -456,7 +473,7 @@ export default function WebhookHealthDashboard() {
       try {
         const response = await fetch('/api/health/database');
         const data = await response.json();
-        
+
         setHealth({
           database: data.status === 'healthy' ? 'healthy' : 'unhealthy',
           lastCheck: data.timestamp,
@@ -474,17 +491,17 @@ export default function WebhookHealthDashboard() {
 
     checkHealth();
     const interval = setInterval(checkHealth, 30000); // Check every 30 seconds
-    
+
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Webhook Health Dashboard</h1>
-      
+
       <div className="bg-white rounded-lg shadow p-4">
         <h2 className="text-lg font-semibold mb-2">Database Connection</h2>
-        
+
         <div className="flex items-center space-x-2">
           <div className={`w-3 h-3 rounded-full ${
             health.database === 'healthy' ? 'bg-green-500' :
@@ -493,19 +510,19 @@ export default function WebhookHealthDashboard() {
           }`} />
           <span className="capitalize">{health.database}</span>
         </div>
-        
+
         {health.queryTime && (
           <p className="text-sm text-gray-600 mt-1">
             Query time: {health.queryTime}
           </p>
         )}
-        
+
         {health.error && (
           <p className="text-sm text-red-600 mt-1">
             Error: {health.error}
           </p>
         )}
-        
+
         <p className="text-xs text-gray-400 mt-2">
           Last checked: {new Date(health.lastCheck).toLocaleString()}
         </p>
@@ -517,13 +534,13 @@ export default function WebhookHealthDashboard() {
 
 ## 📊 Performance Targets
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Connection Errors | ~80% webhooks | < 1% |
-| Webhook Processing Time | Timeout/Fail | < 5 seconds |
-| Database Query Time | Variable | < 100ms |
-| Retry Success Rate | N/A | > 95% |
-| Connection Pool Usage | Exhausted | < 80% |
+| Metric                  | Current       | Target      |
+| ----------------------- | ------------- | ----------- |
+| Connection Errors       | ~80% webhooks | < 1%        |
+| Webhook Processing Time | Timeout/Fail  | < 5 seconds |
+| Database Query Time     | Variable      | < 100ms     |
+| Retry Success Rate      | N/A           | > 95%       |
+| Connection Pool Usage   | Exhausted     | < 80%       |
 
 ## 🚨 Rollback Strategy
 
@@ -579,6 +596,7 @@ Once stable, consider:
 ## ✅ Implementation Completed (September 10, 2025)
 
 ### What's Been Implemented:
+
 - [x] **Optimized Webhook Prisma Client** (`/src/lib/db/webhook-connection.ts`)
   - Singleton pattern for serverless environments
   - Proper connection lifecycle management
@@ -615,6 +633,7 @@ Once stable, consider:
   - Transaction and queue table verification
 
 ### Performance Improvements Achieved:
+
 - **Connection Management**: Singleton pattern prevents multiple connections per invocation
 - **Smart Retry**: Automatic retry for transient connection failures with exponential backoff
 - **Timeout Management**: 5s query timeout, 10s transaction timeout
@@ -624,6 +643,7 @@ Once stable, consider:
 ## 📝 Documentation Updates
 
 Update after implementation:
+
 - README with new database configuration
 - Webhook troubleshooting guide
 - Connection pool tuning guide

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { BoxedLunchMenu } from '@/components/Catering/BoxedLunchMenu';
 import CateringCartButton from '@/components/Catering/CateringCartButton';
 
-
 export const dynamic = 'force-dynamic';
 
 const BrowseOptionsPage = () => {
@@ -13,8 +12,6 @@ const BrowseOptionsPage = () => {
     <div className="bg-white min-h-screen">
       {/* Add the CateringCartButton component */}
       <CateringCartButton />
-
-
 
       {/* Header with navigation */}
       <div className="bg-gray-50 border-b">

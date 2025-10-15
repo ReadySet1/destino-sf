@@ -5,35 +5,39 @@ import { safeCateringApiOperation } from '@/lib/catering-api-utils';
 
 async function getSpotlightPicks(): Promise<SpotlightPick[]> {
   // Fetch spotlight picks with product data using Prisma
-  const rawSpotlightPicks = await withRetry(async () => {
-    return await prisma.spotlightPick.findMany({
-      where: {
-        isActive: true,
-        AND: [
-          {
-            productId: {
-              not: undefined,
+  const rawSpotlightPicks = await withRetry(
+    async () => {
+      return await prisma.spotlightPick.findMany({
+        where: {
+          isActive: true,
+          AND: [
+            {
+              productId: {
+                not: undefined,
+              },
             },
-          },
-        ],
-      },
-      include: {
-        product: {
-          include: {
-            category: {
-              select: {
-                name: true,
-                slug: true,
+          ],
+        },
+        include: {
+          product: {
+            include: {
+              category: {
+                select: {
+                  name: true,
+                  slug: true,
+                },
               },
             },
           },
         },
-      },
-      orderBy: {
-        position: 'asc',
-      },
-    });
-  }, 3, 'spotlight-picks-fetch');
+        orderBy: {
+          position: 'asc',
+        },
+      });
+    },
+    3,
+    'spotlight-picks-fetch'
+  );
 
   // Transform the data to match our interface
   return rawSpotlightPicks
@@ -79,6 +83,6 @@ export async function GET(
     fallbackData,
     'spotlight-picks'
   );
-  
+
   return response as NextResponse<SpotlightAPIResponse<SpotlightPick[]>>;
 }

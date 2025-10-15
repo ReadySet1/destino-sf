@@ -68,9 +68,9 @@ async function testDatabaseFixes() {
         take: 3,
         include: {
           products: {
-            take: 1
-          }
-        }
+            take: 1,
+          },
+        },
       });
       console.log(`✅ Found ${categories.length} categories with products`);
     } catch (error) {
@@ -81,7 +81,9 @@ async function testDatabaseFixes() {
     // Test 6: Raw query
     console.log('\n6. Testing raw queries...');
     try {
-      const result = await prisma.$queryRaw<Array<{ version: string }>>`SELECT version() as version`;
+      const result = await prisma.$queryRaw<
+        Array<{ version: string }>
+      >`SELECT version() as version`;
       console.log(`✅ Database version: ${result[0]?.version?.substring(0, 50)}...`);
     } catch (error) {
       success = false;
@@ -94,14 +96,15 @@ async function testDatabaseFixes() {
       const [categoryCount, productCount, orderCount] = await Promise.all([
         prisma.category.count(),
         prisma.product.count(),
-        prisma.order.count()
+        prisma.order.count(),
       ]);
-      console.log(`✅ Counts - Categories: ${categoryCount}, Products: ${productCount}, Orders: ${orderCount}`);
+      console.log(
+        `✅ Counts - Categories: ${categoryCount}, Products: ${productCount}, Orders: ${orderCount}`
+      );
     } catch (error) {
       success = false;
       console.error('❌ Concurrent operations failed:', (error as Error).message);
     }
-
   } catch (error) {
     success = false;
     console.error('❌ Test suite failed:', (error as Error).message);
@@ -128,7 +131,7 @@ async function testDatabaseFixes() {
 }
 
 // Run if this is the main module
-testDatabaseFixes().catch((error) => {
+testDatabaseFixes().catch(error => {
   console.error('💥 Test runner crashed:', error);
   process.exit(1);
 });

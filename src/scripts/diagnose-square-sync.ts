@@ -2,7 +2,7 @@
 
 /**
  * Production Issues Diagnostic Script
- * 
+ *
  * This script verifies that the database schema fixes have been applied correctly
  * and helps diagnose any remaining issues from the production problems.
  */
@@ -16,7 +16,7 @@ async function main() {
   try {
     // Test 1: Verify categories table schema
     console.log('1. Testing Categories Table Schema...');
-    
+
     const categories = await prisma.category.findMany({
       select: {
         id: true,
@@ -39,17 +39,19 @@ async function main() {
 
     // Test 2: Check for any lingering isActive column references
     console.log('\n2. Testing Category Active Status Filtering...');
-    
+
     const activeCategories = await prisma.category.findMany({
       where: { active: true },
       select: { name: true, active: true },
     });
 
-    console.log(`✅ Active categories query successful! Found ${activeCategories.length} active categories`);
+    console.log(
+      `✅ Active categories query successful! Found ${activeCategories.length} active categories`
+    );
 
     // Test 3: Verify products can query categories correctly
     console.log('\n3. Testing Products with Category Relations...');
-    
+
     const productsWithCategories = await prisma.product.findMany({
       where: {
         active: true,
@@ -69,14 +71,18 @@ async function main() {
       take: 3,
     });
 
-    console.log(`✅ Products with categories query successful! Found ${productsWithCategories.length} products`);
+    console.log(
+      `✅ Products with categories query successful! Found ${productsWithCategories.length} products`
+    );
     productsWithCategories.forEach(product => {
-      console.log(`   - ${product.name} in category ${product.category.name} (active: ${product.category.active})`);
+      console.log(
+        `   - ${product.name} in category ${product.category.name} (active: ${product.category.active})`
+      );
     });
 
     // Test 4: Raw SQL verification (as mentioned in fix plan)
     console.log('\n4. Raw SQL Schema Verification...');
-    
+
     const schemaInfo = await prisma.$queryRaw<{ column_name: string; data_type: string }[]>`
       SELECT column_name, data_type 
       FROM information_schema.columns 
@@ -96,19 +102,18 @@ async function main() {
     }
 
     console.log('\n🎉 All database schema tests passed! Production issues appear to be resolved.');
-
   } catch (error) {
     console.error('❌ Diagnostic failed:', error);
-    
+
     if (error instanceof Error && error.message.includes('column "isActive"')) {
       console.log('\n🚨 ISSUE DETECTED: Code is still referencing old isActive column');
       console.log('   Please update all code references from isActive to active');
     }
-    
+
     process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-main().catch(console.error); 
+main().catch(console.error);

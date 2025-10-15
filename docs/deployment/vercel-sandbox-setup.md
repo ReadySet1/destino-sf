@@ -5,6 +5,7 @@ This guide provides step-by-step instructions for setting up a Square sandbox en
 ## 🎯 Overview
 
 The sandbox environment allows you to:
+
 - Test payment flows without real transactions
 - Develop and debug order processing
 - Test webhook integrations safely
@@ -31,6 +32,7 @@ Follow the sections below to manually configure your environment.
    - Get sandbox credentials
 
 2. **Vercel CLI**
+
    ```bash
    npm install -g vercel
    vercel login
@@ -185,6 +187,7 @@ curl -X POST https://your-domain.vercel.app/api/webhooks/square \
 **Problem**: `NEXT_PUBLIC_APP_URL` not set
 
 **Solution**:
+
 ```bash
 vercel env add NEXT_PUBLIC_APP_URL https://your-domain.vercel.app production
 vercel --prod
@@ -195,6 +198,7 @@ vercel --prod
 **Problem**: Invalid or missing Square tokens
 
 **Solution**:
+
 ```bash
 # Check current configuration
 curl https://your-domain.vercel.app/api/debug/square-production-fix
@@ -208,6 +212,7 @@ vercel env add SQUARE_SANDBOX_TOKEN your_new_token preview
 **Problem**: Invalid `DATABASE_URL`
 
 **Solution**:
+
 ```bash
 # Verify database URL format
 DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
@@ -282,22 +287,22 @@ vercel logs --function=api/square/sync
 
 ### Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_APP_URL` | Application base URL | `https://your-domain.vercel.app` |
-| `SQUARE_SANDBOX_TOKEN` | Square sandbox access token | `EAAA...` |
-| `SQUARE_LOCATION_ID` | Square location ID | `L...` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://...` |
-| `NEXTAUTH_SECRET` | Authentication secret | `base64-encoded-string` |
+| Variable               | Description                  | Example                          |
+| ---------------------- | ---------------------------- | -------------------------------- |
+| `NEXT_PUBLIC_APP_URL`  | Application base URL         | `https://your-domain.vercel.app` |
+| `SQUARE_SANDBOX_TOKEN` | Square sandbox access token  | `EAAA...`                        |
+| `SQUARE_LOCATION_ID`   | Square location ID           | `L...`                           |
+| `DATABASE_URL`         | PostgreSQL connection string | `postgresql://...`               |
+| `NEXTAUTH_SECRET`      | Authentication secret        | `base64-encoded-string`          |
 
 ### Optional Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `USE_SQUARE_SANDBOX` | Enable sandbox mode | `true` |
+| Variable                        | Description            | Default |
+| ------------------------------- | ---------------------- | ------- |
+| `USE_SQUARE_SANDBOX`            | Enable sandbox mode    | `true`  |
 | `SQUARE_CATALOG_USE_PRODUCTION` | Use production catalog | `false` |
-| `BYPASS_RATE_LIMIT` | Bypass rate limiting | `true` |
-| `NEXT_TELEMETRY_DISABLED` | Disable telemetry | `1` |
+| `BYPASS_RATE_LIMIT`             | Bypass rate limiting   | `true`  |
+| `NEXT_TELEMETRY_DISABLED`       | Disable telemetry      | `1`     |
 
 ## 🚨 Troubleshooting
 
@@ -342,4 +347,4 @@ After successful setup:
 2. **Validate webhook processing**
 3. **Test order management**
 4. **Set up monitoring**
-5. **Document any custom configurations** 
+5. **Document any custom configurations**

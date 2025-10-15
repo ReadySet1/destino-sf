@@ -10,13 +10,13 @@ import { logger } from '@/utils/logger';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     const options = {
       limit: parseInt(searchParams.get('limit') || '20'),
       offset: parseInt(searchParams.get('offset') || '0'),
       priority: searchParams.get('priority') || undefined,
       type: searchParams.get('type') || undefined,
-      unreadOnly: searchParams.get('unreadOnly') === 'true'
+      unreadOnly: searchParams.get('unreadOnly') === 'true',
     };
 
     const alertService = new DashboardAlertService();
@@ -25,16 +25,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: result,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     logger.error('Error fetching alerts', { error });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -47,9 +46,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     const { type, title, message, priority, data } = body;
-    
+
     if (!type || !title || !message || !priority) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields: type, title, message, priority' },
@@ -63,22 +62,21 @@ export async function POST(request: NextRequest) {
       title,
       message,
       priority,
-      data: data || {}
+      data: data || {},
     });
 
     return NextResponse.json({
       success: true,
       data: alert,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     logger.error('Error creating alert', { error });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

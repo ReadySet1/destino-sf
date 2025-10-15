@@ -1,11 +1,13 @@
 # Add Enable/Disable Toggle for Product Availability Rules
 
 ## Context
+
 We have an availability management system for products where users can create rules (like "Christmas Pre-Order"). Currently, users can manage rules globally, but we need the ability to enable/disable rules at the product level directly from the products overview table.
 
 ## Requirements
 
 ### 1. Database Schema Changes
+
 Add a junction table to track rule status per product:
 
 ```sql
@@ -22,8 +24,6 @@ CREATE TABLE product_availability_rule_status (
 CREATE INDEX idx_product_rule_status_product ON product_availability_rule_status(product_id);
 CREATE INDEX idx_product_rule_status_rule ON product_availability_rule_status(rule_id);
 ```
-
-
 
 ### 2. TypeScript Types
 
@@ -65,21 +65,15 @@ Create `/app/api/products/[productId]/availability-rules/route.ts`:
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET - Fetch all rules for a product with their enabled status
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { productId: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { productId: string } }) {
   // Query to get all rules and their status for this product
   // JOIN with product_availability_rule_status
 }
 
 // PATCH - Toggle rule status for a product
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { productId: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { productId: string } }) {
   const { ruleId, isEnabled } = await request.json();
-  
+
   // Upsert into product_availability_rule_status
   // Return updated status
 }
@@ -89,12 +83,9 @@ Create `/app/api/products/[productId]/availability-rules/bulk-toggle/route.ts`:
 
 ```typescript
 // POST - Enable/disable multiple rules at once
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { productId: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { productId: string } }) {
   const { ruleIds, isEnabled } = await request.json();
-  
+
   // Bulk upsert for multiple rules
   // Use transaction for data integrity
 }
@@ -219,4 +210,3 @@ interface BulkRuleActionsProps {
 - UI updates feel instant (optimistic updates)
 - All changes are properly logged
 - No loss of existing rule configurations
-

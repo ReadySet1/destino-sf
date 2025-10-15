@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Square Sync Verification Script
- * 
+ *
  * This script helps verify if the Square sync is working correctly by:
  * 1. Checking Square catalog for recent product changes
  * 2. Comparing Square products with local database
@@ -45,7 +45,7 @@ interface VerificationResult {
 async function getSquareProducts() {
   try {
     logger.info('🔍 Fetching all products from Square...');
-    
+
     const response = await searchCatalogObjects({
       objectTypes: ['ITEM'],
       includeDeletedObjects: false,
@@ -81,7 +81,7 @@ async function getSquareProducts() {
 async function getLocalProducts() {
   try {
     logger.info('🔍 Fetching all products from local database...');
-    
+
     const products = await prisma.product.findMany({
       select: {
         id: true,
@@ -93,12 +93,12 @@ async function getLocalProducts() {
           select: {
             name: true,
             squareId: true,
-          }
-        }
+          },
+        },
       },
       where: {
-        squareId: { not: null }
-      }
+        squareId: { not: null },
+      },
     });
 
     logger.info(`✅ Found ${products.length} products in local database with Square IDs`);
@@ -114,12 +114,10 @@ async function getLocalProducts() {
  */
 function getCategoryName(categoryIds: string[], relatedObjects: any[]): string {
   if (!categoryIds.length) return 'Uncategorized';
-  
+
   const categoryId = categoryIds[0];
-  const category = relatedObjects.find(obj => 
-    obj.type === 'CATEGORY' && obj.id === categoryId
-  );
-  
+  const category = relatedObjects.find(obj => obj.type === 'CATEGORY' && obj.id === categoryId);
+
   return category?.category_data?.name || 'Unknown Category';
 }
 
@@ -128,33 +126,29 @@ function getCategoryName(categoryIds: string[], relatedObjects: any[]): string {
  */
 async function verifySquareSync(): Promise<VerificationResult> {
   logger.info('🚀 Starting Square sync verification...');
-  
+
   try {
     // Fetch data from both sources
     const [squareData, localProducts] = await Promise.all([
       getSquareProducts(),
-      getLocalProducts()
+      getLocalProducts(),
     ]);
 
     const { products: squareProducts, relatedObjects } = squareData;
-    
+
     // Create lookup maps
-    const localBySquareId = new Map(
-      localProducts.map(p => [p.squareId!, p])
-    );
-    const squareBySquareId = new Map(
-      squareProducts.map(p => [p.squareId, p])
-    );
+    const localBySquareId = new Map(localProducts.map(p => [p.squareId!, p]));
+    const squareBySquareId = new Map(squareProducts.map(p => [p.squareId, p]));
 
     // Find discrepancies
     const missingFromLocal: VerificationResult['missingFromLocal'] = [];
     const outdatedInLocal: VerificationResult['outdatedInLocal'] = [];
     const recentSquareChanges: VerificationResult['recentSquareChanges'] = [];
-    
+
     // Check each Square product
     for (const squareProduct of squareProducts) {
       const localProduct = localBySquareId.get(squareProduct.squareId);
-      
+
       if (!localProduct) {
         missingFromLocal.push({
           squareId: squareProduct.squareId,
@@ -163,13 +157,13 @@ async function verifySquareSync(): Promise<VerificationResult> {
           lastUpdated: squareProduct.updatedAt,
         });
       }
-      
+
       // Check for recent changes (within last 7 days)
       if (squareProduct.updatedAt) {
         const updatedDate = new Date(squareProduct.updatedAt);
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        
+
         if (updatedDate > sevenDaysAgo) {
           recentSquareChanges.push({
             squareId: squareProduct.squareId,
@@ -199,7 +193,6 @@ async function verifySquareSync(): Promise<VerificationResult> {
       extraInLocal,
       recentSquareChanges,
     };
-
   } catch (error) {
     logger.error('❌ Verification failed:', error);
     throw error;
@@ -212,7 +205,7 @@ async function verifySquareSync(): Promise<VerificationResult> {
 function printReport(result: VerificationResult) {
   logger.info('\n📊 SQUARE SYNC VERIFICATION REPORT');
   logger.info('=====================================');
-  
+
   logger.info(`\n📈 SUMMARY:`);
   logger.info(`   Square products: ${result.squareProductsCount}`);
   logger.info(`   Local products:  ${result.localProductsCount}`);
@@ -247,7 +240,9 @@ function printReport(result: VerificationResult) {
   if (result.recentSquareChanges.length > 0) {
     logger.info(`\n🔄 RECENT CHANGES IN SQUARE (Last 7 days):`);
     for (const product of result.recentSquareChanges.slice(0, 10)) {
-      logger.info(`   • ${product.name} - Updated: ${new Date(product.updatedAt).toLocaleString()}`);
+      logger.info(
+        `   • ${product.name} - Updated: ${new Date(product.updatedAt).toLocaleString()}`
+      );
     }
     if (result.recentSquareChanges.length > 10) {
       logger.info(`   ... and ${result.recentSquareChanges.length - 10} more`);
@@ -276,11 +271,10 @@ async function main() {
   try {
     const result = await verifySquareSync();
     printReport(result);
-    
+
     // Exit with appropriate code
     const hasIssues = result.missingFromLocal.length > 0 || result.recentSquareChanges.length > 5;
     process.exit(hasIssues ? 1 : 0);
-    
   } catch (error) {
     logger.error('❌ Verification script failed:', error);
     process.exit(1);

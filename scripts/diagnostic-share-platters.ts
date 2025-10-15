@@ -2,7 +2,7 @@
 
 /**
  * Diagnostic Script for Share Platters
- * 
+ *
  * This script checks the current state of Share Platter products and their variants
  * to help understand the current database state after cleanup.
  */
@@ -19,16 +19,16 @@ async function diagnosisSharePlatters() {
     const sharePlatters = await prisma.product.findMany({
       where: {
         category: {
-          name: 'CATERING- SHARE PLATTERS'
-        }
+          name: 'CATERING- SHARE PLATTERS',
+        },
       },
       include: {
         variants: true,
-        category: true
+        category: true,
       },
       orderBy: {
-        name: 'asc'
-      }
+        name: 'asc',
+      },
     });
 
     console.log(`📊 Total Share Platter products found: ${sharePlatters.length}\n`);
@@ -47,10 +47,12 @@ async function diagnosisSharePlatters() {
       console.log(`   💰 Base Price: $${product.price}`);
       console.log(`   📦 Square ID: ${product.squareId}`);
       console.log(`   🔧 Variants: ${product.variants.length}`);
-      
+
       if (product.variants.length > 0) {
         product.variants.forEach(variant => {
-          console.log(`      • ${variant.name}: $${variant.price} (Square: ${variant.squareVariantId})`);
+          console.log(
+            `      • ${variant.name}: $${variant.price} (Square: ${variant.squareVariantId})`
+          );
         });
       } else {
         console.log(`      • No variants found`);
@@ -99,8 +101,9 @@ async function diagnosisSharePlatters() {
     console.log(`\n🌐 Frontend Status:`);
     const productsWithVariations = activeProducts.filter(p => p.variants.length > 1);
     console.log(`   • Products with multiple variations: ${productsWithVariations.length}`);
-    console.log(`   • Should show size dropdowns: ${productsWithVariations.length > 0 ? 'YES' : 'NO'}`);
-
+    console.log(
+      `   • Should show size dropdowns: ${productsWithVariations.length > 0 ? 'YES' : 'NO'}`
+    );
   } catch (error) {
     console.error('❌ Error during diagnosis:', error);
     throw error;
@@ -116,7 +119,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log('\n🎉 Diagnosis complete!');
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('\n💥 Diagnosis failed:', error);
       process.exit(1);
     });

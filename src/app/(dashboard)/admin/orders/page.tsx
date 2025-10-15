@@ -46,17 +46,10 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
 
       {/* Action Buttons */}
       <FormActions>
-        <FormButton
-          variant="secondary"
-          href="/admin/orders/archived"
-          leftIcon={FormIcons.archive}
-        >
+        <FormButton variant="secondary" href="/admin/orders/archived" leftIcon={FormIcons.archive}>
           View Archived Orders
         </FormButton>
-        <FormButton
-          href="/admin/orders/manual"
-          leftIcon={FormIcons.plus}
-        >
+        <FormButton href="/admin/orders/manual" leftIcon={FormIcons.plus}>
           Add Manual Order
         </FormButton>
       </FormActions>
@@ -72,7 +65,7 @@ export default async function OrdersPage({ params, searchParams }: OrderPageProp
               currentStatus={statusFilter}
               currentPayment={paymentFilter}
             />
-            
+
             {/* Loading state */}
             <div className="text-center py-20">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>

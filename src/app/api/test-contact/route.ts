@@ -3,16 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     console.log('Test contact API - POST request received');
-    
+
     const body = await request.json();
     console.log('Test contact API - Request body:', body);
 
     // Validate required fields
     if (!body.name || !body.email || !body.message) {
-      return NextResponse.json(
-        { error: 'name, email, and message required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'name, email, and message required' }, { status: 400 });
     }
 
     // Simulate successful submission
@@ -50,4 +47,4 @@ export async function OPTIONS(request: NextRequest) {
       'Access-Control-Max-Age': '86400',
     },
   });
-} 
+}

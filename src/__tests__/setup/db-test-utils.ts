@@ -41,13 +41,16 @@ export async function startTransaction() {
   const db = initTestDb();
 
   // Start an interactive transaction
-  transactionClient = await db.$transaction(async (tx) => {
-    // Store the transaction client for use in tests
-    return tx;
-  }, {
-    maxWait: 5000,
-    timeout: 10000,
-  });
+  transactionClient = await db.$transaction(
+    async tx => {
+      // Store the transaction client for use in tests
+      return tx;
+    },
+    {
+      maxWait: 5000,
+      timeout: 10000,
+    }
+  );
 
   return transactionClient;
 }
@@ -129,7 +132,9 @@ export async function waitForDatabase(maxAttempts = 10, delayMs = 1000): Promise
       if (attempt === maxAttempts) {
         throw new Error(`Failed to connect to database after ${maxAttempts} attempts`);
       }
-      console.log(`⏳ Database not ready, attempt ${attempt}/${maxAttempts}. Retrying in ${delayMs}ms...`);
+      console.log(
+        `⏳ Database not ready, attempt ${attempt}/${maxAttempts}. Retrying in ${delayMs}ms...`
+      );
       await new Promise(resolve => setTimeout(resolve, delayMs));
     }
   }
@@ -170,14 +175,12 @@ export async function restoreDbSnapshot(snapshot: any): Promise<void> {
  * });
  * // user was created and then rolled back
  */
-export async function withTransactionRollback<T>(
-  fn: (tx: any) => Promise<T>
-): Promise<T> {
+export async function withTransactionRollback<T>(fn: (tx: any) => Promise<T>): Promise<T> {
   const db = initTestDb();
   let result: T;
 
   try {
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async tx => {
       result = await fn(tx);
       // Throw error to force rollback
       throw new Error('ROLLBACK');

@@ -41,41 +41,33 @@ export function FormSection({
   icon,
   variant = 'default',
   className = '',
-  action
+  action,
 }: FormSectionProps) {
   const headerClass = variantClasses[variant];
   const iconClass = iconColorClasses[variant];
   const borderClass = variant === 'amber' ? 'border-amber-200' : 'border-gray-200';
 
   return (
-    <div className={`bg-white shadow-sm rounded-xl border ${borderClass} overflow-hidden ${className}`}>
+    <div
+      className={`bg-white shadow-sm rounded-xl border ${borderClass} overflow-hidden ${className}`}
+    >
       <div className={`px-8 py-6 border-b ${borderClass} ${headerClass}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             {icon && (
               <div className="flex-shrink-0">
-                <div className={`w-6 h-6 ${iconClass}`}>
-                  {icon}
-                </div>
+                <div className={`w-6 h-6 ${iconClass}`}>{icon}</div>
               </div>
             )}
             <div className={icon ? 'ml-3' : ''}>
               <h2 className="text-xl font-semibold text-gray-900 mb-1">{title}</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {description}
-              </p>
+              <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
             </div>
           </div>
-          {action && (
-            <div className="flex-shrink-0">
-              {action}
-            </div>
-          )}
+          {action && <div className="flex-shrink-0">{action}</div>}
         </div>
       </div>
-      <div className="px-8 py-8">
-        {children}
-      </div>
+      <div className="px-8 py-8">{children}</div>
     </div>
   );
 }

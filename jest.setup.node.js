@@ -12,7 +12,8 @@ require('dotenv').config({ path: '.env.test' });
 process.env.NODE_ENV = 'test';
 
 // Mock environment variables for tests
-process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-key';
 process.env.SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN || 'test-token';
 process.env.SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT || 'sandbox';
@@ -66,9 +67,9 @@ jest.mock('@/lib/db-unified', () => {
 
   return {
     prisma: mockPrismaClient,
-    withRetry: jest.fn((fn) => fn()),
-    withWebhookRetry: jest.fn((fn) => fn()),
-    withTransaction: jest.fn((fn) => fn(mockPrismaClient)),
+    withRetry: jest.fn(fn => fn()),
+    withWebhookRetry: jest.fn(fn => fn()),
+    withTransaction: jest.fn(fn => fn(mockPrismaClient)),
     ensureConnection: jest.fn().mockResolvedValue(undefined),
     getHealthStatus: jest.fn().mockResolvedValue({ connected: true, latency: 10, version: 'test' }),
     checkConnection: jest.fn().mockResolvedValue(true),

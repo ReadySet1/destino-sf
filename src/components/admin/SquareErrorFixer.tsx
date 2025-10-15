@@ -31,14 +31,14 @@ export function SquareErrorFixer({ orderId }: SquareErrorFixerProps) {
   const checkStatus = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch(`/api/admin/orders/${orderId}/fix-square-error`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to check order status');
       }
-      
+
       const data = await response.json();
       setStatus(data);
     } catch (err) {
@@ -57,7 +57,7 @@ export function SquareErrorFixer({ orderId }: SquareErrorFixerProps) {
     setIsLoading(true);
     setError(null);
     setFixResult(null);
-    
+
     try {
       const response = await fetch(`/api/admin/orders/${orderId}/fix-square-error`, {
         method: 'POST',
@@ -65,15 +65,15 @@ export function SquareErrorFixer({ orderId }: SquareErrorFixerProps) {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fix Square error');
       }
-      
+
       const data = await response.json();
       setFixResult(data);
-      
+
       // Refresh status after fix
       await checkStatus();
     } catch (err) {
@@ -94,15 +94,10 @@ export function SquareErrorFixer({ orderId }: SquareErrorFixerProps) {
           Diagnose and fix Square payment errors for order {orderId}
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Check Status Button */}
-        <Button
-          onClick={checkStatus}
-          disabled={isLoading}
-          variant="outline"
-          className="w-full"
-        >
+        <Button onClick={checkStatus} disabled={isLoading} variant="outline" className="w-full">
           {isLoading ? 'Checking...' : 'Check Order Status'}
         </Button>
 
@@ -117,11 +112,14 @@ export function SquareErrorFixer({ orderId }: SquareErrorFixerProps) {
         {/* Status Display */}
         {status && (
           <div className="space-y-3">
-            <Alert variant={status.needsFixing || status.squareErrorDetected ? 'destructive' : 'default'}>
+            <Alert
+              variant={status.needsFixing || status.squareErrorDetected ? 'destructive' : 'default'}
+            >
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Diagnosis:</strong> {status.needsFixing || status.squareErrorDetected 
-                  ? 'Order has Square payment issues that need fixing' 
+                <strong>Diagnosis:</strong>{' '}
+                {status.needsFixing || status.squareErrorDetected
+                  ? 'Order has Square payment issues that need fixing'
                   : 'Order appears to be functioning normally'}
               </AlertDescription>
             </Alert>
@@ -134,10 +132,12 @@ export function SquareErrorFixer({ orderId }: SquareErrorFixerProps) {
                 <strong>Payment Status:</strong> {status.currentStatus.payment}
               </div>
               <div>
-                <strong>Square Order ID:</strong> {status.currentStatus.hasSquareOrderId ? 'Present' : 'Missing'}
+                <strong>Square Order ID:</strong>{' '}
+                {status.currentStatus.hasSquareOrderId ? 'Present' : 'Missing'}
               </div>
               <div>
-                <strong>Payment URL:</strong> {status.currentStatus.hasValidPaymentUrl ? 'Valid' : 'Invalid/Expired'}
+                <strong>Payment URL:</strong>{' '}
+                {status.currentStatus.hasValidPaymentUrl ? 'Valid' : 'Invalid/Expired'}
               </div>
             </div>
 

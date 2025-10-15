@@ -43,10 +43,10 @@ console.log('3. Runtime Context Check:');
 if (typeof window !== 'undefined') {
   console.log('   ✅ Running in browser context');
   console.log(`   Umami loaded: ${isUmamiLoaded()}`);
-  
+
   if (isUmamiLoaded()) {
     console.log('   ✅ Umami script is loaded and available');
-    
+
     // Test tracking
     try {
       trackEvent('test_event', { source: 'test_script', timestamp: Date.now() });
@@ -100,4 +100,4 @@ console.log('\n📝 Note: The environment variables are correctly configured in 
 console.log('   The test script shows "Not set" because it runs in Node.js context');
 console.log('   Next.js will load these variables when the application starts');
 
-export {}; 
+export {};

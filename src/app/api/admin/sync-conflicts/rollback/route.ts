@@ -53,15 +53,12 @@ export async function POST(request: NextRequest) {
         isAvailable: true,
         isPreorder: true,
         itemState: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
 
     if (!currentProduct) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
     // Create snapshot of current state before rollback
@@ -71,10 +68,7 @@ export async function POST(request: NextRequest) {
     const targetState = await findRollbackTarget(rollbackRequest);
 
     if (!targetState) {
-      return NextResponse.json(
-        { error: 'No valid rollback target found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'No valid rollback target found' }, { status: 404 });
     }
 
     // Perform the rollback
@@ -98,7 +92,7 @@ export async function POST(request: NextRequest) {
       productId: rollbackRequest.productId,
       rollbackType: rollbackRequest.rollbackType,
       admin: authResult.user?.email,
-      reason: rollbackRequest.reason
+      reason: rollbackRequest.reason,
     });
 
     return NextResponse.json({
@@ -108,16 +102,12 @@ export async function POST(request: NextRequest) {
         rollbackType: rollbackRequest.rollbackType,
         previousState: currentProduct,
         restoredState: targetState,
-        rollbackDate: new Date().toISOString()
-      }
+        rollbackDate: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     logger.error('Error performing rollback:', error);
-    return NextResponse.json(
-      { error: 'Failed to perform rollback' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to perform rollback' }, { status: 500 });
   }
 }
 
@@ -136,10 +126,7 @@ export async function GET(request: NextRequest) {
     const productId = url.pathname.split('/').pop();
 
     if (!productId) {
-      return NextResponse.json(
-        { error: 'Product ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
     // Get product snapshots for rollback options
@@ -154,27 +141,19 @@ export async function GET(request: NextRequest) {
         productId,
         snapshots,
         syncHistory,
-        rollbackOptions: generateRollbackOptions(snapshots, syncHistory)
-      }
+        rollbackOptions: generateRollbackOptions(snapshots, syncHistory),
+      },
     });
-
   } catch (error) {
     logger.error('Error getting rollback options:', error);
-    return NextResponse.json(
-      { error: 'Failed to get rollback options' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to get rollback options' }, { status: 500 });
   }
 }
 
 /**
  * Create a snapshot of the current product state
  */
-async function createProductSnapshot(
-  product: any,
-  userId: string,
-  reason: string
-): Promise<void> {
+async function createProductSnapshot(product: any, userId: string, reason: string): Promise<void> {
   // In a real implementation, this would use a dedicated snapshots table
   // For now, we'll log it and could store in a JSONB field
   logger.info('Product snapshot created', {
@@ -186,8 +165,8 @@ async function createProductSnapshot(
       itemState: product.itemState,
       snapshotDate: new Date(),
       snapshotReason: reason,
-      createdBy: userId
-    }
+      createdBy: userId,
+    },
   });
 
   // TODO: Store in dedicated snapshots table
@@ -208,9 +187,7 @@ async function createProductSnapshot(
 /**
  * Find the appropriate rollback target based on request type
  */
-async function findRollbackTarget(
-  rollbackRequest: RollbackRequest
-): Promise<any | null> {
+async function findRollbackTarget(rollbackRequest: RollbackRequest): Promise<any | null> {
   const { productId, rollbackType, rollbackTo } = rollbackRequest;
 
   switch (rollbackType) {
@@ -244,7 +221,7 @@ async function findLastManualState(productId: string): Promise<any | null> {
     isAvailable: true,
     isPreorder: false,
     itemState: 'ACTIVE',
-    source: 'manual_default'
+    source: 'manual_default',
   };
 }
 
@@ -259,7 +236,7 @@ async function findPreSyncState(productId: string): Promise<any | null> {
     isAvailable: true,
     isPreorder: false,
     itemState: 'ACTIVE',
-    source: 'pre_sync'
+    source: 'pre_sync',
   };
 }
 
@@ -274,7 +251,7 @@ async function findStateAtDate(productId: string, date: Date): Promise<any | nul
     isPreorder: false,
     itemState: 'ACTIVE',
     source: 'specific_date',
-    targetDate: date
+    targetDate: date,
   };
 }
 
@@ -294,9 +271,9 @@ async function performRollback(
       isAvailable: targetState.isAvailable,
       isPreorder: targetState.isPreorder,
       itemState: targetState.itemState,
-      updatedAt: new Date()
+      updatedAt: new Date(),
       // Note: Rollback metadata would be stored in audit trail instead of product table
-    }
+    },
   });
 
   // Remove any conflict prevention rules that might interfere
@@ -304,12 +281,12 @@ async function performRollback(
     where: {
       productId,
       ruleType: 'CUSTOM',
-      name: { contains: 'Conflict prevention rule' }
+      name: { contains: 'Conflict prevention rule' },
     },
     data: {
       deletedAt: new Date(),
-      updatedBy: userId
-    }
+      updatedBy: userId,
+    },
   });
 }
 
@@ -329,7 +306,7 @@ async function getProductSnapshots(productId: string): Promise<ProductSnapshot[]
       itemState: 'ACTIVE',
       snapshotDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
       snapshotReason: 'pre_sync',
-      createdBy: 'system'
+      createdBy: 'system',
     },
     {
       id: '2',
@@ -340,8 +317,8 @@ async function getProductSnapshots(productId: string): Promise<ProductSnapshot[]
       itemState: 'SEASONAL',
       snapshotDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
       snapshotReason: 'manual_override',
-      createdBy: 'admin'
-    }
+      createdBy: 'admin',
+    },
   ];
 }
 
@@ -357,8 +334,8 @@ async function getSyncHistory(productId: string): Promise<any[]> {
       syncType: 'production_sync',
       syncDate: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
       changesMade: ['visibility: PRIVATE -> PUBLIC', 'isAvailable: false -> true'],
-      conflictResolved: false
-    }
+      conflictResolved: false,
+    },
   ];
 }
 
@@ -373,7 +350,7 @@ function generateRollbackOptions(snapshots: ProductSnapshot[], syncHistory: any[
     type: 'last_manual',
     label: 'Last Manual State',
     description: 'Restore to the last manually-configured state',
-    available: true
+    available: true,
   });
 
   // Add pre-sync option if there was a recent sync
@@ -383,7 +360,7 @@ function generateRollbackOptions(snapshots: ProductSnapshot[], syncHistory: any[
       label: 'Before Last Sync',
       description: 'Restore to state before the most recent sync operation',
       available: true,
-      syncDate: syncHistory[0].syncDate
+      syncDate: syncHistory[0].syncDate,
     });
   }
 
@@ -395,7 +372,7 @@ function generateRollbackOptions(snapshots: ProductSnapshot[], syncHistory: any[
       description: `Restore to ${snapshot.snapshotReason} state`,
       available: true,
       snapshotDate: snapshot.snapshotDate,
-      snapshot
+      snapshot,
     });
   });
 
@@ -423,21 +400,20 @@ async function createRollbackAuditEntry(
         visibility: previousState.visibility,
         isAvailable: previousState.isAvailable,
         isPreorder: previousState.isPreorder,
-        itemState: previousState.itemState
+        itemState: previousState.itemState,
       },
       restoredState: {
         visibility: restoredState.visibility,
         isAvailable: restoredState.isAvailable,
         isPreorder: restoredState.isPreorder,
-        itemState: restoredState.itemState
-      }
+        itemState: restoredState.itemState,
+      },
     },
     adminUserId: userId,
     adminEmail: adminEmail,
     timestamp: new Date(),
-    reason: `Product rollback: ${rollbackRequest.reason}`
+    reason: `Product rollback: ${rollbackRequest.reason}`,
   };
 
   logger.info('Rollback audit entry created', auditEntry);
 }
-

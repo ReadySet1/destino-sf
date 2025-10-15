@@ -11,6 +11,7 @@
 ### Problem Statement
 
 The filtered Square catalog sync is failing with two critical errors:
+
 1. Invalid UUID format in sync history creation (using custom format `sync_1754518018317_e12njoct8` instead of proper UUID)
 2. Malformed Square API query structure causing 400 error with "Unknown query type" (incorrect `query` field structure)
 
@@ -98,7 +99,7 @@ private async fetchFilteredCatalog(): Promise<{
 }> {
   try {
     const catalogApi = squareClient.catalogApi;
-    
+
     const response = await catalogApi.searchCatalogObjects({
       objectTypes: ['ITEM'],
       query: {
@@ -119,11 +120,11 @@ private async fetchFilteredCatalog(): Promise<{
 }> {
   try {
     const catalogApi = squareClient.catalogApi;
-    
+
     if (!catalogApi) {
       throw new Error('Square catalog API is not available');
     }
-    
+
     // Use proper Square API structure
     const requestBody = {
       object_types: ['ITEM'],  // Changed from objectTypes
@@ -136,7 +137,7 @@ private async fetchFilteredCatalog(): Promise<{
         sort_order: 'ASC'
       }
     };
-    
+
     const response = await catalogApi.searchCatalogObjects(requestBody);
 ```
 
@@ -156,11 +157,11 @@ private async fetchFilteredCatalog(): Promise<{
 }> {
   try {
     const catalogApi = squareClient.catalogApi;
-    
+
     if (!catalogApi) {
       throw new Error('Square catalog API is not available');
     }
-    
+
     // Use the format expected by catalog-api.ts searchCatalogObjects
     const requestBody = {
       filter: {
@@ -170,7 +171,7 @@ private async fetchFilteredCatalog(): Promise<{
       include_related_objects: true,
       limit: 1000
     };
-    
+
     const response = await catalogApi.searchCatalogObjects(requestBody);
 
     if (!response.result) {
@@ -242,7 +243,7 @@ describe('FilteredSyncManager', () => {
     const manager = new FilteredSyncManager();
     // Access private property for testing
     const syncId = (manager as any).syncId;
-    
+
     expect(uuidValidate(syncId)).toBe(true);
     expect(syncId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -252,13 +253,13 @@ describe('FilteredSyncManager', () => {
   it('creates sync history with valid UUID', async () => {
     const mockPrisma = {
       syncHistory: {
-        create: jest.fn().mockResolvedValue({})
-      }
+        create: jest.fn().mockResolvedValue({}),
+      },
     };
-    
+
     const manager = new FilteredSyncManager();
     await (manager as any).createSyncHistory(new Date());
-    
+
     const call = mockPrisma.syncHistory.create.mock.calls[0];
     expect(uuidValidate(call[0].data.id)).toBe(true);
   });
@@ -269,7 +270,7 @@ describe('Square Catalog API Integration', () => {
   it('formats search request correctly', async () => {
     const manager = new FilteredSyncManager();
     const result = await (manager as any).fetchFilteredCatalog();
-    
+
     // Should not throw 400 error
     expect(result.error).not.toContain('Unknown query type');
     expect(result.success).toBeDefined();
@@ -280,6 +281,7 @@ describe('Square Catalog API Integration', () => {
 ### Manual Testing Steps
 
 1. **Test UUID Generation**:
+
 ```bash
 # In your Next.js app, add a test endpoint
 # app/api/test-sync/route.ts
@@ -287,7 +289,7 @@ import { randomUUID } from 'crypto';
 
 export async function GET() {
   const testId = randomUUID();
-  return Response.json({ 
+  return Response.json({
     uuid: testId,
     isValid: /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(testId)
   });
@@ -295,18 +297,20 @@ export async function GET() {
 ```
 
 2. **Test Database Insert**:
+
 ```sql
 -- Test that UUID column accepts the new format
-INSERT INTO sync_history (id, "syncType", "startedAt") 
+INSERT INTO sync_history (id, "syncType", "startedAt")
 VALUES (gen_random_uuid(), 'TEST', NOW());
 
 -- Verify it worked
-SELECT id, LENGTH(id::text) as id_length 
-FROM sync_history 
+SELECT id, LENGTH(id::text) as id_length
+FROM sync_history
 WHERE "syncType" = 'TEST';
 ```
 
 3. **Test Square API Call**:
+
 ```bash
 # Test the catalog API directly
 curl -X POST https://connect.squareup.com/v2/catalog/search \
@@ -333,18 +337,21 @@ curl -X POST https://connect.squareup.com/v2/catalog/search \
 ### Code Changes
 
 1. **Update filtered-sync.ts**:
+
 ```bash
 # Line 33 - Update constructor
 # Line 180-220 - Update fetchFilteredCatalog method
 ```
 
 2. **Verify imports**:
+
 ```tsx
 // At top of filtered-sync.ts
 import { randomUUID } from 'crypto';
 ```
 
 3. **Update package.json if needed** (crypto is built-in to Node.js):
+
 ```json
 // No changes needed - crypto is native to Node.js
 ```
@@ -370,9 +377,10 @@ psql $DATABASE_URL -c "SELECT id, \"syncType\", \"startedAt\" FROM sync_history 
 ## 🔄 Quick Debugging
 
 ### Check Current Sync History Issues
+
 ```sql
 -- See what's in sync_history
-SELECT 
+SELECT
   id,
   "syncType",
   "startedAt",
@@ -385,11 +393,12 @@ ORDER BY "startedAt" DESC
 LIMIT 10;
 
 -- Clean up invalid entries if needed
-DELETE FROM sync_history 
+DELETE FROM sync_history
 WHERE id NOT SIMILAR TO '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 ```
 
 ### Test API Directly
+
 ```tsx
 // app/api/test-catalog/route.ts
 import { squareClient } from '@/lib/square/client';
@@ -398,21 +407,24 @@ export async function GET() {
   try {
     const response = await squareClient.catalogApi.searchCatalogObjects({
       filter: {
-        types: ['ITEM']
+        types: ['ITEM'],
       },
       include_related_objects: true,
-      limit: 5
+      limit: 5,
     });
-    
+
     return Response.json({
       success: true,
-      count: response.result?.objects?.length || 0
+      count: response.result?.objects?.length || 0,
     });
   } catch (error: any) {
-    return Response.json({
-      success: false,
-      error: error.message
-    }, { status: 500 });
+    return Response.json(
+      {
+        success: false,
+        error: error.message,
+      },
+      { status: 500 }
+    );
   }
 }
 ```

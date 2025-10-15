@@ -44,13 +44,13 @@ export async function GET(request: NextRequest) {
     const conflicts = await detectSyncConflicts({
       conflictType,
       productId,
-      onlyUnresolved
+      onlyUnresolved,
     });
 
     logger.info('Sync conflicts retrieved', {
       count: conflicts.length,
       filters: { conflictType, productId, onlyUnresolved },
-      admin: authResult.user?.email
+      admin: authResult.user?.email,
     });
 
     return NextResponse.json({
@@ -58,16 +58,12 @@ export async function GET(request: NextRequest) {
       data: {
         conflicts,
         totalCount: conflicts.length,
-        summary: generateConflictSummary(conflicts)
-      }
+        summary: generateConflictSummary(conflicts),
+      },
     });
-
   } catch (error) {
     logger.error('Error retrieving sync conflicts:', error);
-    return NextResponse.json(
-      { error: 'Failed to retrieve sync conflicts' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to retrieve sync conflicts' }, { status: 500 });
   }
 }
 
@@ -86,10 +82,7 @@ export async function POST(request: NextRequest) {
     const { resolutions }: { resolutions: ConflictResolution[] } = body;
 
     if (!resolutions || !Array.isArray(resolutions)) {
-      return NextResponse.json(
-        { error: 'Invalid resolutions data' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid resolutions data' }, { status: 400 });
     }
 
     // Apply conflict resolutions
@@ -101,7 +94,7 @@ export async function POST(request: NextRequest) {
     logger.info('Sync conflicts resolved', {
       resolvedCount: results.resolved.length,
       failedCount: results.failed.length,
-      admin: authResult.user?.email
+      admin: authResult.user?.email,
     });
 
     return NextResponse.json({
@@ -109,16 +102,12 @@ export async function POST(request: NextRequest) {
       data: {
         resolved: results.resolved,
         failed: results.failed,
-        totalProcessed: resolutions.length
-      }
+        totalProcessed: resolutions.length,
+      },
     });
-
   } catch (error) {
     logger.error('Error resolving sync conflicts:', error);
-    return NextResponse.json(
-      { error: 'Failed to resolve sync conflicts' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to resolve sync conflicts' }, { status: 500 });
   }
 }
 
@@ -149,24 +138,25 @@ async function detectSyncConflicts(filters: {
       updatedAt: true,
       // Check if product has availability rules (indicates manual management)
       availabilityRules: {
-        select: { 
+        select: {
           id: true,
           state: true,
           ruleType: true,
-          updatedAt: true
+          updatedAt: true,
         },
-        where: { deletedAt: null }
-      }
+        where: { deletedAt: null },
+      },
       // Note: Sync history would be added when implemented
-    }
+    },
   });
 
   const conflicts: SyncConflict[] = [];
 
   for (const product of products) {
-    const hasManualOverrides = product.availabilityRules.length > 0 ||
-                              product.visibility === 'PRIVATE' ||
-                              product.itemState !== 'ACTIVE';
+    const hasManualOverrides =
+      product.availabilityRules.length > 0 ||
+      product.visibility === 'PRIVATE' ||
+      product.itemState !== 'ACTIVE';
 
     // Only consider products with manual overrides
     if (!hasManualOverrides) {
@@ -195,9 +185,8 @@ async function detectSyncConflicts(filters: {
 
   if (onlyUnresolved) {
     // Check if conflicts have been resolved recently
-    filteredConflicts = filteredConflicts.filter(c => 
-      !c.lastSyncAt || 
-      (Date.now() - c.lastSyncAt.getTime()) > 24 * 60 * 60 * 1000 // Not resolved in last 24h
+    filteredConflicts = filteredConflicts.filter(
+      c => !c.lastSyncAt || Date.now() - c.lastSyncAt.getTime() > 24 * 60 * 60 * 1000 // Not resolved in last 24h
     );
   }
 
@@ -219,7 +208,7 @@ async function simulateSquareState(squareId: string): Promise<{
     visibility: 'PUBLIC', // Square typically defaults to PUBLIC
     isAvailable: true,
     isPreorder: false,
-    itemState: 'ACTIVE'
+    itemState: 'ACTIVE',
   };
 }
 
@@ -239,7 +228,7 @@ function detectProductConflicts(
     squareId: product.squareId,
     hasManualOverrides,
     lastSyncAt: new Date(), // Would use actual sync history when available
-    createdAt: new Date()
+    createdAt: new Date(),
   };
 
   // Check visibility conflict
@@ -250,7 +239,7 @@ function detectProductConflicts(
       conflictType: 'visibility',
       currentValue: product.visibility,
       squareValue: squareState.visibility,
-      manualValue: product.visibility
+      manualValue: product.visibility,
     });
   }
 
@@ -262,7 +251,7 @@ function detectProductConflicts(
       conflictType: 'availability',
       currentValue: product.isAvailable,
       squareValue: squareState.isAvailable,
-      manualValue: product.isAvailable
+      manualValue: product.isAvailable,
     });
   }
 
@@ -274,7 +263,7 @@ function detectProductConflicts(
       conflictType: 'preorder',
       currentValue: product.isPreorder,
       squareValue: squareState.isPreorder,
-      manualValue: product.isPreorder
+      manualValue: product.isPreorder,
     });
   }
 
@@ -286,7 +275,7 @@ function detectProductConflicts(
       conflictType: 'state',
       currentValue: product.itemState,
       squareValue: squareState.itemState,
-      manualValue: product.itemState
+      manualValue: product.itemState,
     });
   }
 
@@ -301,18 +290,18 @@ function generateConflictSummary(conflicts: SyncConflict[]) {
     total: conflicts.length,
     byType: {} as Record<string, number>,
     withManualOverrides: 0,
-    critical: 0 // Conflicts that would hide available products
+    critical: 0, // Conflicts that would hide available products
   };
 
   conflicts.forEach(conflict => {
     // Count by type
     summary.byType[conflict.conflictType] = (summary.byType[conflict.conflictType] || 0) + 1;
-    
+
     // Count manual overrides
     if (conflict.hasManualOverrides) {
       summary.withManualOverrides++;
     }
-    
+
     // Count critical conflicts
     if (conflict.conflictType === 'visibility' && conflict.squareValue === 'PRIVATE') {
       summary.critical++;
@@ -339,7 +328,7 @@ async function resolveConflicts(
     } catch (error) {
       failed.push({
         id: resolution.conflictId,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -363,7 +352,7 @@ async function applyConflictResolution(
 
   // Get the current product
   const product = await prisma.product.findUnique({
-    where: { id: productId }
+    where: { id: productId },
   });
 
   if (!product) {
@@ -377,7 +366,7 @@ async function applyConflictResolution(
       // No changes needed - current manual settings are preserved
       logger.info('Conflict resolved: keeping manual settings', {
         productId,
-        conflictId: resolution.conflictId
+        conflictId: resolution.conflictId,
       });
       break;
 
@@ -393,7 +382,7 @@ async function applyConflictResolution(
         // Add metadata about sync conflict resolution
         syncConflictResolved: true,
         syncConflictResolvedBy: userId,
-        syncConflictResolvedAt: new Date()
+        syncConflictResolvedAt: new Date(),
       };
       break;
 
@@ -406,7 +395,7 @@ async function applyConflictResolution(
         updatedAt: new Date(),
         syncConflictResolved: true,
         syncConflictResolvedBy: userId,
-        syncConflictResolvedAt: new Date()
+        syncConflictResolvedAt: new Date(),
       };
       break;
 
@@ -418,7 +407,7 @@ async function applyConflictResolution(
   if (Object.keys(updateData).length > 0) {
     await prisma.product.update({
       where: { id: productId },
-      data: updateData
+      data: updateData,
     });
   }
 
@@ -444,18 +433,18 @@ async function createAuditTrail(
       conflictId: resolution.conflictId,
       resolution: resolution.resolution,
       customValue: resolution.customValue,
-      applyToFuture: resolution.applyToFuture
+      applyToFuture: resolution.applyToFuture,
     },
     adminUserId: userId,
     adminEmail: adminEmail,
     timestamp: new Date(),
-    reason: `Sync conflict resolved via admin interface`
+    reason: `Sync conflict resolved via admin interface`,
   }));
 
   // Store audit entries (implement based on your audit system)
   logger.info('Audit trail created for sync conflict resolutions', {
     entriesCount: auditEntries.length,
-    admin: adminEmail
+    admin: adminEmail,
   });
 }
 
@@ -477,15 +466,14 @@ async function createConflictPreventionRule(
       enabled: true,
       name: `Conflict prevention rule - preserves admin decision for ${resolution.conflictId}`,
       createdBy: userId,
-      updatedBy: userId
+      updatedBy: userId,
       // Note: Metadata would be stored elsewhere if needed
-    }
+    },
   });
 
   logger.info('Conflict prevention rule created', {
     productId,
     conflictId: resolution.conflictId,
-    admin: userId
+    admin: userId,
   });
 }
-

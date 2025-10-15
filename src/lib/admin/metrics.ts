@@ -34,7 +34,7 @@ interface BusinessMetrics {
     total: number;
     newToday: number;
     returning: number;
-    topSpenders: Array<{ name: string; total: number; }>;
+    topSpenders: Array<{ name: string; total: number }>;
   };
   salesHistory: Array<{
     date: string;
@@ -113,124 +113,125 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
       returningCustomers,
       totalProducts,
       lowStockProducts,
-      outOfStockProducts
+      outOfStockProducts,
     ] = await Promise.all([
       // Revenue queries
       prisma.order.aggregate({
         where: {
-          "createdAt": { gte: todayStart },
-          "paymentStatus": 'COMPLETED'
+          createdAt: { gte: todayStart },
+          paymentStatus: 'COMPLETED',
         },
-        _sum: { total: true }
+        _sum: { total: true },
       }),
-      
+
       prisma.order.aggregate({
         where: {
-          "createdAt": { 
+          createdAt: {
             gte: yesterdayStart,
-            lt: todayStart
+            lt: todayStart,
           },
-          "paymentStatus": 'COMPLETED'
+          paymentStatus: 'COMPLETED',
         },
-        _sum: { total: true }
+        _sum: { total: true },
       }),
-      
+
       prisma.order.aggregate({
         where: {
-          "createdAt": { gte: weekStart },
-          "paymentStatus": 'COMPLETED'
+          createdAt: { gte: weekStart },
+          paymentStatus: 'COMPLETED',
         },
-        _sum: { total: true }
+        _sum: { total: true },
       }),
-      
+
       prisma.order.aggregate({
         where: {
-          "createdAt": { gte: monthStart },
-          "paymentStatus": 'COMPLETED'
+          createdAt: { gte: monthStart },
+          paymentStatus: 'COMPLETED',
         },
-        _sum: { total: true }
+        _sum: { total: true },
       }),
 
       // Order counts
       prisma.order.count({
-        where: { "createdAt": { gte: todayStart } }
+        where: { createdAt: { gte: todayStart } },
       }),
-      
+
       prisma.order.count({
-        where: { status: 'PENDING' }
+        where: { status: 'PENDING' },
       }),
-      
+
       prisma.order.count({
-        where: { status: 'COMPLETED' }
+        where: { status: 'COMPLETED' },
       }),
-      
+
       prisma.order.count({
-        where: { "paymentStatus": 'FAILED' }
+        where: { paymentStatus: 'FAILED' },
       }),
 
       // Average order value (last 30 days)
       prisma.order.aggregate({
         where: {
-          "createdAt": { gte: last30Days },
-          "paymentStatus": 'COMPLETED'
+          createdAt: { gte: last30Days },
+          paymentStatus: 'COMPLETED',
         },
-        _avg: { total: true }
+        _avg: { total: true },
       }),
 
       // Customer metrics
       prisma.profile.count(),
-      
+
       prisma.profile.count({
-        where: { "created_at": { gte: todayStart } }
+        where: { created_at: { gte: todayStart } },
       }),
-      
+
       // Returning customers (simplified - users with more than one order)
       prisma.profile.count({
         where: {
           orders: {
             some: {
-              "paymentStatus": 'COMPLETED'
-            }
-          }
-        }
+              paymentStatus: 'COMPLETED',
+            },
+          },
+        },
       }),
 
       // Product inventory
       prisma.product.count({
-        where: { active: true }
+        where: { active: true },
       }),
-      
+
       prisma.product.count({
-        where: { 
+        where: {
           active: true,
-          inventory: { lte: 5, gt: 0 }
-        }
+          inventory: { lte: 5, gt: 0 },
+        },
       }),
-      
+
       prisma.product.count({
-        where: { 
+        where: {
           active: true,
-          inventory: 0
-        }
-      })
+          inventory: 0,
+        },
+      }),
     ]);
 
     // Calculate growth rate
     const todayRevenueValue = Number(todayRevenue._sum.total || 0);
     const yesterdayRevenueValue = Number(yesterdayRevenue._sum.total || 0);
-    const growthRate = yesterdayRevenueValue > 0 
-      ? ((todayRevenueValue - yesterdayRevenueValue) / yesterdayRevenueValue)
-      : 0;
+    const growthRate =
+      yesterdayRevenueValue > 0
+        ? (todayRevenueValue - yesterdayRevenueValue) / yesterdayRevenueValue
+        : 0;
 
     // Get sales history (last 30 days)
     const salesHistory = await getDailySalesHistory(30);
-    
+
     // Get top products
     const topProducts = await getTopProducts(10);
-    
+
     // Get recent orders
     const recentOrders = await getRecentOrders(10);
-    
+
     // Get top customers
     const topCustomers = await getTopCustomers(5);
 
@@ -248,35 +249,35 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
         today: todayRevenueValue,
         thisWeek: Number(weekRevenue._sum.total || 0),
         thisMonth: Number(monthRevenue._sum.total || 0),
-        growth: growthRate
+        growth: growthRate,
       },
       orders: {
         today: todayOrders,
         pending: pendingOrders,
         completed: completedOrders,
         failed: failedOrders,
-        averageOrderValue: Number(avgOrderValue._avg.total || 0)
+        averageOrderValue: Number(avgOrderValue._avg.total || 0),
       },
       conversion: {
         rate: conversionRate,
         cartAbandonment,
-        checkoutCompletion
+        checkoutCompletion,
       },
       inventory: {
         lowStock: lowStockProducts,
         outOfStock: outOfStockProducts,
-        totalProducts
+        totalProducts,
       },
       customers: {
         total: totalCustomers,
         newToday: newTodayCustomers,
         returning: returningCustomers,
-        topSpenders: topCustomers
+        topSpenders: topCustomers,
       },
       salesHistory,
       topProducts,
       recentOrders,
-      alerts
+      alerts,
     };
   } catch (error) {
     console.error('Error getting business metrics:', error);
@@ -290,30 +291,39 @@ export async function getBusinessMetrics(): Promise<BusinessMetrics> {
 export async function getPerformanceMetrics(): Promise<PerformanceMetrics> {
   try {
     const performance = performanceMonitor.getPerformanceSummary();
-    
+
     // Check system health
     const healthChecks = await Promise.allSettled([
       checkDatabaseHealth(),
       checkPaymentSystemHealth(),
-      checkCacheHealth()
+      checkCacheHealth(),
     ]);
 
     const systemHealth = {
-      database: healthChecks[0].status === 'fulfilled' && healthChecks[0].value ? 'healthy' as const : 'down' as const,
-      payments: healthChecks[1].status === 'fulfilled' && healthChecks[1].value ? 'healthy' as const : 'down' as const,
-      cache: healthChecks[2].status === 'fulfilled' && healthChecks[2].value ? 'healthy' as const : 'degraded' as const
+      database:
+        healthChecks[0].status === 'fulfilled' && healthChecks[0].value
+          ? ('healthy' as const)
+          : ('down' as const),
+      payments:
+        healthChecks[1].status === 'fulfilled' && healthChecks[1].value
+          ? ('healthy' as const)
+          : ('down' as const),
+      cache:
+        healthChecks[2].status === 'fulfilled' && healthChecks[2].value
+          ? ('healthy' as const)
+          : ('degraded' as const),
     };
 
     return {
       responseTime: {
         average: performance.response_times.average,
         p95: performance.response_times.p95,
-        p99: performance.response_times.p95 * 1.2 // Estimate
+        p99: performance.response_times.p95 * 1.2, // Estimate
       },
       errorRate: performance.error_rate / 100,
       throughput: performance.throughput,
       uptime: 0.999, // Would integrate with monitoring service
-      systemHealth
+      systemHealth,
     };
   } catch (error) {
     console.error('Error getting performance metrics:', error);
@@ -322,7 +332,7 @@ export async function getPerformanceMetrics(): Promise<PerformanceMetrics> {
       errorRate: 0.01,
       throughput: 120,
       uptime: 0.99,
-      systemHealth: { database: 'healthy', payments: 'healthy', cache: 'healthy' }
+      systemHealth: { database: 'healthy', payments: 'healthy', cache: 'healthy' },
     };
   }
 }
@@ -336,7 +346,7 @@ export async function getSystemHealth(): Promise<SystemHealth> {
       { name: 'Database', check: checkDatabaseHealth() },
       { name: 'Payment System', check: checkPaymentSystemHealth() },
       { name: 'Cache System', check: checkCacheHealth() },
-      { name: 'Email Service', check: checkEmailHealth() }
+      { name: 'Email Service', check: checkEmailHealth() },
     ]);
 
     const issues: SystemHealth['issues'] = [];
@@ -345,26 +355,33 @@ export async function getSystemHealth(): Promise<SystemHealth> {
     for (let i = 0; i < healthChecks.length; i++) {
       const result = healthChecks[i];
       const serviceName = ['Database', 'Payment System', 'Cache System', 'Email Service'][i];
-      
+
       if (result.status === 'fulfilled' && result.value) {
         healthyCount++;
       } else {
         issues.push({
           service: serviceName,
           status: 'down',
-          message: result.status === 'rejected' ? result.reason?.message || 'Service check failed' : 'Service is unhealthy'
+          message:
+            result.status === 'rejected'
+              ? result.reason?.message || 'Service check failed'
+              : 'Service is unhealthy',
         });
       }
     }
 
-    const overall = healthyCount === healthChecks.length ? 'healthy' : 
-                   healthyCount >= healthChecks.length / 2 ? 'degraded' : 'down';
+    const overall =
+      healthyCount === healthChecks.length
+        ? 'healthy'
+        : healthyCount >= healthChecks.length / 2
+          ? 'degraded'
+          : 'down';
 
     return { overall, issues };
   } catch (error) {
     return {
       overall: 'down',
-      issues: [{ service: 'System', status: 'down', message: 'Unable to check system health' }]
+      issues: [{ service: 'System', status: 'down', message: 'Unable to check system health' }],
     };
   }
 }
@@ -374,13 +391,15 @@ export async function getSystemHealth(): Promise<SystemHealth> {
 async function getDailySalesHistory(days: number) {
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
-  
+
   try {
-    const rawData = await prisma.$queryRaw<Array<{
-      date: string;
-      revenue: number;
-      orders: number;
-    }>>`
+    const rawData = await prisma.$queryRaw<
+      Array<{
+        date: string;
+        revenue: number;
+        orders: number;
+      }>
+    >`
       SELECT 
         DATE("createdAt") as date,
         COALESCE(SUM(CASE WHEN "paymentStatus" = 'COMPLETED' THEN total ELSE 0 END), 0) as revenue,
@@ -395,7 +414,7 @@ async function getDailySalesHistory(days: number) {
     return rawData.map(row => ({
       date: row.date,
       revenue: Number(row.revenue),
-      orders: Number(row.orders)
+      orders: Number(row.orders),
     }));
   } catch (error) {
     console.error('Error getting sales history:', error);
@@ -409,27 +428,27 @@ async function getTopProducts(limit: number) {
       by: ['productId'],
       _sum: {
         quantity: true,
-        price: true
+        price: true,
       },
       orderBy: {
         _sum: {
-          price: 'desc'
-        }
+          price: 'desc',
+        },
       },
-      take: limit
+      take: limit,
     });
 
     const productsWithNames = await Promise.all(
-      topProducts.map(async (item) => {
+      topProducts.map(async item => {
         const product = await prisma.product.findUnique({
           where: { id: item.productId },
-          select: { name: true }
+          select: { name: true },
         });
 
         return {
           name: product?.name || 'Unknown Product',
           sales: Number(item._sum.quantity || 0),
-          revenue: Number(item._sum.price || 0)
+          revenue: Number(item._sum.price || 0),
         };
       })
     );
@@ -445,15 +464,15 @@ async function getRecentOrders(limit: number) {
   try {
     const orders = await prisma.order.findMany({
       take: limit,
-      orderBy: { "createdAt": 'desc' },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        "customerName": true,
+        customerName: true,
         email: true,
         total: true,
         status: true,
-        "createdAt": true
-      }
+        createdAt: true,
+      },
     });
 
     return orders.map(order => ({
@@ -461,7 +480,7 @@ async function getRecentOrders(limit: number) {
       customer: order.customerName || order.email || 'Guest',
       total: Number(order.total),
       status: order.status,
-      createdAt: order.createdAt.toISOString()
+      createdAt: order.createdAt.toISOString(),
     }));
   } catch (error) {
     console.error('Error getting recent orders:', error);
@@ -474,25 +493,25 @@ async function getTopCustomers(limit: number) {
     const topCustomers = await prisma.order.groupBy({
       by: ['email'],
       where: {
-        "paymentStatus": 'COMPLETED',
+        paymentStatus: 'COMPLETED',
         email: {
-          not: ""
-        }
+          not: '',
+        },
       },
       _sum: {
-        total: true
+        total: true,
       },
       orderBy: {
         _sum: {
-          total: 'desc'
-        }
+          total: 'desc',
+        },
       },
-      take: limit
+      take: limit,
     });
 
     return topCustomers.map(customer => ({
       name: customer.email || 'Unknown',
-      total: Number(customer._sum.total || 0)
+      total: Number(customer._sum.total || 0),
     }));
   } catch (error) {
     console.error('Error getting top customers:', error);
@@ -511,18 +530,18 @@ async function getSystemAlerts() {
     // Check for failed orders
     const failedOrdersCount = await prisma.order.count({
       where: {
-        "paymentStatus": 'FAILED',
-        "createdAt": {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-        }
-      }
+        paymentStatus: 'FAILED',
+        createdAt: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+        },
+      },
     });
 
     if (failedOrdersCount > 0) {
       alerts.push({
         type: 'warning',
         message: `${failedOrdersCount} failed payment(s) in the last 24 hours`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -530,15 +549,15 @@ async function getSystemAlerts() {
     const lowStockCount = await prisma.product.count({
       where: {
         active: true,
-        inventory: { lte: 5, gt: 0 }
-      }
+        inventory: { lte: 5, gt: 0 },
+      },
     });
 
     if (lowStockCount > 0) {
       alerts.push({
         type: 'warning',
         message: `${lowStockCount} product(s) are low in stock`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -546,26 +565,28 @@ async function getSystemAlerts() {
     const outOfStockCount = await prisma.product.count({
       where: {
         active: true,
-        inventory: 0
-      }
+        inventory: 0,
+      },
     });
 
     if (outOfStockCount > 0) {
       alerts.push({
         type: 'error',
         message: `${outOfStockCount} product(s) are out of stock`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
     return alerts;
   } catch (error) {
     console.error('Error getting system alerts:', error);
-    return [{
-      type: 'error' as const,
-      message: 'Unable to fetch system alerts',
-      timestamp: new Date().toISOString()
-    }];
+    return [
+      {
+        type: 'error' as const,
+        message: 'Unable to fetch system alerts',
+        timestamp: new Date().toISOString(),
+      },
+    ];
   }
 }
 
@@ -616,6 +637,6 @@ function getDefaultBusinessMetrics(): BusinessMetrics {
     salesHistory: [],
     topProducts: [],
     recentOrders: [],
-    alerts: []
+    alerts: [],
   };
 }

@@ -20,7 +20,7 @@ export function ArchiveToggleButton({
   productName,
   isArchived,
   variant = 'default',
-  onSuccess
+  onSuccess,
 }: ArchiveToggleButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -40,7 +40,7 @@ export function ArchiveToggleButton({
     try {
       const response = await fetch(`/api/admin/products/${productId}/archive`, {
         method: isArchived ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const data = await response.json();
@@ -69,11 +69,7 @@ export function ArchiveToggleButton({
         className="h-8 w-8 p-0"
         title={isArchived ? 'Restore product' : 'Archive product'}
       >
-        {isArchived ? (
-          <ArchiveRestore className="h-4 w-4" />
-        ) : (
-          <Archive className="h-4 w-4" />
-        )}
+        {isArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
       </Button>
     );
   }

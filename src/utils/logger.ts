@@ -28,7 +28,7 @@ const formatValue = (value: any): string => {
             if (value === undefined) {
               return '[undefined]';
             }
-            
+
             // Handle circular references
             if (typeof value === 'object' && value !== null) {
               if (seen.has(value)) {
@@ -36,17 +36,17 @@ const formatValue = (value: any): string => {
               }
               seen.add(value);
             }
-            
+
             // Handle BigInt - convert to string
             if (typeof value === 'bigint') {
               return value.toString() + 'n';
             }
-            
+
             // Handle functions
             if (typeof value === 'function') {
               return '[Function]';
             }
-            
+
             return value;
           },
           indent

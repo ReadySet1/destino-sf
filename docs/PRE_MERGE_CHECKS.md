@@ -25,7 +25,9 @@ Install the git hooks by running:
 ### What Gets Installed
 
 #### Pre-Commit Hook
+
 Runs automatically before every `git commit`:
+
 - ✅ TypeScript type checking (`pnpm type-check`)
 - ✅ ESLint (`pnpm lint`)
 - ✅ Code formatting check (`pnpm format --check`)
@@ -34,7 +36,9 @@ Runs automatically before every `git commit`:
 **Fails the commit if any check fails.**
 
 #### Pre-Push Hook
+
 Runs automatically before every `git push`:
+
 - ✅ Production build (`pnpm build`)
 - ✅ Critical path tests (`pnpm test:critical`)
 - ✅ Unit tests (`pnpm test:unit`)
@@ -67,6 +71,7 @@ git push --no-verify
 **Triggered on**: PR opened, synchronized, or reopened
 
 **Checks performed**:
+
 1. ✅ TypeScript type checking
 2. ✅ ESLint
 3. ✅ Code formatting
@@ -90,6 +95,7 @@ git push --no-verify
 **Workflow**: `.github/workflows/pre-deployment.yml`
 
 **Includes all `development` checks PLUS**:
+
 - ✅ E2E critical tests
 - ✅ Test coverage verification
 - ✅ Deployment approval gate
@@ -106,6 +112,7 @@ pnpm validate
 ```
 
 Runs:
+
 - Type checking
 - Linting
 
@@ -186,6 +193,7 @@ git commit -m "feat: descriptive commit message"
 ```
 
 **Commit message format**:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `refactor:` - Code refactoring
@@ -210,6 +218,7 @@ gh pr create --base development --title "feat: Your Feature" --body "Description
 ```
 
 **PR checklist**:
+
 1. All local hooks passed
 2. All CI checks pass (wait for GitHub Actions)
 3. Code review completed
@@ -313,6 +322,7 @@ Notify team when hooks are updated.
 ### Updating CI Workflows
 
 When modifying workflows in `.github/workflows/`:
+
 1. Test changes on a feature branch first
 2. Verify all checks still pass
 3. Document any new requirements
@@ -334,6 +344,7 @@ To add a new validation check:
 ### For Developers
 
 ✅ **DO**:
+
 - Install git hooks immediately after cloning
 - Run `pnpm validate` before committing
 - Fix issues before committing (don't rely on `--no-verify`)
@@ -343,6 +354,7 @@ To add a new validation check:
 - Update documentation
 
 ❌ **DON'T**:
+
 - Use `--no-verify` except in emergencies
 - Push directly to `development` or `main`
 - Commit commented-out code or console.logs
@@ -352,6 +364,7 @@ To add a new validation check:
 ### For Code Reviewers
 
 ✅ **Check**:
+
 - All CI checks pass before reviewing
 - Code follows project conventions
 - Tests cover new functionality
@@ -364,11 +377,13 @@ To add a new validation check:
 ## 8. Summary
 
 **Three layers of protection**:
+
 1. **Local hooks** - Catch issues before commit/push (fastest feedback)
 2. **CI validation** - Comprehensive checks on PRs (catches what hooks missed)
 3. **Code review** - Human review of logic, design, security
 
 **Why multiple layers?**
+
 - Faster feedback locally (don't wait for CI)
 - CI catches environment-specific issues
 - Hooks can be bypassed, CI cannot (unless you have admin access)

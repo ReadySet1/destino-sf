@@ -11,6 +11,7 @@
 Destino SF is a **production-ready e-commerce platform** specializing in authentic Argentine cuisine and professional catering services. The platform combines modern web technologies with robust Square POS integration to deliver a streamlined business operation and exceptional customer experience.
 
 ### **Core Business Value**
+
 - **Customer-Facing**: Modern web platform for ordering empanadas, alfajores, and catering services
 - **Business Operations**: Automated workflows with Square POS integration for efficient management
 - **Scalable Foundation**: Built to support business growth with minimal operational overhead
@@ -20,35 +21,38 @@ Destino SF is a **production-ready e-commerce platform** specializing in authent
 ## 🏗️ **Technology Stack**
 
 ### **Frontend & User Experience**
+
 ```typescript
 interface FrontendTech {
-  framework: "Next.js 15 with App Router";
-  language: "TypeScript (100% type coverage)";
-  ui: "React 19 with Tailwind CSS + shadcn/ui";
-  stateManagement: "React state + Zustand for complex scenarios";
-  performance: "90%+ Lighthouse scores, optimized for mobile-first";
+  framework: 'Next.js 15 with App Router';
+  language: 'TypeScript (100% type coverage)';
+  ui: 'React 19 with Tailwind CSS + shadcn/ui';
+  stateManagement: 'React state + Zustand for complex scenarios';
+  performance: '90%+ Lighthouse scores, optimized for mobile-first';
 }
 ```
 
 ### **Backend & Infrastructure**
+
 ```typescript
 interface BackendTech {
-  runtime: "Node.js with Next.js API Routes and Server Actions";
-  database: "PostgreSQL with Prisma ORM";
-  authentication: "Supabase Auth with role-based access control";
-  hosting: "Vercel with automatic CI/CD and edge computing";
-  monitoring: "Comprehensive error tracking and performance monitoring";
+  runtime: 'Node.js with Next.js API Routes and Server Actions';
+  database: 'PostgreSQL with Prisma ORM';
+  authentication: 'Supabase Auth with role-based access control';
+  hosting: 'Vercel with automatic CI/CD and edge computing';
+  monitoring: 'Comprehensive error tracking and performance monitoring';
 }
 ```
 
 ### **Business Integrations**
+
 ```typescript
 interface Integrations {
-  payments: "Square Payment API (production-ready)";
-  pos: "Square POS (product catalog, inventory, order management)";
-  shipping: "Shippo API (automated label generation)";
-  email: "Resend (transactional emails and notifications)";
-  analytics: "Umami (web analytics and user behavior tracking)";
+  payments: 'Square Payment API (production-ready)';
+  pos: 'Square POS (product catalog, inventory, order management)';
+  shipping: 'Shippo API (automated label generation)';
+  email: 'Resend (transactional emails and notifications)';
+  analytics: 'Umami (web analytics and user behavior tracking)';
 }
 ```
 
@@ -57,6 +61,7 @@ interface Integrations {
 ## ✨ **Key Platform Features**
 
 ### **🛒 E-commerce Core**
+
 - **Product Catalog**: Synchronized automatically from Square POS
 - **Shopping Cart**: Persistent across sessions with real-time calculations
 - **Secure Checkout**: Square-integrated payment processing with PCI compliance
@@ -64,12 +69,14 @@ interface Integrations {
 - **Customer Accounts**: Streamlined profile and order history management
 
 ### **🍽️ Professional Catering System**
+
 - **Package Configuration**: Pre-defined catering packages (5, 7, 9 items) with per-person pricing
 - **Delivery Zones**: Geographic area management with minimum order requirements
 - **Custom Inquiries**: Professional quote system for special events and large orders
 - **Automated Workflows**: Seamless inquiry-to-order conversion process
 
 ### **⚙️ Business Operations**
+
 - **Square POS Integration**: Bidirectional sync for products, orders, and payments
 - **Automated Shipping**: Shippo API generates labels automatically via webhooks
 - **Email Automation**: Customer confirmations, admin alerts, and status notifications
@@ -80,6 +87,7 @@ interface Integrations {
 ## 🚀 **Quick Start Guide**
 
 ### **Prerequisites**
+
 ```bash
 Node.js 18.17+ (LTS recommended)
 pnpm 8.0+ (package manager)
@@ -87,6 +95,7 @@ PostgreSQL 14+ (database)
 ```
 
 ### **Development Setup**
+
 ```bash
 # Clone and navigate to project
 git clone <repository-url>
@@ -112,6 +121,7 @@ pnpm dev
 ```
 
 ### **Essential Environment Configuration**
+
 ```bash
 # Core application settings
 DATABASE_URL="postgresql://..."
@@ -136,49 +146,63 @@ SHIPPO_API_KEY="..."
 ## 📖 **Documentation Structure**
 
 ### **🚀 Getting Started**
+
 Essential guides for setup, configuration, and initial deployment:
+
 - [Quick Start Guide](getting-started/quick-start.md) - Development environment setup
 - [Environment Configuration](getting-started/environment-setup.md) - Production configuration
 - [Development Setup](getting-started/development-setup.md) - Local development guide
 - [Test Database Setup](getting-started/test-database-setup.md) - Testing environment
 
 ### **🏗️ Architecture & Design**
+
 Technical documentation for system understanding:
+
 - [System Overview](architecture/system-overview.md) - High-level architecture
 - [Database Design](architecture/database-design.md) - Schema and relationships
 - [API Architecture](architecture/api-architecture.md) - REST API design
 - [Technology Stack](architecture/technology-stack.md) - Detailed technology choices
 
 ### **🎯 Feature Documentation**
+
 Comprehensive guides for each major platform feature:
+
 - [E-commerce Core](features/ecommerce/README.md) - Shopping, cart, checkout, orders
 - [Catering System](features/catering/README.md) - Professional catering management
 - [Payment Processing](features/payments/README.md) - Square integration details
 - [Shipping & Fulfillment](features/shipping/README.md) - Shippo automation
 
 ### **📚 API Reference**
+
 Complete API documentation with TypeScript examples:
+
 - [REST API Overview](api/rest-api/README.md) - API structure and conventions
 - [Products API](api/rest-api/products.md) - Product catalog endpoints
 - [Orders API](api/rest-api/orders.md) - Order management endpoints
 - [Catering API](api/rest-api/catering.md) - Catering-specific endpoints
 
 ### **🧪 Testing & Quality Assurance**
+
 Comprehensive testing strategy and procedures:
+
 - [Testing Strategy](testing/testing-strategy.md) - Overall testing approach
 - [Unit Testing](testing/unit-testing.md) - Component and function testing
 - [Integration Testing](testing/integration-testing.md) - API and database testing
 - [E2E Testing](testing/e2e-testing/README.md) - End-to-end user journey testing
 
 ### **🚀 Deployment & Operations**
+
 Production deployment and ongoing operations:
+
 - [Deployment Overview](deployment/overview.md) - Deployment strategy
 - [Pre-deployment Checklist](deployment/pre-deployment-checklist.md) - Go-live validation
 - [Environment Configuration](deployment/environment-configuration.md) - Production settings
 - [Product Sync Operations](operations/product-sync/README.md) - Square synchronization
 
 ### **👥 User Guides**
+
 User-facing documentation for customers and administrators:
+
 - [Customer Guides](user-guides/customer/README.md) - Customer platform usage
 - [Admin Guides](user-guides/admin/README.md) - Administrative procedures
 - [User Guides Overview](USER_GUIDES_SUMMARY.md) - Complete user documentation
@@ -188,6 +212,7 @@ User-facing documentation for customers and administrators:
 ## 🎯 **Key Development Workflows**
 
 ### **Feature Development**
+
 ```bash
 # Create feature branch
 git checkout -b feature/new-feature
@@ -204,6 +229,7 @@ pnpm build                 # Production build test
 ```
 
 ### **Testing Strategy**
+
 ```bash
 # Unit and integration testing
 pnpm test                  # Full test suite
@@ -222,6 +248,7 @@ pnpm test:accessibility   # Accessibility compliance
 ```
 
 ### **Deployment Process**
+
 ```bash
 # Pre-deployment validation
 pnpm test:e2e:critical    # Critical functionality
@@ -238,6 +265,7 @@ git push origin main      # Automatic deployment
 ## 📊 **Project Status & Metrics**
 
 ### **Production Readiness**
+
 - ✅ **Test Coverage**: 86.3% (505+ automated tests)
 - ✅ **Performance**: 90%+ Lighthouse scores across all pages
 - ✅ **Type Safety**: 100% TypeScript coverage
@@ -247,6 +275,7 @@ git push origin main      # Automatic deployment
 - ✅ **Mobile Responsive**: iOS and Android optimized
 
 ### **Business Metrics**
+
 - **Order Processing**: Fully automated from web to fulfillment
 - **Payment Success**: 99%+ success rate via Square integration
 - **Email Delivery**: 99.9%+ deliverability via Resend
@@ -258,12 +287,14 @@ git push origin main      # Automatic deployment
 ## 🔧 **Troubleshooting & Support**
 
 ### **Common Development Issues**
+
 - [Common Issues](troubleshooting/common-issues.md) - Frequent problems and solutions
 - [Database Issues](troubleshooting/database-issues.md) - Database connectivity and performance
 - [Payment Issues](troubleshooting/payment-issues.md) - Square integration troubleshooting
 - [Authentication Issues](troubleshooting/authentication-issues.md) - Supabase Auth problems
 
 ### **Support Resources**
+
 - **Technical Documentation**: Comprehensive guides for all platform features
 - **API Reference**: Complete endpoint documentation with examples
 - **Testing Guides**: Validation procedures for all development phases
@@ -274,6 +305,7 @@ git push origin main      # Automatic deployment
 ## 🔐 **Security & Compliance**
 
 ### **Security Implementation**
+
 - **Payment Security**: PCI DSS compliance through Square integration
 - **Data Protection**: Encryption in transit and at rest
 - **Authentication**: Secure Supabase Auth with JWT tokens
@@ -281,6 +313,7 @@ git push origin main      # Automatic deployment
 - **API Security**: Rate limiting and request validation
 
 ### **Privacy & Compliance**
+
 - **GDPR Compliance**: Data handling and user privacy protection
 - **Data Minimization**: Collect only necessary customer information
 - **Secure Communications**: All API communications over HTTPS
@@ -291,26 +324,27 @@ git push origin main      # Automatic deployment
 ## 🚀 **Future Enhancement Opportunities**
 
 ### **Platform Expansion**
+
 While the current platform is production-ready and feature-complete, future enhancements could include:
 
 ```typescript
 interface FutureOpportunities {
   customerExperience: [
-    "Saved address management for repeat customers",
-    "Order favorites and quick reordering",
-    "Mobile app for iOS and Android platforms"
+    'Saved address management for repeat customers',
+    'Order favorites and quick reordering',
+    'Mobile app for iOS and Android platforms',
   ];
-  
+
   businessOperations: [
-    "Advanced analytics and business intelligence",
-    "Loyalty program integration",
-    "Multi-location support for business expansion"
+    'Advanced analytics and business intelligence',
+    'Loyalty program integration',
+    'Multi-location support for business expansion',
   ];
-  
+
   integrations: [
-    "Additional payment methods (Apple Pay, Google Pay)",
-    "Third-party delivery service integration",
-    "Advanced inventory management tools"
+    'Additional payment methods (Apple Pay, Google Pay)',
+    'Third-party delivery service integration',
+    'Advanced inventory management tools',
   ];
 }
 ```
@@ -320,7 +354,9 @@ interface FutureOpportunities {
 ## 📞 **Contributing & Development**
 
 ### **Development Team**
+
 This is a professional project with established development standards:
+
 - **Code Quality**: TypeScript strict mode, ESLint, Prettier
 - **Testing Requirements**: Comprehensive test coverage for all changes
 - **Documentation**: Update documentation for new features
@@ -328,6 +364,7 @@ This is a professional project with established development standards:
 - **Security**: Regular security audits and vulnerability scanning
 
 ### **Development Standards**
+
 - **Git Workflow**: Feature branches with pull request reviews
 - **Testing**: Unit, integration, and E2E test coverage
 - **Code Review**: Peer review required for all changes
@@ -354,6 +391,7 @@ This is a professional project with established development standards:
 This is a proprietary project. All rights reserved by Destino SF.
 
 **For authorized development team members:**
+
 - Follow established development procedures
 - Maintain code quality and testing standards
 - Update documentation for any changes
@@ -361,4 +399,4 @@ This is a proprietary project. All rights reserved by Destino SF.
 
 ---
 
-*This documentation is automatically maintained and synchronized with the platform codebase. For the most current information, always refer to the latest version in the repository.*
+_This documentation is automatically maintained and synchronized with the platform codebase. For the most current information, always refer to the latest version in the repository._

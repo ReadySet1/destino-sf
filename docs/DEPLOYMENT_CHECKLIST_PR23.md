@@ -8,17 +8,20 @@
 ## 📋 Pre-Merge Verification
 
 ### Code Quality
+
 - ✅ TypeScript compilation passes (`pnpm type-check`)
 - ✅ Production build succeeds (203 pages)
 - ✅ ESLint passes (0 errors, 0 warnings)
 - ✅ Critical tests pass (`pnpm test:critical`)
 
 ### Database State
+
 - ✅ RLS enabled on all tables (migration `20250930110710`)
 - ✅ Foreign key indexes added (migration `20250930110720`)
 - ✅ Production database migrations up to date
 
 ### Code Changes Summary
+
 - Catering dessert filtering (Lunch tab - Alfajores only)
 - Webhook signature verification fix
 - Production logging cleanup
@@ -27,6 +30,7 @@
 ## 🚀 Deployment Steps
 
 ### Step 1: Merge Pull Request
+
 ```bash
 # Review and approve PR #23 on GitHub
 # Merge using "Squash and merge" or "Create a merge commit"
@@ -37,6 +41,7 @@
 **Important**: These migrations apply product availability fixes and must be run AFTER merging to main.
 
 #### Production Database Connection
+
 ```bash
 # Get production database URL from environment
 export DATABASE_URL="postgresql://postgres.drrejylrcjbeldnzodjd:5qpIoVheBSgkq5f9@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
@@ -46,6 +51,7 @@ psql $DATABASE_URL
 ```
 
 #### Migration 1: Fix Lucuma Availability
+
 ```bash
 # In psql
 \i prisma/migrations-manual/fix_lucuma_availability.sql
@@ -57,6 +63,7 @@ psql $DATABASE_URL
 ```
 
 #### Migration 2: Process Past Availability Schedules
+
 ```bash
 # In psql
 \i prisma/migrations-manual/process_past_availability_schedules.sql
@@ -70,6 +77,7 @@ psql $DATABASE_URL
 ```
 
 #### Verify Migrations
+
 ```sql
 -- Check Lucuma product state
 SELECT name, visibility, is_available, active, item_state, is_preorder
@@ -103,12 +111,14 @@ LIMIT 3;
 ### Step 3: Deploy Application
 
 #### Option A: Vercel (Recommended)
+
 ```bash
 # Vercel automatically deploys main branch
 # Monitor deployment at: https://vercel.com/your-project/deployments
 ```
 
 #### Option B: Manual Deployment
+
 ```bash
 git checkout main
 git pull origin main
@@ -120,6 +130,7 @@ pnpm build
 ### Step 4: Post-Deployment Verification
 
 #### Immediate Checks (0-5 minutes)
+
 - [ ] Application loads: https://destinosf.com
 - [ ] Catering menu page loads: https://destinosf.com/catering
 - [ ] Lunch tab displays correctly (only Alfajores desserts)
@@ -128,6 +139,7 @@ pnpm build
 - [ ] Health check passes: https://destinosf.com/api/health
 
 #### Functional Testing (5-30 minutes)
+
 - [ ] Browse catering menu - all tabs work
 - [ ] Add Alfajores to cart from Lunch tab
 - [ ] Add other desserts from Buffet tab
@@ -136,6 +148,7 @@ pnpm build
 - [ ] Verify order appears in admin panel
 
 #### Database Verification (30 minutes)
+
 ```sql
 -- Check product availability states
 SELECT
@@ -167,6 +180,7 @@ LIMIT 20;
 ```
 
 #### Monitoring (24 hours)
+
 - [ ] Monitor Sentry for errors
 - [ ] Check webhook logs for failures
 - [ ] Monitor order creation success rate
@@ -178,6 +192,7 @@ LIMIT 20;
 If critical issues are discovered:
 
 ### Step 1: Revert Code
+
 ```bash
 # On GitHub, revert the merge commit
 # Or manually:
@@ -187,6 +202,7 @@ git push origin main
 ```
 
 ### Step 2: Revert Database Changes (if needed)
+
 ```sql
 -- Revert Lucuma product (if needed)
 BEGIN;
@@ -217,6 +233,7 @@ COMMIT;
 ```
 
 ### Step 3: Notify Stakeholders
+
 - Post in #deployments Slack channel
 - Email affected team members
 - Update status page if customer-facing
@@ -224,6 +241,7 @@ COMMIT;
 ## 📊 Success Metrics
 
 **Deployment is successful when**:
+
 - ✅ All health checks pass
 - ✅ Catering menu displays correctly
 - ✅ Orders can be created successfully

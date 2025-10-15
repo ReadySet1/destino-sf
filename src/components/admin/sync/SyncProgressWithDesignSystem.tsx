@@ -233,7 +233,7 @@ export function SyncProgressWithDesignSystem({ syncId, onSyncComplete }: SyncPro
 
   const getStatusIcon = () => {
     if (!status) return <Activity className="w-full h-full" />;
-    
+
     switch (status.status) {
       case 'PENDING':
         return <Clock className="w-full h-full text-amber-500" />;
@@ -252,7 +252,7 @@ export function SyncProgressWithDesignSystem({ syncId, onSyncComplete }: SyncPro
 
   const getStatusVariant = (): 'default' | 'secondary' | 'danger' | 'outline' => {
     if (!status) return 'outline';
-    
+
     switch (status.status) {
       case 'COMPLETED':
         return 'default';
@@ -275,11 +275,7 @@ export function SyncProgressWithDesignSystem({ syncId, onSyncComplete }: SyncPro
   };
 
   if (!syncId) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        No active sync to monitor
-      </div>
-    );
+    return <div className="text-center text-gray-500 py-8">No active sync to monitor</div>;
   }
 
   if (error) {
@@ -308,13 +304,9 @@ export function SyncProgressWithDesignSystem({ syncId, onSyncComplete }: SyncPro
       {/* Status Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 flex-shrink-0">
-            {getStatusIcon()}
-          </div>
+          <div className="w-6 h-6 flex-shrink-0">{getStatusIcon()}</div>
           <div>
-            <div className="font-semibold text-sm">
-              Started by {status.startedBy}
-            </div>
+            <div className="font-semibold text-sm">Started by {status.startedBy}</div>
             <div className="text-xs text-gray-500">
               {formatDuration(status.duration)} elapsed
               {pollCountRef.current > 0 && (
@@ -325,9 +317,7 @@ export function SyncProgressWithDesignSystem({ syncId, onSyncComplete }: SyncPro
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={getStatusVariant()}>{status.status}</Badge>
-          {isPollingRef.current && (
-            <div className="text-xs text-gray-500">Monitoring...</div>
-          )}
+          {isPollingRef.current && <div className="text-xs text-gray-500">Monitoring...</div>}
         </div>
       </div>
 
@@ -355,15 +345,11 @@ export function SyncProgressWithDesignSystem({ syncId, onSyncComplete }: SyncPro
       {status.results && (
         <FormGrid cols={4} gap={4}>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {status.results.syncedProducts}
-            </div>
+            <div className="text-2xl font-bold text-green-600">{status.results.syncedProducts}</div>
             <div className="text-xs text-gray-500">Synced</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-600">
-              {status.results.skippedProducts}
-            </div>
+            <div className="text-2xl font-bold text-gray-600">{status.results.skippedProducts}</div>
             <div className="text-xs text-gray-500">Skipped</div>
           </div>
           <div className="text-center">

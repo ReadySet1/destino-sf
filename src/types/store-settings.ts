@@ -12,7 +12,10 @@ export const StoreSettingsSchema = z.object({
   zipCode: z.string().nullable(),
   phone: z.string().nullable(),
   email: z.string().email('Invalid email format').nullable(),
-  taxRate: z.number().min(0, 'Tax rate must be non-negative').max(100, 'Tax rate cannot exceed 100%'),
+  taxRate: z
+    .number()
+    .min(0, 'Tax rate must be non-negative')
+    .max(100, 'Tax rate cannot exceed 100%'),
   minOrderAmount: z.number().min(0, 'Minimum order amount must be non-negative'),
   cateringMinimumAmount: z.number().min(0, 'Catering minimum amount must be non-negative'),
   minAdvanceHours: z.number().int().min(0, 'Minimum advance hours must be non-negative'),
@@ -42,7 +45,7 @@ export type StoreSettingsUpdate = z.infer<typeof StoreSettingsUpdateSchema>;
 /**
  * Result type for settings operations
  */
-export type SettingsResult<T = StoreSettings> = 
+export type SettingsResult<T = StoreSettings> =
   | { success: true; data: T }
   | { success: false; error: string };
 
@@ -77,4 +80,4 @@ export const ORDER_AFFECTING_FIELDS = [
   'temporaryClosureMsg',
 ] as const;
 
-export type OrderAffectingField = typeof ORDER_AFFECTING_FIELDS[number];
+export type OrderAffectingField = (typeof ORDER_AFFECTING_FIELDS)[number];

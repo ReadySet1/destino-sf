@@ -101,13 +101,19 @@ export async function getShippingWeightConfig(
 
     // Fall back to default configurations
     const defaultConfig = DEFAULT_WEIGHT_CONFIGS[productType] || null;
-    logger.warn(`[Shipping] ⚠️ No database config for ${productType}, using hardcoded default:`, defaultConfig);
+    logger.warn(
+      `[Shipping] ⚠️ No database config for ${productType}, using hardcoded default:`,
+      defaultConfig
+    );
     return defaultConfig;
   } catch (error) {
     logger.error('[Shipping] ❌ Error fetching shipping weight config:', error);
     // Fall back to default configurations
     const fallbackConfig = DEFAULT_WEIGHT_CONFIGS[productType] || null;
-    logger.warn(`[Shipping] ⚠️ Using fallback config for ${productType} due to database error:`, fallbackConfig);
+    logger.warn(
+      `[Shipping] ⚠️ Using fallback config for ${productType} due to database error:`,
+      fallbackConfig
+    );
     return fallbackConfig;
   }
 }
@@ -175,7 +181,9 @@ export async function calculateShippingWeight(
 
   // Validate calculated weight
   if (totalWeight < 0) {
-    logger.error(`[Shipping] ❌ Invalid negative weight calculated: ${totalWeight}lb. Using minimum weight.`);
+    logger.error(
+      `[Shipping] ❌ Invalid negative weight calculated: ${totalWeight}lb. Using minimum weight.`
+    );
     totalWeight = 0.5;
   }
 
@@ -187,7 +195,9 @@ export async function calculateShippingWeight(
 
   // Validate final weight is reasonable (< 50 lbs for food items)
   if (roundedWeight > 50) {
-    logger.warn(`[Shipping] ⚠️ Unusually high weight calculated: ${roundedWeight}lb. Please verify cart items.`);
+    logger.warn(
+      `[Shipping] ⚠️ Unusually high weight calculated: ${roundedWeight}lb. Please verify cart items.`
+    );
   }
 
   logger.info(
@@ -196,8 +206,6 @@ export async function calculateShippingWeight(
 
   return roundedWeight;
 }
-
-
 
 /**
  * Admin function to get all shipping weight configurations
@@ -215,9 +223,10 @@ export async function getAllShippingConfigurations(): Promise<ShippingWeightConf
   try {
     // Use centralized Prisma client with error handling
     const dbConfigs = await withRetry(
-      () => prisma.shippingConfiguration.findMany({
-        orderBy: { productName: 'asc' },
-      }),
+      () =>
+        prisma.shippingConfiguration.findMany({
+          orderBy: { productName: 'asc' },
+        }),
       3,
       'shipping configurations query'
     );
@@ -238,7 +247,9 @@ export async function getAllShippingConfigurations(): Promise<ShippingWeightConf
       }
     }
 
-    logger.info(`✅ Loaded ${configs.length} shipping configurations (${dbConfigs.length} from DB, ${configs.length - dbConfigs.length} defaults)`);
+    logger.info(
+      `✅ Loaded ${configs.length} shipping configurations (${dbConfigs.length} from DB, ${configs.length - dbConfigs.length} defaults)`
+    );
     return configs;
   } catch (error) {
     logger.error('❌ Error fetching shipping configurations:', error);

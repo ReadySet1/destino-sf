@@ -164,8 +164,6 @@ export class SquareService {
     }
   }
 
-
-
   /**
    * Search catalog objects
    */

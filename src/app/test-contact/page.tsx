@@ -30,7 +30,7 @@ export default function TestContactPage() {
   return (
     <div className="max-w-4xl mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8">Contact Form Test Page</h1>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
           <h2 className="text-xl font-semibold mb-4">Test API Endpoint</h2>
@@ -40,7 +40,7 @@ export default function TestContactPage() {
           >
             Test API
           </button>
-          
+
           {testResult && (
             <div className="bg-gray-100 p-4 rounded">
               <h3 className="font-semibold mb-2">API Response:</h3>
@@ -51,7 +51,7 @@ export default function TestContactPage() {
 
         <div>
           <h2 className="text-xl font-semibold mb-4">Contact Form</h2>
-          <ContactForm 
+          <ContactForm
             onSubmitSuccess={() => {
               console.log('Contact form submitted successfully');
             }}
@@ -60,4 +60,4 @@ export default function TestContactPage() {
       </div>
     </div>
   );
-} 
+}

@@ -149,10 +149,7 @@ export default async function ProductPage({ params }: PageProps) {
   // Fetch product from database
   const dbProduct = await prisma.product.findFirst({
     where: {
-      OR: [
-        { slug: slug },
-        ...(isUUID ? [{ id: slug }] : []),
-      ],
+      OR: [{ slug: slug }, ...(isUUID ? [{ id: slug }] : [])],
       active: true,
     },
     include: {
@@ -183,10 +180,12 @@ export default async function ProductPage({ params }: PageProps) {
     evaluatedAvailability = {
       currentState: String(evaluation.currentState),
       appliedRulesCount: evaluation.appliedRules.length,
-      nextStateChange: evaluation.nextStateChange ? {
-        date: evaluation.nextStateChange.date.toISOString(),
-        newState: String(evaluation.nextStateChange.newState),
-      } : undefined,
+      nextStateChange: evaluation.nextStateChange
+        ? {
+            date: evaluation.nextStateChange.date.toISOString(),
+            newState: String(evaluation.nextStateChange.newState),
+          }
+        : undefined,
     };
   } catch (error) {
     console.error('[Server] Error evaluating product availability:', error);

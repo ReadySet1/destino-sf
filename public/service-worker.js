@@ -12,48 +12,46 @@ const IMAGE_CACHE = `destino-images-${CACHE_VERSION}`;
 const CACHE_CONFIG = {
   static: {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    maxEntries: 100
+    maxEntries: 100,
   },
   dynamic: {
     maxAge: 24 * 60 * 60 * 1000, // 1 day
-    maxEntries: 50
+    maxEntries: 50,
   },
   api: {
     maxAge: 10 * 60 * 1000, // 10 minutes
-    maxEntries: 30
+    maxEntries: 30,
   },
   images: {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    maxEntries: 200
-  }
+    maxEntries: 200,
+  },
 };
 
 // Essential URLs to cache immediately
-const ESSENTIAL_URLS = [
-  '/',
-  '/menu',
-  '/cart',
-  '/catering',
-  '/offline',
-  '/manifest.json'
-];
+const ESSENTIAL_URLS = ['/', '/menu', '/cart', '/catering', '/offline', '/manifest.json'];
 
 // Install Event
 self.addEventListener('install', event => {
   console.log('[SW] Installing service worker');
-  
+
   event.waitUntil(
     (async () => {
       try {
         const cache = await caches.open(STATIC_CACHE);
-        
+
         // Cache essential resources
-        await cache.addAll(ESSENTIAL_URLS.map(url => new Request(url, {
-          cache: 'reload' // Bypass browser cache during install
-        })));
-        
+        await cache.addAll(
+          ESSENTIAL_URLS.map(
+            url =>
+              new Request(url, {
+                cache: 'reload', // Bypass browser cache during install
+              })
+          )
+        );
+
         console.log('[SW] Essential resources cached');
-        
+
         // Skip waiting to activate immediately
         await self.skipWaiting();
       } catch (error) {
@@ -66,7 +64,7 @@ self.addEventListener('install', event => {
 // Activate Event
 self.addEventListener('activate', event => {
   console.log('[SW] Activating service worker');
-  
+
   event.waitUntil(
     (async () => {
       try {
@@ -78,17 +76,17 @@ self.addEventListener('activate', event => {
             console.log('[SW] Deleting old cache:', name);
             return caches.delete(name);
           });
-        
+
         await Promise.all(deletionPromises);
-        
+
         // Enable navigation preload if available
         if (self.registration.navigationPreload) {
           await self.registration.navigationPreload.enable();
         }
-        
+
         // Claim all clients
         await self.clients.claim();
-        
+
         console.log('[SW] Service worker activated');
       } catch (error) {
         console.error('[SW] Activation failed:', error);
@@ -111,11 +109,13 @@ self.addEventListener('fetch', event => {
   }
 
   // Skip admin routes, account routes, and sensitive APIs
-  if (url.pathname.startsWith('/admin') || 
-      url.pathname.startsWith('/account') ||
-      url.pathname.startsWith('/api/auth') ||
-      url.pathname.startsWith('/api/checkout') ||
-      url.pathname.startsWith('/api/orders')) {
+  if (
+    url.pathname.startsWith('/admin') ||
+    url.pathname.startsWith('/account') ||
+    url.pathname.startsWith('/api/auth') ||
+    url.pathname.startsWith('/api/checkout') ||
+    url.pathname.startsWith('/api/orders')
+  ) {
     return;
   }
 
@@ -138,34 +138,36 @@ async function cacheFirstStrategy(request, cacheName, config) {
   try {
     const cache = await caches.open(cacheName);
     const cachedResponse = await cache.match(request);
-    
+
     if (cachedResponse) {
       // Check if cache entry is still fresh
-      const cacheDate = new Date(cachedResponse.headers.get('sw-cached-date') || cachedResponse.headers.get('date') || 0);
+      const cacheDate = new Date(
+        cachedResponse.headers.get('sw-cached-date') || cachedResponse.headers.get('date') || 0
+      );
       const isExpired = Date.now() - cacheDate.getTime() > config.maxAge;
-      
+
       if (!isExpired) {
         return cachedResponse;
       }
     }
-    
+
     // Fetch from network
     const response = await fetch(request);
-    
+
     if (response.ok) {
       await putInCache(cache, request, response.clone(), config);
     }
-    
+
     return response;
   } catch (error) {
     // Return cached version if network fails
     const cache = await caches.open(cacheName);
     const cachedResponse = await cache.match(request);
-    
+
     if (cachedResponse) {
       return cachedResponse;
     }
-    
+
     throw error;
   }
 }
@@ -174,48 +176,51 @@ async function cacheFirstStrategy(request, cacheName, config) {
 async function staleWhileRevalidateStrategy(request, cacheName, config) {
   const cache = await caches.open(cacheName);
   const cachedResponse = await cache.match(request);
-  
+
   // Start fetch in background
-  const fetchPromise = fetch(request).then(async response => {
-    if (response.ok) {
-      await putInCache(cache, request, response.clone(), config);
-    }
-    return response;
-  }).catch(() => null);
-  
+  const fetchPromise = fetch(request)
+    .then(async response => {
+      if (response.ok) {
+        await putInCache(cache, request, response.clone(), config);
+      }
+      return response;
+    })
+    .catch(() => null);
+
   // Return cached response immediately if available
   if (cachedResponse) {
     // Don't await the fetch promise to return immediately
     return cachedResponse;
   }
-  
+
   // If no cache, wait for network
-  return await fetchPromise || new Response('Offline', { status: 503 });
+  return (await fetchPromise) || new Response('Offline', { status: 503 });
 }
 
 // Network First Strategy (for pages)
 async function networkFirstStrategy(request, cacheName, config) {
   try {
     const response = await fetch(request);
-    
+
     if (response.ok) {
       const cache = await caches.open(cacheName);
       await putInCache(cache, request, response.clone(), config);
     }
-    
+
     return response;
   } catch (error) {
     // Fallback to cache
     const cache = await caches.open(cacheName);
     const cachedResponse = await cache.match(request);
-    
+
     if (cachedResponse) {
       return cachedResponse;
     }
-    
+
     // Return offline page for navigation requests
     if (isPageRequest(request)) {
-      return new Response(`
+      return new Response(
+        `
         <!DOCTYPE html>
         <html>
         <head>
@@ -240,17 +245,19 @@ async function networkFirstStrategy(request, cacheName, config) {
           </div>
         </body>
         </html>
-      `, { 
-        status: 503,
-        statusText: 'Service Unavailable',
-        headers: { 'Content-Type': 'text/html' }
-      });
+      `,
+        {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/html' },
+        }
+      );
     }
-    
-    return new Response('Offline', { 
+
+    return new Response('Offline', {
       status: 503,
       statusText: 'Service Unavailable',
-      headers: { 'Content-Type': 'text/plain' }
+      headers: { 'Content-Type': 'text/plain' },
     });
   }
 }
@@ -264,12 +271,12 @@ async function putInCache(cache, request, response, config) {
       statusText: response.statusText,
       headers: {
         ...Object.fromEntries(response.headers.entries()),
-        'sw-cached-date': new Date().toISOString()
-      }
+        'sw-cached-date': new Date().toISOString(),
+      },
     });
-    
+
     await cache.put(request, responseWithTimestamp);
-    
+
     // Manage cache size
     await manageCacheSize(cache, config.maxEntries);
   } catch (error) {
@@ -281,7 +288,7 @@ async function putInCache(cache, request, response, config) {
 async function manageCacheSize(cache, maxEntries) {
   try {
     const keys = await cache.keys();
-    
+
     if (keys.length > maxEntries) {
       // Remove oldest entries (FIFO)
       const entriesToDelete = keys.slice(0, keys.length - maxEntries);
@@ -294,30 +301,35 @@ async function manageCacheSize(cache, maxEntries) {
 
 // Helper functions for request classification
 function isImageRequest(request) {
-  return request.destination === 'image' || 
-         /\.(png|jpg|jpeg|gif|webp|svg|ico|avif)$/i.test(new URL(request.url).pathname);
+  return (
+    request.destination === 'image' ||
+    /\.(png|jpg|jpeg|gif|webp|svg|ico|avif)$/i.test(new URL(request.url).pathname)
+  );
 }
 
 function isStaticAsset(request) {
-  return request.destination === 'script' ||
-         request.destination === 'style' ||
-         request.destination === 'font' ||
-         /\.(js|css|woff|woff2|ttf|eot|map)$/i.test(new URL(request.url).pathname) ||
-         new URL(request.url).pathname.startsWith('/_next/static/');
+  return (
+    request.destination === 'script' ||
+    request.destination === 'style' ||
+    request.destination === 'font' ||
+    /\.(js|css|woff|woff2|ttf|eot|map)$/i.test(new URL(request.url).pathname) ||
+    new URL(request.url).pathname.startsWith('/_next/static/')
+  );
 }
 
 function isAPIRequest(request) {
   const pathname = new URL(request.url).pathname;
-  return pathname.startsWith('/api/') && 
-         (pathname.includes('/products') || 
-          pathname.includes('/categories') ||
-          pathname.includes('/health') ||
-          pathname.includes('/spotlight-picks'));
+  return (
+    pathname.startsWith('/api/') &&
+    (pathname.includes('/products') ||
+      pathname.includes('/categories') ||
+      pathname.includes('/health') ||
+      pathname.includes('/spotlight-picks'))
+  );
 }
 
 function isPageRequest(request) {
-  return request.destination === 'document' ||
-         request.headers.get('accept')?.includes('text/html');
+  return request.destination === 'document' || request.headers.get('accept')?.includes('text/html');
 }
 
 // Background sync for offline actions

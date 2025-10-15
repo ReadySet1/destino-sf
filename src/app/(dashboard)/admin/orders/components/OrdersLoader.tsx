@@ -60,7 +60,9 @@ export default function OrdersLoader() {
   const statusFilter = searchParams.get('status') || 'all';
   const paymentFilter = searchParams.get('payment') || 'all';
   const sortField = searchParams.get('sort') || 'createdAt';
-  const sortDirection = (searchParams.get('direction') === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+  const sortDirection = (searchParams.get('direction') === 'asc' ? 'asc' : 'desc') as
+    | 'asc'
+    | 'desc';
 
   useEffect(() => {
     async function fetchOrders() {
@@ -105,7 +107,7 @@ export default function OrdersLoader() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          
+
           if (response.status === 504 || errorData.code === 'TIMEOUT') {
             setError('Request timed out. The server is experiencing high load. Please try again.');
           } else {
@@ -116,18 +118,16 @@ export default function OrdersLoader() {
 
         const ordersData = await response.json();
         setData(ordersData);
-        
+
         logger.info(`[ORDERS-LOADER] Successfully loaded ${ordersData.orders.length} orders`);
-        
       } catch (fetchError) {
         logger.error('[ORDERS-LOADER] Error fetching orders:', fetchError);
-        
+
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
           setError('Request timed out. Please try again.');
         } else {
           setError('Failed to load orders. Please try again.');
         }
-        
       } finally {
         setLoading(false);
       }
@@ -208,9 +208,7 @@ export default function OrdersLoader() {
           currentStatus={statusFilter}
           currentPayment={paymentFilter}
         />
-        <div className="text-center py-10 text-gray-500">
-          No data available.
-        </div>
+        <div className="text-center py-10 text-gray-500">No data available.</div>
       </div>
     );
   }
@@ -234,11 +232,7 @@ export default function OrdersLoader() {
       ) : (
         <>
           {/* Orders Table */}
-          <OrdersTableWrapper 
-            orders={orders}
-            sortKey={sortField}
-            sortDirection={sortDirection}
-          />
+          <OrdersTableWrapper orders={orders} sortKey={sortField} sortDirection={sortDirection} />
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (

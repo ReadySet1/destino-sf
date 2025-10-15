@@ -46,7 +46,7 @@ export function BulkRuleModal({
   onOpenChange,
   selectedProductIds,
   productNames,
-  onSuccess
+  onSuccess,
 }: BulkRuleModalProps) {
   const router = useRouter();
   const [ruleAggregations, setRuleAggregations] = useState<RuleAggregation[]>([]);
@@ -80,7 +80,7 @@ export function BulkRuleModal({
             totalProducts: 0,
             enabledProducts: 0,
             disabledProducts: 0,
-            productIds: []
+            productIds: [],
           });
         }
 
@@ -135,9 +135,7 @@ export function BulkRuleModal({
 
     try {
       const enabled = action === 'enable';
-      const aggregation = ruleAggregations.find(
-        r => r.templateRule.name === selectedRuleName
-      );
+      const aggregation = ruleAggregations.find(r => r.templateRule.name === selectedRuleName);
 
       if (!aggregation) {
         throw new Error('Rule not found');
@@ -155,8 +153,8 @@ export function BulkRuleModal({
         body: JSON.stringify({
           templateRuleId: aggregation.templateRule.id,
           productIds: targetProductIds,
-          enabled
-        })
+          enabled,
+        }),
       });
 
       const data = await response.json();
@@ -175,7 +173,9 @@ export function BulkRuleModal({
         successParts.push(`Updated ${updated} product${updated !== 1 ? 's' : ''}`);
       }
 
-      const scope = applyToAll ? 'all products' : `${selectedProductIds.length} selected product${selectedProductIds.length !== 1 ? 's' : ''}`;
+      const scope = applyToAll
+        ? 'all products'
+        : `${selectedProductIds.length} selected product${selectedProductIds.length !== 1 ? 's' : ''}`;
 
       toast.success(
         `${enabled ? 'Enabled' : 'Disabled'} "${aggregation.templateRule.name}" for ${scope}: ${successParts.join(', ')}`,
@@ -201,9 +201,7 @@ export function BulkRuleModal({
     router.push(`/admin/products/availability/bulk?productIds=${productIdsParam}`);
   };
 
-  const selectedAggregation = ruleAggregations.find(
-    r => r.templateRule.name === selectedRuleName
-  );
+  const selectedAggregation = ruleAggregations.find(r => r.templateRule.name === selectedRuleName);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -212,7 +210,8 @@ export function BulkRuleModal({
           <DialogTitle>Bulk Manage Availability Rules</DialogTitle>
           <DialogDescription>
             Apply availability rules to {selectedProductIds.length} selected product
-            {selectedProductIds.length !== 1 ? 's' : ''}. Rules will be created for products that don&apos;t have them yet.
+            {selectedProductIds.length !== 1 ? 's' : ''}. Rules will be created for products that
+            don&apos;t have them yet.
           </DialogDescription>
         </DialogHeader>
 
@@ -284,7 +283,7 @@ export function BulkRuleModal({
                   <SelectValue placeholder="Choose a rule..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {ruleAggregations.map((agg) => (
+                  {ruleAggregations.map(agg => (
                     <SelectItem key={agg.templateRule.name} value={agg.templateRule.name}>
                       <div className="flex items-center gap-2">
                         <span>{agg.templateRule.name}</span>
@@ -353,7 +352,7 @@ export function BulkRuleModal({
             {/* Action Selection */}
             <div className="space-y-2">
               <Label>Action</Label>
-              <RadioGroup value={action} onValueChange={(v) => setAction(v as 'enable' | 'disable')}>
+              <RadioGroup value={action} onValueChange={v => setAction(v as 'enable' | 'disable')}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="enable" id="enable" />
                   <Label htmlFor="enable" className="font-normal cursor-pointer">
@@ -370,45 +369,39 @@ export function BulkRuleModal({
             </div>
 
             {/* Apply to All Option */}
-            {selectedAggregation && selectedAggregation.totalProducts > selectedProductIds.length && (
-              <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                <div className="flex items-start space-x-3">
-                  <Checkbox
-                    id="apply-to-all"
-                    checked={applyToAll}
-                    onCheckedChange={(checked) => setApplyToAll(checked as boolean)}
-                  />
-                  <div className="flex-1">
-                    <Label
-                      htmlFor="apply-to-all"
-                      className="text-sm font-medium cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Apply to ALL {selectedAggregation.totalProducts} products with this rule
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {applyToAll
-                        ? `Will ${action} this rule for all ${selectedAggregation.totalProducts} products that have it`
-                        : `Will only ${action} for the ${selectedProductIds.length} selected product${selectedProductIds.length !== 1 ? 's' : ''}`}
-                    </p>
+            {selectedAggregation &&
+              selectedAggregation.totalProducts > selectedProductIds.length && (
+                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="apply-to-all"
+                      checked={applyToAll}
+                      onCheckedChange={checked => setApplyToAll(checked as boolean)}
+                    />
+                    <div className="flex-1">
+                      <Label
+                        htmlFor="apply-to-all"
+                        className="text-sm font-medium cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Apply to ALL {selectedAggregation.totalProducts} products with this rule
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {applyToAll
+                          ? `Will ${action} this rule for all ${selectedAggregation.totalProducts} products that have it`
+                          : `Will only ${action} for the ${selectedProductIds.length} selected product${selectedProductIds.length !== 1 ? 's' : ''}`}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         )}
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={applying}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={applying}>
             Cancel
           </Button>
-          <Button
-            onClick={handleApply}
-            disabled={applying || loading || !selectedRuleName}
-          >
+          <Button onClick={handleApply} disabled={applying || loading || !selectedRuleName}>
             {applying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {applyToAll && selectedAggregation
               ? `Apply to All ${selectedAggregation.totalProducts} Products`

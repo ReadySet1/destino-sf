@@ -1,7 +1,7 @@
-import { 
-  type AvailabilityRule, 
+import {
+  type AvailabilityRule,
   type AvailabilitySchedule,
-  AvailabilityState 
+  AvailabilityState,
 } from '@/types/availability';
 import { prisma } from '@/lib/db';
 import { logger } from '@/utils/logger';
@@ -19,7 +19,7 @@ export class AvailabilityScheduler {
     try {
       // Clear existing schedules for this rule
       await prisma.availabilitySchedule.deleteMany({
-        where: { ruleId: rule.id }
+        where: { ruleId: rule.id },
       });
 
       const schedules: Omit<AvailabilitySchedule, 'id'>[] = [];
@@ -32,7 +32,7 @@ export class AvailabilityScheduler {
           stateChange: `activate_${rule.state}`,
           processed: false,
           processedAt: null,
-          errorMessage: null
+          errorMessage: null,
         });
       }
 
@@ -44,7 +44,7 @@ export class AvailabilityScheduler {
           stateChange: `deactivate_${rule.state}`,
           processed: false,
           processedAt: null,
-          errorMessage: null
+          errorMessage: null,
         });
       }
 
@@ -57,18 +57,18 @@ export class AvailabilityScheduler {
       // Create all schedules
       if (schedules.length > 0) {
         await prisma.availabilitySchedule.createMany({
-          data: schedules
+          data: schedules,
         });
 
         logger.info('Scheduled availability changes', {
           ruleId: rule.id,
-          schedulesCreated: schedules.length
+          schedulesCreated: schedules.length,
         });
       }
     } catch (error) {
       logger.error('Error scheduling rule changes', {
         ruleId: rule.id,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -77,7 +77,9 @@ export class AvailabilityScheduler {
   /**
    * Generate seasonal schedule entries for the next 2 years
    */
-  private static generateSeasonalSchedules(rule: AvailabilityRule): Omit<AvailabilitySchedule, 'id'>[] {
+  private static generateSeasonalSchedules(
+    rule: AvailabilityRule
+  ): Omit<AvailabilitySchedule, 'id'>[] {
     if (!rule.seasonalConfig) return [];
 
     const schedules: Omit<AvailabilitySchedule, 'id'>[] = [];
@@ -95,7 +97,7 @@ export class AvailabilityScheduler {
           stateChange: `seasonal_start_${rule.state}`,
           processed: false,
           processedAt: null,
-          errorMessage: null
+          errorMessage: null,
         });
       }
 
@@ -108,7 +110,7 @@ export class AvailabilityScheduler {
           stateChange: `seasonal_end_${rule.state}`,
           processed: false,
           processedAt: null,
-          errorMessage: null
+          errorMessage: null,
         });
       }
     }
@@ -122,45 +124,44 @@ export class AvailabilityScheduler {
   static async processPendingChanges(): Promise<void> {
     try {
       const now = new Date();
-      
+
       // Get all pending schedules that are due
       const pendingSchedules = await prisma.availabilitySchedule.findMany({
         where: {
           processed: false,
           scheduledAt: {
-            lte: now
-          }
+            lte: now,
+          },
         },
         include: {
           rule: {
             include: {
-              product: true
-            }
-          }
+              product: true,
+            },
+          },
         },
         orderBy: {
-          scheduledAt: 'asc'
-        }
+          scheduledAt: 'asc',
+        },
       });
 
       logger.info('Processing pending availability changes', {
-        count: pendingSchedules.length
+        count: pendingSchedules.length,
       });
 
       // Process each schedule
       for (const schedule of pendingSchedules) {
         try {
           await this.processScheduleChange(schedule as any);
-          
+
           // Mark as processed
           await prisma.availabilitySchedule.update({
             where: { id: schedule.id },
             data: {
               processed: true,
-              processedAt: now
-            }
+              processedAt: now,
+            },
           });
-
         } catch (error) {
           // Mark as failed with error message
           await prisma.availabilitySchedule.update({
@@ -168,21 +169,20 @@ export class AvailabilityScheduler {
             data: {
               processed: true,
               processedAt: now,
-              errorMessage: error instanceof Error ? error.message : 'Unknown error'
-            }
+              errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            },
           });
 
           logger.error('Error processing schedule change', {
             scheduleId: schedule.id,
             ruleId: schedule.ruleId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
         }
       }
-
     } catch (error) {
       logger.error('Error processing pending changes', {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -192,16 +192,16 @@ export class AvailabilityScheduler {
    */
   private static async processScheduleChange(
     schedule: AvailabilitySchedule & {
-      rule: AvailabilityRule & { product: any }
+      rule: AvailabilityRule & { product: any };
     }
   ): Promise<void> {
     const { stateChange, rule } = schedule;
-    
+
     logger.info('Processing availability change', {
       scheduleId: schedule.id,
       ruleId: rule.id,
       productId: rule.productId,
-      stateChange
+      stateChange,
     });
 
     // The actual state change is handled by the evaluation engine
@@ -215,15 +215,12 @@ export class AvailabilityScheduler {
   /**
    * Send notifications for state changes
    */
-  private static async notifyStateChange(
-    productId: string, 
-    stateChange: string
-  ): Promise<void> {
+  private static async notifyStateChange(productId: string, stateChange: string): Promise<void> {
     // Implementation for notifications
     // Could send emails, webhooks, or update other systems
     logger.info('Availability state change notification', {
       productId,
-      stateChange
+      stateChange,
     });
   }
 
@@ -239,18 +236,18 @@ export class AvailabilityScheduler {
         where: {
           processed: true,
           processedAt: {
-            lt: cutoffDate
-          }
-        }
+            lt: cutoffDate,
+          },
+        },
       });
 
       logger.info('Cleaned up old availability schedules', {
         deletedCount: result.count,
-        cutoffDate
+        cutoffDate,
       });
     } catch (error) {
       logger.error('Error cleaning up old schedules', {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -263,12 +260,12 @@ export class AvailabilityScheduler {
       const rules = await prisma.availabilityRule.findMany({
         where: {
           enabled: true,
-          deletedAt: null
-        }
+          deletedAt: null,
+        },
       });
 
       logger.info('Rescheduling all availability rules', {
-        rulesCount: rules.length
+        rulesCount: rules.length,
       });
 
       for (const rule of rules) {
@@ -278,7 +275,7 @@ export class AvailabilityScheduler {
       logger.info('Completed rescheduling all rules');
     } catch (error) {
       logger.error('Error rescheduling all rules', {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -297,20 +294,20 @@ export class AvailabilityScheduler {
     return prisma.availabilitySchedule.findMany({
       where: {
         rule: {
-          productId
+          productId,
         },
         processed: false,
         scheduledAt: {
           gte: new Date(),
-          lte: futureDate
-        }
+          lte: futureDate,
+        },
       },
       include: {
-        rule: true
+        rule: true,
       },
       orderBy: {
-        scheduledAt: 'asc'
-      }
+        scheduledAt: 'asc',
+      },
     }) as Promise<AvailabilitySchedule[]>;
   }
 }

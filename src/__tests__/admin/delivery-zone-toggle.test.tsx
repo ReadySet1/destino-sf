@@ -112,7 +112,7 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
 
     test('should toggle zone status optimistically', async () => {
       const user = userEvent.setup();
-      
+
       // Mock successful API response
       (fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -127,7 +127,7 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
 
       // Find the toggle switch for the first zone
       const toggle = screen.getByRole('switch', { name: /downtown san francisco/i });
-      
+
       // Check initial state
       expect(toggle).toBeChecked();
 
@@ -157,11 +157,9 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
 
     test('should prevent multiple rapid clicks', async () => {
       const user = userEvent.setup();
-      
+
       // Mock slow API response
-      (fetch as any).mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 1000))
-      );
+      (fetch as any).mockImplementation(() => new Promise(resolve => setTimeout(resolve, 1000)));
 
       render(<DeliveryZoneManager />);
 
@@ -170,7 +168,7 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
       });
 
       const toggle = screen.getByRole('switch', { name: /downtown san francisco/i });
-      
+
       // Click multiple times rapidly
       await user.click(toggle);
       await user.click(toggle);
@@ -184,11 +182,9 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
 
     test('should show loading spinner during toggle', async () => {
       const user = userEvent.setup();
-      
+
       // Mock slow API response
-      (fetch as any).mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 1000))
-      );
+      (fetch as any).mockImplementation(() => new Promise(resolve => setTimeout(resolve, 1000)));
 
       render(<DeliveryZoneManager />);
 
@@ -197,7 +193,7 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
       });
 
       const toggle = screen.getByRole('switch', { name: /downtown san francisco/i });
-      
+
       // Click toggle
       await user.click(toggle);
 
@@ -209,7 +205,7 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
 
     test('should rollback on API error', async () => {
       const user = userEvent.setup();
-      
+
       // Mock API error
       (fetch as any).mockResolvedValueOnce({
         ok: false,
@@ -224,7 +220,7 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
       });
 
       const toggle = screen.getByRole('switch', { name: /downtown san francisco/i });
-      
+
       // Check initial state
       expect(toggle).toBeChecked();
 
@@ -249,7 +245,7 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
 
     test('should handle network errors gracefully', async () => {
       const user = userEvent.setup();
-      
+
       // Mock network error
       (fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
@@ -260,7 +256,7 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
       });
 
       const toggle = screen.getByRole('switch', { name: /downtown san francisco/i });
-      
+
       // Toggle off
       await user.click(toggle);
 
@@ -321,7 +317,7 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
 
     test('should save zone successfully', async () => {
       const user = userEvent.setup();
-      
+
       // Mock successful save
       (fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -375,14 +371,14 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
 
     test('should handle API validation errors', async () => {
       const user = userEvent.setup();
-      
+
       // Mock API validation error
       (fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 400,
-        json: async () => ({ 
+        json: async () => ({
           error: 'Validation failed',
-          details: [{ message: 'Zone identifier is required' }]
+          details: [{ message: 'Zone identifier is required' }],
         }),
       });
 
@@ -403,4 +399,4 @@ describe('DeliveryZoneManager - Toggle Functionality', () => {
       });
     });
   });
-}); 
+});

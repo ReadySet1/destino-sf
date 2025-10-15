@@ -93,7 +93,9 @@ export function FeaturedProducts() {
               dangerouslySetInnerHTML={{ __html: shortDescription }}
             />
           )}
-          {productData.price && <p className="font-medium text-amber-600 mt-2">{productData.price}</p>}
+          {productData.price && (
+            <p className="font-medium text-amber-600 mt-2">{productData.price}</p>
+          )}
         </div>
       </Link>
     );

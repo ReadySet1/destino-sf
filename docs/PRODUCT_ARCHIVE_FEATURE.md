@@ -9,21 +9,25 @@ This document describes the newly implemented product archive feature that integ
 ### 1. Database Schema Changes
 
 **New Fields Added to `products` Table:**
+
 - `is_archived` (BOOLEAN, NOT NULL, DEFAULT false) - Archive status flag
 - `archived_at` (TIMESTAMP, NULLABLE) - When product was archived
 - `archived_reason` (VARCHAR(100), NULLABLE) - Why product was archived
 
 **New Index:**
+
 - `idx_products_archived_active` on `(is_archived, active)` - Optimizes archive queries
 
 ### 2. Square Sync Integration
 
 **What Changed:**
+
 - Square's `is_archived` field is now checked during sync
 - Products marked as archived in Square → automatically archived in database
 - Archive status syncs bidirectionally with Square
 
 **Archive Reasons:**
+
 - `square_archived` - Archived in Square dashboard by James
 - `removed_from_square` - Product no longer exists in Square catalog
 - `manual` - Manually archived by admin via API
@@ -31,6 +35,7 @@ This document describes the newly implemented product archive feature that integ
 ### 3. Archive Handler Updates
 
 **Enhanced Functions:**
+
 - `archiveRemovedSquareProducts()` - Now sets archive fields when archiving
 - `restoreArchivedProduct()` - Properly restores all archive fields
 - `getArchivedProductsCount()` - Returns statistics by category AND reason
@@ -40,10 +45,13 @@ This document describes the newly implemented product archive feature that integ
 **Base URL:** `/api/admin/products/[id]/archive`
 
 #### Archive a Product
+
 ```http
 POST /api/admin/products/[id]/archive
 ```
+
 **Response:**
+
 ```json
 {
   "success": true,
@@ -61,10 +69,13 @@ POST /api/admin/products/[id]/archive
 ```
 
 #### Restore (Unarchive) a Product
+
 ```http
 DELETE /api/admin/products/[id]/archive
 ```
+
 **Response:**
+
 ```json
 {
   "success": true,
@@ -82,6 +93,7 @@ DELETE /api/admin/products/[id]/archive
 ```
 
 #### Get Archive Status
+
 ```http
 GET /api/admin/products/[id]/archive
 ```
@@ -121,11 +133,11 @@ graph TD
 
 ### Archive Reasons Explained
 
-| Reason | Description | How It Happens |
-|--------|-------------|----------------|
-| `square_archived` | Archived in Square dashboard | James archives product in Square → sync picks it up |
-| `removed_from_square` | Product deleted from Square | Product no longer appears in catalog sync |
-| `manual` | Manually archived by admin | Admin uses archive API endpoint |
+| Reason                | Description                  | How It Happens                                      |
+| --------------------- | ---------------------------- | --------------------------------------------------- |
+| `square_archived`     | Archived in Square dashboard | James archives product in Square → sync picks it up |
+| `removed_from_square` | Product deleted from Square  | Product no longer appears in catalog sync           |
+| `manual`              | Manually archived by admin   | Admin uses archive API endpoint                     |
 
 ## Usage Examples
 
@@ -136,8 +148,8 @@ graph TD
 const response = await fetch('/api/admin/products/abc-123/archive', {
   method: 'POST',
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
 const result = await response.json();
@@ -151,8 +163,8 @@ console.log(result.message); // "Product \"Alfajores\" has been archived"
 const response = await fetch('/api/admin/products/abc-123/archive', {
   method: 'DELETE',
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
 const result = await response.json();
@@ -167,27 +179,27 @@ import { prisma } from '@/lib/db-unified';
 // Get all archived products
 const archivedProducts = await prisma.product.findMany({
   where: {
-    isArchived: true
+    isArchived: true,
   },
   include: {
-    category: true
-  }
+    category: true,
+  },
 });
 
 // Get products archived from Square
 const squareArchivedProducts = await prisma.product.findMany({
   where: {
     isArchived: true,
-    archivedReason: 'square_archived'
-  }
+    archivedReason: 'square_archived',
+  },
 });
 
 // Get active products only (exclude archived)
 const activeProducts = await prisma.product.findMany({
   where: {
     active: true,
-    isArchived: false
-  }
+    isArchived: false,
+  },
 });
 ```
 
@@ -230,20 +242,21 @@ console.log(stats);
 ### For Developers
 
 1. **Default Queries Should Exclude Archived:**
+
    ```typescript
    // GOOD - Excludes archived products
    const products = await prisma.product.findMany({
      where: {
        active: true,
-       isArchived: false
-     }
+       isArchived: false,
+     },
    });
 
    // BAD - Might include archived products
    const products = await prisma.product.findMany({
      where: {
-       active: true
-     }
+       active: true,
+     },
    });
    ```
 
@@ -253,6 +266,7 @@ console.log(stats);
    - Archived products preserve order history
 
 3. **Testing Archive:**
+
    ```bash
    # Archive a product
    curl -X POST http://localhost:3000/api/admin/products/PRODUCT_ID/archive
@@ -284,20 +298,24 @@ CREATE INDEX idx_products_archived_active ON products(is_archived, active);
 ## Files Modified
 
 ### Schema & Database
+
 - ✅ `prisma/schema.prisma` - Added archive fields to Product model
 - ✅ `prisma/migrations/20250110000000_add_product_archive_fields/migration.sql` - Migration file
 
 ### Square Sync
+
 - ✅ `src/lib/square/production-sync.ts` - Added `is_archived` to TypeScript interface, updated sync logic
 - ✅ `src/lib/square/archive-handler.ts` - Updated all archive functions to use new fields
 - ✅ `src/types/square-sync.ts` - Added `isArchived` to SquareItemAvailability interface
 
 ### API Endpoints
+
 - ✅ `src/app/api/admin/products/[id]/archive/route.ts` - New archive/unarchive API endpoints
 
 ## Testing Checklist
 
 ### Phase 1 (Backend/API) - ✅ COMPLETE
+
 - [x] Database migration applied successfully
 - [x] Prisma client regenerated with new fields
 - [x] Square sync correctly detects archived products
@@ -309,6 +327,7 @@ CREATE INDEX idx_products_archived_active ON products(is_archived, active);
 - [x] Archive handler functions updated with new fields
 
 ### Phase 2 (Admin UI) - ✅ COMPLETE
+
 - [x] Archive statistics dashboard component
 - [x] Product cards display archive status
 - [x] Archive/restore toggle buttons functional
@@ -322,9 +341,11 @@ CREATE INDEX idx_products_archived_active ON products(is_archived, active);
 ## Implementation Phases
 
 ### ✅ Phase 1: Backend & API (COMPLETE)
+
 **Completed:** October 1, 2025
 
 **Deliverables:**
+
 - ✅ Database schema migration with archive fields
 - ✅ Prisma models updated
 - ✅ Square sync integration with `is_archived` detection
@@ -334,6 +355,7 @@ CREATE INDEX idx_products_archived_active ON products(is_archived, active);
 - ✅ Archive statistics functions
 
 **Files Changed:**
+
 - `prisma/schema.prisma`
 - `prisma/migrations/20250110000000_add_product_archive_fields/migration.sql`
 - `src/lib/square/production-sync.ts`
@@ -342,9 +364,11 @@ CREATE INDEX idx_products_archived_active ON products(is_archived, active);
 - `src/app/api/admin/products/[id]/archive/route.ts`
 
 ### ✅ Phase 2: Admin UI Components (COMPLETE)
+
 **Completed:** October 1, 2025
 
 **Deliverables:**
+
 - ✅ Archive statistics dashboard
 - ✅ Enhanced product cards with archive badges
 - ✅ Dedicated archived products page
@@ -355,6 +379,7 @@ CREATE INDEX idx_products_archived_active ON products(is_archived, active);
 - ✅ Type-safe implementation with TypeScript
 
 **Files Created:**
+
 - `src/app/(dashboard)/admin/products/components/ArchiveStatsDashboard.tsx` - Server component displaying archive statistics
 - `src/app/(dashboard)/admin/products/components/ArchiveFilter.tsx` - Client component for filtering products
 - `src/app/(dashboard)/admin/products/components/ArchiveToggleButton.tsx` - Client component for archive/restore actions
@@ -363,10 +388,12 @@ CREATE INDEX idx_products_archived_active ON products(is_archived, active);
 - `src/types/product-archive.ts` - TypeScript types for archive system
 
 **Files Updated:**
+
 - `src/app/(dashboard)/admin/products/page.tsx` - Added archive filter and "View Archived" button
 - `src/app/api/admin/products/[id]/archive/route.ts` - Fixed for Next.js 15 async params
 
 **Key Features Implemented:**
+
 - Visual dimming effect for archived products (grayscale + opacity)
 - Color-coded archive reason badges (blue, yellow, green)
 - Confirmation dialogs before archiving
@@ -378,9 +405,11 @@ CREATE INDEX idx_products_archived_active ON products(is_archived, active);
 - URL state persistence for filters
 
 ### 📋 Phase 3: Analytics & Automation (PLANNED)
+
 **Target:** TBD
 
 **Proposed Deliverables:**
+
 - [ ] Bulk archive/restore operations modal
 - [ ] Archive history audit trail
 - [ ] Time-series analytics charts (archive trends)
@@ -422,6 +451,7 @@ A: No. Archived products are filtered out of all customer-facing queries.
 
 **Q: What's the difference between `active: false` and `isArchived: true`?**
 A:
+
 - `active: false` means product is temporarily unavailable (might be out of stock, seasonal, etc.)
 - `isArchived: true` means product is permanently archived with metadata about when/why
 
@@ -434,6 +464,7 @@ A: Yes, using the API endpoint. However, the next sync from Square might restore
 ## Support
 
 For questions or issues:
+
 - Check logs: `logger.info` statements track all archive operations
 - Review archive statistics: `getArchivedProductsCount()`
 - Verify database: Check `is_archived`, `archived_at`, `archived_reason` columns
@@ -509,27 +540,32 @@ For questions or issues:
 ### Design Patterns Followed
 
 ✅ **Server Components First**
+
 - Statistics dashboard fetches data directly
 - Archived page is a server component
 - Minimal client components (only for interactivity)
 
 ✅ **Form Design System**
+
 - Used FormHeader, FormActions, FormButton
 - Used FormSection with variant colors
 - Used FormIcons for consistent iconography
 
 ✅ **URL State Management**
+
 - Archive filter uses search params
 - Pagination persists through filters
 - Router.push() for navigation
 
 ✅ **Styling Consistency**
+
 - White cards: rounded-xl, shadow-sm, border-gray-200
 - Amber colors for archive warnings
 - Responsive grids: grid-cols-1 md:grid-cols-2 lg:grid-cols-3
 - Consistent spacing: space-y-8, gap-4, p-6
 
 ✅ **TypeScript Strict Mode**
+
 - All props properly typed
 - No any types
 - Proper async/await handling
@@ -537,22 +573,26 @@ For questions or issues:
 ### User Experience Highlights
 
 **Visual Feedback:**
+
 - Archived products clearly distinguishable (grayscale + dimmed)
 - Color-coded badges for quick scanning
 - Loading states prevent double-clicks
 - Toast notifications confirm actions
 
 **Navigation:**
+
 - Clear breadcrumb navigation
 - Count badges show archived totals
 - URL state makes sharing/bookmarking easy
 
 **Performance:**
+
 - Pagination prevents overwhelming data loads
 - Server components reduce client bundle size
 - Optimized queries with proper indexes
 
 **Accessibility:**
+
 - Semantic HTML structure
 - Proper button labels
 - Keyboard navigation supported
@@ -564,7 +604,7 @@ For questions or issues:
 ✅ Next.js build: PASSED  
 ✅ No ESLint errors  
 ✅ All imports resolved  
-✅ Type checking: PASSED  
+✅ Type checking: PASSED
 
 ### Testing Performed
 
@@ -584,6 +624,7 @@ For questions or issues:
 ### Known Limitations
 
 **Deferred to Phase 3:**
+
 - Bulk archive operations (checkbox selection)
 - Archive history audit trail
 - Analytics charts and trends
@@ -591,6 +632,7 @@ For questions or issues:
 - Email/Slack notifications
 
 **Technical Debt:**
+
 - Using native confirm() instead of AlertDialog (simpler, but less customizable)
 - Could add keyboard shortcuts for power users
 - Could add search within archived products
@@ -599,12 +641,14 @@ For questions or issues:
 ### Lessons Learned
 
 **What Worked Well:**
+
 - Following established patterns made implementation smooth
 - Server components reduced complexity
 - Form Design System provided consistency
 - TypeScript caught bugs early
 
 **What Could Be Improved:**
+
 - Could add more granular loading states
 - Could implement optimistic UI updates
 - Could add undo functionality
@@ -615,17 +659,19 @@ For questions or issues:
 
 **Phase 1 (Backend):** ✅ COMPLETE (October 1, 2025)  
 **Phase 2 (Admin UI):** ✅ COMPLETE (October 1, 2025)  
-**Phase 3 (Analytics):** 📋 PLANNED  
+**Phase 3 (Analytics):** 📋 PLANNED
 
 **Current Version:** 2.0.0  
 **Last Updated:** October 1, 2025
 
 **Documentation:**
+
 - Phase 1 Summary: `PRODUCT_ARCHIVE_FEATURE.md` (this file)
 - Phase 2 Prompt: `PRODUCT_ARCHIVE_PHASE2_PROMPT.md`
 - Phase 3 Prompt: `PRODUCT_ARCHIVE_PHASE3_PROMPT.md`
 
 **Quick Links:**
+
 - [Archive API Documentation](#new-api-endpoints)
 - [Phase 2 Implementation Guide](./PRODUCT_ARCHIVE_PHASE2_PROMPT.md)
 - [Database Schema](#database-migration)

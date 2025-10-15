@@ -11,7 +11,10 @@ export async function GET(request: NextRequest) {
   try {
     // Check authentication
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError) {
       return NextResponse.json({
@@ -20,8 +23,8 @@ export async function GET(request: NextRequest) {
         details: authError.message,
         debug: {
           step: 'auth_check',
-          authenticated: false
-        }
+          authenticated: false,
+        },
       });
     }
 
@@ -31,25 +34,25 @@ export async function GET(request: NextRequest) {
         error: 'No user found',
         debug: {
           step: 'user_check',
-          authenticated: false
-        }
+          authenticated: false,
+        },
       });
     }
 
     // Check if profile exists
     let profile = null;
     let profileError = null;
-    
+
     try {
       profile = await prisma.profile.findUnique({
         where: { id: user.id },
-        select: { 
+        select: {
           id: true,
           email: true,
           role: true,
           name: true,
-          created_at: true
-        }
+          created_at: true,
+        },
       });
     } catch (dbError) {
       profileError = dbError instanceof Error ? dbError.message : 'Database error';
@@ -61,29 +64,33 @@ export async function GET(request: NextRequest) {
         user: {
           id: user.id,
           email: user.email,
-          created_at: user.created_at
+          created_at: user.created_at,
         },
-        profile: profile ? {
-          id: profile.id,
-          email: profile.email,
-          role: profile.role,
-          name: profile.name,
-          created_at: profile.created_at
-        } : null,
+        profile: profile
+          ? {
+              id: profile.id,
+              email: profile.email,
+              role: profile.role,
+              name: profile.name,
+              created_at: profile.created_at,
+            }
+          : null,
         profileError,
         isAdmin: profile?.role === 'ADMIN',
-        authenticated: true
-      }
+        authenticated: true,
+      },
     });
-
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: 'Unexpected error',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      debug: {
-        step: 'general_error'
-      }
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Unexpected error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        debug: {
+          step: 'general_error',
+        },
+      },
+      { status: 500 }
+    );
   }
 }

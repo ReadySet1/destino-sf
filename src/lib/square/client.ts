@@ -197,12 +197,16 @@ class SquareClientSingleton {
       logger.info('Adding direct payments API implementation to Square client');
       (client as any).paymentsApi = directPaymentsApi;
 
-
-
       // Check for locations API - fix for Square SDK v42.0.1
-      if ((client as any).locationsApi && typeof (client as any).locationsApi.listLocations === 'function') {
+      if (
+        (client as any).locationsApi &&
+        typeof (client as any).locationsApi.listLocations === 'function'
+      ) {
         logger.info('Square locations API initialized');
-      } else if (client.locations && typeof (client.locations as any).listLocations === 'function') {
+      } else if (
+        client.locations &&
+        typeof (client.locations as any).listLocations === 'function'
+      ) {
         (client as any).locationsApi = client.locations;
         logger.info('Square locations API initialized from locations property');
       } else {
@@ -212,7 +216,7 @@ class SquareClientSingleton {
           listLocations: async () => {
             logger.warn('Using fallback locations API - returning empty result');
             return { result: { locations: [] } };
-          }
+          },
         };
       }
 

@@ -72,7 +72,9 @@ test.describe('Complete Purchase Journey', () => {
 
     // Step 7: Fill in payment information
     // Wait for Square payment form to load
-    await page.waitForSelector('iframe[title="Secure card payment input frame"]', { timeout: 10000 });
+    await page.waitForSelector('iframe[title="Secure card payment input frame"]', {
+      timeout: 10000,
+    });
 
     // Switch to Square payment form iframe
     const paymentFrame = page.frameLocator('iframe[title="Secure card payment input frame"]');

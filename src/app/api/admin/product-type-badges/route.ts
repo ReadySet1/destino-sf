@@ -46,10 +46,11 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   }
 
   const adminProfile = await withRetry(
-    () => prisma.profile.findUnique({
-      where: { id: user.id },
-      select: { role: true },
-    }),
+    () =>
+      prisma.profile.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      }),
     3,
     'isUserAdmin profile lookup'
   );
@@ -66,9 +67,10 @@ export async function GET(request: NextRequest) {
     }
 
     const badges = await withRetry(
-      () => prisma.productTypeBadges.findMany({
-        orderBy: { productType: 'asc' },
-      }),
+      () =>
+        prisma.productTypeBadges.findMany({
+          orderBy: { productType: 'asc' },
+        }),
       3,
       'fetch product type badges'
     );
@@ -166,34 +168,36 @@ export async function PUT(request: NextRequest) {
 
     // Fetch the updated record
     const result = await withRetry(
-      () => prisma.$queryRaw<Array<{
-        id: number;
-        product_type: string;
-        badge1: string;
-        badge2: string;
-        badge3: string | null;
-        icon1: string;
-        icon2: string;
-        icon3: string | null;
-        bg_color: string;
-        text_color: string;
-        trust_signal1_title: string;
-        trust_signal1_desc: string;
-        trust_signal1_icon: string;
-        trust_signal1_icon_color: string;
-        trust_signal1_bg_color: string;
-        trust_signal2_title: string;
-        trust_signal2_desc: string;
-        trust_signal2_icon: string;
-        trust_signal2_icon_color: string;
-        trust_signal2_bg_color: string;
-        trust_signal3_title: string;
-        trust_signal3_desc: string;
-        trust_signal3_icon: string;
-        trust_signal3_icon_color: string;
-        trust_signal3_bg_color: string;
-        updated_at: Date;
-      }>>`
+      () => prisma.$queryRaw<
+        Array<{
+          id: number;
+          product_type: string;
+          badge1: string;
+          badge2: string;
+          badge3: string | null;
+          icon1: string;
+          icon2: string;
+          icon3: string | null;
+          bg_color: string;
+          text_color: string;
+          trust_signal1_title: string;
+          trust_signal1_desc: string;
+          trust_signal1_icon: string;
+          trust_signal1_icon_color: string;
+          trust_signal1_bg_color: string;
+          trust_signal2_title: string;
+          trust_signal2_desc: string;
+          trust_signal2_icon: string;
+          trust_signal2_icon_color: string;
+          trust_signal2_bg_color: string;
+          trust_signal3_title: string;
+          trust_signal3_desc: string;
+          trust_signal3_icon: string;
+          trust_signal3_icon_color: string;
+          trust_signal3_bg_color: string;
+          updated_at: Date;
+        }>
+      >`
         SELECT * FROM product_type_badges WHERE product_type = ${product_type}
       `,
       3,

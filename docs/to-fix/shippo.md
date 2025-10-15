@@ -6,7 +6,7 @@
 
 This plan addresses the missing Shippo label creation functionality in your e-commerce system.
 
-------
+---
 
 ## 🎯 Feature/Fix Overview
 
@@ -29,7 +29,7 @@ Orders with nationwide shipping are storing Shippo rate IDs but never automatica
 - [x] Failed label creation attempts are logged and can be retried
 - [x] Admin can manually trigger label creation from order details page
 
-------
+---
 
 ## 📋 Planning Phase
 
@@ -136,8 +136,11 @@ async function handlePaymentConfirmation(orderId: string): Promise<void> {
 }
 
 // Existing: app/actions/labels.ts
-async function purchaseShippingLabel(orderId: string, rateId: string): Promise<ShippingLabelResponse>
-async function refreshAndRetryLabel(orderId: string): Promise<ShippingLabelResponse>
+async function purchaseShippingLabel(
+  orderId: string,
+  rateId: string
+): Promise<ShippingLabelResponse>;
+async function refreshAndRetryLabel(orderId: string): Promise<ShippingLabelResponse>;
 ```
 
 ### Client-Server Data Flow
@@ -148,7 +151,7 @@ async function refreshAndRetryLabel(orderId: string): Promise<ShippingLabelRespo
 4. Store label details in database
 5. Send confirmation email with tracking
 
-------
+---
 
 ## 🧪 Testing Strategy
 
@@ -157,16 +160,16 @@ async function refreshAndRetryLabel(orderId: string): Promise<ShippingLabelRespo
 ```tsx
 // Test label creation trigger
 describe('Payment Confirmation Handler', () => {
-  it('creates label for nationwide shipping orders', async () => {})
-  it('skips label creation for pickup orders', async () => {})
-  it('handles label creation failures gracefully', async () => {})
+  it('creates label for nationwide shipping orders', async () => {});
+  it('skips label creation for pickup orders', async () => {});
+  it('handles label creation failures gracefully', async () => {});
 });
 
 // Test retry mechanism
 describe('Label Retry Logic', () => {
-  it('refreshes expired rates', async () => {})
-  it('respects maximum retry attempts', async () => {})
-  it('logs failures for monitoring', async () => {})
+  it('refreshes expired rates', async () => {});
+  it('respects maximum retry attempts', async () => {});
+  it('logs failures for monitoring', async () => {});
 });
 ```
 
@@ -175,13 +178,13 @@ describe('Label Retry Logic', () => {
 ```tsx
 // End-to-end order flow
 describe('Order to Label Flow', () => {
-  it('creates label after successful payment', async () => {})
-  it('handles Shippo API failures', async () => {})
-  it('prevents duplicate label creation', async () => {})
+  it('creates label after successful payment', async () => {});
+  it('handles Shippo API failures', async () => {});
+  it('prevents duplicate label creation', async () => {});
 });
 ```
 
-------
+---
 
 ## 🔒 Security Analysis
 
@@ -197,7 +200,7 @@ describe('Order to Label Flow', () => {
 - [x] Verify payment status before label creation
 - [x] Sanitize Shippo API responses before storage
 
-------
+---
 
 ## 📊 Performance Considerations
 
@@ -205,10 +208,10 @@ describe('Order to Label Flow', () => {
 
 ```sql
 -- Index for quick lookup of orders needing labels
-CREATE INDEX idx_orders_shipping_label_pending 
-ON orders(id) 
-WHERE shippingRateId IS NOT NULL 
-AND trackingNumber IS NULL 
+CREATE INDEX idx_orders_shipping_label_pending
+ON orders(id)
+WHERE shippingRateId IS NOT NULL
+AND trackingNumber IS NULL
 AND paymentStatus = 'PAID';
 ```
 
@@ -218,7 +221,7 @@ AND paymentStatus = 'PAID';
 - [x] Implement exponential backoff for retries
 - [x] Queue label creation jobs to prevent blocking
 
-------
+---
 
 ## 🚦 Implementation Checklist
 
@@ -264,7 +267,7 @@ AND paymentStatus = 'PAID';
 - [x] Update monitoring for label creation metrics
 - [x] Document manual intervention process
 
-------
+---
 
 ## 📝 MCP Analysis Commands
 
@@ -284,7 +287,7 @@ filesystem:read_text_file path: /Users/ealanis/Development/current-projects/dest
 filesystem:search_files path: /Users/ealanis/Development/current-projects/destino-sf/src pattern: purchaseShippingLabel
 ```
 
-------
+---
 
 ## 🎨 Code Implementation References
 
@@ -295,6 +298,7 @@ filesystem:search_files path: /Users/ealanis/Development/current-projects/destin
 **Location**: After payment confirmation (around line where `updateOrderPayment` is called)
 
 **Add**:
+
 ```typescript
 // After successful payment update
 if (order.fulfillmentType === 'nationwide_shipping' && order.shippingRateId) {
@@ -319,6 +323,7 @@ if (order.fulfillmentType === 'nationwide_shipping' && order.shippingRateId) {
 **New File**: `/src/app/(dashboard)/admin/orders/components/ShippingLabelButton.tsx`
 
 **Structure**:
+
 ```typescript
 'use client';
 
@@ -334,11 +339,11 @@ interface ShippingLabelButtonProps {
   shippingCarrier: string | null;
 }
 
-export function ShippingLabelButton({ 
-  orderId, 
-  shippingRateId, 
+export function ShippingLabelButton({
+  orderId,
+  shippingRateId,
   trackingNumber,
-  shippingCarrier 
+  shippingCarrier,
 }: ShippingLabelButtonProps) {
   // Implementation
 }
@@ -351,12 +356,13 @@ export function ShippingLabelButton({
 **Location**: After shipping information display (around line with tracking number display)
 
 **Add**:
+
 ```typescript
 import { ShippingLabelButton } from '../components/ShippingLabelButton';
 
 // In the render, after tracking number display:
 {serializedOrder?.fulfillmentType === 'nationwide_shipping' && (
-  <ShippingLabelButton 
+  <ShippingLabelButton
     orderId={serializedOrder.id}
     shippingRateId={serializedOrder.shippingRateId}
     trackingNumber={serializedOrder.trackingNumber}
@@ -371,20 +377,20 @@ import { ShippingLabelButton } from '../components/ShippingLabelButton';
 
 ```sql
 -- Add label tracking fields
-ALTER TABLE "Order" 
+ALTER TABLE "Order"
 ADD COLUMN "labelUrl" TEXT,
 ADD COLUMN "labelCreatedAt" TIMESTAMP(3),
 ADD COLUMN "labelRetryCount" INTEGER DEFAULT 0;
 
 -- Index for finding orders needing labels
-CREATE INDEX "Order_label_pending_idx" 
-ON "Order"("id") 
-WHERE "shippingRateId" IS NOT NULL 
-AND "trackingNumber" IS NULL 
+CREATE INDEX "Order_label_pending_idx"
+ON "Order"("id")
+WHERE "shippingRateId" IS NOT NULL
+AND "trackingNumber" IS NULL
 AND "paymentStatus" = 'PAID';
 ```
 
-------
+---
 
 ## 📚 Documentation
 
@@ -402,7 +408,7 @@ AND "paymentStatus" = 'PAID';
 3. **Rate Expiration**: Automatic refresh and retry on `RATE_EXPIRED` errors
 4. **Idempotency**: Multiple calls with same order ID won't create duplicate labels
 
-------
+---
 
 ## 🔄 Rollback Plan
 
@@ -419,7 +425,7 @@ if (process.env.ENABLE_AUTO_LABEL_CREATION === 'true') {
 
 ```sql
 -- Rollback migration if needed
-ALTER TABLE "Order" 
+ALTER TABLE "Order"
 DROP COLUMN IF EXISTS "labelUrl",
 DROP COLUMN IF EXISTS "labelCreatedAt",
 DROP COLUMN IF EXISTS "labelRetryCount";
@@ -434,7 +440,7 @@ DROP INDEX IF EXISTS "Order_label_pending_idx";
 - [x] Monitor Shippo API response times
 - [x] Track manual intervention frequency
 
-------
+---
 
 ## Implementation Priority
 

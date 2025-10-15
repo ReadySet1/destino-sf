@@ -14,15 +14,15 @@ dotenv.config({ path: path.join(process.cwd(), '.env.local') });
 
 // Test payload from your logs
 const testPayload = {
-  "merchant_id": "MLJD4JJXS3YSP",
-  "type": "order.created",
-  "event_id": "7947971b-10f9-36cd-a749-5e953c70f8"
+  merchant_id: 'MLJD4JJXS3YSP',
+  type: 'order.created',
+  event_id: '7947971b-10f9-36cd-a749-5e953c70f8',
 };
 
 const bodyText = JSON.stringify(testPayload);
 
 // Signature from your logs
-const receivedSignature = "4vlL2vffXfrn5EWZd8xSWJ5/tdTB4eSullpSAhi2H48=";
+const receivedSignature = '4vlL2vffXfrn5EWZd8xSWJ5/tdTB4eSullpSAhi2H48=';
 
 // Test with both secrets
 const sandboxSecret = process.env.SQUARE_WEBHOOK_SECRET_SANDBOX;
@@ -34,8 +34,14 @@ console.log('🔏 Received Signature:', receivedSignature);
 console.log('');
 
 console.log('🔑 Environment Variables:');
-console.log('  SQUARE_WEBHOOK_SECRET (Production):', productionSecret ? `${productionSecret.substring(0, 4)}...` : 'NOT SET');
-console.log('  SQUARE_WEBHOOK_SECRET_SANDBOX:', sandboxSecret ? `${sandboxSecret.substring(0, 4)}...` : 'NOT SET');
+console.log(
+  '  SQUARE_WEBHOOK_SECRET (Production):',
+  productionSecret ? `${productionSecret.substring(0, 4)}...` : 'NOT SET'
+);
+console.log(
+  '  SQUARE_WEBHOOK_SECRET_SANDBOX:',
+  sandboxSecret ? `${sandboxSecret.substring(0, 4)}...` : 'NOT SET'
+);
 console.log('');
 
 // Test with sandbox secret
@@ -45,7 +51,7 @@ if (sandboxSecret) {
     .createHmac('sha256', sandboxSecret)
     .update(bodyText)
     .digest('base64');
-  
+
   console.log('  Expected:', sandboxSignature);
   console.log('  Received:', receivedSignature);
   console.log('  Match:', sandboxSignature === receivedSignature ? '✅ YES' : '❌ NO');
@@ -59,7 +65,7 @@ if (productionSecret) {
     .createHmac('sha256', productionSecret)
     .update(bodyText)
     .digest('base64');
-  
+
   console.log('  Expected:', productionSignature);
   console.log('  Received:', receivedSignature);
   console.log('  Match:', productionSignature === receivedSignature ? '✅ YES' : '❌ NO');
@@ -67,7 +73,8 @@ if (productionSecret) {
 }
 
 // Test with actual body from logs (partial)
-const actualBody = '{"merchant_id":"MLJD4JJXS3YSP","type":"order.created","event_id":"7947971b-10f9-36cd-a749-5e953c70f8';
+const actualBody =
+  '{"merchant_id":"MLJD4JJXS3YSP","type":"order.created","event_id":"7947971b-10f9-36cd-a749-5e953c70f8';
 
 console.log('🧪 Testing with actual body preview from logs:');
 if (sandboxSecret) {
@@ -75,7 +82,7 @@ if (sandboxSecret) {
     .createHmac('sha256', sandboxSecret)
     .update(actualBody)
     .digest('base64');
-  
+
   console.log('  Sandbox Expected:', actualSandboxSignature);
   console.log('  Received:', receivedSignature);
   console.log('  Match:', actualSandboxSignature === receivedSignature ? '✅ YES' : '❌ NO');
@@ -84,7 +91,10 @@ if (sandboxSecret) {
 // Additional debug info
 console.log('\n📊 Debug Information:');
 console.log('  Body Length:', bodyText.length);
-console.log('  Body as Hex (first 100 chars):', Buffer.from(bodyText).toString('hex').substring(0, 100));
+console.log(
+  '  Body as Hex (first 100 chars):',
+  Buffer.from(bodyText).toString('hex').substring(0, 100)
+);
 
 // Test URL encoding scenarios
 console.log('\n🔄 Testing URL encoding scenarios:');
@@ -96,15 +106,18 @@ if (sandboxSecret) {
     .createHmac('sha256', sandboxSecret)
     .update(urlEncodedBody)
     .digest('base64');
-  
+
   const urlDecodedSignature = crypto
     .createHmac('sha256', sandboxSecret)
     .update(urlDecodedBody)
     .digest('base64');
-  
+
   console.log('  URL Encoded Signature:', urlEncodedSignature);
   console.log('  URL Decoded Signature:', urlDecodedSignature);
-  console.log('  Normal Signature:', crypto.createHmac('sha256', sandboxSecret).update(bodyText).digest('base64'));
+  console.log(
+    '  Normal Signature:',
+    crypto.createHmac('sha256', sandboxSecret).update(bodyText).digest('base64')
+  );
 }
 
 console.log('\n💡 Recommendations:');

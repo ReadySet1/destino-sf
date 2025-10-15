@@ -15,7 +15,10 @@ interface AdminSettingsTabsProps {
   deliveryZones?: any[];
 }
 
-export default function AdminSettingsTabs({ storeSettings, deliveryZones }: AdminSettingsTabsProps) {
+export default function AdminSettingsTabs({
+  storeSettings,
+  deliveryZones,
+}: AdminSettingsTabsProps) {
   const [activeTab, setActiveTab] = useState('store');
 
   return (
@@ -47,7 +50,7 @@ export default function AdminSettingsTabs({ storeSettings, deliveryZones }: Admi
             Product Shipping
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="store" className="mt-6">
           <Card>
             <CardHeader>
@@ -56,37 +59,45 @@ export default function AdminSettingsTabs({ storeSettings, deliveryZones }: Admi
                 Store Settings
               </CardTitle>
               <CardDescription>
-                Configure your store&apos;s basic information, tax rates, order minimums, and business rules. 
-                These settings affect order processing, customer communications, and financial calculations.
+                Configure your store&apos;s basic information, tax rates, order minimums, and
+                business rules. These settings affect order processing, customer communications, and
+                financial calculations.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <h4 className="text-sm font-medium text-yellow-900 mb-2">
-                  Store Settings Usage
-                </h4>
+                <h4 className="text-sm font-medium text-yellow-900 mb-2">Store Settings Usage</h4>
                 <ul className="text-sm text-yellow-800 space-y-1">
-                  <li>• <strong>Store Information:</strong> Appears on invoices, receipts, and shipping labels</li>
-                  <li>• <strong>Tax Rate:</strong> Applied to all taxable items during checkout</li>
-                  <li>• <strong>Order Minimums:</strong> Enforced for regular product orders</li>
-                  <li>• <strong>Catering Settings:</strong> General minimums and advance booking rules</li>
+                  <li>
+                    • <strong>Store Information:</strong> Appears on invoices, receipts, and
+                    shipping labels
+                  </li>
+                  <li>
+                    • <strong>Tax Rate:</strong> Applied to all taxable items during checkout
+                  </li>
+                  <li>
+                    • <strong>Order Minimums:</strong> Enforced for regular product orders
+                  </li>
+                  <li>
+                    • <strong>Catering Settings:</strong> General minimums and advance booking rules
+                  </li>
                 </ul>
               </div>
-              
+
               {/* Enhanced Store Settings Form */}
               <EnhancedStoreSettingsForm settings={storeSettings} />
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="catering" className="mt-6">
           <DeliveryZoneManager />
         </TabsContent>
-        
+
         <TabsContent value="regular" className="mt-6">
           <RegularDeliveryZoneManager />
         </TabsContent>
-        
+
         <TabsContent value="shipping" className="mt-6">
           <Card>
             <CardHeader>
@@ -95,8 +106,9 @@ export default function AdminSettingsTabs({ storeSettings, deliveryZones }: Admi
                 Product Shipping Configuration
               </CardTitle>
               <CardDescription>
-                Configure shipping rates and weight calculations for empanadas, alfajores, and other products. 
-                This section is separate from catering delivery zones and handles nationwide shipping via Shippo.
+                Configure shipping rates and weight calculations for empanadas, alfajores, and other
+                products. This section is separate from catering delivery zones and handles
+                nationwide shipping via Shippo.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -105,18 +117,34 @@ export default function AdminSettingsTabs({ storeSettings, deliveryZones }: Admi
                   Shipping vs. Catering Delivery
                 </h4>
                 <ul className="text-sm text-purple-800 space-y-1">
-                  <li>• <strong>Product Shipping:</strong> Nationwide delivery of packaged goods via carriers</li>
-                  <li>• <strong>Catering Delivery:</strong> Local delivery of fresh prepared food</li>
-                  <li>• <strong>Weight-based pricing:</strong> Calculated automatically for products</li>
-                  <li>• <strong>Shippo integration:</strong> Real-time shipping rates and label generation</li>
+                  <li>
+                    • <strong>Product Shipping:</strong> Nationwide delivery of packaged goods via
+                    carriers
+                  </li>
+                  <li>
+                    • <strong>Catering Delivery:</strong> Local delivery of fresh prepared food
+                  </li>
+                  <li>
+                    • <strong>Weight-based pricing:</strong> Calculated automatically for products
+                  </li>
+                  <li>
+                    • <strong>Shippo integration:</strong> Real-time shipping rates and label
+                    generation
+                  </li>
                 </ul>
               </div>
-              
+
               {/* Shipping configuration will be rendered here */}
               <div className="text-center py-8 text-gray-500">
                 <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Shipping configuration component will be integrated here</p>
-                <p className="text-sm mt-2">Visit <a href="/admin/shipping" className="text-blue-600 hover:underline">/admin/shipping</a> for current shipping config</p>
+                <p className="text-sm mt-2">
+                  Visit{' '}
+                  <a href="/admin/shipping" className="text-blue-600 hover:underline">
+                    /admin/shipping
+                  </a>{' '}
+                  for current shipping config
+                </p>
               </div>
             </CardContent>
           </Card>

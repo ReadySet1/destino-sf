@@ -3,23 +3,29 @@ I'll analyze the migration issues between development and production. Let me exa
 ## 🔍 **Root Cause Analysis**
 
 ### **Issue 1: Missing Appetizers**
+
 The appetizers are missing because:
+
 1. The Square sync is looking for categories named exactly `CATERING- APPETIZERS`, `CATERING- SHARE PLATTERS`, and `CATERING- DESSERTS`
 2. The sync script only syncs basic configuration data (store_settings, delivery_zones, protected_products) but NOT categories or products
 3. Categories need to be synced from development to production with their exact names and Square IDs
 
 ### **Issue 2: Missing Build Your Own Boxed Lunch Tiers**
+
 The boxed lunch tiers are missing because:
+
 1. They are stored in a separate `boxed_lunch_tiers` table
 2. The sync script doesn't include this table in its export/import process
 3. The API endpoint checks this table directly via raw SQL query
 
 ### **Issue 3: Stuck Sync in Database**
+
 The stuck sync record is in the `user_sync_logs` table with status 'RUNNING' but the actual sync has likely failed or timed out.
 
 ## 📋 **Fix Plan**
 
 ### **Step 1: Add Missing Tables to Sync Script**
+
 Update `/scripts/sync-dev-to-prod.sh` to include:
 
 1. **Categories table** (required for product categorization)
@@ -60,11 +66,11 @@ Before running the sync, clean up stuck records:
 
 ```sql
 -- Run this on production database
-UPDATE user_sync_logs 
-SET status = 'FAILED', 
-    endTime = NOW(), 
+UPDATE user_sync_logs
+SET status = 'FAILED',
+    endTime = NOW(),
     message = 'Sync terminated due to timeout'
-WHERE status IN ('RUNNING', 'PENDING') 
+WHERE status IN ('RUNNING', 'PENDING')
   AND startTime < NOW() - INTERVAL '1 hour';
 ```
 
@@ -74,7 +80,7 @@ The correct sync order should be:
 
 1. **First sync configuration and structure:**
    - store_settings
-   - catering_delivery_zones  
+   - catering_delivery_zones
    - protected_products
    - **categories** (NEW - CRITICAL)
    - **boxed_lunch_tiers** (NEW)
@@ -87,6 +93,7 @@ The correct sync order should be:
 ### **Step 5: Verify Category Mapping**
 
 The key categories that must exist in production with exact names:
+
 - `CATERING- APPETIZERS`
 - `CATERING- SHARE PLATTERS`
 - `CATERING- DESSERTS`
@@ -117,7 +124,7 @@ echo "   Active boxed lunch tiers: $TIER_COUNT"
 2. **Clean stuck sync records** in production database
 3. **Update sync script** with categories and boxed_lunch_tiers
 4. **Run updated sync script**
-5. **Verify categories** are synced correctly  
+5. **Verify categories** are synced correctly
 6. **Run Square sync** from admin panel
 7. **Validate** with updated validation script
 
@@ -129,6 +136,7 @@ echo "   Active boxed lunch tiers: $TIER_COUNT"
 4. **Square IDs in categories** must be preserved for proper linking
 
 This approach ensures all catering items will appear correctly because:
+
 - Categories will exist with proper names
 - Boxed lunch tiers will be available
 - Square sync will map products to correct categories

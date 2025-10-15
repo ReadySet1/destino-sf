@@ -13,9 +13,9 @@ const FixMappingsSchema = z.object({
     invalidProducts: z.number(),
     issues: z.array(z.any()),
     recommendations: z.array(z.string()),
-    fixApplied: z.boolean()
+    fixApplied: z.boolean(),
   }),
-  dryRun: z.boolean().optional().default(false)
+  dryRun: z.boolean().optional().default(false),
 });
 
 export async function POST(request: NextRequest) {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Dry run completed',
         wouldFix: auditResult.issues.filter(i => i.severity === 'ERROR').length,
-        issues: auditResult.issues
+        issues: auditResult.issues,
       });
     }
 
@@ -62,19 +62,21 @@ export async function POST(request: NextRequest) {
       message: 'Mappings fixed successfully',
       before: {
         invalid: auditResult.invalidProducts,
-        issues: auditResult.issues.length
+        issues: auditResult.issues.length,
       },
       after: {
         invalid: verificationAudit.invalidProducts,
-        issues: verificationAudit.issues.length
+        issues: verificationAudit.issues.length,
       },
-      fixed: auditResult.invalidProducts - verificationAudit.invalidProducts
+      fixed: auditResult.invalidProducts - verificationAudit.invalidProducts,
     });
-
   } catch (error) {
     logger.error('Fix mappings failed:', error);
     return NextResponse.json(
-      { error: 'Fix operation failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Fix operation failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

@@ -135,7 +135,7 @@ export function getCurrentBreakpoint(width: number): 'mobile' | 'tablet' | 'desk
  */
 export function getContainerClasses(maxWidth: ResponsiveValue<string>): string {
   const classes = ['mx-auto', 'w-full'];
-  
+
   if (maxWidth.mobile !== '100%') {
     classes.push(`max-w-[${maxWidth.mobile}]`);
   }
@@ -155,10 +155,7 @@ export function getContainerClasses(maxWidth: ResponsiveValue<string>): string {
 /**
  * Generate sidebar classes with responsive behavior
  */
-export function getSidebarClasses(
-  isOpen: boolean,
-  sidebarWidth: ResponsiveValue<string>
-): string {
+export function getSidebarClasses(isOpen: boolean, sidebarWidth: ResponsiveValue<string>): string {
   const baseClasses = [
     'fixed',
     'inset-y-0',
@@ -199,12 +196,7 @@ export function getSidebarClasses(
  * Generate main content classes with responsive margin
  */
 export function getMainContentClasses(sidebarWidth: ResponsiveValue<string>): string {
-  const baseClasses = [
-    'flex-1',
-    'transition-all',
-    'duration-300',
-    'ease-in-out',
-  ];
+  const baseClasses = ['flex-1', 'transition-all', 'duration-300', 'ease-in-out'];
 
   // Mobile: no margin (sidebar is overlay)
   // Desktop: add margin to account for fixed sidebar
@@ -220,9 +212,11 @@ export function getMainContentClasses(sidebarWidth: ResponsiveValue<string>): st
 /**
  * Generate mobile menu button classes
  */
-export function getMobileMenuClasses(
-  position: { top: string; right: string; left?: string }
-): string {
+export function getMobileMenuClasses(position: {
+  top: string;
+  right: string;
+  left?: string;
+}): string {
   const baseClasses = [
     'fixed',
     'z-50',
@@ -314,21 +308,12 @@ export function getResponsiveCardClasses(): string {
  * Generate responsive form classes
  */
 export function getResponsiveFormClasses(): string {
-  return [
-    'space-y-4',
-    'md:space-y-6',
-  ].join(' ');
+  return ['space-y-4', 'md:space-y-6'].join(' ');
 }
 
 /**
  * Generate responsive button group classes
  */
 export function getResponsiveButtonGroupClasses(): string {
-  return [
-    'flex',
-    'flex-col',
-    'sm:flex-row',
-    'gap-2',
-    'sm:gap-3',
-  ].join(' ');
-} 
+  return ['flex', 'flex-col', 'sm:flex-row', 'gap-2', 'sm:gap-3'].join(' ');
+}

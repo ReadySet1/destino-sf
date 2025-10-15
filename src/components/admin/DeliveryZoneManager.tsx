@@ -41,11 +41,25 @@ interface ZoneCardProps {
   isDeleting: boolean;
 }
 
-function ZoneCard({ zone, index, onEdit, onToggle, onDelete, isToggling, isDeleting }: ZoneCardProps) {
+function ZoneCard({
+  zone,
+  index,
+  onEdit,
+  onToggle,
+  onDelete,
+  isToggling,
+  isDeleting,
+}: ZoneCardProps) {
   const statusColor = zone.isActive ? 'border-l-green-500' : 'border-l-gray-400';
-  const statusBadge = zone.isActive 
-    ? <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
-    : <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactive</span>;
+  const statusBadge = zone.isActive ? (
+    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      Active
+    </span>
+  ) : (
+    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+      Inactive
+    </span>
+  );
 
   return (
     <Card className={`border-l-4 ${statusColor} transition-all duration-200 hover:shadow-md`}>
@@ -59,11 +73,9 @@ function ZoneCard({ zone, index, onEdit, onToggle, onDelete, isToggling, isDelet
               </h3>
               {statusBadge}
             </div>
-            
-            {zone.description && (
-              <p className="text-sm text-gray-600 mb-3">{zone.description}</p>
-            )}
-            
+
+            {zone.description && <p className="text-sm text-gray-600 mb-3">{zone.description}</p>}
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
               <div className="flex items-center gap-2 text-sm">
                 <DollarSign className="h-4 w-4 text-green-600" />
@@ -72,7 +84,7 @@ function ZoneCard({ zone, index, onEdit, onToggle, onDelete, isToggling, isDelet
                   <div className="font-medium">${zone.minimumAmount.toFixed(2)}</div>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2 text-sm">
                 <DollarSign className="h-4 w-4 text-blue-600" />
                 <div>
@@ -80,7 +92,7 @@ function ZoneCard({ zone, index, onEdit, onToggle, onDelete, isToggling, isDelet
                   <div className="font-medium">${zone.deliveryFee.toFixed(2)}</div>
                 </div>
               </div>
-              
+
               {zone.estimatedDeliveryTime && (
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-orange-600" />
@@ -90,13 +102,9 @@ function ZoneCard({ zone, index, onEdit, onToggle, onDelete, isToggling, isDelet
                   </div>
                 </div>
               )}
-              
+
               <div className="flex items-center gap-2">
-                <Switch
-                  checked={zone.isActive}
-                  onCheckedChange={onToggle}
-                  disabled={isToggling}
-                />
+                <Switch checked={zone.isActive} onCheckedChange={onToggle} disabled={isToggling} />
                 {isToggling && (
                   <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                 )}
@@ -110,20 +118,26 @@ function ZoneCard({ zone, index, onEdit, onToggle, onDelete, isToggling, isDelet
                   <span className="text-xs text-gray-500 min-w-16">Cities:</span>
                   <div className="flex flex-wrap gap-1">
                     {zone.cities.map((city, i) => (
-                      <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
+                      <span
+                        key={i}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800"
+                      >
                         {city}
                       </span>
                     ))}
                   </div>
                 </div>
               )}
-              
+
               {zone.postalCodes.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   <span className="text-xs text-gray-500 min-w-16">Postal:</span>
                   <div className="flex flex-wrap gap-1">
                     {zone.postalCodes.slice(0, 5).map((code, i) => (
-                      <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">
+                      <span
+                        key={i}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
+                      >
                         {code}
                       </span>
                     ))}
@@ -137,7 +151,7 @@ function ZoneCard({ zone, index, onEdit, onToggle, onDelete, isToggling, isDelet
               )}
             </div>
           </div>
-          
+
           <div className="flex gap-2 ml-4">
             <Button
               variant="outline"
@@ -175,11 +189,11 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
   const [saving, setSaving] = useState(false);
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
   const [isNewZone, setIsNewZone] = useState(false);
-  
+
   // Track loading states for individual zone toggles
   const [togglingZones, setTogglingZones] = useState<Set<string>>(new Set());
-  
-  // Track loading states for individual zone deletes  
+
+  // Track loading states for individual zone deletes
   const [deletingZones, setDeletingZones] = useState<Set<string>>(new Set());
 
   // Form state for editing zone
@@ -327,14 +341,10 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
     try {
       // Add to loading set
       setTogglingZones(prev => new Set(prev).add(zoneId));
-      
+
       // Optimistic update - immediately update UI
       console.log(`🔄 Optimistically updating zone ${zoneId} to ${isActive}`);
-      setZones(prevZones => 
-        prevZones.map(z => 
-          z.id === zoneId ? { ...z, isActive } : z
-        )
-      );
+      setZones(prevZones => prevZones.map(z => (z.id === zoneId ? { ...z, isActive } : z)));
 
       // Make API call
       console.log(`📡 Making API call to update zone ${zoneId}`);
@@ -356,20 +366,20 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
 
       const result = await response.json();
       console.log('✅ Zone status updated successfully:', result);
-      
+
       // Success - no need to reload since we already updated optimistically
       toast.success(`Zone ${isActive ? 'activated' : 'deactivated'} successfully`);
-      
     } catch (error) {
       console.error('❌ Error updating zone status:', error);
-      
+
       // Rollback optimistic update on error
       console.log('🔄 Rolling back optimistic update for zone:', zoneId);
       setZones(originalZones);
-      
+
       // Show error message
-      toast.error(`Failed to ${isActive ? 'activate' : 'deactivate'} zone: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
+      toast.error(
+        `Failed to ${isActive ? 'activate' : 'deactivate'} zone: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       // Remove from loading set
       setTogglingZones(prev => {
@@ -406,7 +416,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
     try {
       // Add to loading set
       setDeletingZones(prev => new Set(prev).add(zoneId));
-      
+
       console.log(`🗑️ Deleting zone: ${zone.name} (${zoneId})`);
 
       // Make API call
@@ -424,21 +434,21 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
 
       const result = await response.json();
       console.log('✅ Zone deleted successfully:', result);
-      
+
       // Remove zone from UI
       setZones(prevZones => prevZones.filter(z => z.id !== zoneId));
-      
+
       // Clear editing state if this zone was being edited
       if (editingZone?.id === zoneId) {
         resetForm();
       }
-      
+
       toast.success(`Delivery zone "${zone.name}" deleted successfully`);
-      
     } catch (error) {
       console.error('❌ Error deleting zone:', error);
-      toast.error(`Failed to delete zone: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
+      toast.error(
+        `Failed to delete zone: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       // Remove from loading set
       setDeletingZones(prev => {
@@ -470,9 +480,9 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                 Catering Delivery Zones
               </CardTitle>
               <CardDescription className="mt-2 max-w-2xl">
-                Configure minimum order requirements and delivery fees for catering orders 
-                based on delivery location. These settings only apply to catering orders, 
-                not regular product shipping.
+                Configure minimum order requirements and delivery fees for catering orders based on
+                delivery location. These settings only apply to catering orders, not regular product
+                shipping.
               </CardDescription>
             </div>
             <Button onClick={startNewZone} className="flex items-center gap-2">
@@ -487,9 +497,7 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
             <div className="flex items-start gap-3">
               <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="text-sm font-medium text-blue-900 mb-2">
-                  How Delivery Zones Work
-                </h4>
+                <h4 className="text-sm font-medium text-blue-900 mb-2">How Delivery Zones Work</h4>
                 <ul className="text-sm text-blue-800 space-y-1">
                   <li>• Zones determine minimum order amounts for catering delivery</li>
                   <li>• Customers see requirements based on their delivery address</li>
@@ -515,14 +523,13 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                   zone={zone}
                   index={index}
                   onEdit={() => startEditZone(zone)}
-                  onToggle={(isActive) => updateZoneStatus(zone.id, isActive)}
+                  onToggle={isActive => updateZoneStatus(zone.id, isActive)}
                   onDelete={() => deleteZone(zone.id)}
                   isToggling={togglingZones.has(zone.id)}
                   isDeleting={deletingZones.has(zone.id)}
                 />
               ))
             )}
-
 
             {/* Add/Edit Zone Form */}
             {(isNewZone || editingZone) && (
@@ -535,10 +542,9 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                       {isNewZone ? 'Add New Catering Zone' : 'Edit Catering Zone'}
                     </CardTitle>
                     <CardDescription>
-                      {isNewZone 
+                      {isNewZone
                         ? 'Configure minimum order and delivery fee requirements for a new catering delivery area'
-                        : 'Update the settings for this catering delivery zone'
-                      }
+                        : 'Update the settings for this catering delivery zone'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -587,7 +593,12 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                           step="0.01"
                           min="0"
                           value={formData.minimumAmount}
-                          onChange={e => setFormData({ ...formData, minimumAmount: parseFloat(e.target.value) || 0 })}
+                          onChange={e =>
+                            setFormData({
+                              ...formData,
+                              minimumAmount: parseFloat(e.target.value) || 0,
+                            })
+                          }
                         />
                         <p className="text-xs text-gray-500 mt-1">
                           Minimum order value required for catering delivery in this zone
@@ -605,7 +616,12 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                           step="0.01"
                           min="0"
                           value={formData.deliveryFee}
-                          onChange={e => setFormData({ ...formData, deliveryFee: parseFloat(e.target.value) || 0 })}
+                          onChange={e =>
+                            setFormData({
+                              ...formData,
+                              deliveryFee: parseFloat(e.target.value) || 0,
+                            })
+                          }
                         />
                         <p className="text-xs text-gray-500 mt-1">
                           Fixed delivery charge for catering orders to this zone
@@ -620,7 +636,9 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
                         <Input
                           id="estimatedDeliveryTime"
                           value={formData.estimatedDeliveryTime}
-                          onChange={e => setFormData({ ...formData, estimatedDeliveryTime: e.target.value })}
+                          onChange={e =>
+                            setFormData({ ...formData, estimatedDeliveryTime: e.target.value })
+                          }
                           placeholder="e.g., 1-2 hours"
                         />
                         <p className="text-xs text-gray-500 mt-1">

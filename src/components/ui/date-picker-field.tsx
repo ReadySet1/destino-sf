@@ -86,32 +86,35 @@ export function DatePickerField({
   }, []);
 
   // Build the disabled date function
-  const getDisabledDate = React.useCallback((date: Date): boolean => {
-    // If disabled is a boolean and true, disable all dates
-    if (typeof disabled === 'boolean') {
-      return disabled;
-    }
+  const getDisabledDate = React.useCallback(
+    (date: Date): boolean => {
+      // If disabled is a boolean and true, disable all dates
+      if (typeof disabled === 'boolean') {
+        return disabled;
+      }
 
-    // If disabled is a function, use it
-    if (typeof disabled === 'function') {
-      return disabled(date);
-    }
+      // If disabled is a function, use it
+      if (typeof disabled === 'function') {
+        return disabled(date);
+      }
 
-    // Disable past dates if requested
-    if (disablePastDates && date < today) {
-      return true;
-    }
+      // Disable past dates if requested
+      if (disablePastDates && date < today) {
+        return true;
+      }
 
-    // Apply min/max date constraints
-    if (minDate && date < minDate) {
-      return true;
-    }
-    if (maxDate && date > maxDate) {
-      return true;
-    }
+      // Apply min/max date constraints
+      if (minDate && date < minDate) {
+        return true;
+      }
+      if (maxDate && date > maxDate) {
+        return true;
+      }
 
-    return false;
-  }, [disabled, minDate, maxDate, disablePastDates, today]);
+      return false;
+    },
+    [disabled, minDate, maxDate, disablePastDates, today]
+  );
 
   return (
     <Popover open={isPopoverOpen} onOpenChange={setPopoverOpen}>
@@ -139,12 +142,7 @@ export function DatePickerField({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-auto p-0"
-        align="start"
-        side="bottom"
-        sideOffset={4}
-      >
+      <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={4}>
         <Calendar
           mode="single"
           selected={value || undefined}

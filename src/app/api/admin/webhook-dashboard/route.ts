@@ -1,13 +1,21 @@
 /**
  * Admin Webhook Dashboard API
- * 
+ *
  * Provides comprehensive webhook monitoring data for the admin dashboard,
  * including real-time metrics, recent logs, alerts, and health status.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getMetricsSummary, getDetailedMetrics, checkAlertThresholds } from '@/lib/monitoring/webhook-metrics';
-import { getRecentWebhookLogs, getWebhookMetrics, getFailedWebhooks } from '@/lib/db/queries/webhooks';
+import {
+  getMetricsSummary,
+  getDetailedMetrics,
+  checkAlertThresholds,
+} from '@/lib/monitoring/webhook-metrics';
+import {
+  getRecentWebhookLogs,
+  getWebhookMetrics,
+  getFailedWebhooks,
+} from '@/lib/db/queries/webhooks';
 import { getPaymentSyncHistory, getPaymentSyncMetrics } from '@/lib/db/queries/payments';
 import { type SquareEnvironment } from '@/types/webhook';
 
@@ -17,14 +25,17 @@ import { type SquareEnvironment } from '@/types/webhook';
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('📊 Admin webhook dashboard data requested');
-    
+
     // 1. Validate admin authorization
     const authResult = await validateAdminAuth(request);
     if (!authResult.valid) {
-      return NextResponse.json({
-        error: 'Unauthorized',
-        message: authResult.error
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: 'Unauthorized',
+          message: authResult.error,
+        },
+        { status: 401 }
+      );
     }
 
     // 2. Get time range from query params
@@ -42,7 +53,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       failedWebhooks,
       paymentSyncHistory,
       paymentSyncMetrics,
-      activeAlerts
+      activeAlerts,
     ] = await Promise.all([
       getMetricsSummary(),
       getDetailedMetrics(),
@@ -51,7 +62,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       getFailedWebhooks({ limit: 20, environment, since }),
       getPaymentSyncHistory({ limit: 10, since }),
       getPaymentSyncMetrics(since),
-      checkAlertThresholds()
+      checkAlertThresholds(),
     ]);
 
     // 4. Calculate health score
@@ -59,7 +70,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       webhookMetrics,
       realtimeMetrics,
       paymentSyncMetrics,
-      activeAlerts
+      activeAlerts,
     });
 
     // 5. Generate insights and recommendations
@@ -67,7 +78,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       webhookMetrics,
       recentLogs,
       failedWebhooks,
-      paymentSyncMetrics
+      paymentSyncMetrics,
     });
 
     // 6. Prepare dashboard response
@@ -75,15 +86,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       status: 'success',
       timestamp: new Date().toISOString(),
       timeRange: { hours, since },
-      
+
       health: {
         score: healthScore,
-        status: healthScore >= 95 ? 'excellent' : 
-                healthScore >= 90 ? 'good' : 
-                healthScore >= 80 ? 'fair' : 'poor',
-        alerts: activeAlerts
+        status:
+          healthScore >= 95
+            ? 'excellent'
+            : healthScore >= 90
+              ? 'good'
+              : healthScore >= 80
+                ? 'fair'
+                : 'poor',
+        alerts: activeAlerts,
       },
-      
+
       webhooks: {
         realtime: realtimeMetrics,
         detailed: webhookMetrics,
@@ -94,17 +110,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           success: log.signatureValid,
           processingTime: log.processingTimeMs,
           timestamp: log.createdAt,
-          error: log.validationError
+          error: log.validationError,
         })),
         failed_webhooks: failedWebhooks.map(log => ({
           id: log.webhookId,
           eventType: log.eventType,
           environment: log.environment,
           error: log.validationError,
-          timestamp: log.createdAt
-        }))
+          timestamp: log.createdAt,
+        })),
       },
-      
+
       payment_sync: {
         metrics: paymentSyncMetrics,
         recent_syncs: paymentSyncHistory.map(sync => ({
@@ -113,35 +129,36 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           success: sync.endTime && sync.paymentsFailed === 0,
           paymentsFound: sync.paymentsFound,
           paymentsProcessed: sync.paymentsProcessed,
-          duration: sync.endTime ? 
-            sync.endTime.getTime() - sync.startTime.getTime() : null,
-          timestamp: sync.createdAt
-        }))
+          duration: sync.endTime ? sync.endTime.getTime() - sync.startTime.getTime() : null,
+          timestamp: sync.createdAt,
+        })),
       },
-      
+
       insights,
-      
+
       configuration: {
         environment_secrets: {
           production: !!process.env.SQUARE_WEBHOOK_SECRET,
-          sandbox: !!process.env.SQUARE_WEBHOOK_SECRET_SANDBOX
+          sandbox: !!process.env.SQUARE_WEBHOOK_SECRET_SANDBOX,
         },
         monitoring_enabled: true,
         alerting_enabled: true,
-        payment_sync_enabled: true
-      }
+        payment_sync_enabled: true,
+      },
     };
 
     return NextResponse.json(dashboardData);
-
   } catch (error) {
     console.error('❌ Failed to generate webhook dashboard data:', error);
-    
-    return NextResponse.json({
-      error: 'Failed to generate dashboard data',
-      timestamp: new Date().toISOString(),
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error: 'Failed to generate dashboard data',
+        timestamp: new Date().toISOString(),
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -151,14 +168,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('⚡ Admin webhook dashboard action requested');
-    
+
     // 1. Validate admin authorization
     const authResult = await validateAdminAuth(request);
     if (!authResult.valid) {
-      return NextResponse.json({
-        error: 'Unauthorized',
-        message: authResult.error
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: 'Unauthorized',
+          message: authResult.error,
+        },
+        { status: 401 }
+      );
     }
 
     // 2. Parse action request
@@ -167,7 +187,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 3. Execute requested action
     let result: any;
-    
+
     switch (action) {
       case 'trigger_payment_sync':
         const { syncRecentPayments } = await import('@/lib/square/payment-sync');
@@ -175,42 +195,47 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           lookbackMinutes: parameters.lookbackMinutes || 60,
           environment: parameters.environment || 'production',
           syncType: 'manual',
-          forceSync: parameters.forceSync || false
+          forceSync: parameters.forceSync || false,
         });
         break;
-        
+
       case 'cleanup_old_logs':
         const { cleanupOldWebhookLogs } = await import('@/lib/db/queries/webhooks');
         result = await cleanupOldWebhookLogs(parameters.olderThanDays || 30);
         break;
-        
+
       case 'reset_metrics':
         const { resetMetrics } = await import('@/lib/monitoring/webhook-metrics');
         resetMetrics();
         result = { success: true, message: 'Metrics reset successfully' };
         break;
-        
+
       default:
-        return NextResponse.json({
-          error: 'Unknown action',
-          availableActions: ['trigger_payment_sync', 'cleanup_old_logs', 'reset_metrics']
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            error: 'Unknown action',
+            availableActions: ['trigger_payment_sync', 'cleanup_old_logs', 'reset_metrics'],
+          },
+          { status: 400 }
+        );
     }
 
     return NextResponse.json({
       success: true,
       action,
       result,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     console.error(`❌ Admin action failed:`, error);
-    
-    return NextResponse.json({
-      error: 'Action failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error: 'Action failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -224,33 +249,41 @@ function calculateHealthScore(data: {
   activeAlerts: any[];
 }): number {
   let score = 100;
-  
+
   // Deduct for low webhook success rate
   if (data.webhookMetrics.successRate < 95) {
     score -= (95 - data.webhookMetrics.successRate) * 2;
   }
-  
+
   // Deduct for high latency
   if (data.webhookMetrics.averageProcessingTime > 200) {
     score -= Math.min(20, (data.webhookMetrics.averageProcessingTime - 200) / 10);
   }
-  
+
   // Deduct for payment sync failures
   if (data.paymentSyncMetrics.failedSyncs > 0) {
     const failureRate = data.paymentSyncMetrics.failedSyncs / data.paymentSyncMetrics.totalSyncs;
     score -= failureRate * 30;
   }
-  
+
   // Deduct for active alerts
   data.activeAlerts.forEach(alert => {
     switch (alert.severity) {
-      case 'critical': score -= 25; break;
-      case 'high': score -= 15; break;
-      case 'medium': score -= 10; break;
-      case 'low': score -= 5; break;
+      case 'critical':
+        score -= 25;
+        break;
+      case 'high':
+        score -= 15;
+        break;
+      case 'medium':
+        score -= 10;
+        break;
+      case 'low':
+        score -= 5;
+        break;
     }
   });
-  
+
   return Math.max(0, Math.round(score));
 }
 
@@ -270,7 +303,7 @@ function generateInsights(data: {
   const insights: string[] = [];
   const recommendations: string[] = [];
   const warnings: string[] = [];
-  
+
   // Webhook performance insights
   if (data.webhookMetrics.successRate > 98) {
     insights.push('Webhook validation is performing excellently');
@@ -278,10 +311,11 @@ function generateInsights(data: {
     warnings.push(`Webhook success rate is low at ${data.webhookMetrics.successRate}%`);
     recommendations.push('Check webhook secret configuration and Square environment setup');
   }
-  
+
   // Payment sync insights
   if (data.paymentSyncMetrics.totalSyncs > 0) {
-    const syncSuccessRate = (data.paymentSyncMetrics.successfulSyncs / data.paymentSyncMetrics.totalSyncs) * 100;
+    const syncSuccessRate =
+      (data.paymentSyncMetrics.successfulSyncs / data.paymentSyncMetrics.totalSyncs) * 100;
     if (syncSuccessRate > 95) {
       insights.push('Payment sync fallback system is working well');
     } else {
@@ -289,7 +323,7 @@ function generateInsights(data: {
       recommendations.push('Investigate Square API connectivity issues');
     }
   }
-  
+
   // Failed webhook analysis
   if (data.failedWebhooks.length > 0) {
     const errorTypes = data.failedWebhooks.reduce((acc: Record<string, number>, webhook) => {
@@ -297,16 +331,21 @@ function generateInsights(data: {
       acc[errorType] = (acc[errorType] || 0) + 1;
       return acc;
     }, {});
-    
-    const mostCommonError = Object.entries(errorTypes)
-      .sort(([,a], [,b]) => (b as number) - (a as number))[0];
-    
+
+    const mostCommonError = Object.entries(errorTypes).sort(
+      ([, a], [, b]) => (b as number) - (a as number)
+    )[0];
+
     if (mostCommonError) {
-      warnings.push(`Most common webhook error: ${mostCommonError[0]} (${mostCommonError[1]} occurrences)`);
-      
+      warnings.push(
+        `Most common webhook error: ${mostCommonError[0]} (${mostCommonError[1]} occurrences)`
+      );
+
       switch (mostCommonError[0]) {
         case 'INVALID_SIGNATURE':
-          recommendations.push('Verify webhook secrets are correctly configured without trailing newlines');
+          recommendations.push(
+            'Verify webhook secrets are correctly configured without trailing newlines'
+          );
           break;
         case 'MISSING_SECRET':
           recommendations.push('Ensure both sandbox and production webhook secrets are configured');
@@ -317,13 +356,15 @@ function generateInsights(data: {
       }
     }
   }
-  
+
   // Performance insights
   if (data.webhookMetrics.averageProcessingTime > 500) {
-    warnings.push(`High webhook processing latency: ${data.webhookMetrics.averageProcessingTime}ms`);
+    warnings.push(
+      `High webhook processing latency: ${data.webhookMetrics.averageProcessingTime}ms`
+    );
     recommendations.push('Optimize database queries and consider increasing server resources');
   }
-  
+
   return { insights, recommendations, warnings };
 }
 
@@ -340,14 +381,14 @@ async function validateAdminAuth(request: NextRequest): Promise<{
   if (apiKey === process.env.ADMIN_API_KEY && process.env.ADMIN_API_KEY) {
     return { valid: true, userId: 'api_admin' };
   }
-  
+
   // Allow in development
   if (process.env.NODE_ENV === 'development') {
     return { valid: true, userId: 'dev_admin' };
   }
-  
+
   return {
     valid: false,
-    error: 'Admin access required. Use x-api-key header.'
+    error: 'Admin access required. Use x-api-key header.',
   };
 }

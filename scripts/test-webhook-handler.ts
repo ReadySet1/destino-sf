@@ -4,50 +4,50 @@
 // This will help us debug why the webhook processing fails
 
 const webhookPayload = {
-  "merchant_id": "MLJD4JJXS3YSP",
-  "type": "payment.updated",
-  "event_id": "b1909a1d-a062-3202-a0f0-20500a046c3b",
-  "created_at": "2025-07-29T18:46:46.28Z",
-  "data": {
-    "type": "payment",
-    "id": "RQyVDYvsGlUC4RbOhUbBnTUQItaZY",
-    "object": {
-      "payment": {
-        "amount_money": {
-          "amount": 5826,
-          "currency": "USD"
+  merchant_id: 'MLJD4JJXS3YSP',
+  type: 'payment.updated',
+  event_id: 'b1909a1d-a062-3202-a0f0-20500a046c3b',
+  created_at: '2025-07-29T18:46:46.28Z',
+  data: {
+    type: 'payment',
+    id: 'RQyVDYvsGlUC4RbOhUbBnTUQItaZY',
+    object: {
+      payment: {
+        amount_money: {
+          amount: 5826,
+          currency: 'USD',
         },
-        "application_details": {
-          "application_id": "sandbox-sq0idb-lky4CaPAWmDnHY3YtYxINg",
-          "square_product": "ECOMMERCE_API"
+        application_details: {
+          application_id: 'sandbox-sq0idb-lky4CaPAWmDnHY3YtYxINg',
+          square_product: 'ECOMMERCE_API',
         },
-        "capabilities": [
-          "EDIT_AMOUNT_UP",
-          "EDIT_AMOUNT_DOWN",
-          "EDIT_TIP_AMOUNT_UP",
-          "EDIT_TIP_AMOUNT_DOWN"
+        capabilities: [
+          'EDIT_AMOUNT_UP',
+          'EDIT_AMOUNT_DOWN',
+          'EDIT_TIP_AMOUNT_UP',
+          'EDIT_TIP_AMOUNT_DOWN',
         ],
-        "created_at": "2025-07-29T18:46:44.271Z",
-        "external_details": {
-          "source": "Developer Control Panel",
-          "type": "CARD"
+        created_at: '2025-07-29T18:46:44.271Z',
+        external_details: {
+          source: 'Developer Control Panel',
+          type: 'CARD',
         },
-        "id": "RQyVDYvsGlUC4RbOhUbBnTUQItaZY",
-        "location_id": "LMV06M1ER6HCC",
-        "order_id": "9FhNm5NYhy6yi5jmU1z3tnzVHb4F",
-        "receipt_number": "RQyV",
-        "receipt_url": "https://squareupsandbox.com/receipt/preview/RQyVDYvsGlUC4RbOhUbBnTUQItaZY",
-        "source_type": "EXTERNAL",
-        "status": "COMPLETED",
-        "total_money": {
-          "amount": 5826,
-          "currency": "USD"
+        id: 'RQyVDYvsGlUC4RbOhUbBnTUQItaZY',
+        location_id: 'LMV06M1ER6HCC',
+        order_id: '9FhNm5NYhy6yi5jmU1z3tnzVHb4F',
+        receipt_number: 'RQyV',
+        receipt_url: 'https://squareupsandbox.com/receipt/preview/RQyVDYvsGlUC4RbOhUbBnTUQItaZY',
+        source_type: 'EXTERNAL',
+        status: 'COMPLETED',
+        total_money: {
+          amount: 5826,
+          currency: 'USD',
         },
-        "updated_at": "2025-07-29T18:46:44.382Z",
-        "version": 1
-      }
-    }
-  }
+        updated_at: '2025-07-29T18:46:44.382Z',
+        version: 1,
+      },
+    },
+  },
 };
 
 type SquareWebhookPayload = {
@@ -71,25 +71,25 @@ import type { Prisma } from '@prisma/client';
 async function testHandlePaymentUpdated(payload: SquareWebhookPayload): Promise<void> {
   console.log(`🧪 Testing handlePaymentUpdated with enhanced debugging...`);
   console.log(`🚀 DEBUG: Starting handlePaymentUpdated function...`);
-  
+
   try {
     const { data } = payload;
     console.log(`✅ DEBUG: Extracted data from payload`);
-    
+
     const paymentData = data.object.payment as any;
     console.log(`✅ DEBUG: Extracted paymentData, keys:`, Object.keys(paymentData || {}));
-    
+
     const squarePaymentId = data.id;
     console.log(`✅ DEBUG: squarePaymentId: ${squarePaymentId}`);
-    
+
     const squareOrderId = paymentData?.order_id;
     console.log(`✅ DEBUG: squareOrderId: ${squareOrderId}`);
-    
+
     const paymentStatus = paymentData?.status?.toUpperCase();
     console.log(`✅ DEBUG: paymentStatus: ${paymentStatus}`);
-    
+
     console.log(`🔄 Processing payment.updated event: ${squarePaymentId}`);
-    
+
     try {
       console.log(`📋 Payment data:`, {
         squarePaymentId,
@@ -114,8 +114,10 @@ async function testHandlePaymentUpdated(payload: SquareWebhookPayload): Promise<
 
     try {
       // First check for a catering order with this Square order ID
-      console.log(`🔍 Checking for catering order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`);
-      
+      console.log(
+        `🔍 Checking for catering order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`
+      );
+
       const cateringOrder = await prisma.cateringOrder.findUnique({
         where: { squareOrderId },
         select: { id: true, paymentStatus: true, status: true },
@@ -129,13 +131,18 @@ async function testHandlePaymentUpdated(payload: SquareWebhookPayload): Promise<
         console.log(`❌ No catering order found with squareOrderId: ${squareOrderId}`);
       }
     } catch (err) {
-      console.error(`❌ Error checking catering order for ${squareOrderId} (Event: ${payload.event_id}):`, err);
+      console.error(
+        `❌ Error checking catering order for ${squareOrderId} (Event: ${payload.event_id}):`,
+        err
+      );
       // Continue to regular order processing even if catering check fails
     }
 
     // If not a catering order, find our internal order using the Square Order ID
-    console.log(`🔍 Checking for regular order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`);
-    
+    console.log(
+      `🔍 Checking for regular order with squareOrderId: ${squareOrderId} (Event: ${payload.event_id})`
+    );
+
     const order = await prisma.order.findUnique({
       where: { squareOrderId: squareOrderId },
       select: {
@@ -148,7 +155,9 @@ async function testHandlePaymentUpdated(payload: SquareWebhookPayload): Promise<
     });
 
     if (!order) {
-      console.error(`❌ CRITICAL: Order with squareOrderId ${squareOrderId} not found for payment update (Event: ${payload.event_id})`);
+      console.error(
+        `❌ CRITICAL: Order with squareOrderId ${squareOrderId} not found for payment update (Event: ${payload.event_id})`
+      );
       return;
     }
 
@@ -170,9 +179,11 @@ async function testHandlePaymentUpdated(payload: SquareWebhookPayload): Promise<
           return 'PENDING';
       }
     }
-    
+
     let updatedPaymentStatus = mapSquarePaymentStatus(paymentStatus);
-    console.log(`📊 Payment status mapping: ${paymentStatus} → ${updatedPaymentStatus} (Event: ${payload.event_id})`);
+    console.log(
+      `📊 Payment status mapping: ${paymentStatus} → ${updatedPaymentStatus} (Event: ${payload.event_id})`
+    );
 
     // Prevent downgrading status
     if (
@@ -194,11 +205,14 @@ async function testHandlePaymentUpdated(payload: SquareWebhookPayload): Promise<
         ? OrderStatus.PROCESSING
         : order.status;
 
-    console.log(`📊 Order status update: ${order.status} → ${updatedOrderStatus} (Event: ${payload.event_id})`);
-    console.log(`💾 Would update order ${order.id} with payment status: ${updatedPaymentStatus}, order status: ${updatedOrderStatus} (Event: ${payload.event_id})`);
+    console.log(
+      `📊 Order status update: ${order.status} → ${updatedOrderStatus} (Event: ${payload.event_id})`
+    );
+    console.log(
+      `💾 Would update order ${order.id} with payment status: ${updatedPaymentStatus}, order status: ${updatedOrderStatus} (Event: ${payload.event_id})`
+    );
 
     console.log(`🎯 Test completed successfully - all data processing worked!`);
-
   } catch (comprehensiveError: any) {
     console.error(`❌ COMPREHENSIVE ERROR in testHandlePaymentUpdated:`, {
       error: comprehensiveError.message,
@@ -206,7 +220,7 @@ async function testHandlePaymentUpdated(payload: SquareWebhookPayload): Promise<
       eventId: payload?.event_id,
       paymentId: payload?.data?.id,
     });
-    
+
     throw comprehensiveError;
   } finally {
     await prisma.$disconnect();
@@ -216,4 +230,4 @@ async function testHandlePaymentUpdated(payload: SquareWebhookPayload): Promise<
 // Run the test
 testHandlePaymentUpdated(webhookPayload as SquareWebhookPayload).catch(console.error);
 
-export { testHandlePaymentUpdated }; 
+export { testHandlePaymentUpdated };

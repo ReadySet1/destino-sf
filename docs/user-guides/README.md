@@ -15,6 +15,7 @@ These user guides provide comprehensive documentation for the Destino SF platfor
 ## 👤 **Customer Documentation**
 
 ### **Target Audience**
+
 - **First-time customers** learning to navigate the platform
 - **Regular customers** exploring ordering and account features
 - **Catering customers** planning events and large orders
@@ -23,14 +24,18 @@ These user guides provide comprehensive documentation for the Destino SF platfor
 ### **Available Customer Guides**
 
 #### **🚀 [Getting Started](customer/getting-started.md)**
+
 Complete onboarding guide for new customers:
+
 - Account creation and authentication
 - Platform navigation and key features
 - First order placement walkthrough
 - Understanding delivery zones and minimums
 
 #### **🛒 [Placing Orders](customer/placing-orders.md)**
+
 Comprehensive ordering process documentation:
+
 - Product browsing and selection
 - Shopping cart management
 - Checkout process with Square payment
@@ -38,7 +43,9 @@ Comprehensive ordering process documentation:
 - Order confirmation and tracking setup
 
 #### **🍽️ [Catering Orders](customer/catering-orders.md)**
+
 Professional catering system guide:
+
 - Catering package selection (5, 7, 9 items)
 - Custom catering inquiry process
 - Delivery zone requirements and pricing
@@ -46,14 +53,18 @@ Professional catering system guide:
 - Business Account features
 
 #### **👤 [Account Management](customer/account-management.md)**
+
 User account and profile management:
+
 - Profile information (name, phone, email)
 - Order history and tracking
 - Password and security settings
 - Communication preferences
 
 #### **📦 [Order Tracking](customer/order-tracking.md)**
+
 Order status and delivery management:
+
 - Understanding order statuses
 - Real-time tracking information
 - Communication with support
@@ -64,6 +75,7 @@ Order status and delivery management:
 ## 🔧 **Administrator Documentation**
 
 ### **Target Audience**
+
 - **Business owners** overseeing platform operations
 - **Staff members** processing orders and managing customers
 - **Managers** handling catering inquiries and special orders
@@ -72,14 +84,18 @@ Order status and delivery management:
 ### **Available Admin Guides**
 
 #### **📊 [Dashboard Overview](admin/dashboard-overview.md)**
+
 Admin panel introduction and navigation:
+
 - Dashboard layout and key sections
 - Order management interface
 - Square integration status monitoring
 - User management and permissions
 
 #### **📦 [Order Management](admin/order-management.md)**
+
 Complete order processing workflow:
+
 - Order review and verification
 - Square POS integration procedures
 - Automated shipping label generation
@@ -87,7 +103,9 @@ Complete order processing workflow:
 - Order status management via Square
 
 #### **🛍️ [Product Management](admin/product-management.md)**
+
 Product catalog and Square integration:
+
 - Square POS product synchronization
 - Category management for website display
 - Product visibility and organization
@@ -99,22 +117,24 @@ Product catalog and Square integration:
 ## 🎯 **Platform Design & User Experience**
 
 ### **Streamlined Customer Experience**
+
 ```typescript
 interface CustomerJourney {
-  discovery: "Browse authentic Argentine products with detailed descriptions";
-  ordering: "Simple, secure checkout with Square payment processing";
-  tracking: "Real-time order updates and delivery notifications";
-  catering: "Professional catering inquiry and package selection system";
+  discovery: 'Browse authentic Argentine products with detailed descriptions';
+  ordering: 'Simple, secure checkout with Square payment processing';
+  tracking: 'Real-time order updates and delivery notifications';
+  catering: 'Professional catering inquiry and package selection system';
 }
 ```
 
 ### **Efficient Admin Operations**
+
 ```typescript
 interface AdminWorkflow {
-  orderProcessing: "View orders in admin panel, manage via Square POS";
-  automation: "Automated shipping labels via Shippo API integration";
-  communication: "Automated customer notifications and admin alerts";
-  productManagement: "Square POS handles products, website displays automatically";
+  orderProcessing: 'View orders in admin panel, manage via Square POS';
+  automation: 'Automated shipping labels via Shippo API integration';
+  communication: 'Automated customer notifications and admin alerts';
+  productManagement: 'Square POS handles products, website displays automatically';
 }
 ```
 
@@ -123,6 +143,7 @@ interface AdminWorkflow {
 ## 💡 **Best Practices & Success Tips**
 
 ### **For Customers**
+
 - **Account Benefits**: Create an account to track orders and view history
 - **Catering Planning**: Submit catering inquiries early for better planning
 - **Delivery Zones**: Check delivery requirements for your area
@@ -130,6 +151,7 @@ interface AdminWorkflow {
 - **Support Access**: Contact support for assistance with orders or platform questions
 
 ### **For Administrators**
+
 - **Daily Workflow**: Check admin panel for new orders, process via Square POS
 - **Square Integration**: Use Square dashboard for order status changes and refunds
 - **Automated Systems**: Trust automated shipping and email systems to handle routine tasks
@@ -141,16 +163,18 @@ interface AdminWorkflow {
 ## 🔄 **Workflow Integration**
 
 ### **Customer-to-Business Flow**
+
 ```typescript
 interface OrderFlow {
-  customerAction: "Places order via website with Square payment";
-  systemResponse: "Order synced to Square POS, confirmation emails sent";
-  businessAction: "Process order in Square, update status triggers shipping";
-  automation: "Shipping label generated, tracking sent to customer";
+  customerAction: 'Places order via website with Square payment';
+  systemResponse: 'Order synced to Square POS, confirmation emails sent';
+  businessAction: 'Process order in Square, update status triggers shipping';
+  automation: 'Shipping label generated, tracking sent to customer';
 }
 ```
 
 ### **Square POS Integration**
+
 - **Primary Management**: All order processing and product management via Square
 - **Website Role**: Customer interface with automatic backend synchronization
 - **Automated Updates**: Webhooks ensure real-time data consistency
@@ -161,13 +185,16 @@ interface OrderFlow {
 ## 🛠️ **Technical Integration Notes**
 
 ### **Square POS Dependency**
+
 The platform is designed around Square POS integration:
+
 - **Products**: All product data originates from Square catalog
 - **Payments**: Secure payment processing via Square Payment API
 - **Orders**: Order management split between web interface and Square POS
 - **Inventory**: Stock levels managed entirely through Square system
 
 ### **Automation Features**
+
 - **Shipping Labels**: Automatic generation via Shippo API when orders ship
 - **Email Notifications**: Automated customer and admin communications
 - **Status Updates**: Real-time synchronization between web platform and Square
@@ -178,18 +205,21 @@ The platform is designed around Square POS integration:
 ## 📞 **Support & Resources**
 
 ### **Customer Support**
+
 - **Platform Questions**: support@destinosf.com
 - **Order Issues**: Reference order number for faster resolution
 - **Catering Inquiries**: Dedicated catering support for large orders
 - **Technical Help**: Browser, payment, or account access issues
 
 ### **Admin Support**
+
 - **Technical Support**: Platform functionality and integration issues
 - **Square Support**: POS system, payment processing, and product management
 - **Training**: Onboarding and ongoing staff training available
 - **Emergency Support**: Critical issue escalation procedures
 
 ### **Documentation Support**
+
 - **Guide Updates**: Documentation updated with platform changes
 - **Feature Documentation**: New feature guides added as capabilities expand
 - **User Feedback**: Guide improvements based on user experience insights
@@ -200,12 +230,14 @@ The platform is designed around Square POS integration:
 ## 📊 **User Success Metrics**
 
 ### **Customer Success Indicators**
+
 - **Order Completion**: High conversion from cart to successful purchase
 - **Repeat Usage**: Customer retention and repeat order rates
 - **Catering Adoption**: Business customer engagement with catering services
 - **Support Efficiency**: Reduced support tickets through clear documentation
 
 ### **Admin Success Indicators**
+
 - **Order Processing Speed**: Efficient workflow from order to fulfillment
 - **System Utilization**: Effective use of Square integration and automation
 - **Customer Satisfaction**: Positive feedback and successful order resolution
@@ -216,12 +248,14 @@ The platform is designed around Square POS integration:
 ## 🔄 **Documentation Maintenance**
 
 ### **Update Schedule**
+
 - **Quarterly Reviews**: Comprehensive guide accuracy verification
 - **Feature Updates**: Documentation updates with new platform capabilities
 - **User Feedback**: Guide improvements based on user experience insights
 - **Accuracy Validation**: Regular testing of documented procedures
 
 ### **Quality Assurance**
+
 - **Platform Alignment**: All procedures verified against actual platform functionality
 - **User Testing**: Guides validated through real user workflows
 - **Technical Accuracy**: Integration details confirmed with development team
@@ -232,12 +266,14 @@ The platform is designed around Square POS integration:
 ## 🎯 **Training & Onboarding**
 
 ### **Customer Onboarding**
+
 - **Welcome Sequence**: Progressive introduction to platform features
 - **Feature Discovery**: Guided exploration of ordering and catering capabilities
 - **Support Integration**: Easy access to help and documentation resources
 - **Success Tracking**: Monitoring of onboarding completion and early usage
 
 ### **Admin Training**
+
 - **Platform Proficiency**: Comprehensive training on administrative functions
 - **Square Integration**: Understanding of POS system workflows and procedures
 - **Customer Service**: Preparation for common customer questions and scenarios
@@ -248,12 +284,14 @@ The platform is designed around Square POS integration:
 ## ✅ **Documentation Standards**
 
 ### **Quality Criteria**
+
 - **Accuracy**: All procedures tested against live platform functionality
 - **Completeness**: Comprehensive coverage of available features and workflows
 - **Clarity**: Clear, step-by-step instructions for all user types
 - **Relevance**: Content focused on actual platform capabilities
 
 ### **User Experience Focus**
+
 - **Task-Oriented**: Guides organized around real user goals and workflows
 - **Professional Presentation**: Clear formatting and professional language
 - **Practical Examples**: Real scenarios and use cases for better understanding

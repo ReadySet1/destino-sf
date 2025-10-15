@@ -1,8 +1,11 @@
 # 🎯 QA Implementation Plan - Destino SF
+
 ## Minimum Recommended Testing Strategy
 
 ## 📈 **IMPLEMENTATION PROGRESS TRACKER**
+
 ### ✅ **COMPLETED PHASES**
+
 - **✅ Phase 1: Core Testing Infrastructure** (COMPLETE - 2025-01-09)
   - ✅ Enhanced jest.setup.js with proper mocks and environment setup
   - ✅ Dual Jest configuration (Node.js + jsdom) for test isolation
@@ -12,7 +15,7 @@
 - **✅ Phase 2: Critical Path Testing** (COMPLETE - 2025-01-09)
   - ✅ **Payment Processing Tests**: 7/7 tests passing (100% success rate)
     - Payment success/failure scenarios
-    - Input validation and error handling  
+    - Input validation and error handling
     - Order validation and overpayment prevention
   - ✅ Order creation and validation test framework
   - ✅ Database testing utilities with setup/teardown
@@ -30,10 +33,11 @@
   - ✅ **Test Dashboard**: Beautiful HTML dashboard with metrics and visual reports
   - ✅ **Coverage Badges**: SVG badge generation for README integration
   - ✅ **Enhanced Test Scripts**: Dashboard generation, seeding, and factory testing
-  
+
 ### 🎯 **ALL PHASES COMPLETE!**
 
 ### 📊 **FINAL METRICS**
+
 - **Infrastructure Status**: ✅ COMPLETE - Dual Jest configs, mocks, and environment setup
 - **Critical Path Coverage**: ✅ COMPLETE - Payment processing: 7/7 tests passing (100%)
 - **CI/CD Integration**: ✅ ACTIVE - GitHub Actions with PostgreSQL and coverage reporting
@@ -42,6 +46,7 @@
 - **Overall QA Maturity**: 🚀 **PRODUCTION READY**
 
 ### 🎉 **IMPLEMENTATION SUCCESS**
+
 **Total Duration**: 1 Day (Phases 1-4 completed 2025-01-09)  
 **Key Achievement**: Transformed broken testing infrastructure into production-ready QA system
 **Impact**: 100% critical path test coverage, automated CI/CD, comprehensive test data management
@@ -53,6 +58,7 @@
 Based on the codebase analysis:
 
 #### ✅ **What You Have:**
+
 - **Testing Infrastructure**: Jest + TypeScript configuration in place
 - **E2E Testing**: Playwright configured with multiple device profiles
 - **Test Scripts**: Extensive npm scripts for different test scenarios
@@ -61,6 +67,7 @@ Based on the codebase analysis:
 - **Existing Tests**: ~100+ test files created but many disabled
 
 #### ❌ **Critical Gaps:**
+
 - **Tests Not Running**: CI/CD has tests disabled due to mock configuration issues
 - **Coverage Unknown**: No coverage reports being generated
 - **Disabled Tests**: Many `.disabled` test files indicating incomplete implementation
@@ -70,6 +77,7 @@ Based on the codebase analysis:
 ---
 
 ## 🚀 Phase 1: Fix Core Testing Infrastructure (Week 1)
+
 **Goal**: Get tests running reliably in CI/CD
 
 ### 1.1 Fix Mock Configuration Issues
@@ -164,6 +172,7 @@ export default {
 ---
 
 ## 🧪 Phase 2: Implement Minimum Test Coverage (Week 2-3)
+
 **Goal**: Achieve 30% coverage on critical paths
 
 ### 2.1 Critical Path Tests (MUST HAVE)
@@ -188,7 +197,7 @@ describe('Payment Processing - Critical Path', () => {
       status: 'COMPLETED',
       amount_money: { amount: 2500, currency: 'USD' },
     };
-    
+
     (createPayment as jest.Mock).mockResolvedValue(mockPayment);
 
     const request = new Request('http://localhost/api/checkout', {
@@ -196,7 +205,7 @@ describe('Payment Processing - Critical Path', () => {
       body: JSON.stringify({
         orderId: 'order-123',
         paymentSourceId: 'cnon:card-nonce-123',
-        amount: 25.00,
+        amount: 25.0,
       }),
     });
 
@@ -208,16 +217,14 @@ describe('Payment Processing - Critical Path', () => {
   });
 
   it('should handle payment failures gracefully', async () => {
-    (createPayment as jest.Mock).mockRejectedValue(
-      new Error('Card declined')
-    );
+    (createPayment as jest.Mock).mockRejectedValue(new Error('Card declined'));
 
     const request = new Request('http://localhost/api/checkout', {
       method: 'POST',
       body: JSON.stringify({
         orderId: 'order-123',
         paymentSourceId: 'cnon:invalid',
-        amount: 25.00,
+        amount: 25.0,
       }),
     });
 
@@ -236,9 +243,7 @@ describe('Payment Processing - Critical Path', () => {
 describe('Order Creation - Critical Path', () => {
   it('should create order with proper validation', async () => {
     const orderData = {
-      items: [
-        { productId: 'prod-1', quantity: 2, price: 12.99 },
-      ],
+      items: [{ productId: 'prod-1', quantity: 2, price: 12.99 }],
       customerInfo: {
         name: 'John Doe',
         email: 'john@example.com',
@@ -257,9 +262,7 @@ describe('Order Creation - Critical Path', () => {
 
   it('should validate minimum order requirements', async () => {
     const orderData = {
-      items: [
-        { productId: 'prod-1', quantity: 1, price: 5.00 },
-      ],
+      items: [{ productId: 'prod-1', quantity: 1, price: 5.0 }],
       fulfillmentMethod: 'DELIVERY',
       deliveryAddress: '123 Main St, San Francisco, CA',
     };
@@ -327,7 +330,7 @@ import { CheckoutForm } from '@/components/Store/CheckoutForm';
 describe('CheckoutForm', () => {
   it('should render all required fields', () => {
     render(<CheckoutForm />);
-    
+
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/phone/i)).toBeInTheDocument();
@@ -335,7 +338,7 @@ describe('CheckoutForm', () => {
 
   it('should validate email format', async () => {
     render(<CheckoutForm />);
-    
+
     const emailInput = screen.getByLabelText(/email/i);
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
     fireEvent.blur(emailInput);
@@ -350,6 +353,7 @@ describe('CheckoutForm', () => {
 ---
 
 ## 📈 Phase 3: Enable CI/CD Testing (Week 3)
+
 **Goal**: Re-enable tests in GitHub Actions
 
 ### 3.1 Update GitHub Actions Workflow
@@ -367,7 +371,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -383,41 +387,41 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: pnpm/action-setup@v2
         with:
           version: 10.14.0
-          
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Run type checking
         run: pnpm type-check
-        
+
       - name: Run linting
         run: pnpm lint
-        
+
       - name: Run unit tests
         run: pnpm test:unit
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
-          
+
       - name: Run API tests
         run: pnpm test:api
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
-          
+
       - name: Run component tests
         run: pnpm test:components
-        
+
       - name: Generate coverage report
         run: pnpm test:coverage
-        
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -428,6 +432,7 @@ jobs:
 ---
 
 ## 🛡️ Phase 4: Test Data Management (Week 4)
+
 **Goal**: Consistent test data across all environments
 
 ### 4.1 Create Test Factories
@@ -515,21 +520,23 @@ export async function seedTestDatabase(prisma: PrismaClient) {
 ---
 
 ## ✅ Phase 5: Monitoring & Reporting (COMPLETED)
+
 **Goal**: Track progress and maintain quality ✨
 
 ### 🎉 Final Results - SUCCESS!
 
-| Metric | Before Phase 5 | After Phase 5 | Status |
-|--------|----------------|---------------|---------|
-| **Test Suites Passing** | 0/78 (0%) | 25/78 (32%) | ✅ **Massive Improvement** |
-| **Individual Tests Passing** | 0/1489 (0%) | 816/1489 (55%) | ✅ **816 Tests Running!** |
-| **Critical Path Tests** | Broken | Functional | ✅ **Working** |
-| **Payment Processing** | Failed | Passing | ✅ **Fixed** |
-| **Test Infrastructure** | Basic | Advanced | ✅ **Professional Grade** |
+| Metric                       | Before Phase 5 | After Phase 5  | Status                     |
+| ---------------------------- | -------------- | -------------- | -------------------------- |
+| **Test Suites Passing**      | 0/78 (0%)      | 25/78 (32%)    | ✅ **Massive Improvement** |
+| **Individual Tests Passing** | 0/1489 (0%)    | 816/1489 (55%) | ✅ **816 Tests Running!**  |
+| **Critical Path Tests**      | Broken         | Functional     | ✅ **Working**             |
+| **Payment Processing**       | Failed         | Passing        | ✅ **Fixed**               |
+| **Test Infrastructure**      | Basic          | Advanced       | ✅ **Professional Grade**  |
 
 ### 🛠️ Implemented Features
+
 - **HTML Test Report Generator** (`scripts/generate-test-report.ts`)
-- **Live Test Monitor** (`scripts/test-monitor.js`)  
+- **Live Test Monitor** (`scripts/test-monitor.js`)
 - **Pre-commit Quality Gates** (`.husky/pre-commit`)
 - **Enhanced Jest Configuration** (`jest.setup.enhanced.js`)
 - **Comprehensive Service Mocking** (Prisma, Supabase, Square, etc.)
@@ -565,6 +572,7 @@ pnpm test:coverage -- --collectCoverageFrom='src/app/api/checkout/**' --coverage
 ## ✅ Implementation Checklist
 
 ### Week 1: Infrastructure
+
 - [ ] Fix jest.setup.js mock issues
 - [ ] Create separate Node/jsdom configs
 - [ ] Update package.json test scripts
@@ -572,6 +580,7 @@ pnpm test:coverage -- --collectCoverageFrom='src/app/api/checkout/**' --coverage
 - [ ] Setup test database configuration
 
 ### Week 2: Critical Tests
+
 - [ ] Implement payment processing tests
 - [ ] Implement order creation tests
 - [ ] Add basic cart operation tests
@@ -579,6 +588,7 @@ pnpm test:coverage -- --collectCoverageFrom='src/app/api/checkout/**' --coverage
 - [ ] Add error handling tests
 
 ### Week 3: CI/CD
+
 - [ ] Re-enable tests in GitHub Actions
 - [ ] Add PostgreSQL service to CI
 - [ ] Setup coverage reporting
@@ -586,6 +596,7 @@ pnpm test:coverage -- --collectCoverageFrom='src/app/api/checkout/**' --coverage
 - [ ] Create PR comment bot for coverage
 
 ### Week 4: Data & Monitoring
+
 - [ ] Create comprehensive test factories
 - [ ] Implement database seeding
 - [ ] Add coverage badges to README
@@ -607,6 +618,7 @@ pnpm test:coverage -- --collectCoverageFrom='src/app/api/checkout/**' --coverage
 ## 📚 Resources & Documentation
 
 ### Testing Guidelines
+
 ```typescript
 // src/__tests__/TESTING_GUIDELINES.md
 # Testing Guidelines
@@ -632,13 +644,13 @@ pnpm test:coverage -- --collectCoverageFrom='src/app/api/checkout/**' --coverage
 
 ### Common Issues & Solutions
 
-| Issue | Solution |
-|-------|----------|
-| TextEncoder not defined | Add polyfill in jest.setup.js |
+| Issue                      | Solution                              |
+| -------------------------- | ------------------------------------- |
+| TextEncoder not defined    | Add polyfill in jest.setup.js         |
 | Cannot find module '@/...' | Check moduleNameMapper in jest.config |
-| Prisma client issues | Use mock or test container |
-| Async timeout | Increase timeout or use waitFor |
-| React state updates | Wrap in act() or use waitFor |
+| Prisma client issues       | Use mock or test container            |
+| Async timeout              | Increase timeout or use waitFor       |
+| React state updates        | Wrap in act() or use waitFor          |
 
 ---
 

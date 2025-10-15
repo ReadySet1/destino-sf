@@ -15,13 +15,15 @@
 ## Solution Implemented
 
 ### 1. Enhanced Debug Logging
+
 - Added comprehensive logging to capture exactly what headers are missing
 - Environment detection improvement
 - User-Agent and Content-Type header logging for debugging
 
 ### 2. Production Fallback Strategy
+
 - **Previous Behavior**: Webhook processing completely blocked if signature missing
-- **New Behavior**: 
+- **New Behavior**:
   - Continue processing webhooks in production even without signatures
   - Log warnings and non-blocking errors for monitoring
   - Maintain security in development/preview environments
@@ -31,23 +33,30 @@
 **File**: `src/app/api/webhooks/square/route.ts`
 
 **Key improvements**:
+
 ```typescript
 // Enhanced debugging for production issues
 console.log('🔍 Webhook signature debugging info:', {
   hasSignature: !!signature,
   hasTimestamp: !!timestamp,
   hasSecret: !!webhookSecret,
-  environment: { /* ... */ },
-  headers: { /* ... */ }
+  environment: {
+    /* ... */
+  },
+  headers: {
+    /* ... */
+  },
 });
 
-// More lenient approach: Allow webhooks without signatures in production 
+// More lenient approach: Allow webhooks without signatures in production
 // but log them for monitoring and Square Developer Dashboard configuration
 if (isProductionEnvironment || isPreviewEnvironment) {
   // Don't block webhook processing, but log the issue for investigation
   console.warn('🔔 NOTICE: Webhook received without proper signature headers in production');
-  console.warn('🔧 This may indicate Square Developer Dashboard webhook configuration needs updating');
-  
+  console.warn(
+    '🔧 This may indicate Square Developer Dashboard webhook configuration needs updating'
+  );
+
   // Log to error monitoring for tracking but don't return/block processing
   await errorMonitor.captureWebhookError(
     new Error(`Webhook signature verification issue - missing: ${missingComponents.join(', ')}`),
@@ -55,15 +64,18 @@ if (isProductionEnvironment || isPreviewEnvironment) {
     payload?.event_id || 'unknown',
     payload?.type || 'unknown'
   );
-  
+
   // Continue processing the webhook but with additional logging
-  console.warn('⚠️ Continuing webhook processing without signature verification (production fallback)');
+  console.warn(
+    '⚠️ Continuing webhook processing without signature verification (production fallback)'
+  );
 }
 ```
 
 ## Testing & Verification
 
 ### 1. Debug Script
+
 Created `scripts/debug-square-webhook-production.ts` to help diagnose webhook issues:
 
 ```bash
@@ -72,6 +84,7 @@ npx ts-node scripts/debug-square-webhook-production.ts
 ```
 
 ### 2. Manual Testing
+
 ```bash
 # Test webhook endpoint
 curl -X POST "https://your-domain.vercel.app/api/webhooks/square" \
@@ -81,16 +94,19 @@ curl -X POST "https://your-domain.vercel.app/api/webhooks/square" \
 ```
 
 ### 3. Debug Endpoint
+
 Visit `/api/webhooks/square/debug` to check environment configuration
 
 ## Post-Deployment Actions
 
 ### 1. Monitor Logs
+
 - Watch Vercel function logs for webhook signature debugging info
 - Look for `signature_missing_non_blocking` errors in monitoring
 - Confirm webhooks are processing successfully
 
 ### 2. Square Developer Dashboard Review
+
 1. Go to https://developer.squareup.com/apps
 2. Select your application
 3. Navigate to "Webhooks" section
@@ -100,7 +116,9 @@ Visit `/api/webhooks/square/debug` to check environment configuration
    - ✅ Webhook events are properly configured
 
 ### 3. Long-term Solution
+
 If Square is consistently not sending signatures:
+
 - Contact Square Developer Support
 - Verify webhook configuration in Square Dashboard
 - Consider implementing additional webhook validation methods
@@ -115,6 +133,7 @@ If Square is consistently not sending signatures:
 ## Error Monitoring
 
 The fix changes the error type from:
+
 - `signature_missing` (blocking)
 - `signature_missing_non_blocking` (non-blocking, logged for monitoring)
 

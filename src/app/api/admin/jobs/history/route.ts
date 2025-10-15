@@ -24,18 +24,17 @@ export async function GET(request: NextRequest) {
         limit,
         offset,
         total: 100, // Mock total
-        hasMore: offset + limit < 100
+        hasMore: offset + limit < 100,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     logger.error('Error getting job history', { error });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -51,10 +50,10 @@ function generateMockHistory(limit: number, offset: number) {
   const now = new Date();
 
   for (let i = offset; i < offset + limit && i < 100; i++) {
-    const startedAt = new Date(now.getTime() - (i * 5 * 60 * 1000)); // Every 5 minutes
+    const startedAt = new Date(now.getTime() - i * 5 * 60 * 1000); // Every 5 minutes
     const duration = Math.random() * 3000 + 500; // 0.5-3.5 seconds
     const completedAt = new Date(startedAt.getTime() + duration);
-    
+
     const isSuccessful = Math.random() > 0.05; // 95% success rate
     const processed = Math.floor(Math.random() * 50) + 10;
     const updated = Math.floor(processed * (Math.random() * 0.3 + 0.1)); // 10-40% updated
@@ -65,13 +64,15 @@ function generateMockHistory(limit: number, offset: number) {
       startedAt: startedAt.toISOString(),
       completedAt: isSuccessful ? completedAt.toISOString() : undefined,
       status: isSuccessful ? 'completed' : 'failed',
-      result: isSuccessful ? {
-        processed,
-        updated,
-        errors: 0,
-        duration: Math.floor(duration)
-      } : undefined,
-      error: isSuccessful ? undefined : 'Mock error for demonstration purposes'
+      result: isSuccessful
+        ? {
+            processed,
+            updated,
+            errors: 0,
+            duration: Math.floor(duration),
+          }
+        : undefined,
+      error: isSuccessful ? undefined : 'Mock error for demonstration purposes',
     });
   }
 
@@ -89,16 +90,15 @@ export async function DELETE() {
     return NextResponse.json({
       success: true,
       message: 'Job history cleanup requested (feature not implemented yet)',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     logger.error('Error clearing job history', { error });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

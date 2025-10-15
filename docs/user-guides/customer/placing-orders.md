@@ -14,14 +14,18 @@ Learn how to browse and order authentic Argentine products from Destino SF. This
 ## 📋 **Browsing Our Product Catalog**
 
 ### **Product Categories**
+
 Our authentic Argentine products are organized into categories:
+
 - **📦 Empanadas**: Traditional Argentine hand pies with various fillings (Beef, Pork, Lomo Saltado, Salmon)
 - **🍪 Alfajores**: Sweet sandwich cookies with dulce de leche in multiple flavors
 - **🍽️ Catering Packages**: Large-format options for events and businesses
 
 ### **Product Information**
+
 Each product displays:
-- **High-quality photos** 
+
+- **High-quality photos**
 - **Product name and detailed description**
 - **Pricing** for individual items or packages
 - **Dietary information** (gluten-free, vegetarian, vegan indicators)
@@ -29,6 +33,7 @@ Each product displays:
 - **Add to cart** functionality
 
 ### **Important Notes**
+
 - All products are **authentic Argentine specialties**
 - We sell **retail food products**, not restaurant meals
 - Product catalog is stored in our database with real-time availability
@@ -39,6 +44,7 @@ Each product displays:
 ## 🛍️ **Adding Items to Cart**
 
 ### **Simple Add-to-Cart Process**
+
 1. **Browse** the product catalog by category
 2. **Click** on a product to view details
 3. **Select** quantity desired
@@ -46,6 +52,7 @@ Each product displays:
 5. **Continue shopping** or proceed to checkout
 
 ### **Cart Management**
+
 - **View Cart**: Click cart icon to see all items
 - **Update Quantities**: Adjust amounts as needed
 - **Remove Items**: Delete unwanted products
@@ -57,13 +64,16 @@ Each product displays:
 ## 📍 **Delivery & Address Information**
 
 ### **Address Entry** (Required Each Order)
+
 For accuracy and flexibility, we require fresh address entry for each order:
+
 - **Street Address**: Complete street address with unit/apartment number
-- **City, State, ZIP**: Full location details  
+- **City, State, ZIP**: Full location details
 - **Phone Number**: For delivery coordination
 - **Delivery Instructions**: Any special delivery requirements
 
 ### **Shipping Options**
+
 - **Calculated Shipping**: Rates calculated based on weight and destination
 - **Nationwide Shipping**: We ship across the United States
 - **Automated Shipping**: Shipping rates calculated automatically
@@ -74,6 +84,7 @@ For accuracy and flexibility, we require fresh address entry for each order:
 ## 💳 **Checkout Process**
 
 ### **Secure Checkout via Square**
+
 1. **Review Your Cart**: Verify all items and quantities
 2. **Enter Shipping Address**: Complete delivery information
 3. **Select Shipping Method**: Choose from available shipping options
@@ -81,6 +92,7 @@ For accuracy and flexibility, we require fresh address entry for each order:
 5. **Order Confirmation**: Receive confirmation email immediately
 
 ### **Payment Security**
+
 - **Square Payment Processing**: Industry-leading payment security
 - **PCI Compliant**: Your payment information is fully protected
 - **No Stored Payment Info**: Payment details processed securely each time
@@ -91,12 +103,15 @@ For accuracy and flexibility, we require fresh address entry for each order:
 ## 📧 **Order Confirmation & Communication**
 
 ### **Automatic Notifications**
+
 After placing your order, you'll receive:
+
 - **Immediate Order Confirmation**: Email with order details
 - **Admin Notification**: Our team is alerted to prepare your order
 - **Shipping Updates**: Tracking information when your order ships
 
 ### **Order Processing**
+
 1. **Order Received**: We review and prepare your order
 2. **Database Processing**: Order stored in our system for processing
 3. **Shipping Preparation**: Items packed and shipping label generated
@@ -107,11 +122,13 @@ After placing your order, you'll receive:
 ## 📦 **What to Expect**
 
 ### **Product Types**
+
 - **Empanadas**: Frozen, ready to bake at home with included instructions
 - **Alfajores**: Fresh, ready to enjoy immediately
 - **Catering Items**: Larger quantities for events with setup instructions
 
 ### **Packaging & Shipping**
+
 - **Careful Packaging**: Items protected for shipping
 - **Temperature Considerations**: Frozen items shipped with appropriate cooling
 - **Nationwide Delivery**: Professional shipping to your location
@@ -147,11 +164,13 @@ A: Catering orders are for larger quantities and events, with separate cart mana
 ## 📞 **Need Help?**
 
 ### **Customer Support**
+
 - **Contact Form**: Available on our website
 - **Questions**: Product information, order assistance
 - **Order Issues**: Payment or delivery concerns
 
 ### **Next Steps**
+
 - **[Order Tracking](order-tracking.md)**: Learn about order status updates
 - **[Account Management](account-management.md)**: Manage your profile
 - **[Catering Orders](catering-orders.md)**: Large quantity orders for events

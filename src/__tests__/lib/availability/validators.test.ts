@@ -1,9 +1,9 @@
-import { 
-  AvailabilityRuleSchema, 
-  ViewOnlySettingsSchema, 
-  AvailabilityState, 
+import {
+  AvailabilityRuleSchema,
+  ViewOnlySettingsSchema,
+  AvailabilityState,
   RuleType,
-  type AvailabilityRule 
+  type AvailabilityRule,
 } from '@/types/availability';
 import { AvailabilityValidators } from '@/lib/availability/validators';
 
@@ -14,36 +14,36 @@ describe('ViewOnlySettingsSchema', () => {
         message: null,
         showPrice: true,
         allowWishlist: false,
-        notifyWhenAvailable: true
+        notifyWhenAvailable: true,
       };
-      
+
       const result = ViewOnlySettingsSchema.safeParse(input);
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.message).toBeNull();
       }
     });
-    
+
     it('should accept string message', () => {
       const input = {
         message: 'This product is view-only',
         showPrice: true,
         allowWishlist: false,
-        notifyWhenAvailable: true
+        notifyWhenAvailable: true,
       };
-      
+
       const result = ViewOnlySettingsSchema.safeParse(input);
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.message).toBe('This product is view-only');
       }
     });
-    
+
     it('should accept settings with defaults when only message is provided', () => {
       const input = {
-        message: null
+        message: null,
       };
-      
+
       const result = ViewOnlySettingsSchema.safeParse(input);
       expect(result.success).toBe(true);
       if (result.success) {
@@ -58,9 +58,9 @@ describe('ViewOnlySettingsSchema', () => {
         message: '',
         showPrice: true,
         allowWishlist: false,
-        notifyWhenAvailable: true
+        notifyWhenAvailable: true,
       };
-      
+
       const result = ViewOnlySettingsSchema.safeParse(input);
       expect(result.success).toBe(true);
       if (result.success) {
@@ -69,14 +69,15 @@ describe('ViewOnlySettingsSchema', () => {
     });
 
     it('should accept long message strings', () => {
-      const longMessage = 'This is a very long custom message that explains in detail why this product is currently view-only and when it might become available again.';
+      const longMessage =
+        'This is a very long custom message that explains in detail why this product is currently view-only and when it might become available again.';
       const input = {
         message: longMessage,
         showPrice: false,
         allowWishlist: true,
-        notifyWhenAvailable: false
+        notifyWhenAvailable: false,
       };
-      
+
       const result = ViewOnlySettingsSchema.safeParse(input);
       expect(result.success).toBe(true);
       if (result.success) {
@@ -122,14 +123,14 @@ describe('AvailabilityRuleSchema', () => {
         state: AvailabilityState.VIEW_ONLY,
         viewOnlySettings: {
           message: null,
-          showPrice: true
+          showPrice: true,
         },
       };
-      
+
       const result = AvailabilityRuleSchema.safeParse(input);
       expect(result.success).toBe(true);
     });
-    
+
     it('should accept view-only rule with custom message', () => {
       const input = {
         ...baseRule,
@@ -137,10 +138,10 @@ describe('AvailabilityRuleSchema', () => {
         state: AvailabilityState.VIEW_ONLY,
         viewOnlySettings: {
           message: 'Available next season',
-          showPrice: false
+          showPrice: false,
         },
       };
-      
+
       const result = AvailabilityRuleSchema.safeParse(input);
       expect(result.success).toBe(true);
     });
@@ -154,10 +155,10 @@ describe('AvailabilityRuleSchema', () => {
           message: 'Custom message',
           showPrice: true,
           allowWishlist: true,
-          notifyWhenAvailable: false
+          notifyWhenAvailable: false,
         },
       };
-      
+
       const result = AvailabilityRuleSchema.safeParse(input);
       expect(result.success).toBe(true);
     });
@@ -168,10 +169,10 @@ describe('AvailabilityRuleSchema', () => {
         name: 'Minimal View-Only Rule',
         state: AvailabilityState.VIEW_ONLY,
         viewOnlySettings: {
-          message: null
+          message: null,
         },
       };
-      
+
       const result = AvailabilityRuleSchema.safeParse(input);
       expect(result.success).toBe(true);
     });
@@ -191,7 +192,7 @@ describe('AvailabilityRuleSchema', () => {
           expectedDeliveryDate: futureDate,
         },
       };
-      
+
       const result = AvailabilityRuleSchema.safeParse(input);
       expect(result.success).toBe(true);
     });
@@ -204,7 +205,7 @@ describe('AvailabilityRuleSchema', () => {
         name: 'Available Rule',
         state: AvailabilityState.AVAILABLE,
       };
-      
+
       const result = AvailabilityRuleSchema.safeParse(input);
       expect(result.success).toBe(true);
     });
@@ -215,7 +216,7 @@ describe('AvailabilityRuleSchema', () => {
         name: 'Hidden Rule',
         state: AvailabilityState.HIDDEN,
       };
-      
+
       const result = AvailabilityRuleSchema.safeParse(input);
       expect(result.success).toBe(true);
     });
@@ -226,7 +227,7 @@ describe('AvailabilityRuleSchema', () => {
         name: 'Coming Soon Rule',
         state: AvailabilityState.COMING_SOON,
       };
-      
+
       const result = AvailabilityRuleSchema.safeParse(input);
       expect(result.success).toBe(true);
     });
@@ -237,7 +238,7 @@ describe('AvailabilityRuleSchema', () => {
         name: 'Sold Out Rule',
         state: AvailabilityState.SOLD_OUT,
       };
-      
+
       const result = AvailabilityRuleSchema.safeParse(input);
       expect(result.success).toBe(true);
     });
@@ -266,12 +267,12 @@ describe('AvailabilityValidators.validateRule', () => {
           depositRequired: false,
         },
       };
-      
+
       const result = AvailabilityValidators.validateRule(rule, undefined, true);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
-    
+
     it('should validate view-only rules with null message', () => {
       const rule: Partial<AvailabilityRule> = {
         ...baseRule,
@@ -281,10 +282,10 @@ describe('AvailabilityValidators.validateRule', () => {
           message: null,
           showPrice: true,
           allowWishlist: false,
-          notifyWhenAvailable: true
+          notifyWhenAvailable: true,
         },
       };
-      
+
       const result = AvailabilityValidators.validateRule(rule);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -299,10 +300,10 @@ describe('AvailabilityValidators.validateRule', () => {
           message: 'This is a custom view-only message',
           showPrice: false,
           allowWishlist: true,
-          notifyWhenAvailable: false
+          notifyWhenAvailable: false,
         },
       };
-      
+
       const result = AvailabilityValidators.validateRule(rule);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -317,7 +318,7 @@ describe('AvailabilityValidators.validateRule', () => {
         state: AvailabilityState.VIEW_ONLY,
         // Missing viewOnlySettings
       };
-      
+
       const result = AvailabilityValidators.validateRule(rule);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('View-only rules must have view-only settings configured');
@@ -330,7 +331,7 @@ describe('AvailabilityValidators.validateRule', () => {
         state: AvailabilityState.PRE_ORDER,
         // Missing preOrderSettings
       };
-      
+
       const result = AvailabilityValidators.validateRule(rule);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Pre-order rules must have pre-order settings configured');
@@ -347,10 +348,10 @@ describe('AvailabilityValidators.validateRule', () => {
           message: null,
           showPrice: true,
           allowWishlist: false,
-          notifyWhenAvailable: true
+          notifyWhenAvailable: true,
         },
       };
-      
+
       const result = AvailabilityValidators.validateRule(rule);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -367,10 +368,10 @@ describe('AvailabilityValidators.validateRule', () => {
           message: '',
           showPrice: true,
           allowWishlist: false,
-          notifyWhenAvailable: true
+          notifyWhenAvailable: true,
         },
       };
-      
+
       const result = AvailabilityValidators.validateRule(rule);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -386,10 +387,10 @@ describe('AvailabilityValidators.validateRule', () => {
           message: longMessage,
           showPrice: true,
           allowWishlist: false,
-          notifyWhenAvailable: true
+          notifyWhenAvailable: true,
         },
       };
-      
+
       const result = AvailabilityValidators.validateRule(rule);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -407,10 +408,10 @@ describe('AvailabilityValidators.validateRule', () => {
           message: null,
           showPrice: true,
           allowWishlist: false,
-          notifyWhenAvailable: true
+          notifyWhenAvailable: true,
         },
       };
-      
+
       const result = AvailabilityValidators.validateRule(rule, undefined, true);
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -433,13 +434,13 @@ describe('Integration: The exact error scenario from the bug report', () => {
         message: null, // This was causing the error
         showPrice: true,
         allowWishlist: false,
-        notifyWhenAvailable: true
-      }
+        notifyWhenAvailable: true,
+      },
     };
-    
+
     // Validator is called with skipFutureDateCheck: true (for toggling existing rules)
     const result = AvailabilityValidators.validateRule(updates, undefined, true);
-    
+
     // Should now pass without errors
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
@@ -450,7 +451,7 @@ describe('Integration: The exact error scenario from the bug report', () => {
       message: null,
       showPrice: true,
       allowWishlist: false,
-      notifyWhenAvailable: true
+      notifyWhenAvailable: true,
     };
 
     // This was failing before the fix
@@ -462,11 +463,10 @@ describe('Integration: The exact error scenario from the bug report', () => {
       name: 'Test Rule',
       ruleType: RuleType.CUSTOM,
       state: AvailabilityState.VIEW_ONLY,
-      viewOnlySettings
+      viewOnlySettings,
     };
 
     const ruleResult = AvailabilityRuleSchema.safeParse(ruleData);
     expect(ruleResult.success).toBe(true);
   });
 });
-

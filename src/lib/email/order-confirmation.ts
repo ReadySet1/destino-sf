@@ -17,7 +17,9 @@ export interface EmailResult {
   error?: string;
 }
 
-export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailData): Promise<EmailResult> {
+export async function sendOrderConfirmationEmail(
+  data: OrderConfirmationEmailData
+): Promise<EmailResult> {
   try {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
@@ -32,26 +34,30 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailDat
     if (result.error) {
       return {
         success: false,
-        error: result.error.message
+        error: result.error.message,
       };
     }
 
     return {
       success: true,
-      emailId: result.data?.id
+      emailId: result.data?.id,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to send email'
+      error: error instanceof Error ? error.message : 'Failed to send email',
     };
   }
 }
 
-function generateOrderConfirmationHtml(orderData: { id: string; total: number; items: any[] }): string {
-  const itemsHtml = orderData.items.map(item => 
-    `<li>${item.name} x ${item.quantity} - $${item.price.toFixed(2)}</li>`
-  ).join('');
+function generateOrderConfirmationHtml(orderData: {
+  id: string;
+  total: number;
+  items: any[];
+}): string {
+  const itemsHtml = orderData.items
+    .map(item => `<li>${item.name} x ${item.quantity} - $${item.price.toFixed(2)}</li>`)
+    .join('');
 
   return `
     <h1>Order Confirmation</h1>

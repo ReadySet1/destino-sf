@@ -30,12 +30,8 @@ class GoogleMapsErrorBoundary extends React.Component<Props, State> {
         this.props.fallback || (
           <div className="flex items-center justify-center h-full bg-amber-50 p-4">
             <div className="text-center">
-              <p className="text-red-500 font-quicksand mb-2">
-                Unable to load map
-              </p>
-              <p className="text-sm text-amber-700">
-                Please try refreshing the page
-              </p>
+              <p className="text-red-500 font-quicksand mb-2">Unable to load map</p>
+              <p className="text-sm text-amber-700">Please try refreshing the page</p>
             </div>
           </div>
         )
@@ -46,4 +42,4 @@ class GoogleMapsErrorBoundary extends React.Component<Props, State> {
   }
 }
 
-export default GoogleMapsErrorBoundary; 
+export default GoogleMapsErrorBoundary;

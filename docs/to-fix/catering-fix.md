@@ -4,7 +4,7 @@
 
 ### Catering Order Payment & Confirmation Issues Fix
 
-------
+---
 
 ## 🎯 Feature/Fix Overview
 
@@ -17,6 +17,7 @@
 ### Problem Statement
 
 The catering order system has three critical issues:
+
 1. Customer information is being saved as placeholder values ("Pending", "pending@example.com", "pending") in Square instead of using the actual customer data from the catering form
 2. Order confirmation page showing "pending" status even when payment is marked as PAID
 3. Double slashes in Square redirect URL (`destinosf.com//catering/confirmation`)
@@ -28,7 +29,7 @@ The catering order system has three critical issues:
 - [ ] Order confirmation page displays correct payment/order status after successful payment
 - [ ] Square redirect URL formatted correctly without double slashes
 
-------
+---
 
 ## 📋 Planning Phase
 
@@ -81,9 +82,9 @@ interface SquareWebhookCateringPayload {
 // Update existing CateringOrder to ensure customer fields are required
 interface CateringOrder {
   // ... existing fields
-  name: string;        // Not nullable
-  email: string;       // Not nullable  
-  phone: string;       // Not nullable
+  name: string; // Not nullable
+  email: string; // Not nullable
+  phone: string; // Not nullable
   squareOrderId?: string;
   squareCheckoutId?: string;
   squareCustomerId?: string;
@@ -144,7 +145,7 @@ async function updateCateringOrderFromWebhook(orderId, customerData): Promise<..
 5. Square webhook only updates payment status (doesn't create duplicate order)
 6. Confirmation page fetches order from DB and displays correct status
 
-------
+---
 
 ## 🔧 Implementation Details
 
@@ -153,6 +154,7 @@ async function updateCateringOrderFromWebhook(orderId, customerData): Promise<..
 **Root Cause**: When creating a regular order (not catering), the system creates placeholder customer data ("Pending", "pending@example.com") because the order is created from a webhook before customer data is available. However, catering orders ALREADY have the customer data from the form submission, but the webhook handler is incorrectly overwriting it with placeholders.
 
 **Fix**:
+
 ```tsx
 // src/app/api/webhooks/square/route.ts
 
@@ -160,20 +162,20 @@ async function updateCateringOrderFromWebhook(orderId, customerData): Promise<..
 async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
   const squareOrderData = data.object.order_created as any;
-  
+
   // Check if this is a catering order first
   const cateringOrder = await prisma.cateringOrder.findUnique({
     where: { squareOrderId: data.id },
     select: { id: true, name: true, email: true, phone: true },
   });
-  
+
   if (cateringOrder) {
     // This is a catering order - don't create a regular order
     // Catering orders already have customer data from the form
     console.log(`✅ Catering order ${cateringOrder.id} already exists with Square ID ${data.id}`);
     return;
   }
-  
+
   // Only create regular orders for non-catering checkouts
   // Continue with existing regular order creation logic...
   await prisma.order.upsert({
@@ -186,7 +188,7 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
       email: 'pending@example.com',
       phone: 'pending',
       // ...
-    }
+    },
   });
 }
 
@@ -194,20 +196,24 @@ async function handleOrderCreated(payload: SquareWebhookPayload): Promise<void> 
 // src/actions/catering.ts - in createCateringOrderAndProcessPayment
 
 // After creating checkout link, update with Square order ID
-const { checkoutUrl, checkoutId, orderId: squareOrderId } = await createCheckoutLink({
+const {
+  checkoutUrl,
+  checkoutId,
+  orderId: squareOrderId,
+} = await createCheckoutLink({
   orderId: orderResult.orderId,
   locationId: process.env.SQUARE_LOCATION_ID!,
   lineItems: lineItemsWithDelivery,
   redirectUrl: `${cleanAppUrl}/catering/confirmation?orderId=${orderResult.orderId}`,
   customerEmail: data.email, // Pass actual customer email
-  customerName: data.name,   // Pass actual customer name
+  customerName: data.name, // Pass actual customer name
   customerPhone: data.phone, // Pass actual customer phone
 });
 
 // Update order with Square IDs
 await db.cateringOrder.update({
   where: { id: orderResult.orderId },
-  data: { 
+  data: {
     squareCheckoutId: checkoutId,
     squareOrderId: squareOrderId, // Save Square order ID immediately
     paymentStatus: PaymentStatus.PENDING,
@@ -216,6 +222,7 @@ await db.cateringOrder.update({
 ```
 
 **Additional Fix - Update checkout-links.ts to accept more customer data:**
+
 ```tsx
 // src/lib/square/checkout-links.ts
 
@@ -257,6 +264,7 @@ const squareRequestBody = {
 **Root Cause**: The confirmation page relies on URL parameters but doesn't properly check the database for actual payment status.
 
 **Fix**:
+
 ```tsx
 // src/app/catering/confirmation/page.tsx
 
@@ -271,7 +279,7 @@ if (orderData) {
     // Check if order was recently created (within 5 minutes)
     const orderAge = Date.now() - new Date(orderData.createdAt).getTime();
     const fiveMinutes = 5 * 60 * 1000;
-    
+
     if (orderAge < fiveMinutes) {
       // Recent order, might still be processing
       actualStatus = 'processing';
@@ -287,6 +295,7 @@ if (orderData) {
 **Root Cause**: The redirect URL is constructed with a hardcoded slash, but `NEXT_PUBLIC_APP_URL` might already end with a slash.
 
 **Fix**:
+
 ```tsx
 // src/lib/square/checkout-links.ts
 
@@ -315,7 +324,7 @@ const { checkoutUrl, checkoutId } = await createCheckoutLink({
 });
 ```
 
-------
+---
 
 ## 🧪 Testing Strategy
 
@@ -380,13 +389,13 @@ test.describe('Catering Order E2E', () => {
     await page.fill('[name="name"]', 'John Doe');
     await page.fill('[name="email"]', 'john@example.com');
     await page.fill('[name="phone"]', '555-1234');
-    
+
     // Submit and go to Square checkout
     await page.click('button[type="submit"]');
-    
+
     // Complete Square payment (sandbox)
     // ...
-    
+
     // Verify confirmation page
     await page.waitForURL(/\/catering\/confirmation/);
     await expect(page.locator('text=Order Confirmed')).toBeVisible();
@@ -395,7 +404,7 @@ test.describe('Catering Order E2E', () => {
 });
 ```
 
-------
+---
 
 ## 🔒 Security Analysis
 
@@ -405,7 +414,10 @@ test.describe('Catering Order E2E', () => {
 // Validate customer data from webhooks
 const validateCustomerData = z.object({
   email: z.string().email().optional(),
-  phone: z.string().regex(/^[\d\s\-\+\(\)]+$/).optional(),
+  phone: z
+    .string()
+    .regex(/^[\d\s\-\+\(\)]+$/)
+    .optional(),
   name: z.string().min(1).max(100).optional(),
 });
 
@@ -430,7 +442,7 @@ const sanitizedData = {
 - [ ] Use secure session storage for order IDs
 - [ ] Implement proper CORS policies
 
-------
+---
 
 ## 📊 Performance Considerations
 
@@ -449,7 +461,7 @@ CREATE INDEX idx_catering_orders_created_at ON CateringOrder(createdAt DESC);
 - [ ] Use React Query for optimistic updates
 - [ ] Implement webhook deduplication cache
 
-------
+---
 
 ## 🚦 Implementation Checklist
 
@@ -478,7 +490,7 @@ CREATE INDEX idx_catering_orders_created_at ON CateringOrder(createdAt DESC);
 - [ ] Plan database migration if needed
 - [ ] Set up monitoring for webhook failures
 
-------
+---
 
 ## 📝 MCP Analysis Commands
 
@@ -501,7 +513,7 @@ filesystem:read_text_file path: src/lib/square/checkout-links.ts
 filesystem:search_files path: src pattern: "customerEmail|buyer_email"
 ```
 
-------
+---
 
 ## 📚 Documentation Updates
 
@@ -510,7 +522,7 @@ filesystem:search_files path: src pattern: "customerEmail|buyer_email"
 ```markdown
 ## Catering Order Webhook Flow
 
-1. **Order Creation**: 
+1. **Order Creation**:
    - Customer fills form with name, email, phone
    - Order created with provided data
    - Square checkout link generated
@@ -535,22 +547,25 @@ filesystem:search_files path: src pattern: "customerEmail|buyer_email"
 ## Common Issues & Solutions
 
 ### Customer Data Shows "Pending"
+
 - Check webhook logs for buyer_email_address field
 - Verify webhook is updating catering orders, not just regular orders
 - Ensure squareOrderId is properly linked
 
 ### Confirmation Shows Wrong Status
+
 - Check database paymentStatus field
 - Verify webhook is processing successfully
 - Check for timing issues between redirect and webhook
 
 ### Double Slash in URL
+
 - Check NEXT_PUBLIC_APP_URL environment variable
 - Ensure no trailing slash in env var
 - Verify URL construction in checkout-links.ts
 ```
 
-------
+---
 
 ## 🔄 Rollback Plan
 
@@ -571,12 +586,12 @@ if (process.env.ENABLE_CATERING_FIX === 'true') {
 
 ```sql
 -- If customer data gets corrupted, restore from backup
-UPDATE CateringOrder 
-SET 
+UPDATE CateringOrder
+SET
   name = backup_name,
   email = backup_email,
   phone = backup_phone
-WHERE 
+WHERE
   updated_at > '2025-08-21'
   AND name = 'Pending';
 ```
@@ -588,7 +603,7 @@ WHERE
 - [ ] Alert on confirmation page errors
 - [ ] Monitor Square API response times
 
-------
+---
 
 ## Implementation Priority
 

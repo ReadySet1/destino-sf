@@ -3,7 +3,7 @@
 **Date:** October 1, 2025  
 **Issue:** Pre-Order Settings Validation Error in Availability Rules  
 **Fix Type:** Bug Fix - Schema Validation  
-**Priority:** P1-High  
+**Priority:** P1-High
 
 ---
 
@@ -28,6 +28,7 @@ The fix for the validation error `"viewOnlySettings.message: Expected string, re
 #### Test Coverage Breakdown:
 
 **ViewOnlySettingsSchema (6 tests):**
+
 - ✅ Accept null message
 - ✅ Accept string message
 - ✅ Accept settings with defaults when only message provided
@@ -36,6 +37,7 @@ The fix for the validation error `"viewOnlySettings.message: Expected string, re
 - ✅ Accept all boolean field combinations
 
 **AvailabilityRuleSchema (9 tests):**
+
 - ✅ Accept view-only rule with null message
 - ✅ Accept view-only rule with custom message
 - ✅ Accept view-only rule with all settings
@@ -47,6 +49,7 @@ The fix for the validation error `"viewOnlySettings.message: Expected string, re
 - ✅ Accept sold out state
 
 **AvailabilityValidators.validateRule (9 tests):**
+
 - ✅ Allow updating old rules when skipFutureDateCheck is true
 - ✅ Validate view-only rules with null message
 - ✅ Validate view-only rules with custom message
@@ -58,6 +61,7 @@ The fix for the validation error `"viewOnlySettings.message: Expected string, re
 - ✅ Handle toggling enabled state on existing view-only rule
 
 **Integration Tests (2 tests):**
+
 - ✅ Handle the Lucuma Pride product update scenario (exact bug scenario)
 - ✅ Handle schema parsing directly
 
@@ -70,6 +74,7 @@ The fix for the validation error `"viewOnlySettings.message: Expected string, re
 ### 3. Backward Compatibility ✅
 
 **Tests Performed:**
+
 - ✅ Existing rules with string messages validate correctly
 - ✅ Existing rules with null messages validate correctly
 - ✅ Schema is more permissive (accepts both null and string)
@@ -87,6 +92,7 @@ The fix for the validation error `"viewOnlySettings.message: Expected string, re
 ### 5. Integration Points ✅
 
 **Files Validated:**
+
 - ✅ `src/types/availability.ts` - Schema definitions
 - ✅ `src/lib/availability/validators.ts` - Validation logic
 - ✅ `src/actions/availability.ts` - Server actions (no changes needed)
@@ -97,16 +103,19 @@ The fix for the validation error `"viewOnlySettings.message: Expected string, re
 ## Code Quality Checks
 
 ### Linting ✅
+
 ```bash
 No linter errors found.
 ```
 
 ### Type Checking ✅
+
 - All types compile successfully
 - Type inference working correctly
 - No type errors introduced
 
 ### Test Coverage ✅
+
 - 26 tests covering all scenarios
 - Unit tests for schema validation
 - Integration tests for real-world scenarios
@@ -117,11 +126,13 @@ No linter errors found.
 ## Documentation Updates ✅
 
 **Updated Files:**
+
 1. ✅ `src/types/availability.ts` - Added comprehensive JSDoc documentation
 2. ✅ `docs/to-fix/availability.md` - Updated fix plan with completion status
 3. ✅ `docs/to-fix/availability-QA-REPORT.md` - This QA report
 
 **Documentation Includes:**
+
 - JSDoc comments explaining nullable message field
 - Examples for both null and string messages
 - Complete implementation summary
@@ -134,6 +145,7 @@ No linter errors found.
 **Risk Level:** ✅ **VERY LOW**
 
 **Mitigating Factors:**
+
 1. Single-line schema change (highly targeted)
 2. More permissive validation (backward compatible)
 3. Comprehensive test coverage (26 tests)
@@ -142,6 +154,7 @@ No linter errors found.
 6. Type safety maintained
 
 **Potential Impacts:**
+
 - ✅ No breaking changes
 - ✅ No data migration needed
 - ✅ No API changes
@@ -154,6 +167,7 @@ No linter errors found.
 **Status:** Pending verification with `pnpm build`
 
 **Command to run:**
+
 ```bash
 pnpm build
 ```
@@ -167,6 +181,7 @@ pnpm build
 **Expected Impact:** NONE
 
 **Rationale:**
+
 - Schema validation performance unchanged
 - No additional database queries
 - No changes to rendering logic
@@ -193,6 +208,7 @@ pnpm build
 ### Post-Deployment Monitoring
 
 **Recommended:**
+
 1. Monitor validation error logs for unexpected failures
 2. Track user feedback on availability rule updates
 3. Verify no increase in Sentry errors related to validation
@@ -259,9 +275,10 @@ Time:        0.556 s
 
 **Tested By:** AI Assistant (Claude)  
 **Date:** October 1, 2025  
-**Build Verification:** Pending  
+**Build Verification:** Pending
 
 **Sign-off:**
+
 - [x] All tests passing
 - [x] Code quality checks passed
 - [x] Documentation complete
@@ -280,4 +297,3 @@ Time:        0.556 s
 6. User acceptance testing
 7. Deploy to production
 8. Monitor for 24-48 hours post-deployment
-

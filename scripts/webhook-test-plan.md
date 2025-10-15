@@ -1,6 +1,7 @@
 # Webhook Testing Plan
 
 ## Overview
+
 This document outlines the comprehensive testing strategy for Square webhook processing to ensure reliable payment and order status updates.
 
 ## Test Scenarios
@@ -8,8 +9,9 @@ This document outlines the comprehensive testing strategy for Square webhook pro
 ### 1. Payment Processing Tests
 
 #### 1.1 Successful Payment Flow
+
 - **Test**: Create order → Process payment → Verify webhook
-- **Expected**: 
+- **Expected**:
   - `payment.created` webhook processes successfully
   - `payment.updated` webhook with status `COMPLETED`
   - Order status: `PENDING` → `PROCESSING`
@@ -17,6 +19,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
   - Payment record created in database
 
 #### 1.2 Failed Payment Flow
+
 - **Test**: Create order → Simulate payment failure
 - **Expected**:
   - `payment.updated` webhook with status `FAILED`
@@ -25,6 +28,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
   - Order remains in `PENDING` status
 
 #### 1.3 Payment Refund Flow
+
 - **Test**: Complete payment → Process refund
 - **Expected**:
   - `refund.created` webhook processes
@@ -35,6 +39,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
 ### 2. Error Handling Tests
 
 #### 2.1 Race Condition Handling
+
 - **Test**: Simulate `payment.updated` arriving before `order.created`
 - **Expected**:
   - Webhook queued for retry with 5-10 second delay
@@ -42,6 +47,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
   - No duplicate processing
 
 #### 2.2 Database Connection Issues
+
 - **Test**: Simulate temporary database connectivity issues
 - **Expected**:
   - Webhook queued for retry with 15 second delay
@@ -50,6 +56,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
   - Processes successfully once DB is available
 
 #### 2.3 Webhook Queue Failures
+
 - **Test**: Force webhook queue processing to fail
 - **Expected**:
   - Fallback direct processing triggers
@@ -60,6 +67,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
 ### 3. Performance Tests
 
 #### 3.1 High Volume Webhook Processing
+
 - **Test**: Send multiple webhooks simultaneously
 - **Expected**:
   - All webhooks acknowledged within 1 second
@@ -67,6 +75,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
   - No webhook timeouts or retries from Square
 
 #### 3.2 Queue Processing Under Load
+
 - **Test**: Fill webhook queue with failed items
 - **Expected**:
   - Queue processes items with proper delays
@@ -76,6 +85,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
 ### 4. Integration Tests
 
 #### 4.1 End-to-End Order Flow
+
 - **Test**: Complete order lifecycle with webhooks
 - **Expected**:
   - `order.created` → `payment.created` → `payment.updated` → `order.fulfillment.updated`
@@ -83,6 +93,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
   - Customer notifications sent appropriately
 
 #### 4.2 Catering Order Processing
+
 - **Test**: Process catering order payment
 - **Expected**:
   - Catering order detected correctly
@@ -92,6 +103,7 @@ This document outlines the comprehensive testing strategy for Square webhook pro
 ## Test Environment Setup
 
 ### Development Testing
+
 ```bash
 # Start development server
 pnpm dev
@@ -104,6 +116,7 @@ tail -f logs/webhook-processing.log
 ```
 
 ### Production Testing
+
 - Use Square Sandbox environment
 - Test with real webhook endpoints
 - Monitor error tracking services
@@ -112,18 +125,21 @@ tail -f logs/webhook-processing.log
 ## Success Criteria
 
 ### Functional Requirements
+
 - [ ] 100% of `payment.updated` webhooks process successfully
 - [ ] Order statuses update within 30 seconds of payment completion
 - [ ] No duplicate processing of webhook events
 - [ ] Failed webhooks retry successfully within 5 minutes
 
-### Performance Requirements  
+### Performance Requirements
+
 - [ ] Webhook acknowledgment response time < 1 second
 - [ ] Async processing completion time < 10 seconds average
 - [ ] Queue processing handles 100+ items without degradation
 - [ ] Memory usage remains stable under load
 
 ### Reliability Requirements
+
 - [ ] Zero data loss during webhook processing failures
 - [ ] Graceful degradation during database issues
 - [ ] Comprehensive error monitoring and alerting
@@ -132,12 +148,14 @@ tail -f logs/webhook-processing.log
 ## Manual Testing Checklist
 
 ### Pre-Deployment
+
 - [ ] Run unit tests for webhook handlers
 - [ ] Test webhook signature validation
 - [ ] Verify environment variables are set
 - [ ] Check database migrations are applied
 
 ### Post-Deployment
+
 - [ ] Test with real Square webhook in sandbox
 - [ ] Verify webhook endpoint accessibility
 - [ ] Monitor error logs for first hour
@@ -147,6 +165,7 @@ tail -f logs/webhook-processing.log
 ## Monitoring and Alerting
 
 ### Key Metrics to Monitor
+
 - Webhook processing success rate
 - Average processing time
 - Queue depth and retry rates
@@ -154,6 +173,7 @@ tail -f logs/webhook-processing.log
 - Database connection health
 
 ### Alert Conditions
+
 - Webhook processing failure rate > 5%
 - Queue depth > 50 items
 - Critical webhook processing failure
@@ -163,12 +183,14 @@ tail -f logs/webhook-processing.log
 ## Rollback Plan
 
 ### If Issues Detected
+
 1. Monitor error rates for 15 minutes post-deployment
 2. If error rate > 10%, immediately rollback
 3. Investigate issues in development environment
 4. Apply fixes and re-test before re-deployment
 
 ### Rollback Procedure
+
 ```bash
 # Revert to previous webhook processing logic
 git revert <commit-hash>
@@ -176,4 +198,4 @@ git revert <commit-hash>
 # Deploy previous version
 # Verify webhook processing returns to normal
 # Update monitoring to track resolution
-``` 
+```

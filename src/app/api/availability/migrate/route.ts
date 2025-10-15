@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { 
+import {
   type AvailabilityRule,
   type AvailabilityApiResponse,
   type SquareAvailabilityMigration,
   AvailabilityState,
-  RuleType 
+  RuleType,
 } from '@/types/availability';
 import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityScheduler } from '@/lib/availability/scheduler';
@@ -22,10 +22,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const body = await request.json();
@@ -46,8 +49,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
         availabilityStart: true,
         availabilityEnd: true,
         itemState: true,
-        availabilityMeta: true
-      }
+        availabilityMeta: true,
+      },
     });
 
     const migrations: SquareAvailabilityMigration[] = [];
@@ -65,19 +68,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
               {
                 ...ruleData,
                 productId: product.id,
-                overrideSquare: true
+                overrideSquare: true,
               } as Omit<AvailabilityRule, 'id' | 'createdAt' | 'updatedAt'>,
               authResult.user!.id
             );
-            
+
             createdRules.push(rule);
-            
+
             // Schedule any automated changes
             await AvailabilityScheduler.scheduleRuleChanges(rule);
           } catch (error) {
             logger.error('Failed to create migration rule', {
               productId: product.id,
-              error: error instanceof Error ? error.message : 'Unknown error'
+              error: error instanceof Error ? error.message : 'Unknown error',
             });
           }
         }
@@ -91,26 +94,29 @@ export async function POST(request: NextRequest): Promise<NextResponse<Availabil
       productsProcessed: products.length,
       rulesCreated: createdRules.length,
       dryRun,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       data: {
         migrations,
         rulesCreated: createdRules.length,
-        dryRun
-      }
+        dryRun,
+      },
     });
   } catch (error) {
     logger.error('Error in POST /api/availability/migrate', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Migration failed' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Migration failed',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -122,10 +128,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -142,14 +151,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
           { preorderStartDate: { not: null } },
           { preorderEndDate: { not: null } },
           { availabilityStart: { not: null } },
-          { availabilityEnd: { not: null } }
-        ]
+          { availabilityEnd: { not: null } },
+        ],
       },
       include: {
         availabilityRules: {
-          where: { deletedAt: null }
-        }
-      }
+          where: { deletedAt: null },
+        },
+      },
     });
 
     const analysis = {
@@ -160,25 +169,28 @@ export async function GET(request: NextRequest): Promise<NextResponse<Availabili
         preorderProducts: products.filter(p => p.isPreorder).length,
         hiddenProducts: products.filter(p => p.visibility !== 'PUBLIC').length,
         unavailableProducts: products.filter(p => !p.isAvailable).length,
-        dateRestrictedProducts: products.filter(p => 
-          p.availabilityStart || p.availabilityEnd || p.preorderStartDate || p.preorderEndDate
-        ).length
-      }
+        dateRestrictedProducts: products.filter(
+          p => p.availabilityStart || p.availabilityEnd || p.preorderStartDate || p.preorderEndDate
+        ).length,
+      },
     };
 
-    return NextResponse.json({ 
-      success: true, 
-      data: analysis 
+    return NextResponse.json({
+      success: true,
+      data: analysis,
     });
   } catch (error) {
     logger.error('Error in GET /api/availability/migrate', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to analyze migration' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to analyze migration',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -195,7 +207,7 @@ async function generateMigrationPlan(product: any): Promise<SquareAvailabilityMi
       ruleType: RuleType.CUSTOM,
       state: AvailabilityState.HIDDEN,
       priority: 100,
-      enabled: true
+      enabled: true,
     });
   }
 
@@ -211,8 +223,8 @@ async function generateMigrationPlan(product: any): Promise<SquareAvailabilityMi
         message: 'Currently unavailable',
         showPrice: true,
         allowWishlist: true,
-        notifyWhenAvailable: true
-      }
+        notifyWhenAvailable: true,
+      },
     });
   }
 
@@ -226,11 +238,13 @@ async function generateMigrationPlan(product: any): Promise<SquareAvailabilityMi
       enabled: true,
       preOrderSettings: {
         message: 'Available for pre-order',
-        expectedDeliveryDate: product.preorderStartDate ? new Date(product.preorderStartDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Use preorder start date or 1 week from now
+        expectedDeliveryDate: product.preorderStartDate
+          ? new Date(product.preorderStartDate)
+          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Use preorder start date or 1 week from now
         depositRequired: false,
         maxQuantity: null,
-        depositAmount: null
-      }
+        depositAmount: null,
+      },
     };
 
     if (product.preorderStartDate) {
@@ -252,7 +266,7 @@ async function generateMigrationPlan(product: any): Promise<SquareAvailabilityMi
       priority: 70,
       enabled: true,
       startDate: product.availabilityStart,
-      endDate: product.availabilityEnd
+      endDate: product.availabilityEnd,
     });
   }
 
@@ -262,9 +276,9 @@ async function generateMigrationPlan(product: any): Promise<SquareAvailabilityMi
       isHidden: product.visibility !== 'PUBLIC',
       isPreorder: product.isPreorder,
       preorderStartDate: product.preorderStartDate,
-      preorderEndDate: product.preorderEndDate
+      preorderEndDate: product.preorderEndDate,
     },
     suggestedRules,
-    migrationStatus: 'pending'
+    migrationStatus: 'pending',
   };
 }

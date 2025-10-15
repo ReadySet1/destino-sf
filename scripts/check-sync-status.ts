@@ -50,10 +50,10 @@ async function checkSyncStatus() {
       // Check if sync is stale (older than 30 minutes)
       if (duration > 30 * 60 * 1000) {
         logger.warn(`   ⚠️ This sync appears to be STALE (over 30 minutes old)`);
-        
+
         // Ask user if they want to fix it
         logger.info(`   🔧 Would you like to mark this sync as failed? (y/n)`);
-        
+
         // For now, just log the recommendation
         logger.info(`   💡 Recommendation: Mark as failed to prevent infinite polling`);
       }
@@ -86,16 +86,15 @@ async function checkSyncStatus() {
     if (recentSyncs.length > 0) {
       logger.info(`\n📋 Recent sync history (last 24 hours):`);
       for (const sync of recentSyncs) {
-        const duration = sync.endTime 
-          ? sync.endTime.getTime() - sync.startTime.getTime()
-          : 0;
+        const duration = sync.endTime ? sync.endTime.getTime() - sync.startTime.getTime() : 0;
         const durationMinutes = Math.floor(duration / (1000 * 60));
         const durationSeconds = Math.floor((duration % (1000 * 60)) / 1000);
 
-        logger.info(`   ${sync.status}: ${sync.syncId} (${durationMinutes}m ${durationSeconds}s) - ${sync.message || 'No message'}`);
+        logger.info(
+          `   ${sync.status}: ${sync.syncId} (${durationMinutes}m ${durationSeconds}s) - ${sync.message || 'No message'}`
+        );
       }
     }
-
   } catch (error) {
     logger.error('❌ Error checking sync status:', error);
   } finally {
@@ -151,7 +150,6 @@ async function fixStuckSyncs() {
     }
 
     logger.info(`\n🎯 Successfully fixed ${stuckSyncs.length} stuck sync(s)`);
-
   } catch (error) {
     logger.error('❌ Error fixing stuck syncs:', error);
   } finally {

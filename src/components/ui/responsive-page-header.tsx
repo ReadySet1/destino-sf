@@ -50,21 +50,13 @@ export function ResponsivePageHeader({
       {/* Header Content */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex-1 min-w-0">
-          <h1 className={`${getTitleSize()} font-bold tracking-tight text-gray-900`}>
-            {title}
-          </h1>
-          {subtitle && (
-            <p className={`${getSubtitleSize()} text-gray-600 mt-2`}>
-              {subtitle}
-            </p>
-          )}
+          <h1 className={`${getTitleSize()} font-bold tracking-tight text-gray-900`}>{title}</h1>
+          {subtitle && <p className={`${getSubtitleSize()} text-gray-600 mt-2`}>{subtitle}</p>}
         </div>
 
         {/* Actions */}
         {actions && (
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            {actions}
-          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">{actions}</div>
         )}
       </div>
     </div>
@@ -88,11 +80,7 @@ export function BreadcrumbItem({
   const linkClasses = 'text-gray-400 hover:text-gray-500 transition-colors duration-200';
 
   if (isCurrent) {
-    return (
-      <span className={`${baseClasses} ${currentClasses} ${className}`}>
-        {children}
-      </span>
-    );
+    return <span className={`${baseClasses} ${currentClasses} ${className}`}>{children}</span>;
   }
 
   if (href) {
@@ -103,18 +91,10 @@ export function BreadcrumbItem({
     );
   }
 
-  return (
-    <span className={`${baseClasses} ${currentClasses} ${className}`}>
-      {children}
-    </span>
-  );
+  return <span className={`${baseClasses} ${currentClasses} ${className}`}>{children}</span>;
 }
 
 // Breadcrumb Separator Component
 export function BreadcrumbSeparator({ className = '' }: { className?: string }) {
-  return (
-    <span className={`mx-2 text-gray-400 ${className}`}>
-      /
-    </span>
-  );
-} 
+  return <span className={`mx-2 text-gray-400 ${className}`}>/</span>;
+}

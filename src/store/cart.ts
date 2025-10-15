@@ -24,7 +24,7 @@ export interface CartStore {
 export { useCartStore } from './useCartStore';
 
 export function calculateCartTotal(items: CartItem[]): number {
-  return items.reduce((total, item) => total + (item.price * item.quantity), 0);
+  return items.reduce((total, item) => total + item.price * item.quantity, 0);
 }
 
 export function formatPrice(amount: number): string {

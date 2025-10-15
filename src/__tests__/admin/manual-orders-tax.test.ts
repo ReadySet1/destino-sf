@@ -16,7 +16,7 @@ describe('Manual Order Tax Exemption', () => {
           category: { name: 'EMPANADAS' },
           name: 'Argentine Beef Empanadas',
         },
-        price: 18.00,
+        price: 18.0,
         quantity: 2, // $36 total - should be tax-exempt
       },
       {
@@ -24,7 +24,7 @@ describe('Manual Order Tax Exemption', () => {
           category: { name: 'ALFAJORES' },
           name: 'Classic Alfajores',
         },
-        price: 14.00,
+        price: 14.0,
         quantity: 1, // $14 total - should be tax-exempt
       },
       {
@@ -32,7 +32,7 @@ describe('Manual Order Tax Exemption', () => {
           category: { name: 'CATERING- MAIN' },
           name: 'Catering Empanada Package',
         },
-        price: 150.00,
+        price: 150.0,
         quantity: 1, // $150 total - should be taxable
       },
       {
@@ -40,16 +40,16 @@ describe('Manual Order Tax Exemption', () => {
           category: { name: 'SAUCES' },
           name: 'Chimichurri Sauce',
         },
-        price: 8.00,
+        price: 8.0,
         quantity: 2, // $16 total - should be tax-exempt
       },
     ];
 
     const taxResult = calculateTaxForItems(mockOrderItems, TAX_RATE);
 
-    expect(taxResult.exemptSubtotal).toBe(66.00); // $36 + $14 + $16
-    expect(taxResult.taxableSubtotal).toBe(150.00); // $150
-    expect(taxResult.totalSubtotal).toBe(216.00); // $66 + $150
+    expect(taxResult.exemptSubtotal).toBe(66.0); // $36 + $14 + $16
+    expect(taxResult.taxableSubtotal).toBe(150.0); // $150
+    expect(taxResult.totalSubtotal).toBe(216.0); // $66 + $150
     expect(taxResult.taxAmount).toBe(12.38); // $150 * 0.0825 = $12.375, rounded to $12.38
   });
 
@@ -60,7 +60,7 @@ describe('Manual Order Tax Exemption', () => {
           category: { name: 'EMPANADAS' },
           name: 'Chicken Empanadas',
         },
-        price: 17.00,
+        price: 17.0,
         quantity: 3,
       },
       {
@@ -68,17 +68,17 @@ describe('Manual Order Tax Exemption', () => {
           category: { name: 'ALFAJORES' },
           name: 'Chocolate Alfajores',
         },
-        price: 20.00,
+        price: 20.0,
         quantity: 1,
       },
     ];
 
     const taxResult = calculateTaxForItems(exemptOnlyItems, TAX_RATE);
 
-    expect(taxResult.exemptSubtotal).toBe(71.00); // $51 + $20
-    expect(taxResult.taxableSubtotal).toBe(0.00);
-    expect(taxResult.totalSubtotal).toBe(71.00);
-    expect(taxResult.taxAmount).toBe(0.00);
+    expect(taxResult.exemptSubtotal).toBe(71.0); // $51 + $20
+    expect(taxResult.taxableSubtotal).toBe(0.0);
+    expect(taxResult.totalSubtotal).toBe(71.0);
+    expect(taxResult.taxAmount).toBe(0.0);
   });
 
   it('should handle manual order with only catering items', () => {
@@ -88,16 +88,16 @@ describe('Manual Order Tax Exemption', () => {
           category: { name: 'CATERING- DESSERTS' },
           name: 'Catering Alfajores Platter',
         },
-        price: 75.00,
+        price: 75.0,
         quantity: 2,
       },
     ];
 
     const taxResult = calculateTaxForItems(cateringOnlyItems, TAX_RATE);
 
-    expect(taxResult.exemptSubtotal).toBe(0.00);
-    expect(taxResult.taxableSubtotal).toBe(150.00);
-    expect(taxResult.totalSubtotal).toBe(150.00);
+    expect(taxResult.exemptSubtotal).toBe(0.0);
+    expect(taxResult.taxableSubtotal).toBe(150.0);
+    expect(taxResult.totalSubtotal).toBe(150.0);
     expect(taxResult.taxAmount).toBe(12.38); // $150 * 0.0825 = $12.375, rounded to $12.38
   });
 
@@ -109,24 +109,24 @@ describe('Manual Order Tax Exemption', () => {
           category: { name: 'EMPANADAS' },
           name: 'Beef Empanadas',
         },
-        price: 18.00,
+        price: 18.0,
         quantity: 1, // $18 - tax-exempt
       },
     ];
 
-    const deliveryFee = 10.00;
-    const shippingCost = 5.00;
+    const deliveryFee = 10.0;
+    const shippingCost = 5.0;
 
     // Calculate tax on items using exemption logic
     const itemTaxResult = calculateTaxForItems(items, TAX_RATE);
-    
+
     // Add delivery fee and shipping cost to taxable amount (these are always taxable in manual orders)
     const additionalTaxableAmount = deliveryFee + shippingCost;
     const additionalTax = Math.round(additionalTaxableAmount * TAX_RATE * 100) / 100; // Round to 2 decimal places
-    
+
     const totalTax = itemTaxResult.taxAmount + additionalTax;
 
-    expect(itemTaxResult.taxAmount).toBe(0.00); // No tax on empanadas
+    expect(itemTaxResult.taxAmount).toBe(0.0); // No tax on empanadas
     expect(additionalTax).toBe(1.24); // $15 * 0.0825 = $1.2375, rounded to $1.24
     expect(totalTax).toBe(1.24); // Only tax on delivery + shipping
   });

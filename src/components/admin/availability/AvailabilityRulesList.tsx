@@ -1,19 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Search,
   Edit,
   Trash2,
@@ -23,15 +23,11 @@ import {
   Plus,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { 
-  AvailabilityState,
-  RuleType,
-  type AvailabilityRule
-} from '@/types/availability';
+import { AvailabilityState, RuleType, type AvailabilityRule } from '@/types/availability';
 import { cn } from '@/lib/utils';
 
 interface AvailabilityRulesListProps {
@@ -51,7 +47,7 @@ interface ProductInfo {
 export function AvailabilityRulesList({
   onEditRule,
   onCreateNew,
-  className
+  className,
 }: AvailabilityRulesListProps) {
   const [rules, setRules] = useState<AvailabilityRule[]>([]);
   const [products, setProducts] = useState<Map<string, ProductInfo>>(new Map());
@@ -67,7 +63,7 @@ export function AvailabilityRulesList({
   const loadRulesAndProducts = async () => {
     try {
       setLoading(true);
-      
+
       // Load all rules
       const rulesResponse = await fetch('/api/availability');
       if (!rulesResponse.ok) {
@@ -75,7 +71,7 @@ export function AvailabilityRulesList({
       }
       const rulesData = await rulesResponse.json();
       const rulesArray = rulesData.success ? rulesData.data : [];
-      
+
       // Load products info
       const productsResponse = await fetch('/api/products?onlyActive=false&excludeCatering=true');
       if (!productsResponse.ok) {
@@ -83,17 +79,17 @@ export function AvailabilityRulesList({
       }
       const productsData = await productsResponse.json();
       const productsArray = Array.isArray(productsData) ? productsData : productsData.data || [];
-      
+
       // Create products map for quick lookup
       const productsMap = new Map<string, ProductInfo>();
       productsArray.forEach((product: any) => {
         productsMap.set(product.id, {
           id: product.id,
           name: product.name,
-          category: product.category
+          category: product.category,
         });
       });
-      
+
       setRules(rulesArray);
       setProducts(productsMap);
     } catch (error) {
@@ -174,7 +170,7 @@ export function AvailabilityRulesList({
       [AvailabilityState.HIDDEN]: 'bg-gray-100 text-gray-800',
       [AvailabilityState.COMING_SOON]: 'bg-purple-100 text-purple-800',
       [AvailabilityState.SOLD_OUT]: 'bg-red-100 text-red-800',
-      [AvailabilityState.RESTRICTED]: 'bg-orange-100 text-orange-800'
+      [AvailabilityState.RESTRICTED]: 'bg-orange-100 text-orange-800',
     } as const;
 
     return (
@@ -190,7 +186,7 @@ export function AvailabilityRulesList({
       [RuleType.SEASONAL]: <Calendar className="h-3 w-3" />,
       [RuleType.TIME_BASED]: <Clock className="h-3 w-3" />,
       [RuleType.INVENTORY]: <Users className="h-3 w-3" />,
-      [RuleType.CUSTOM]: <Users className="h-3 w-3" />
+      [RuleType.CUSTOM]: <Users className="h-3 w-3" />,
     };
 
     return (
@@ -209,13 +205,14 @@ export function AvailabilityRulesList({
   };
 
   const filteredRules = rules.filter(rule => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch =
+      !searchTerm ||
       rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       products.get(rule.productId)?.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesType = filterType === 'all' || rule.ruleType === filterType;
     const matchesState = filterState === 'all' || rule.state === filterState;
-    
+
     return matchesSearch && matchesType && matchesState;
   });
 
@@ -257,14 +254,14 @@ export function AvailabilityRulesList({
               <Input
                 placeholder="Search rules or products..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
           </div>
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={e => setFilterType(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
           >
             <option value="all">All Types</option>
@@ -276,7 +273,7 @@ export function AvailabilityRulesList({
           </select>
           <select
             value={filterState}
-            onChange={(e) => setFilterState(e.target.value)}
+            onChange={e => setFilterState(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
           >
             <option value="all">All States</option>
@@ -297,10 +294,9 @@ export function AvailabilityRulesList({
                 {rules.length === 0 ? 'No availability rules found' : 'No rules match your filters'}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {rules.length === 0 
+                {rules.length === 0
                   ? 'Create your first availability rule to get started'
-                  : 'Try adjusting your search or filter criteria'
-                }
+                  : 'Try adjusting your search or filter criteria'}
               </p>
             </div>
             {rules.length === 0 && onCreateNew && (
@@ -326,13 +322,11 @@ export function AvailabilityRulesList({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRules.map((rule) => {
+                {filteredRules.map(rule => {
                   const product = products.get(rule.productId);
                   return (
                     <TableRow key={rule.id}>
-                      <TableCell className="font-medium">
-                        {rule.name}
-                      </TableCell>
+                      <TableCell className="font-medium">{rule.name}</TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{product?.name || 'Unknown Product'}</div>
@@ -343,12 +337,8 @@ export function AvailabilityRulesList({
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {getTypeBadge(rule.ruleType as RuleType)}
-                      </TableCell>
-                      <TableCell>
-                        {getStateBadge(rule.state as AvailabilityState)}
-                      </TableCell>
+                      <TableCell>{getTypeBadge(rule.ruleType as RuleType)}</TableCell>
+                      <TableCell>{getStateBadge(rule.state as AvailabilityState)}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className={getPriorityBadge(rule.priority || 0)}>
                           {rule.priority || 0}
@@ -357,14 +347,10 @@ export function AvailabilityRulesList({
                       <TableCell>
                         <div className="text-sm">
                           {rule.startDate && (
-                            <div>
-                              Start: {format(new Date(rule.startDate), 'MMM d, yyyy')}
-                            </div>
+                            <div>Start: {format(new Date(rule.startDate), 'MMM d, yyyy')}</div>
                           )}
                           {rule.endDate && (
-                            <div>
-                              End: {format(new Date(rule.endDate), 'MMM d, yyyy')}
-                            </div>
+                            <div>End: {format(new Date(rule.endDate), 'MMM d, yyyy')}</div>
                           )}
                           {!rule.startDate && !rule.endDate && (
                             <span className="text-muted-foreground">No schedule</span>
@@ -377,8 +363,8 @@ export function AvailabilityRulesList({
                           size="sm"
                           onClick={() => toggleRuleEnabled(rule)}
                           className={cn(
-                            "flex items-center gap-1",
-                            rule.enabled ? "text-green-600" : "text-gray-400"
+                            'flex items-center gap-1',
+                            rule.enabled ? 'text-green-600' : 'text-gray-400'
                           )}
                         >
                           {rule.enabled ? (
@@ -397,11 +383,7 @@ export function AvailabilityRulesList({
                       <TableCell>
                         <div className="flex items-center gap-1">
                           {onEditRule && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onEditRule(rule)}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => onEditRule(rule)}>
                               <Edit className="h-3 w-3" />
                             </Button>
                           )}
@@ -426,4 +408,3 @@ export function AvailabilityRulesList({
     </Card>
   );
 }
-

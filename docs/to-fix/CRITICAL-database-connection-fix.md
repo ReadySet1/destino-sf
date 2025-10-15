@@ -1,6 +1,7 @@
 # 🚨 CRITICAL: Production Database Connection Fix
 
 ## Issue Summary
+
 **Severity**: HIGH  
 **Environment**: Production  
 **Status**: NEEDS IMMEDIATE ATTENTION
@@ -8,17 +9,21 @@
 Production webhooks are failing because the production environment is configured to connect to the development database instead of the production database.
 
 ## Root Cause
+
 The production `DATABASE_URL` environment variable is pointing to:
+
 - **Current (WRONG)**: `db.drrejylrcjbeldnzodjd.supabase.co:5432` (development)
 - **Should be**: `db.ocusztulyiegeawqptrs.supabase.co:5432` (production)
 
 ## Error Details
+
 ```
 PrismaClientInitializationError: Can't reach database server at `db.drrejylrcjbeldnzodjd.supabase.co:5432`
 ```
 
 This error occurs in webhook processing at:
-- Component: SquareWebhooks  
+
+- Component: SquareWebhooks
 - Function: `handleOrderUpdated` → `withDatabaseConnection` → `ensureConnection`
 
 ## Immediate Fix Required
@@ -55,7 +60,7 @@ async function validateProductionDB() {
   try {
     const health = await checkDatabaseHealth();
     console.log('Database Health:', health);
-    
+
     if (health.connected) {
       console.log('✅ Database connection successful');
       console.log(`Response time: ${health.responseTime}ms`);
@@ -73,12 +78,14 @@ validateProductionDB();
 ## Database Configuration Reference
 
 ### Development Database
+
 - **Project ID**: `drrejylrcjbeldnzodjd`
 - **Name**: `destino-development`
 - **Host**: `db.drrejylrcjbeldnzodjd.supabase.co`
 - **Status**: ACTIVE_HEALTHY
 
-### Production Database  
+### Production Database
+
 - **Project ID**: `ocusztulyiegeawqptrs`
 - **Name**: `destino-production`
 - **Host**: `db.ocusztulyiegeawqptrs.supabase.co`
@@ -87,6 +94,7 @@ validateProductionDB();
 ## Prevention Measures
 
 ### 1. Environment Validation
+
 Add database host validation to prevent this issue:
 
 ```typescript
@@ -94,11 +102,11 @@ Add database host validation to prevent this issue:
 function validateDatabaseEnvironment() {
   const dbUrl = process.env.DATABASE_URL;
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   if (isProduction && dbUrl?.includes('drrejylrcjbeldnzodjd')) {
     throw new Error('🚨 CRITICAL: Production environment is using development database!');
   }
-  
+
   if (!isProduction && dbUrl?.includes('ocusztulyiegeawqptrs')) {
     console.warn('⚠️ WARNING: Development environment is using production database!');
   }
@@ -106,9 +114,11 @@ function validateDatabaseEnvironment() {
 ```
 
 ### 2. Connection Health Monitoring
+
 Implement automated health checks to catch configuration issues early.
 
 ### 3. Environment Documentation
+
 Maintain clear documentation of which database each environment should use.
 
 ## Timeline for Fix
@@ -126,13 +136,15 @@ After implementing the fix, verify with these tests:
 3. **Error Monitoring**: Check that database connection errors have stopped
 
 ## Related Files
+
 - `/src/lib/db.ts` - Database connection configuration
-- `/src/lib/db-utils.ts` - Connection health utilities  
+- `/src/lib/db-utils.ts` - Connection health utilities
 - `/src/app/api/webhooks/square/route.ts` - Webhook handler where error occurs
 
 ## Validation Tools
 
 ### Database Configuration Validator
+
 A new validation script has been created to detect and prevent this issue:
 
 ```bash
@@ -144,13 +156,16 @@ tsx scripts/validate-database-config.ts
 ```
 
 This script will:
+
 - ✅ Check database environment configuration
 - ✅ Validate DATABASE_URL points to correct database
 - ✅ Test database connectivity
 - ✅ Report configuration issues with specific guidance
 
 ### Enhanced Error Handling
+
 New webhook error handling has been implemented:
+
 - Detects environment/database mismatches
 - Provides specific troubleshooting guidance
 - Categorizes errors by severity and type
@@ -165,6 +180,7 @@ The following automated safeguards are now in place:
 3. **Configuration Detection**: Automatically detects and warns about mismatched environments
 
 ## Notes
+
 - Both databases are healthy and operational
 - The issue is purely configuration-related
 - No data corruption or loss has occurred

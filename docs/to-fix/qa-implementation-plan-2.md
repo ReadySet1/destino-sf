@@ -3,7 +3,8 @@
 ## 🎉 Final Status - SUCCESS!
 
 **Phase 5: Monitoring & Reporting Implementation Complete!**
-- **25/78 test suites passing** (32% success rate) 
+
+- **25/78 test suites passing** (32% success rate)
 - **816/1489 tests passing** (55% pass rate)
 - **Critical path tests are running successfully!**
 - **All Phase 5 monitoring and reporting tools implemented**
@@ -11,13 +12,15 @@
 ## 🏆 Phase 5 Achievements
 
 ### ✅ Implemented Features:
+
 1. **Test Report Generator** - HTML dashboard with metrics (`scripts/generate-test-report.ts`)
-2. **Live Test Monitor** - Real-time test execution tracking (`scripts/test-monitor.js`) 
+2. **Live Test Monitor** - Real-time test execution tracking (`scripts/test-monitor.js`)
 3. **Pre-commit Hooks** - Quality gates with critical test execution (`.husky/pre-commit`)
 4. **Enhanced Jest Setup** - Comprehensive mocking system (`jest.setup.enhanced.js`)
 5. **Package Script Updates** - New monitoring commands in `package.json`
 
 ### 🛠️ Technical Fixes Applied:
+
 1. Fixed Jest TypeScript configuration errors (`coverageThreshold` vs `coverageThresholds`)
 2. Added comprehensive mocks for all major services (Prisma, Supabase, Square, Shippo)
 3. Prevented real database connections in tests
@@ -42,12 +45,12 @@ global.TextDecoder = TextDecoder;
 const requiredEnvVars = {
   // Database
   DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
-  
+
   // Supabase
   NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
   SUPABASE_SERVICE_ROLE_KEY: 'test-service-key',
-  
+
   // Square
   SQUARE_ACCESS_TOKEN: 'test-access-token',
   SQUARE_SANDBOX_TOKEN: 'test-sandbox-token',
@@ -56,25 +59,25 @@ const requiredEnvVars = {
   SQUARE_ENVIRONMENT: 'sandbox',
   SQUARE_WEBHOOK_SIGNATURE_KEY: 'test-signature',
   SQUARE_WEBHOOK_SECRET: 'test-webhook-secret',
-  
+
   // Email
   RESEND_API_KEY: 'test-resend-key',
   FROM_EMAIL: 'test@example.com',
   ADMIN_EMAIL: 'admin@example.com',
   SUPPORT_EMAIL: 'support@example.com',
-  
+
   // App
   NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
   NODE_ENV: 'test',
-  
+
   // Shippo
   SHIPPO_API_KEY: 'test-shippo-key',
-  
+
   // Twilio
   TWILIO_ACCOUNT_SID: 'test-account-sid',
   TWILIO_AUTH_TOKEN: 'test-auth-token',
   TWILIO_PHONE_NUMBER: '+15555555555',
-  
+
   // Redis/Upstash
   UPSTASH_REDIS_REST_URL: 'https://test.upstash.io',
   UPSTASH_REDIS_REST_TOKEN: 'test-token',
@@ -117,9 +120,9 @@ jest.mock('@/lib/db', () => ({
 jest.mock('@/utils/supabase/server', () => ({
   createClient: jest.fn(() => ({
     auth: {
-      getUser: jest.fn().mockResolvedValue({ 
-        data: { user: { id: 'test-user' } }, 
-        error: null 
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: { id: 'test-user' } },
+        error: null,
       }),
     },
     from: jest.fn(() => ({
@@ -177,8 +180,8 @@ console.error = (...args) => {
   if (
     typeof args[0] === 'string' &&
     (args[0].includes('Not implemented') ||
-     args[0].includes('Warning:') ||
-     args[0].includes('Invalid'))
+      args[0].includes('Warning:') ||
+      args[0].includes('Invalid'))
   ) {
     return;
   }
@@ -257,22 +260,23 @@ const config: Config = {
       },
       setupFilesAfterEnv: ['<rootDir>/jest.setup.enhanced.js'],
       transform: {
-        '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: {
-            jsx: 'react',
-            esModuleInterop: true,
-            allowSyntheticDefaultImports: true,
+        '^.+\\.tsx?$': [
+          'ts-jest',
+          {
+            tsconfig: {
+              jsx: 'react',
+              esModuleInterop: true,
+              allowSyntheticDefaultImports: true,
+            },
           },
-        }],
+        ],
       },
     },
     {
       displayName: 'jsdom',
       preset: 'ts-jest',
       testEnvironment: 'jsdom',
-      testMatch: [
-        '<rootDir>/src/**/__tests__/**/*.test.tsx',
-      ],
+      testMatch: ['<rootDir>/src/**/__tests__/**/*.test.tsx'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
@@ -280,13 +284,16 @@ const config: Config = {
       },
       setupFilesAfterEnv: ['<rootDir>/jest.setup.enhanced.js'],
       transform: {
-        '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: {
-            jsx: 'react',
-            esModuleInterop: true,
-            allowSyntheticDefaultImports: true,
+        '^.+\\.tsx?$': [
+          'ts-jest',
+          {
+            tsconfig: {
+              jsx: 'react',
+              esModuleInterop: true,
+              allowSyntheticDefaultImports: true,
+            },
           },
-        }],
+        ],
       },
     },
   ],
@@ -301,7 +308,7 @@ const config: Config = {
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
   coverageThresholds: {
     global: {
-      branches: 0,  // Start with 0 to allow tests to pass
+      branches: 0, // Start with 0 to allow tests to pass
       functions: 0,
       lines: 0,
       statements: 0,
@@ -309,9 +316,9 @@ const config: Config = {
   },
   passWithNoTests: true,
   verbose: true,
-  maxWorkers: '50%',  // Use half of available CPU cores
-  testTimeout: 10000,  // 10 seconds per test
-  bail: false,  // Don't stop on first failure
+  maxWorkers: '50%', // Use half of available CPU cores
+  testTimeout: 10000, // 10 seconds per test
+  bail: false, // Don't stop on first failure
 };
 
 export default config;
@@ -380,7 +387,7 @@ class TestReportGenerator {
 
     // Generate HTML report
     const html = this.generateHTML(results, coverage);
-    
+
     // Write report
     fs.writeFileSync(this.reportPath, html);
     console.log(`\n✅ Test report generated: ${this.reportPath}`);
@@ -409,7 +416,7 @@ class TestReportGenerator {
 
   private generateHTML(results: TestResults | null, coverage: CoverageReport | null): string {
     const now = new Date().toLocaleString();
-    const passRate = results 
+    const passRate = results
       ? ((results.numPassedTests / results.numTotalTests) * 100).toFixed(1)
       : '0';
 
@@ -540,7 +547,9 @@ class TestReportGenerator {
             </div>
         </div>
 
-        ${coverage ? `
+        ${
+          coverage
+            ? `
         <div class="coverage-grid">
             <div class="coverage-item">
                 <strong>Lines</strong>
@@ -571,7 +580,9 @@ class TestReportGenerator {
                 <div>${coverage.total.branches.pct.toFixed(1)}%</div>
             </div>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="timestamp">
             Generated on ${now}
@@ -585,7 +596,9 @@ class TestReportGenerator {
     console.log('\n📈 Test Summary:');
     if (results) {
       console.log(`✅ Passed: ${results.numPassedTests}/${results.numTotalTests} tests`);
-      console.log(`📦 Suites: ${results.numPassedTestSuites}/${results.numTotalTestSuites} passing`);
+      console.log(
+        `📦 Suites: ${results.numPassedTestSuites}/${results.numTotalTestSuites} passing`
+      );
     }
     if (coverage) {
       console.log(`📊 Coverage: ${coverage.total.lines.pct.toFixed(1)}% lines`);
@@ -674,7 +687,7 @@ Create `/Users/ealanis/Development/current-projects/destino-sf/src/__mocks__/com
 ```typescript
 // Common mocks for all tests
 export const mockPrismaClient = {
-  $transaction: jest.fn((fn) => fn()),
+  $transaction: jest.fn(fn => fn()),
   $disconnect: jest.fn(),
   $connect: jest.fn(),
   order: {
@@ -764,18 +777,18 @@ import { mockPrismaClient, mockSupabaseClient, mockSquareClient } from '@/__mock
 export function setupMocks() {
   // Reset all mocks
   jest.clearAllMocks();
-  
+
   // Setup default mock implementations
   mockPrismaClient.order.create.mockResolvedValue({
     id: 'order-123',
     status: 'PENDING',
-    total: 25.00,
+    total: 25.0,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
 
   mockPrismaClient.product.findMany.mockResolvedValue([
-    { id: 'prod-1', name: 'Test Product', price: 10.00, available: true },
+    { id: 'prod-1', name: 'Test Product', price: 10.0, available: true },
   ]);
 
   return {
@@ -810,6 +823,7 @@ export function createMockResponse() {
 ### Current State → Target State
 
 Based on your test results:
+
 - **Current**: 59% of tests passing (822/1399)
 - **Week 1 Target**: 75% passing (fix configuration issues)
 - **Week 2 Target**: 85% passing (fix mock issues)
@@ -894,42 +908,55 @@ let lastPassRate = 0;
 function runTests() {
   testRuns++;
   console.log(chalk.gray(`Run #${testRuns} - ${new Date().toLocaleTimeString()}`));
-  
+
   const test = spawn('pnpm', ['test', '--json'], {
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
   let output = '';
-  
-  test.stdout.on('data', (data) => {
+
+  test.stdout.on('data', data => {
     output += data.toString();
   });
 
-  test.on('close', (code) => {
+  test.on('close', code => {
     try {
       const results = JSON.parse(output);
-      const passRate = (results.numPassedTests / results.numTotalTests * 100).toFixed(1);
-      
+      const passRate = ((results.numPassedTests / results.numTotalTests) * 100).toFixed(1);
+
       console.clear();
       console.log(chalk.blue.bold('🔍 Destino SF - Test Monitor\n'));
-      
+
       // Show trend
       const trend = passRate > lastPassRate ? '📈' : passRate < lastPassRate ? '📉' : '➡️';
-      
-      console.log(chalk.white('Status:'), passRate >= 80 ? chalk.green('✅ Healthy') : chalk.yellow('⚠️ Needs Attention'));
+
+      console.log(
+        chalk.white('Status:'),
+        passRate >= 80 ? chalk.green('✅ Healthy') : chalk.yellow('⚠️ Needs Attention')
+      );
       console.log(chalk.white('Pass Rate:'), chalk.cyan(`${passRate}%`), trend);
-      console.log(chalk.white('Tests:'), chalk.green(results.numPassedTests), '/', results.numTotalTests);
-      console.log(chalk.white('Suites:'), chalk.green(results.numPassedTestSuites), '/', results.numTotalTestSuites);
-      
+      console.log(
+        chalk.white('Tests:'),
+        chalk.green(results.numPassedTests),
+        '/',
+        results.numTotalTests
+      );
+      console.log(
+        chalk.white('Suites:'),
+        chalk.green(results.numPassedTestSuites),
+        '/',
+        results.numTotalTestSuites
+      );
+
       if (results.numFailedTests > 0) {
         console.log(chalk.red(`\n⚠️ ${results.numFailedTests} tests failing`));
       }
-      
+
       lastPassRate = parseFloat(passRate);
     } catch (e) {
       console.log(chalk.red('Error parsing test results'));
     }
-    
+
     console.log(chalk.gray('\nPress Ctrl+C to exit'));
   });
 }
@@ -948,13 +975,13 @@ process.on('SIGINT', () => {
 
 Track these metrics weekly:
 
-| Metric | Current | Week 1 | Week 2 | Week 4 |
-|--------|---------|---------|---------|---------|
-| Tests Passing | 822/1399 (59%) | 1050/1399 (75%) | 1190/1399 (85%) | 1330/1399 (95%) |
-| Suites Passing | 28/96 (29%) | 60/96 (63%) | 80/96 (83%) | 92/96 (96%) |
-| Coverage (Lines) | Unknown | 30% | 45% | 60% |
-| CI/CD Status | ❌ Disabled | ⚠️ Partial | ✅ Enabled | ✅ Full |
-| Test Runtime | 46s | 30s | 25s | 20s |
+| Metric           | Current        | Week 1          | Week 2          | Week 4          |
+| ---------------- | -------------- | --------------- | --------------- | --------------- |
+| Tests Passing    | 822/1399 (59%) | 1050/1399 (75%) | 1190/1399 (85%) | 1330/1399 (95%) |
+| Suites Passing   | 28/96 (29%)    | 60/96 (63%)     | 80/96 (83%)     | 92/96 (96%)     |
+| Coverage (Lines) | Unknown        | 30%             | 45%             | 60%             |
+| CI/CD Status     | ❌ Disabled    | ⚠️ Partial      | ✅ Enabled      | ✅ Full         |
+| Test Runtime     | 46s            | 30s             | 25s             | 20s             |
 
 ## 🎯 Next Steps
 
@@ -968,10 +995,11 @@ Track these metrics weekly:
 
 Add to your README.md:
 
-```markdown
+````markdown
 ## 🧪 Testing
 
 ### Quick Start
+
 ```bash
 # Run all tests
 pnpm test
@@ -985,12 +1013,15 @@ pnpm test:coverage
 # Monitor tests live
 pnpm test:monitor
 ```
+````
 
 ### Test Status
+
 ![Tests Passing](coverage/badges/tests-passing.svg)
 ![Coverage](coverage/badges/coverage.svg)
 
 ### Debugging Tests
+
 ```bash
 # Run diagnostic script
 node scripts/diagnose-tests.js
@@ -1001,6 +1032,8 @@ pnpm test:fix
 # Generate detailed report
 pnpm test:report
 ```
+
 ```
 
 This comprehensive plan will get your tests from 59% passing to 95%+ passing within 4 weeks! 🚀
+```

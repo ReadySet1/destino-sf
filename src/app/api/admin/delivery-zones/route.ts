@@ -3,30 +3,29 @@ import { z } from 'zod';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { requireAdminAccess } from '@/lib/auth/admin-guard';
 import { setAuditContext } from '@/lib/audit/delivery-zone-audit';
-import { 
-  DeliveryZoneRequestSchema, 
+import {
+  DeliveryZoneRequestSchema,
   DeliveryZoneUpdateSchema,
   BulkDeliveryZoneUpdateSchema,
   type DeliveryZoneRequest,
   type DeliveryZoneUpdate,
-  type DeliveryZoneResponse 
+  type DeliveryZoneResponse,
 } from '@/types/delivery-zones';
 
 // GET - Fetch all delivery zones
 export async function GET(request: NextRequest) {
   console.log('🔄 GET /api/admin/delivery-zones - Starting request');
-  
+
   const authResult = await requireAdminAccess();
-  
+
   if (!authResult.authorized) {
     console.error('❌ Unauthorized access attempt:', authResult.response?.status);
     return authResult.response!;
   }
 
   console.log('✅ Admin verified:', authResult.user?.email);
-  
-  try {
 
+  try {
     const deliveryZones = await prisma.cateringDeliveryZone.findMany({
       orderBy: { displayOrder: 'asc' },
     });
@@ -50,22 +49,23 @@ export async function GET(request: NextRequest) {
 // POST - Create or update delivery zone
 export async function POST(request: NextRequest) {
   console.log('🔄 POST /api/admin/delivery-zones - Starting request');
-  
+
   const authResult = await requireAdminAccess();
-  
+
   if (!authResult.authorized) {
     console.error('❌ Unauthorized access attempt:', authResult.response?.status);
     return authResult.response!;
   }
 
   console.log('✅ Admin verified:', authResult.user?.email);
-  
+
   try {
     // Set audit context for this transaction
     await setAuditContext({
       adminUserId: authResult.user?.id || '',
       adminEmail: authResult.user?.email || '',
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      ipAddress:
+        request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
       userAgent: request.headers.get('user-agent') || undefined,
     });
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     try {
       // Check if this is an update (has ID) or create (no ID)
       const isUpdate = !!body.id;
-      zoneData = isUpdate 
+      zoneData = isUpdate
         ? DeliveryZoneUpdateSchema.parse(body)
         : DeliveryZoneRequestSchema.parse(body);
     } catch (error) {
@@ -102,26 +102,21 @@ export async function POST(request: NextRequest) {
         // Update existing zone
         const updateData = zoneData as DeliveryZoneUpdate;
         console.log(`🔄 Updating zone with ID: ${updateData.id}`);
-        
+
         // Validate ID before proceeding with database operations
         if (!updateData.id || updateData.id.trim() === '') {
           console.log('❌ Invalid ID provided for update: empty or undefined');
-          return NextResponse.json(
-            { error: 'Missing ID for update' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Missing ID for update' }, { status: 400 });
         }
 
         // Validate ID format (basic UUID check)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         if (!uuidRegex.test(updateData.id)) {
           console.log(`❌ Invalid ID format for update: ${updateData.id}`);
-          return NextResponse.json(
-            { error: 'Invalid ID format for update' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Invalid ID format for update' }, { status: 400 });
         }
-        
+
         // First, check if zone exists
         const existingZone = await prisma.cateringDeliveryZone.findUnique({
           where: { id: updateData.id },
@@ -129,10 +124,7 @@ export async function POST(request: NextRequest) {
 
         if (!existingZone) {
           console.log(`❌ Zone not found with ID: ${updateData.id}`);
-          return NextResponse.json(
-            { error: 'Zone not found' },
-            { status: 404 }
-          );
+          return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
         }
 
         result = await prisma.cateringDeliveryZone.update({
@@ -150,13 +142,13 @@ export async function POST(request: NextRequest) {
             displayOrder: updateData.displayOrder,
           },
         });
-        
+
         console.log(`✅ Zone updated successfully: ${result.name}`);
       } else {
         // Create new zone
         const createData = zoneData as DeliveryZoneRequest;
         console.log('🔄 Creating new zone');
-        
+
         result = await prisma.cateringDeliveryZone.create({
           data: {
             zone: createData.zone,
@@ -171,7 +163,7 @@ export async function POST(request: NextRequest) {
             displayOrder: createData.displayOrder || 0,
           },
         });
-        
+
         console.log(`✅ Zone created successfully: ${result.name}`);
       }
 
@@ -184,41 +176,33 @@ export async function POST(request: NextRequest) {
       };
 
       const message = isUpdate ? 'Zone updated successfully' : 'Zone created successfully';
-      
+
       console.log(`✅ ${message}: ${processedResult.name} (Active: ${processedResult.isActive})`);
-      
+
       return NextResponse.json({
         message,
         zone: processedResult,
       });
-      
     } catch (dbError) {
       console.error('❌ Database operation failed:', dbError);
-      
+
       // Handle specific database errors
       if (dbError instanceof Error) {
         if (dbError.message.includes('Unique constraint')) {
-          return NextResponse.json(
-            { error: 'Zone identifier already exists' },
-            { status: 409 }
-          );
+          return NextResponse.json({ error: 'Zone identifier already exists' }, { status: 409 });
         }
       }
-      
+
       throw dbError;
     }
-    
   } catch (error) {
     console.error('❌ Error in delivery zones POST:', error);
-    
+
     // Return appropriate error response
     if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -226,22 +210,23 @@ export async function POST(request: NextRequest) {
 // PUT - Update multiple zones (bulk update)
 export async function PUT(request: NextRequest) {
   console.log('🔄 PUT /api/admin/delivery-zones - Starting bulk update');
-  
+
   const authResult = await requireAdminAccess();
-  
+
   if (!authResult.authorized) {
     console.error('❌ Unauthorized access attempt:', authResult.response?.status);
     return authResult.response!;
   }
 
   console.log('✅ Admin verified:', authResult.user?.email);
-  
+
   try {
     // Set audit context for bulk update
     await setAuditContext({
       adminUserId: authResult.user?.id || '',
       adminEmail: authResult.user?.email || '',
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      ipAddress:
+        request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
       userAgent: request.headers.get('user-agent') || undefined,
     });
 
@@ -263,10 +248,7 @@ export async function PUT(request: NextRequest) {
     for (const zone of validatedZones) {
       if (!zone.id || zone.id.trim() === '') {
         console.log('❌ Invalid ID in bulk update: empty or undefined');
-        return NextResponse.json(
-          { error: 'Missing ID for bulk update' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Missing ID for bulk update' }, { status: 400 });
       }
       if (!uuidRegex.test(zone.id)) {
         console.log(`❌ Invalid ID format in bulk update: ${zone.id}`);
@@ -306,7 +288,7 @@ export async function PUT(request: NextRequest) {
     }));
 
     console.log(`✅ Successfully updated ${processedResults.length} zones`);
-    
+
     return NextResponse.json({
       message: 'Delivery zones updated successfully',
       zones: processedResults,
@@ -320,9 +302,9 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete delivery zone
 export async function DELETE(request: NextRequest) {
   console.log('🔄 DELETE /api/admin/delivery-zones - Starting request');
-  
+
   const authResult = await requireAdminAccess();
-  
+
   if (!authResult.authorized) {
     console.error('❌ Unauthorized access attempt:', authResult.response?.status);
     return authResult.response!;
@@ -343,7 +325,7 @@ export async function DELETE(request: NextRequest) {
 
     // Check if zone exists
     const existingZone = await prisma.cateringDeliveryZone.findUnique({
-      where: { id: zoneId }
+      where: { id: zoneId },
     });
 
     if (!existingZone) {
@@ -353,18 +335,18 @@ export async function DELETE(request: NextRequest) {
 
     // Delete the zone
     await prisma.cateringDeliveryZone.delete({
-      where: { id: zoneId }
+      where: { id: zoneId },
     });
 
     console.log(`✅ Successfully deleted zone: ${existingZone.name} (${existingZone.zone})`);
-    
+
     return NextResponse.json({
       message: `Delivery zone "${existingZone.name}" deleted successfully`,
       deletedZone: {
         id: existingZone.id,
         name: existingZone.name,
         zone: existingZone.zone,
-      }
+      },
     });
   } catch (error) {
     console.error('❌ Error deleting delivery zone:', error);

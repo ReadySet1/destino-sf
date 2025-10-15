@@ -4,7 +4,8 @@
 
 **Current Status**: The system is creating $0.00 "Regular Orders" when processing catering order webhooks.
 
-**Evidence**: 
+**Evidence**:
+
 - Order `7328EB30`: Regular Order, $0.00, 0 items, PROCESSING status (PHANTOM ORDER)
 - Order `AC0CD9F4`: Catering Order, $203.00, 7 items, PENDING status (REAL ORDER)
 
@@ -32,7 +33,9 @@ The webhook handler is creating a placeholder "Regular Order" when it doesn't fi
 await safeQuery(() =>
   prisma.order.upsert({
     where: { squareOrderId: data.id },
-    update: { /* ... */ },
+    update: {
+      /* ... */
+    },
     create: {
       squareOrderId: data.id,
       status: orderStatus,
@@ -45,7 +48,7 @@ await safeQuery(() =>
         webhookSource: 'order.created',
         placeholderOrder: true, // ← EVEN MARKED AS PLACEHOLDER!
         cateringOrderCheckPerformed: true,
-      }
+      },
     },
   })
 );
@@ -54,6 +57,7 @@ await safeQuery(() =>
 ### Good News: Partial Fix Already Attempted
 
 Your code already has:
+
 1. **Retry logic** to find catering orders (lines 104-141)
 2. **Recent catering order check** (lines 184-221)
 3. **Queue for later processing** (lines 65-85)
@@ -65,6 +69,7 @@ Your code already has:
 ## 🎯 THE FIX - THREE OPTIONS
 
 ### Option 1: IMMEDIATE FIX (Stop the Bleeding)
+
 **Location**: Line 240-267 in `handleOrderCreated`
 **Action**: Comment out or remove the entire `prisma.order.upsert` block that creates placeholder orders
 
@@ -82,6 +87,7 @@ return; // Just exit without creating anything
 ```
 
 ### Option 2: PROPER FIX (Recommended)
+
 **Enhance the queue logic to NEVER create placeholders**
 
 1. **Update `queueWebhookForLaterProcessing`** (Line 65-85):
@@ -93,6 +99,7 @@ return; // Just exit without creating anything
    - Replace with logging and exit
 
 ### Option 3: COMPREHENSIVE FIX (Best Long-term)
+
 **Only process webhooks for known orders**
 
 1. **Change webhook strategy**:
@@ -181,7 +188,7 @@ Run this SQL to identify and clean up phantom orders:
 
 ```sql
 -- Find all $0.00 phantom orders
-SELECT 
+SELECT
   id,
   "squareOrderId",
   status,
@@ -190,7 +197,7 @@ SELECT
   email,
   "createdAt"
 FROM orders
-WHERE 
+WHERE
   total = 0
   AND ("customerName" = 'Pending Order' OR email LIKE '%webhook.temp%')
   AND "createdAt" > NOW() - INTERVAL '7 days';
@@ -227,13 +234,13 @@ After implementing the fix:
 -- Monitor for new phantom orders (run every hour)
 SELECT COUNT(*) as phantom_count
 FROM orders
-WHERE 
+WHERE
   total = 0
   AND "customerName" IN ('Pending Order', 'Pending')
   AND "createdAt" > NOW() - INTERVAL '1 hour';
 
 -- Check catering order processing
-SELECT 
+SELECT
   co.id as catering_id,
   co."squareOrderId",
   co.status as catering_status,

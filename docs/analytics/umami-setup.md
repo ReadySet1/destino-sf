@@ -19,6 +19,7 @@ NEXT_PUBLIC_UMAMI_SRC=https://analytics.readysetllc.com/script.js
 ### Default Configuration
 
 If environment variables are not set, the system uses these defaults:
+
 - **Website ID**: `5a0ae847-dbb0-456c-b972-9e29944de4b2`
 - **Script Source**: `https://analytics.readysetllc.com/script.js`
 
@@ -136,4 +137,4 @@ To test analytics in development:
 
 Access your analytics dashboard at: https://analytics.readysetllc.com
 
-Use your website ID: `5a0ae847-dbb0-456c-b972-9e29944de4b2` 
+Use your website ID: `5a0ae847-dbb0-456c-b972-9e29944de4b2`

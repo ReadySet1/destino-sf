@@ -3,7 +3,6 @@ import { NextResponse, NextRequest } from 'next/server';
 // import { type CookieOptions, createServerClient } from '@supabase/ssr';
 // import { cookies } from 'next/headers';
 import { prisma, withRetry } from '@/lib/db-unified';
-;
 // Import the server client utility
 import { createClient } from '@/utils/supabase/server';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
@@ -28,34 +27,39 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch orders using the authenticated user's ID with connection management
-      // Handle build time or database unavailability
-  if (isBuildTime()) {
-    console.log('🔧 Build-time detected: Using fallback data');
-    return NextResponse.json({ 
-      success: true, 
-      data: [], 
-      note: 'Fallback data used due to build-time constraints' 
-    });
-  }
+    // Handle build time or database unavailability
+    if (isBuildTime()) {
+      console.log('🔧 Build-time detected: Using fallback data');
+      return NextResponse.json({
+        success: true,
+        data: [],
+        note: 'Fallback data used due to build-time constraints',
+      });
+    }
 
-    const orders = await withRetry(() => prisma.order.findMany({
-        where: { userId: user.id }, // Use user.id directly
-        include: {
-          items: {
-            include: {
-              product: {
-                select: { name: true, images: true },
-              },
-              variant: {
-                select: { name: true },
+    const orders = await withRetry(
+      () =>
+        prisma.order.findMany({
+          where: { userId: user.id }, // Use user.id directly
+          include: {
+            items: {
+              include: {
+                product: {
+                  select: { name: true, images: true },
+                },
+                variant: {
+                  select: { name: true },
+                },
               },
             },
           },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      }), 3, 'find-many');
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
+      3,
+      'find-many'
+    );
 
     return NextResponse.json({ orders });
   } catch (error) {

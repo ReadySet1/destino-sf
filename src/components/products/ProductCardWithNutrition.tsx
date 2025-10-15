@@ -5,7 +5,14 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { NutritionFacts } from './NutritionFacts';
 import { Info, ShoppingCart, Apple } from 'lucide-react';
 import { sanitizeProductDescription } from '@/lib/utils/product-description';
@@ -29,17 +36,18 @@ interface ProductCardWithNutritionProps {
   className?: string;
 }
 
-export function ProductCardWithNutrition({ 
-  product, 
+export function ProductCardWithNutrition({
+  product,
   onAddToCart,
-  className 
+  className,
 }: ProductCardWithNutritionProps) {
   const [nutritionSheetOpen, setNutritionSheetOpen] = useState(false);
-  
-  const hasNutritionInfo = product.calories || 
-    (product.dietaryPreferences && product.dietaryPreferences.length > 0) || 
-    product.ingredients || 
-    (product.allergens && product.allergens.length > 0) || 
+
+  const hasNutritionInfo =
+    product.calories ||
+    (product.dietaryPreferences && product.dietaryPreferences.length > 0) ||
+    product.ingredients ||
+    (product.allergens && product.allergens.length > 0) ||
     product.nutritionFacts;
 
   const formatPrice = (price: number) => {
@@ -85,7 +93,7 @@ export function ProductCardWithNutrition({
             <CardDescription
               className="line-clamp-3"
               dangerouslySetInnerHTML={{
-                __html: sanitizeProductDescription(product.description)
+                __html: sanitizeProductDescription(product.description),
               }}
             />
           )}
@@ -94,7 +102,11 @@ export function ProductCardWithNutrition({
           {product.dietaryPreferences && product.dietaryPreferences.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {product.dietaryPreferences.slice(0, 2).map((preference, index) => (
-                <Badge key={index} variant="secondary" className="text-xs bg-green-100 text-green-700">
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="text-xs bg-green-100 text-green-700"
+                >
                   {preference.charAt(0).toUpperCase() + preference.slice(1)}
                 </Badge>
               ))}
@@ -131,10 +143,7 @@ export function ProductCardWithNutrition({
           </div>
 
           {onAddToCart && (
-            <Button 
-              onClick={() => onAddToCart(product)} 
-              className="w-full gap-2"
-            >
+            <Button onClick={() => onAddToCart(product)} className="w-full gap-2">
               <ShoppingCart className="h-4 w-4" />
               Add to Cart
             </Button>
@@ -147,11 +156,9 @@ export function ProductCardWithNutrition({
         <SheetContent className="sm:max-w-md">
           <SheetHeader>
             <SheetTitle>{product.name}</SheetTitle>
-            <SheetDescription>
-              Nutrition information and ingredients
-            </SheetDescription>
+            <SheetDescription>Nutrition information and ingredients</SheetDescription>
           </SheetHeader>
-          
+
           <div className="mt-6">
             <NutritionFacts
               calories={product.calories}

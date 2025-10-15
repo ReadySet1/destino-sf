@@ -121,7 +121,7 @@ export const SQUARE_CATEGORY_MAPPING: Record<string, string> = {
   'CATERING- LUNCH, STARTERS': 'lunch',
   'CATERING- LUNCH, ENTREES': 'lunch',
   'CATERING- LUNCH, SIDES': 'lunch',
-  
+
   'CATERING- BOXED LUNCHES': 'boxed-lunches',
   'CATERING- BOXED LUNCH ENTREES': 'boxed-lunch-entrees', // New category for Build Your Own Box
 };

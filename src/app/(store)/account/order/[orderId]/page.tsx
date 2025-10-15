@@ -89,13 +89,16 @@ const getPaymentStatusVariant = (
 };
 
 // Helper to get the display text for order status based on fulfillment type
-const getStatusDisplayText = (status: string | null | undefined, fulfillmentType: string | null | undefined): string => {
+const getStatusDisplayText = (
+  status: string | null | undefined,
+  fulfillmentType: string | null | undefined
+): string => {
   if (!status) return 'UNKNOWN';
-  
+
   // Handle READY status based on fulfillment type
   if (status === 'READY') {
     const fulfillment = fulfillmentType?.toLowerCase();
-    
+
     if (fulfillment === 'pickup') {
       return 'READY FOR PICKUP';
     } else if (fulfillment === 'local_delivery') {
@@ -107,7 +110,7 @@ const getStatusDisplayText = (status: string | null | undefined, fulfillmentType
       return 'READY';
     }
   }
-  
+
   // For all other statuses, return as-is
   return status;
 };
@@ -131,7 +134,11 @@ export default async function OrderDetailsPage({ params }: PageProps) {
             </div>
             <h1 className="mb-4 text-2xl font-bold text-destino-charcoal">Account Access</h1>
             <p className="mb-6 text-gray-600">Please sign in to access your order details.</p>
-            <Button asChild size="lg" className="bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
+            <Button
+              asChild
+              size="lg"
+              className="bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+            >
               <Link href="/sign-in">Sign In</Link>
             </Button>
           </div>
@@ -161,7 +168,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
   // Try to fetch as a regular order first with enhanced error handling
   let regularOrder = null;
   let cateringOrder = null;
-  
+
   try {
     regularOrder = await prisma.order.findUnique({
       where: {
@@ -183,21 +190,23 @@ export default async function OrderDetailsPage({ params }: PageProps) {
       orderId,
       userId: user.id,
       error: error instanceof Error ? error.message : 'Unknown error',
-      code: (error as any)?.code
+      code: (error as any)?.code,
     });
-    
+
     // Check if it's a prepared statement error
-    if (error instanceof Error && 
-        ((error as any).code === '42P05' || // prepared statement already exists
-         (error as any).code === '26000' || // prepared statement does not exist
-         error.message.includes('prepared statement'))) {
+    if (
+      error instanceof Error &&
+      ((error as any).code === '42P05' || // prepared statement already exists
+        (error as any).code === '26000' || // prepared statement does not exist
+        error.message.includes('prepared statement'))
+    ) {
       console.log('Detected prepared statement error, attempting retry with fresh connection...');
-      
+
       // Attempt one retry with a fresh connection
       try {
         await prisma.$disconnect();
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         regularOrder = await prisma.order.findUnique({
           where: {
             id: orderId,
@@ -212,7 +221,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
             },
           },
         });
-        
+
         console.log('✅ Retry successful after prepared statement error');
       } catch (retryError) {
         console.error('❌ Retry failed:', retryError);
@@ -269,21 +278,25 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         orderId,
         customerId: user.id,
         error: error instanceof Error ? error.message : 'Unknown error',
-        code: (error as any)?.code
+        code: (error as any)?.code,
       });
-      
+
       // Check if it's a prepared statement error
-      if (error instanceof Error && 
-          ((error as any).code === '42P05' || // prepared statement already exists
-           (error as any).code === '26000' || // prepared statement does not exist
-           error.message.includes('prepared statement'))) {
-        console.log('Detected prepared statement error in catering order query, attempting retry...');
-        
+      if (
+        error instanceof Error &&
+        ((error as any).code === '42P05' || // prepared statement already exists
+          (error as any).code === '26000' || // prepared statement does not exist
+          error.message.includes('prepared statement'))
+      ) {
+        console.log(
+          'Detected prepared statement error in catering order query, attempting retry...'
+        );
+
         // Attempt one retry with a fresh connection
         try {
           await prisma.$disconnect();
           await new Promise(resolve => setTimeout(resolve, 100));
-          
+
           cateringOrder = await prisma.cateringOrder.findUnique({
             where: {
               id: orderId,
@@ -321,7 +334,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               },
             },
           });
-          
+
           console.log('✅ Catering order retry successful after prepared statement error');
         } catch (retryError) {
           console.error('❌ Catering order retry failed:', retryError);
@@ -353,7 +366,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         deliveryFee: regularOrder!.deliveryFee?.toNumber() ?? 0,
         serviceFee: regularOrder!.serviceFee?.toNumber() ?? 0,
         gratuityAmount: regularOrder!.gratuityAmount?.toNumber() ?? 0,
-        shippingCost: regularOrder!.shippingCostCents ? (regularOrder!.shippingCostCents / 100) : 0,
+        shippingCost: regularOrder!.shippingCostCents ? regularOrder!.shippingCostCents / 100 : 0,
         createdAt: regularOrder!.createdAt,
         customerName: regularOrder!.customerName,
         email: regularOrder!.email,
@@ -440,9 +453,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
 
   // Calculate actual subtotal from items (not from total minus fees, which can be wrong when fees are 0)
   const subtotal = orderData.items.reduce((sum, item) => {
-    const itemTotal = isRegularOrder
-      ? item.price * item.quantity
-      : (item as any).totalPrice;
+    const itemTotal = isRegularOrder ? item.price * item.quantity : (item as any).totalPrice;
     return sum + itemTotal;
   }, 0);
 
@@ -489,7 +500,9 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                   <Package className="h-5 w-5 text-destino-orange" />
                   Order Summary
                 </CardTitle>
-                <CardDescription className="text-gray-600">Order #{orderData.id.slice(-8)}</CardDescription>
+                <CardDescription className="text-gray-600">
+                  Order #{orderData.id.slice(-8)}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
@@ -506,19 +519,29 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     </Badge>
                     {/* Show retry payment button for all orders with pending/failed payments */}
                     {((isRegularOrder &&
-                      (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') &&
+                      (orderData.paymentStatus === 'PENDING' ||
+                        orderData.paymentStatus === 'FAILED') &&
                       regularOrder?.paymentMethod === 'SQUARE') ||
                       (isCateringOrder &&
-                      (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') &&
-                      cateringOrder?.paymentMethod === 'SQUARE')) && (
+                        (orderData.paymentStatus === 'PENDING' ||
+                          orderData.paymentStatus === 'FAILED') &&
+                        cateringOrder?.paymentMethod === 'SQUARE')) && (
                       <div className="mt-2">
                         <RetryPaymentButton
                           orderId={orderData.id}
-                          retryCount={isRegularOrder ? (regularOrder?.retryCount || 0) : (cateringOrder?.retryCount || 0)}
-                          disabled={isRegularOrder ? ((regularOrder?.retryCount || 0) >= 3) : ((cateringOrder?.retryCount || 0) >= 3)}
+                          retryCount={
+                            isRegularOrder
+                              ? regularOrder?.retryCount || 0
+                              : cateringOrder?.retryCount || 0
+                          }
+                          disabled={
+                            isRegularOrder
+                              ? (regularOrder?.retryCount || 0) >= 3
+                              : (cateringOrder?.retryCount || 0) >= 3
+                          }
                         />
                       </div>
-                      )}
+                    )}
                   </div>
                 </div>
 
@@ -620,7 +643,9 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                       <Users className="h-4 w-4 text-gray-600 flex-shrink-0" />
                       <div>
                         <p className="text-sm text-gray-600">Number of People</p>
-                        <p className="text-gray-900 font-medium">{Number(orderData.numberOfPeople) || 0}</p>
+                        <p className="text-gray-900 font-medium">
+                          {Number(orderData.numberOfPeople) || 0}
+                        </p>
                       </div>
                     </div>
                     {orderData.deliveryAddress && (
@@ -685,7 +710,9 @@ export default async function OrderDetailsPage({ params }: PageProps) {
         {/* Order Items */}
         <Card className="bg-white/95 backdrop-blur-sm border-destino-yellow/30 shadow-lg mb-8">
           <CardHeader className="bg-gradient-to-r from-destino-cream/30 to-white border-b border-destino-yellow/20">
-            <CardTitle className="text-destino-charcoal">Items Ordered ({orderData.items.length})</CardTitle>
+            <CardTitle className="text-destino-charcoal">
+              Items Ordered ({orderData.items.length})
+            </CardTitle>
             <CardDescription className="text-gray-600">
               {totalQuantity} total items • {formatCurrency(orderData.total)}
             </CardDescription>

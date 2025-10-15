@@ -1,6 +1,6 @@
 /**
  * Enhanced Webhook Error Handler
- * 
+ *
  * Provides better error handling and reporting for webhook processing,
  * with special attention to database connection issues.
  */
@@ -28,20 +28,23 @@ export interface WebhookErrorContext {
 /**
  * Analyzes an error and categorizes it for better handling
  */
-export function analyzeWebhookError(error: Error | any, context: WebhookErrorContext): WebhookError {
+export function analyzeWebhookError(
+  error: Error | any,
+  context: WebhookErrorContext
+): WebhookError {
   const errorMessage = error?.message || String(error);
   const errorCode = error?.code;
-  
+
   // Database connection errors
   if (isDatabaseConnectionError(error)) {
     return analyzeDatabaseError(error, context);
   }
-  
+
   // Prisma-specific errors
   if (isPrismaError(error)) {
     return analyzePrismaError(error, context);
   }
-  
+
   // Network/timeout errors
   if (isNetworkError(error)) {
     return {
@@ -52,17 +55,17 @@ export function analyzeWebhookError(error: Error | any, context: WebhookErrorCon
         error: errorMessage,
         code: errorCode,
         eventId: context.eventId,
-        orderId: context.orderId
+        orderId: context.orderId,
       },
       suggestedActions: [
         'Retry the operation',
         'Check network connectivity',
-        'Verify external service availability'
+        'Verify external service availability',
       ],
-      canRetry: true
+      canRetry: true,
     };
   }
-  
+
   // Validation errors
   if (isValidationError(error)) {
     return {
@@ -72,17 +75,17 @@ export function analyzeWebhookError(error: Error | any, context: WebhookErrorCon
       details: {
         error: errorMessage,
         eventId: context.eventId,
-        orderId: context.orderId
+        orderId: context.orderId,
       },
       suggestedActions: [
         'Check webhook payload format',
         'Verify required fields are present',
-        'Review data schema changes'
+        'Review data schema changes',
       ],
-      canRetry: false
+      canRetry: false,
     };
   }
-  
+
   // Default unknown error
   return {
     type: 'unknown',
@@ -93,14 +96,14 @@ export function analyzeWebhookError(error: Error | any, context: WebhookErrorCon
       code: errorCode,
       stack: error?.stack,
       eventId: context.eventId,
-      orderId: context.orderId
+      orderId: context.orderId,
     },
     suggestedActions: [
       'Review error logs for more details',
       'Check for recent code changes',
-      'Contact development team if issue persists'
+      'Contact development team if issue persists',
     ],
-    canRetry: true
+    canRetry: true,
   };
 }
 
@@ -110,7 +113,7 @@ export function analyzeWebhookError(error: Error | any, context: WebhookErrorCon
 function analyzeDatabaseError(error: Error | any, context: WebhookErrorContext): WebhookError {
   const errorMessage = error?.message || String(error);
   const dbInfo = getDatabaseInfo();
-  
+
   // Check for environment mismatch
   if (errorMessage.includes('drrejylrcjbeldnzodjd') && context.environment === 'production') {
     return {
@@ -123,17 +126,17 @@ function analyzeDatabaseError(error: Error | any, context: WebhookErrorContext):
         databaseBeingAccessed: 'development (drrejylrcjbeldnzodjd)',
         expectedDatabase: 'production (ocusztulyiegeawqptrs)',
         eventId: context.eventId,
-        orderId: context.orderId
+        orderId: context.orderId,
       },
       suggestedActions: [
         'IMMEDIATE: Update DATABASE_URL to production database',
         'Redeploy application with correct configuration',
-        'Verify environment variables in deployment platform'
+        'Verify environment variables in deployment platform',
       ],
-      canRetry: false
+      canRetry: false,
     };
   }
-  
+
   if (errorMessage.includes('ocusztulyiegeawqptrs') && context.environment === 'development') {
     return {
       type: 'database',
@@ -145,17 +148,17 @@ function analyzeDatabaseError(error: Error | any, context: WebhookErrorContext):
         databaseBeingAccessed: 'production (ocusztulyiegeawqptrs)',
         expectedDatabase: 'development (drrejylrcjbeldnzodjd)',
         eventId: context.eventId,
-        orderId: context.orderId
+        orderId: context.orderId,
       },
       suggestedActions: [
         'Update DATABASE_URL to development database',
         'Check local environment configuration',
-        'Avoid modifying production data'
+        'Avoid modifying production data',
       ],
-      canRetry: false
+      canRetry: false,
     };
   }
-  
+
   // General connection errors
   if (errorMessage.includes("Can't reach database server")) {
     return {
@@ -166,18 +169,18 @@ function analyzeDatabaseError(error: Error | any, context: WebhookErrorContext):
         error: errorMessage,
         databaseInfo: dbInfo,
         eventId: context.eventId,
-        orderId: context.orderId
+        orderId: context.orderId,
       },
       suggestedActions: [
         'Check database server status',
         'Verify network connectivity',
         'Check database configuration',
-        'Retry operation after brief delay'
+        'Retry operation after brief delay',
       ],
-      canRetry: true
+      canRetry: true,
     };
   }
-  
+
   // Connection pool exhaustion
   if (errorMessage.includes('connection pool') || errorMessage.includes('P2024')) {
     return {
@@ -187,18 +190,18 @@ function analyzeDatabaseError(error: Error | any, context: WebhookErrorContext):
       details: {
         error: errorMessage,
         eventId: context.eventId,
-        orderId: context.orderId
+        orderId: context.orderId,
       },
       suggestedActions: [
         'Wait and retry operation',
         'Check for connection leaks',
         'Consider increasing connection pool size',
-        'Review concurrent operation patterns'
+        'Review concurrent operation patterns',
       ],
-      canRetry: true
+      canRetry: true,
     };
   }
-  
+
   return {
     type: 'database',
     severity: 'high',
@@ -207,14 +210,14 @@ function analyzeDatabaseError(error: Error | any, context: WebhookErrorContext):
       error: errorMessage,
       code: error?.code,
       eventId: context.eventId,
-      orderId: context.orderId
+      orderId: context.orderId,
     },
     suggestedActions: [
       'Check database connectivity',
       'Verify database permissions',
-      'Review error logs for more details'
+      'Review error logs for more details',
     ],
-    canRetry: true
+    canRetry: true,
   };
 }
 
@@ -223,7 +226,7 @@ function analyzeDatabaseError(error: Error | any, context: WebhookErrorContext):
  */
 function analyzePrismaError(error: Error | any, context: WebhookErrorContext): WebhookError {
   const errorCode = error?.code;
-  
+
   switch (errorCode) {
     case 'P1001':
       return {
@@ -232,9 +235,9 @@ function analyzePrismaError(error: Error | any, context: WebhookErrorContext): W
         message: 'Database server unreachable',
         details: { error: error.message, code: errorCode, eventId: context.eventId },
         suggestedActions: ['Check database server status', 'Verify connection configuration'],
-        canRetry: true
+        canRetry: true,
       };
-      
+
     case 'P2025':
       return {
         type: 'validation',
@@ -242,9 +245,9 @@ function analyzePrismaError(error: Error | any, context: WebhookErrorContext): W
         message: 'Record not found',
         details: { error: error.message, code: errorCode, eventId: context.eventId },
         suggestedActions: ['Verify record exists', 'Check data consistency'],
-        canRetry: false
+        canRetry: false,
       };
-      
+
     default:
       return {
         type: 'database',
@@ -252,7 +255,7 @@ function analyzePrismaError(error: Error | any, context: WebhookErrorContext): W
         message: 'Prisma operation failed',
         details: { error: error.message, code: errorCode, eventId: context.eventId },
         suggestedActions: ['Review database operation', 'Check data constraints'],
-        canRetry: true
+        canRetry: true,
       };
   }
 }
@@ -269,11 +272,11 @@ export async function handleWebhookError(
   } = {}
 ): Promise<WebhookError> {
   const { notifyMonitoring = true, logDetails = true } = options;
-  
+
   try {
     // Analyze the error
     const webhookError = analyzeWebhookError(error, context);
-    
+
     // Log error details
     if (logDetails) {
       console.error(`🚨 Webhook Error [${webhookError.severity.toUpperCase()}]:`, {
@@ -281,10 +284,10 @@ export async function handleWebhookError(
         message: webhookError.message,
         context,
         details: webhookError.details,
-        suggestedActions: webhookError.suggestedActions
+        suggestedActions: webhookError.suggestedActions,
       });
     }
-    
+
     // Send to monitoring service
     if (notifyMonitoring) {
       await errorMonitor.captureWebhookError(
@@ -294,23 +297,23 @@ export async function handleWebhookError(
         context.eventId
       );
     }
-    
+
     return webhookError;
-    
   } catch (handlingError) {
     console.error('Error in webhook error handler:', handlingError);
-    
+
     // Fallback error response
     return {
       type: 'unknown',
       severity: 'high',
       message: 'Error handler failed',
-      details: { 
-        originalError: error instanceof Error ? error.message : String(error), 
-        handlingError: handlingError instanceof Error ? handlingError.message : String(handlingError) 
+      details: {
+        originalError: error instanceof Error ? error.message : String(error),
+        handlingError:
+          handlingError instanceof Error ? handlingError.message : String(handlingError),
       },
       suggestedActions: ['Contact development team'],
-      canRetry: false
+      canRetry: false,
     };
   }
 }
@@ -351,6 +354,6 @@ function isValidationError(error: any): boolean {
     message.includes('required') ||
     message.includes('invalid') ||
     error?.code === 'P2003' || // Foreign key constraint
-    error?.code === 'P2002'    // Unique constraint
+    error?.code === 'P2002' // Unique constraint
   );
 }

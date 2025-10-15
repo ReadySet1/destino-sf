@@ -7,11 +7,14 @@ The Square Payment Verification system allows administrators to manually verify 
 ## How It Works
 
 ### The Problem
+
 Sometimes Square webhooks fail to deliver payment status updates, causing a mismatch between:
+
 - **Local Database**: Shows payment as `PENDING`
 - **Square Dashboard**: Shows payment as `PAID`
 
 ### The Solution
+
 Two new verification options in the admin order details:
 
 1. **"Verificar con Square"** - Checks payment status with Square API without making changes
@@ -22,16 +25,19 @@ Two new verification options in the admin order details:
 ### API Endpoints
 
 #### `POST /api/admin/orders/[orderId]/verify-square-payment`
+
 Verifies payment status directly with Square and optionally syncs the status.
 
 **Request Body:**
+
 ```json
 {
-  "autoSync": false  // Set to true for automatic sync
+  "autoSync": false // Set to true for automatic sync
 }
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -63,15 +69,18 @@ Verifies payment status directly with Square and optionally syncs the status.
 ### Core Functions
 
 #### `verifySquarePaymentStatus(squareOrderId: string)`
+
 Located in `/src/lib/square/payment-verification.ts`
 
 This function:
+
 1. Retrieves order details from Square API
 2. Examines payment tenders (payments) for the order
 3. Maps Square payment status to our internal status
 4. Returns detailed verification results
 
 **Status Mapping:**
+
 - `CAPTURED` or `COMPLETED` → `PAID`
 - `FAILED` or `CANCELED` → `FAILED`
 - No tenders or other statuses → `PENDING`
@@ -81,6 +90,7 @@ This function:
 The `PaymentSyncButton` component (`/src/app/(dashboard)/admin/orders/[orderId]/components/PaymentSyncButton.tsx`) provides the UI for manual verification.
 
 **Features:**
+
 - Shows warning when payment status is PENDING or FAILED
 - "Verificar con Square" button - Checks status and shows results in toast
 - "Sincronizar Automático" button - Checks and auto-syncs if needed
@@ -133,6 +143,7 @@ The system includes comprehensive error handling for:
 ## Environment Configuration
 
 Required environment variables:
+
 ```bash
 # For sandbox/development
 USE_SQUARE_SANDBOX=true
@@ -147,11 +158,13 @@ SQUARE_ACCESS_TOKEN=your_access_token
 ## Testing
 
 Run the payment verification tests:
+
 ```bash
 npm test src/__tests__/square/payment-verification.test.ts
 ```
 
 The test suite covers:
+
 - Successful payment verification
 - Pending payment handling
 - API error scenarios

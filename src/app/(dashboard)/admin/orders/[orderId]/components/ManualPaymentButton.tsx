@@ -32,7 +32,7 @@ export function ManualPaymentButton({
   paymentStatus,
   status,
   paymentMethod,
-  fulfillmentType
+  fulfillmentType,
 }: ManualPaymentButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -62,7 +62,6 @@ export function ManualPaymentButton({
   };
 
   const handlePaymentSync = async () => {
-
     setIsLoading(true);
     setIsDialogOpen(false);
 
@@ -75,7 +74,7 @@ export function ManualPaymentButton({
         body: JSON.stringify({
           paymentStatus: 'PAID',
           squareOrderId: squareOrderId,
-          notes: 'Payment status manually synchronized by administrator'
+          notes: 'Payment status manually synchronized by administrator',
         }),
       });
 
@@ -86,7 +85,7 @@ export function ManualPaymentButton({
           description: 'The order has been marked as PAID and is ready to process',
           duration: 5000,
         });
-        
+
         // Refresh the page to show updated data
         router.refresh();
       } else {
@@ -103,21 +102,23 @@ export function ManualPaymentButton({
     }
   };
 
-  
-
   if (!shouldShowButton) {
     return null;
   }
 
   return (
-    <div className={`flex flex-col gap-3 p-4 rounded-lg ${
-      isCashPayment
-        ? 'bg-blue-50 border border-blue-200'
-        : 'bg-yellow-50 border border-yellow-200'
-    }`}>
+    <div
+      className={`flex flex-col gap-3 p-4 rounded-lg ${
+        isCashPayment
+          ? 'bg-blue-50 border border-blue-200'
+          : 'bg-yellow-50 border border-yellow-200'
+      }`}
+    >
       <div className="flex items-center gap-2">
         <AlertCircle className={`h-5 w-5 ${isCashPayment ? 'text-blue-600' : 'text-yellow-600'}`} />
-        <span className={`font-medium text-sm ${isCashPayment ? 'text-blue-800' : 'text-yellow-800'}`}>
+        <span
+          className={`font-medium text-sm ${isCashPayment ? 'text-blue-800' : 'text-yellow-800'}`}
+        >
           {isCashPayment ? 'Cash Payment - Action Required' : 'Manual Payment Override'}
         </span>
       </div>
@@ -127,7 +128,6 @@ export function ManualPaymentButton({
       </p>
 
       <div className="flex gap-2 flex-wrap">
-
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button
@@ -151,11 +151,18 @@ export function ManualPaymentButton({
               </DialogDescription>
               <div className="space-y-3 mt-4">
                 <div className="bg-gray-50 p-3 rounded-md text-sm">
-                  <div><strong>Order ID:</strong> {orderId}</div>
-                  <div><strong>Current Status:</strong> <Badge variant="secondary">{paymentStatus}</Badge></div>
+                  <div>
+                    <strong>Order ID:</strong> {orderId}
+                  </div>
+                  <div>
+                    <strong>Current Status:</strong>{' '}
+                    <Badge variant="secondary">{paymentStatus}</Badge>
+                  </div>
                 </div>
                 <div className="text-sm text-gray-600">
-                  This action will change the payment status to PAID and the order status to PROCESSING. Only use this if you have confirmed the payment was completed outside the system.
+                  This action will change the payment status to PAID and the order status to
+                  PROCESSING. Only use this if you have confirmed the payment was completed outside
+                  the system.
                 </div>
               </div>
             </DialogHeader>

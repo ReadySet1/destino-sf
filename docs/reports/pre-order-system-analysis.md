@@ -32,6 +32,7 @@ The Destino SF platform implements a comprehensive pre-order system that allows 
 ### Core Functionality
 
 The pre-order system enables:
+
 - **Admin Control**: Enable/disable pre-order status for any product
 - **Customer Experience**: Clear pre-order messaging and confirmation workflow
 - **Inventory Management**: Separate handling of pre-order vs. regular inventory
@@ -63,7 +64,7 @@ The pre-order system extends the base `Product` model with the following fields:
 
 model Product {
   // ... existing fields ...
-  
+
   // Availability fields for pre-order and seasonal items
   visibility           String?   @default("PUBLIC") @db.VarChar(20)
   isAvailable         Boolean   @default(true) @map("is_available")
@@ -80,20 +81,21 @@ model Product {
 
 ### Field Descriptions
 
-| Field | Type | Purpose | Default |
-|-------|------|---------|---------|
-| `isPreorder` | Boolean | Primary flag indicating pre-order status | `false` |
-| `isAvailable` | Boolean | Controls if product can be purchased | `true` |
-| `visibility` | String | Product visibility (PUBLIC/PRIVATE) | `"PUBLIC"` |
-| `preorderStartDate` | DateTime | When pre-orders begin | `null` |
-| `preorderEndDate` | DateTime | When pre-orders end | `null` |
-| `itemState` | String | Product state (ACTIVE/SEASONAL/ARCHIVED) | `"ACTIVE"` |
+| Field               | Type     | Purpose                                  | Default    |
+| ------------------- | -------- | ---------------------------------------- | ---------- |
+| `isPreorder`        | Boolean  | Primary flag indicating pre-order status | `false`    |
+| `isAvailable`       | Boolean  | Controls if product can be purchased     | `true`     |
+| `visibility`        | String   | Product visibility (PUBLIC/PRIVATE)      | `"PUBLIC"` |
+| `preorderStartDate` | DateTime | When pre-orders begin                    | `null`     |
+| `preorderEndDate`   | DateTime | When pre-orders end                      | `null`     |
+| `itemState`         | String   | Product state (ACTIVE/SEASONAL/ARCHIVED) | `"ACTIVE"` |
 
 ---
 
 ## Admin Interface Features
 
 ### 1. Product Creation
+
 **Location:** `/admin/products/new`
 
 ```typescript
@@ -113,11 +115,13 @@ model Product {
 ```
 
 ### 2. Product Editing
+
 **Location:** `/admin/products/[id]`
 
 #### Manual Availability Override Section
+
 - **Available for Purchase** checkbox
-- **Pre-order Item** checkbox  
+- **Pre-order Item** checkbox
 - Visual feedback for configuration changes
 - Form validation and error handling
 
@@ -125,11 +129,11 @@ model Product {
 // Server action for updating product
 async function updateProduct(formData: FormData) {
   'use server';
-  
+
   const isAvailable = formData.has('isAvailable');
   const isPreorder = formData.has('isPreorder');
-  const visibility = formData.get('visibility') as string || 'PUBLIC';
-  const itemState = formData.get('itemState') as string || 'ACTIVE';
+  const visibility = (formData.get('visibility') as string) || 'PUBLIC';
+  const itemState = (formData.get('itemState') as string) || 'ACTIVE';
 
   await prisma.product.update({
     where: { id: productId },
@@ -145,9 +149,11 @@ async function updateProduct(formData: FormData) {
 ```
 
 ### 3. Product List Management
+
 **Location:** `/admin/products`
 
 #### Status Badge System
+
 The admin interface displays color-coded badges for quick status identification:
 
 ```typescript
@@ -178,6 +184,7 @@ The admin interface displays color-coded badges for quick status identification:
 ```
 
 #### Badge Color System
+
 - 🔴 **Red**: Unavailable products
 - 🔵 **Blue**: Pre-order items
 - ⚫ **Gray**: Hidden products
@@ -190,11 +197,13 @@ The admin interface displays color-coded badges for quick status identification:
 
 ### 1. Product Card Pre-Order Indicators
 
-**Locations:** 
+**Locations:**
+
 - `src/components/Products/ProductCard.tsx`
 - `src/components/store/ProductCard.tsx`
 
 #### Pre-Order Confirmation Flow
+
 When customers attempt to add a pre-order item to cart:
 
 ```typescript
@@ -206,7 +215,7 @@ const handleAddToCart = () => {
       return; // User cancelled
     }
   }
-  
+
   // Add to cart with pre-order indication
   addItem({
     id: productId,
@@ -217,35 +226,40 @@ const handleAddToCart = () => {
     variantId: undefined,
   });
 
-  const alertMessage = isPreorder 
+  const alertMessage = isPreorder
     ? `1 ${product.name} has been pre-ordered and added to your cart.`
     : `1 ${product.name} has been added to your cart.`;
-  
+
   showAlert(alertMessage);
 };
 ```
 
 #### Pre-Order Message Formatting
+
 ```typescript
 const formatPreorderMessage = (product: Product): string => {
-  const formatDate = (date: Date) => date.toLocaleDateString('en-US', { 
-    year: 'numeric', month: 'long', day: 'numeric' 
-  });
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
 
   let message = `This item is available for pre-order only.\n\n`;
-  
+
   if (product.preorderStartDate && product.preorderEndDate) {
     message += `Expected availability: ${formatDate(product.preorderStartDate)} - ${formatDate(product.preorderEndDate)}\n\n`;
   } else if (product.preorderEndDate) {
     message += `Expected availability by: ${formatDate(product.preorderEndDate)}\n\n`;
   }
-  
+
   message += `Would you like to place a pre-order for this item?`;
   return message;
 };
 ```
 
 ### 2. Product Details Page
+
 **Location:** `src/components/Products/ProductDetails.tsx`
 
 - Enhanced confirmation dialog for pre-order items
@@ -255,6 +269,7 @@ const formatPreorderMessage = (product: Product): string => {
 ### 3. Checkout Integration
 
 The checkout process seamlessly handles pre-order items:
+
 - Order validation includes pre-order items
 - No special restrictions on pre-order purchases
 - Clear indication in order confirmations
@@ -283,7 +298,7 @@ export interface Product {
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Availability fields for pre-order and seasonal items
   visibility?: string | null;
   isAvailable?: boolean;
@@ -305,12 +320,12 @@ export interface Product {
 ```typescript
 async function updateProduct(formData: FormData) {
   'use server';
-  
+
   // Extract form data
   const isAvailable = formData.has('isAvailable');
   const isPreorder = formData.has('isPreorder');
-  const visibility = formData.get('visibility') as string || 'PUBLIC';
-  const itemState = formData.get('itemState') as string || 'ACTIVE';
+  const visibility = (formData.get('visibility') as string) || 'PUBLIC';
+  const itemState = (formData.get('itemState') as string) || 'ACTIVE';
 
   try {
     // Update the product in the database
@@ -357,6 +372,7 @@ async function updateProduct(formData: FormData) {
 **Solution:** Manual Availability Override System
 
 #### Automatic Detection
+
 **Location:** `src/lib/square/production-sync.ts`
 
 ```typescript
@@ -365,16 +381,16 @@ private determineAvailability(
   productName: string
 ): ProductAvailability {
   const now = new Date();
-  
+
   // Check for pre-order indicators in name or attributes
-  const isPreorderItem = 
+  const isPreorderItem =
     productName.toLowerCase().includes('pre-order') ||
     productName.toLowerCase().includes('preorder') ||
     productName.toLowerCase().includes('gingerbread') ||
     productName.toLowerCase().includes('coming soon') ||
     metadata.customAttributes?.preorder_enabled === 'true' ||
     metadata.customAttributes?.has_preorder_modifier;
-  
+
   // Return availability configuration
   return {
     isAvailable: true,
@@ -389,6 +405,7 @@ private determineAvailability(
 ```
 
 #### Sync Behavior
+
 - Products with "pre-order" in the name are automatically marked as pre-order items
 - Manual overrides take precedence over automatic detection
 - Sync respects existing manual configurations
@@ -400,6 +417,7 @@ private determineAvailability(
 ### 1. Pre-Order Validation Rules
 
 Currently, the system applies minimal validation:
+
 - Pre-order items can be added to cart like regular items
 - No quantity restrictions specific to pre-orders
 - No date-based availability checking (dates are informational)
@@ -420,6 +438,7 @@ if (!orderValidation.isValid) {
 ```
 
 **Key Points:**
+
 - Pre-order items count toward minimum order requirements
 - No separate processing for pre-order vs. regular items
 - Same payment processing workflow
@@ -465,11 +484,13 @@ Manual Override Section
 ### 3. Visual Design Patterns
 
 #### Customer Interface
+
 - **Confirmation Dialogs**: Clear, informative pre-order confirmations
 - **Date Formatting**: Human-readable expected availability dates
 - **Alert Messages**: Distinct messaging for pre-order vs. regular items
 
-#### Admin Interface  
+#### Admin Interface
+
 - **Color-Coded Badges**: Immediate visual status identification
 - **Form Layout**: Logical grouping of availability controls
 - **Responsive Design**: Works across desktop and mobile admin interfaces
@@ -560,7 +581,7 @@ Manual Override Section
 ### Security Considerations
 
 - **Admin Controls**: Pre-order configuration restricted to admin users
-- **Input Validation**: All form inputs properly validated and sanitized  
+- **Input Validation**: All form inputs properly validated and sanitized
 - **SQL Injection**: Prisma ORM provides protection against SQL injection
 
 ### Scalability Notes

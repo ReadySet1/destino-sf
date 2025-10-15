@@ -17,7 +17,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Archive, Package, Calendar, CreditCard, ShoppingBag, User } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Eye,
+  Archive,
+  Package,
+  Calendar,
+  CreditCard,
+  ShoppingBag,
+  User,
+} from 'lucide-react';
 
 // Define our unified order type (same as in page.tsx)
 interface UnifiedOrder {
@@ -69,7 +78,10 @@ function getStatusColor(status: OrderStatus | CateringStatus) {
 }
 
 // Helper function to get the display text for payment status
-function getPaymentStatusDisplay(paymentStatus: PaymentStatus, paymentMethod: string | null): string {
+function getPaymentStatusDisplay(
+  paymentStatus: PaymentStatus,
+  paymentMethod: string | null
+): string {
   // If payment method is CASH and status is PENDING, show CASH
   if (paymentMethod?.toUpperCase() === 'CASH' && paymentStatus === 'PENDING') {
     return 'CASH';
@@ -80,7 +92,7 @@ function getPaymentStatusDisplay(paymentStatus: PaymentStatus, paymentMethod: st
 function getPaymentStatusColor(paymentStatus: PaymentStatus, paymentMethod: string | null) {
   // Get the display status first
   const displayStatus = getPaymentStatusDisplay(paymentStatus, paymentMethod);
-  
+
   switch (displayStatus) {
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
@@ -99,13 +111,12 @@ function getPaymentStatusColor(paymentStatus: PaymentStatus, paymentMethod: stri
   }
 }
 
-export default function ResponsiveOrdersTable({ 
-  orders, 
-  onSort, 
-  sortKey, 
-  sortDirection = 'asc' 
+export default function ResponsiveOrdersTable({
+  orders,
+  onSort,
+  sortKey,
+  sortDirection = 'asc',
 }: ResponsiveOrdersTableProps) {
-
   const [archivingOrderId, setArchivingOrderId] = useState<string | null>(null);
   const [archiveReason, setArchiveReason] = useState('');
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -124,9 +135,10 @@ export default function ResponsiveOrdersTable({
       const order = orders.find(o => o.id === archivingOrderId);
       if (!order) throw new Error('Order not found');
 
-      const result = order.type === 'catering' 
-        ? await archiveCateringOrder(archivingOrderId, archiveReason)
-        : await archiveOrder(archivingOrderId, archiveReason);
+      const result =
+        order.type === 'catering'
+          ? await archiveCateringOrder(archivingOrderId, archiveReason)
+          : await archiveOrder(archivingOrderId, archiveReason);
 
       if (result.success) {
         toast.success('Order Archived', {
@@ -164,7 +176,7 @@ export default function ResponsiveOrdersTable({
             View Details
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={() => handleArchiveOrder(order.id, order.type)}
           className="text-red-600"
         >
@@ -179,7 +191,7 @@ export default function ResponsiveOrdersTable({
     createTableColumn(
       'id',
       'Order ID',
-      (order) => (
+      order => (
         <div className="flex items-center space-x-3">
           <div className="flex-shrink-0">
             <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -190,9 +202,7 @@ export default function ResponsiveOrdersTable({
             <p className="text-sm font-mono font-semibold text-gray-900">
               {order.id.slice(-8).toUpperCase()}
             </p>
-            <p className="text-sm text-gray-600 capitalize">
-              {order.type} order
-            </p>
+            <p className="text-sm text-gray-600 capitalize">{order.type} order</p>
           </div>
         </div>
       ),
@@ -206,7 +216,7 @@ export default function ResponsiveOrdersTable({
     createTableColumn(
       'customerName',
       'Customer',
-      (order) => (
+      order => (
         <div className="flex items-center space-x-3">
           <div className="flex-shrink-0">
             <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
@@ -230,8 +240,10 @@ export default function ResponsiveOrdersTable({
     createTableColumn(
       'status',
       'Status',
-      (order) => (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+      order => (
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}
+        >
           <Package className="h-3 w-3" />
           {order.status}
         </span>
@@ -246,11 +258,9 @@ export default function ResponsiveOrdersTable({
     createTableColumn(
       'total',
       'Total',
-      (order) => (
+      order => (
         <div className="text-sm">
-          <span className="font-semibold text-gray-900 text-lg">
-            {formatCurrency(order.total)}
-          </span>
+          <span className="font-semibold text-gray-900 text-lg">{formatCurrency(order.total)}</span>
           <div className="text-xs text-gray-600 mt-1">
             {order.itemCount} item{order.itemCount !== 1 ? 's' : ''}
           </div>
@@ -266,7 +276,7 @@ export default function ResponsiveOrdersTable({
     createTableColumn(
       'date',
       'Date',
-      (order) => (
+      order => (
         <div className="flex items-center text-sm text-gray-500">
           <Calendar className="h-4 w-4 mr-3 text-gray-400" />
           <div className="space-y-1">
@@ -274,15 +284,15 @@ export default function ResponsiveOrdersTable({
               {order.type === 'catering' && order.eventDate
                 ? formatDistance(new Date(order.eventDate), new Date(), { addSuffix: true })
                 : order.pickupTime
-                ? formatDistance(new Date(order.pickupTime), new Date(), { addSuffix: true })
-                : formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })}
+                  ? formatDistance(new Date(order.pickupTime), new Date(), { addSuffix: true })
+                  : formatDistance(new Date(order.createdAt), new Date(), { addSuffix: true })}
             </div>
             <div className="text-xs text-gray-500">
               {order.type === 'catering' && order.eventDate
                 ? new Date(order.eventDate).toLocaleDateString()
                 : order.pickupTime
-                ? new Date(order.pickupTime).toLocaleDateString()
-                : new Date(order.createdAt).toLocaleDateString()}
+                  ? new Date(order.pickupTime).toLocaleDateString()
+                  : new Date(order.createdAt).toLocaleDateString()}
             </div>
           </div>
         </div>
@@ -297,8 +307,10 @@ export default function ResponsiveOrdersTable({
     createTableColumn(
       'paymentStatus',
       'Payment',
-      (order) => (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus, order.paymentMethod)}`}>
+      order => (
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus, order.paymentMethod)}`}
+        >
           <CreditCard className="h-3 w-3" />
           {getPaymentStatusDisplay(order.paymentStatus, order.paymentMethod)}
         </span>
@@ -311,18 +323,13 @@ export default function ResponsiveOrdersTable({
       }
     ),
 
-    createTableColumn(
-      'actions',
-      'Actions',
-      (order) => renderActions(order),
-      {
-        sortable: false,
-        mobileVisible: true,
-        tabletVisible: true,
-        desktopVisible: true,
-        className: 'text-right',
-      }
-    ),
+    createTableColumn('actions', 'Actions', order => renderActions(order), {
+      sortable: false,
+      mobileVisible: true,
+      tabletVisible: true,
+      desktopVisible: true,
+      className: 'text-right',
+    }),
   ];
 
   return (
@@ -347,12 +354,10 @@ export default function ResponsiveOrdersTable({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-medium mb-4">Archive Order</h3>
-            <p className="text-gray-600 mb-4">
-              Please provide a reason for archiving this order:
-            </p>
+            <p className="text-gray-600 mb-4">Please provide a reason for archiving this order:</p>
             <textarea
               value={archiveReason}
-              onChange={(e) => setArchiveReason(e.target.value)}
+              onChange={e => setArchiveReason(e.target.value)}
               placeholder="Reason for archiving..."
               className="w-full p-3 border border-gray-300 rounded-md mb-4 resize-none"
               rows={3}
@@ -382,4 +387,4 @@ export default function ResponsiveOrdersTable({
       )}
     </>
   );
-} 
+}

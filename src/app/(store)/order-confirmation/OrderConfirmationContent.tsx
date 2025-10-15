@@ -39,7 +39,7 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
     if (status === 'success') {
       // Clear cart state
       clearCart();
-      
+
       // Clear regular checkout localStorage data
       if (typeof window !== 'undefined') {
         try {
@@ -113,10 +113,11 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
               Thank you for your order. We&apos;ll send you updates about your order status.
             </p>
           </div>
-          
+
           <div className="rounded-lg border bg-yellow-50 p-4 mb-6">
             <p className="text-sm text-yellow-800">
-              Could not retrieve order details at this time. Please check your email for order confirmation.
+              Could not retrieve order details at this time. Please check your email for order
+              confirmation.
             </p>
           </div>
 
@@ -150,7 +151,7 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
         pickupTime: orderData.pickupTime ? orderData.pickupTime.toString() : undefined,
         paymentStatus: orderData.paymentStatus,
         // Pricing breakdown
-        subtotal: orderData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        subtotal: orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0),
         taxAmount: orderData.taxAmount || 0,
         deliveryFee: orderData.deliveryFee || 0,
         serviceFee: orderData.serviceFee || 0,
@@ -168,7 +169,7 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
           // Determine fulfillment type based on the actual fulfillmentType field from the database
           // The database stores: 'pickup', 'local_delivery', 'nationwide_shipping'
           const fulfillmentType = orderData.fulfillmentType?.toLowerCase();
-          
+
           // Parse address information from notes field if available
           let addressInfo = null;
           try {
@@ -179,42 +180,48 @@ export default function OrderConfirmationContent({ status, orderData }: Props) {
           } catch (error) {
             console.warn('Failed to parse order notes for address information:', error);
           }
-          
+
           if (fulfillmentType === 'nationwide_shipping') {
             return {
               type: 'shipment' as const,
               trackingNumber: orderData.trackingNumber || undefined,
               shippingCarrier: orderData.shippingCarrier || undefined,
-              shipmentDetails: addressInfo ? {
-                recipient: {
-                  displayName: addressInfo.recipientName || addressInfo.name || undefined,
-                  address: {
-                    addressLine1: addressInfo.street || undefined,
-                    addressLine2: addressInfo.street2 || addressInfo.apartmentNumber || undefined,
-                    locality: addressInfo.city || undefined,
-                    administrativeDistrictLevel1: addressInfo.state || undefined,
-                    postalCode: addressInfo.postalCode || addressInfo.zipCode || undefined,
-                  },
-                },
-              } : undefined,
+              shipmentDetails: addressInfo
+                ? {
+                    recipient: {
+                      displayName: addressInfo.recipientName || addressInfo.name || undefined,
+                      address: {
+                        addressLine1: addressInfo.street || undefined,
+                        addressLine2:
+                          addressInfo.street2 || addressInfo.apartmentNumber || undefined,
+                        locality: addressInfo.city || undefined,
+                        administrativeDistrictLevel1: addressInfo.state || undefined,
+                        postalCode: addressInfo.postalCode || addressInfo.zipCode || undefined,
+                      },
+                    },
+                  }
+                : undefined,
             };
           } else if (fulfillmentType === 'local_delivery') {
             return {
               type: 'delivery' as const,
               trackingNumber: orderData.trackingNumber || undefined,
               shippingCarrier: orderData.shippingCarrier || undefined,
-              deliveryDetails: addressInfo ? {
-                recipient: {
-                  displayName: addressInfo.recipientName || addressInfo.name || undefined,
-                  address: {
-                    addressLine1: addressInfo.street || undefined,
-                    addressLine2: addressInfo.street2 || addressInfo.apartmentNumber || undefined,
-                    locality: addressInfo.city || undefined,
-                    administrativeDistrictLevel1: addressInfo.state || undefined,
-                    postalCode: addressInfo.postalCode || addressInfo.zipCode || undefined,
-                  },
-                },
-              } : undefined,
+              deliveryDetails: addressInfo
+                ? {
+                    recipient: {
+                      displayName: addressInfo.recipientName || addressInfo.name || undefined,
+                      address: {
+                        addressLine1: addressInfo.street || undefined,
+                        addressLine2:
+                          addressInfo.street2 || addressInfo.apartmentNumber || undefined,
+                        locality: addressInfo.city || undefined,
+                        administrativeDistrictLevel1: addressInfo.state || undefined,
+                        postalCode: addressInfo.postalCode || addressInfo.zipCode || undefined,
+                      },
+                    },
+                  }
+                : undefined,
             };
           } else if (fulfillmentType === 'pickup') {
             return {

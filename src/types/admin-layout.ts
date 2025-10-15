@@ -377,4 +377,4 @@ export const DEFAULT_MODAL_CONFIG: ModalConfig = {
   },
   mobileFullScreen: true,
   backdropBlur: true,
-}; 
+};

@@ -73,7 +73,7 @@ export function CateringOrderForm({
   defaultValues,
   onSubmit,
   isSubmitting,
-  buttonText = "Complete Order",
+  buttonText = 'Complete Order',
 }: CateringOrderFormProps) {
   // Get current date for minimum date selection (5 days advance)
   const today = new Date();
@@ -91,7 +91,9 @@ export function CateringOrderForm({
             name: parsed.name || defaultValues?.name || '',
             email: parsed.email || defaultValues?.email || '',
             phone: parsed.phone || defaultValues?.phone || '',
-            eventDate: parsed.eventDate ? new Date(parsed.eventDate) : (defaultValues?.eventDate || addDays(new Date(), 5)),
+            eventDate: parsed.eventDate
+              ? new Date(parsed.eventDate)
+              : defaultValues?.eventDate || addDays(new Date(), 5),
             specialRequests: parsed.specialRequests || defaultValues?.specialRequests || '',
           };
         } catch (error) {
@@ -99,7 +101,7 @@ export function CateringOrderForm({
         }
       }
     }
-    
+
     // Fallback to defaultValues
     return {
       name: defaultValues?.name || '',
@@ -156,7 +158,7 @@ export function CateringOrderForm({
       try {
         const existingData = localStorage.getItem('cateringCustomerInfo');
         let currentData = {};
-        
+
         if (existingData) {
           try {
             currentData = JSON.parse(existingData);
@@ -164,13 +166,13 @@ export function CateringOrderForm({
             console.error('Error parsing existing customer info:', error);
           }
         }
-        
+
         const updatedData = {
           ...currentData,
           ...values,
           ...(values.eventDate && { eventDate: values.eventDate.toISOString() }),
         };
-        
+
         localStorage.setItem('cateringCustomerInfo', JSON.stringify(updatedData));
       } catch (error) {
         console.error('Error saving form values to localStorage:', error);
@@ -192,7 +194,7 @@ export function CateringOrderForm({
       if (fieldName && value[fieldName as keyof FormValues]) {
         saveFormValuesToLocalStorage(value);
       }
-      
+
       // Only save to backend when all contact fields are filled and not already saved
       if (!contactSaved && fieldName && ['name', 'email', 'phone'].includes(fieldName)) {
         const { name, email, phone } = value;
@@ -213,11 +215,14 @@ export function CateringOrderForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((values) => {
-        console.log('🔍 [CATERING-FORM-DEBUG] Form handleSubmit called with values:', values);
-        console.log('🔍 [CATERING-FORM-DEBUG] Phone value:', values.phone);
-        onSubmit(values);
-      })} className="space-y-6">
+      <form
+        onSubmit={form.handleSubmit(values => {
+          console.log('🔍 [CATERING-FORM-DEBUG] Form handleSubmit called with values:', values);
+          console.log('🔍 [CATERING-FORM-DEBUG] Phone value:', values.phone);
+          onSubmit(values);
+        })}
+        className="space-y-6"
+      >
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-4">

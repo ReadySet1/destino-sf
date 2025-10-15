@@ -2,10 +2,10 @@
 
 /**
  * Cleanup Duplicate Platters Script
- * 
+ *
  * This script merges existing duplicate platter items ONLY in "CATERING- SHARE PLATTERS" category.
  * Converts separate "Product - Small" and "Product - Large" items into single products with Square variations.
- * 
+ *
  * ⚠️  IMPORTANT: Only affects SHARE PLATTERS category - all other categories remain as individual products.
  */
 
@@ -39,22 +39,24 @@ async function cleanupDuplicatePlatters() {
 
   try {
     // Find all catering share platter products (including inactive ones)
-    const sharePlatters = await prisma.product.findMany({
+    const sharePlatters = (await prisma.product.findMany({
       where: {
         category: {
-          name: 'CATERING- SHARE PLATTERS'
-        }
+          name: 'CATERING- SHARE PLATTERS',
+        },
         // Remove active: true filter to include inactive products
       },
-      include: { 
+      include: {
         variants: true,
-        category: true
-      }
-    }) as ProductWithCategory[];
+        category: true,
+      },
+    })) as ProductWithCategory[];
 
     const activeCount = sharePlatters.filter(p => p.active).length;
     const inactiveCount = sharePlatters.length - activeCount;
-    console.log(`📊 Found ${sharePlatters.length} share platter products (${activeCount} active, ${inactiveCount} inactive)`);
+    console.log(
+      `📊 Found ${sharePlatters.length} share platter products (${activeCount} active, ${inactiveCount} inactive)`
+    );
 
     if (sharePlatters.length === 0) {
       console.log('✅ No share platter products found. Nothing to cleanup.');
@@ -63,11 +65,11 @@ async function cleanupDuplicatePlatters() {
 
     // Group by base name to identify duplicates
     const grouped = new Map<string, ProductWithCategory[]>();
-    
+
     sharePlatters.forEach(product => {
       const { baseName } = VariationGrouper.detectSizePattern(product.name);
       const normalizedBaseName = VariationGrouper.normalizeProductName(baseName);
-      
+
       if (!grouped.has(normalizedBaseName)) {
         grouped.set(normalizedBaseName, []);
       }
@@ -85,16 +87,16 @@ async function cleanupDuplicatePlatters() {
     for (const [baseName, products] of grouped) {
       if (products.length > 1) {
         console.log(`\n🔄 Processing "${baseName}" (${products.length} duplicates)`);
-        
+
         // Sort products by size preference (Small first, then Large)
         const sortedProducts = products.sort((a, b) => {
           const { size: sizeA } = VariationGrouper.detectSizePattern(a.name);
           const { size: sizeB } = VariationGrouper.detectSizePattern(b.name);
-          
-          const sizeOrder = { 'small': 1, 'regular': 2, 'large': 3 };
+
+          const sizeOrder = { small: 1, regular: 2, large: 3 };
           const orderA = sizeOrder[sizeA?.toLowerCase() as keyof typeof sizeOrder] || 2;
           const orderB = sizeOrder[sizeB?.toLowerCase() as keyof typeof sizeOrder] || 2;
-          
+
           return orderA - orderB;
         });
 
@@ -109,7 +111,7 @@ async function cleanupDuplicatePlatters() {
 
         // Check if base product was inactive
         const wasInactive = !baseProduct.active;
-        
+
         // Update base product to remove size suffix from name and ensure it's active
         await prisma.product.update({
           where: { id: baseProduct.id },
@@ -120,8 +122,8 @@ async function cleanupDuplicatePlatters() {
             // Use best available image
             images: sortedProducts.find(p => p.images.length > 0)?.images || baseProduct.images,
             // Ensure base product is active
-            active: true
-          }
+            active: true,
+          },
         });
 
         if (wasInactive) {
@@ -134,16 +136,16 @@ async function cleanupDuplicatePlatters() {
         // Create variation for the base product if it doesn't have one
         const { size: baseSize } = VariationGrouper.detectSizePattern(baseProduct.name);
         const baseVariationName = VariationGrouper.generateVariantName(
-          cleanBaseName, 
-          baseSize || 'regular', 
+          cleanBaseName,
+          baseSize || 'regular',
           Number(baseProduct.price)
         );
 
         const existingBaseVariant = await prisma.variant.findFirst({
           where: {
             productId: baseProduct.id,
-            squareVariantId: baseProduct.squareId
-          }
+            squareVariantId: baseProduct.squareId,
+          },
         });
 
         if (!existingBaseVariant) {
@@ -152,8 +154,8 @@ async function cleanupDuplicatePlatters() {
               productId: baseProduct.id,
               squareVariantId: baseProduct.squareId || `cleanup-base-${baseProduct.id}`,
               name: baseVariationName,
-              price: baseProduct.price
-            }
+              price: baseProduct.price,
+            },
           });
           variationsCreated++;
           console.log(`  ➕ Created base variation: ${baseVariationName}`);
@@ -172,8 +174,8 @@ async function cleanupDuplicatePlatters() {
           const existingVariant = await prisma.variant.findFirst({
             where: {
               productId: baseProduct.id,
-              squareVariantId: duplicate.squareId
-            }
+              squareVariantId: duplicate.squareId,
+            },
           });
 
           if (!existingVariant) {
@@ -182,8 +184,8 @@ async function cleanupDuplicatePlatters() {
                 productId: baseProduct.id,
                 squareVariantId: duplicate.squareId || `cleanup-${duplicate.id}`,
                 name: variantName,
-                price: duplicate.price
-              }
+                price: duplicate.price,
+              },
             });
             variationsCreated++;
             console.log(`  ➕ Created variation: ${variantName}`);
@@ -194,7 +196,7 @@ async function cleanupDuplicatePlatters() {
           // Deactivate duplicate product
           await prisma.product.update({
             where: { id: duplicate.id },
-            data: { active: false }
+            data: { active: false },
           });
           productsDeactivated++;
           console.log(`  🗑️  Deactivated duplicate: "${duplicate.name}"`);
@@ -213,7 +215,6 @@ async function cleanupDuplicatePlatters() {
     console.log(`  🔄 Products activated: ${productsActivated}`);
     console.log(`  🗑️  Products deactivated: ${productsDeactivated}`);
     console.log('  ✅ Cleanup completed successfully!');
-
   } catch (error) {
     console.error('❌ Error during cleanup:', error);
     throw error;
@@ -267,7 +268,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log('\n🎉 All done!');
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('\n💥 Script failed:', error);
       process.exit(1);
     });

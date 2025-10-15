@@ -24,10 +24,10 @@ import {
   formatEmailForSquare,
   formatCustomerDataForSquarePaymentLink,
 } from '@/lib/square/formatting';
-import { 
-  createCheckoutLink, 
-  formatCateringItemsForSquare, 
-  addDeliveryFeeLineItem 
+import {
+  createCheckoutLink,
+  formatCateringItemsForSquare,
+  addDeliveryFeeLineItem,
 } from '@/lib/square/checkout-links';
 import { sendCateringOrderNotification } from '@/lib/email';
 import { isStoreOpen } from '@/lib/store-settings';
@@ -51,27 +51,33 @@ export async function getCateringPackages(): Promise<CateringPackage[]> {
 
   return safeBuildTimeOperation(
     async () => {
-      return withRetry(async () => {
-        console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
+      return withRetry(
+        async () => {
+          console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
 
-        const packages = await db.cateringPackage.findMany({
-          where: {
-            isActive: true,
-          },
-          orderBy: {
-            featuredOrder: 'asc',
-          },
-        });
+          const packages = await db.cateringPackage.findMany({
+            where: {
+              isActive: true,
+            },
+            orderBy: {
+              featuredOrder: 'asc',
+            },
+          });
 
-        console.log(`✅ [CATERING] Successfully fetched ${packages?.length || 0} catering packages`);
+          console.log(
+            `✅ [CATERING] Successfully fetched ${packages?.length || 0} catering packages`
+          );
 
-        return (
-          (packages?.map((pkg: any) => ({
-            ...pkg,
-            pricePerPerson: Number(pkg.pricePerPerson),
-          })) as CateringPackage[]) || []
-        );
-      }, 3, 'getCateringPackages');
+          return (
+            (packages?.map((pkg: any) => ({
+              ...pkg,
+              pricePerPerson: Number(pkg.pricePerPerson),
+            })) as CateringPackage[]) || []
+          );
+        },
+        3,
+        'getCateringPackages'
+      );
     },
     [], // Fallback to empty array
     'getCateringPackages'
@@ -90,49 +96,50 @@ export async function getCateringItems(): Promise<any[]> {
 
   return safeBuildTimeOperation(
     async () => {
-      return withRetry(async () => {
-        console.log('🔧 [CATERING] Fetching catering items via Prisma...');
+      return withRetry(
+        async () => {
+          console.log('🔧 [CATERING] Fetching catering items via Prisma...');
 
-        const items = await db.product.findMany({
-          where: {
-            active: true,
-            category: {
-              name: {
-                contains: 'CATERING',
-                mode: 'insensitive'
-              }
-            }
-          },
-          include: {
-            category: true,
-            variants: {
-              select: {
-                id: true,
-                name: true,
-                price: true,
-              }
-            }
-          },
-          orderBy: [
-            { ordinal: 'asc' },
-            { name: 'asc' }
-          ]
-        });
+          const items = await db.product.findMany({
+            where: {
+              active: true,
+              category: {
+                name: {
+                  contains: 'CATERING',
+                  mode: 'insensitive',
+                },
+              },
+            },
+            include: {
+              category: true,
+              variants: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                },
+              },
+            },
+            orderBy: [{ ordinal: 'asc' }, { name: 'asc' }],
+          });
 
-        console.log(`✅ [CATERING] Successfully fetched ${items?.length || 0} catering items`);
+          console.log(`✅ [CATERING] Successfully fetched ${items?.length || 0} catering items`);
 
-        return items.map(item => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          price: Number(item.price),
-          category: item.category.name,
-          imageUrl: item.images?.[0] || null,
-          squareId: item.squareId,
-          variants: item.variants,
-          active: item.active,
-        }));
-      }, 3, 'getCateringItems');
+          return items.map(item => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: Number(item.price),
+            category: item.category.name,
+            imageUrl: item.images?.[0] || null,
+            squareId: item.squareId,
+            variants: item.variants,
+            active: item.active,
+          }));
+        },
+        3,
+        'getCateringItems'
+      );
     },
     [], // Fallback to empty array
     'getCateringItems'
@@ -310,10 +317,10 @@ export async function submitCateringInquiry(data: {
   try {
     // For now, just log the inquiry since we don't have a dedicated table
     console.log('Catering inquiry received:', data);
-    
+
     // TODO: Implement proper inquiry storage when needed
     // Could create a new table or use the existing contact submissions
-    
+
     return { success: true };
   } catch (error) {
     console.error('Error submitting catering inquiry:', error);
@@ -367,67 +374,82 @@ export async function saveContactInfo(data: {
 
     // Check for duplicate orders using idempotency key or email+date combination
     if (data.idempotencyKey) {
-    const existingOrderByKey = await withRetry(async () => {
-      return await db.cateringOrder.findFirst({
-        where: {
-          OR: [
-            { 
-              metadata: {
-                path: ['idempotencyKey'],
-                equals: data.idempotencyKey
-              }
+      const existingOrderByKey = await withRetry(
+        async () => {
+          return await db.cateringOrder.findFirst({
+            where: {
+              OR: [
+                {
+                  metadata: {
+                    path: ['idempotencyKey'],
+                    equals: data.idempotencyKey,
+                  },
+                },
+                // Also check by squareOrderId if provided
+                ...(data.squareOrderId ? [{ squareOrderId: data.squareOrderId }] : []),
+              ],
             },
-            // Also check by squareOrderId if provided
-            ...(data.squareOrderId ? [{ squareOrderId: data.squareOrderId }] : [])
-          ]
+            select: { id: true, totalAmount: true, paymentStatus: true },
+          });
         },
-        select: { id: true, totalAmount: true, paymentStatus: true }
-      });
-    }, 3, 'checkDuplicateByIdempotencyKey');
-      
+        3,
+        'checkDuplicateByIdempotencyKey'
+      );
+
       if (existingOrderByKey) {
-        console.log(`🔧 [CATERING] Duplicate order detected with idempotency key: ${data.idempotencyKey}`);
+        console.log(
+          `🔧 [CATERING] Duplicate order detected with idempotency key: ${data.idempotencyKey}`
+        );
         return {
           success: true,
           orderId: existingOrderByKey.id,
-          error: 'Order already exists'
+          error: 'Order already exists',
         };
       }
     }
 
     // Additional check for duplicate orders by email and event date (within 1 hour window)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const duplicateCheck = await withRetry(async () => {
-      return await db.cateringOrder.findFirst({
-        where: {
-          email: data.email,
-          eventDate: new Date(data.eventDate),
-          totalAmount: data.totalAmount,
-          createdAt: {
-            gte: oneHourAgo
-          }
-        },
-        select: { id: true, totalAmount: true }
-      });
-    }, 3, 'checkDuplicateByEmailAndDate');
-    
+    const duplicateCheck = await withRetry(
+      async () => {
+        return await db.cateringOrder.findFirst({
+          where: {
+            email: data.email,
+            eventDate: new Date(data.eventDate),
+            totalAmount: data.totalAmount,
+            createdAt: {
+              gte: oneHourAgo,
+            },
+          },
+          select: { id: true, totalAmount: true },
+        });
+      },
+      3,
+      'checkDuplicateByEmailAndDate'
+    );
+
     if (duplicateCheck) {
-      console.log(`🔧 [CATERING] Potential duplicate order detected for ${data.email} on ${data.eventDate}`);
+      console.log(
+        `🔧 [CATERING] Potential duplicate order detected for ${data.email} on ${data.eventDate}`
+      );
       return {
         success: true,
         orderId: duplicateCheck.id,
-        error: 'Similar order already exists'
+        error: 'Similar order already exists',
       };
     }
 
     // Create formatted delivery address string for backward compatibility
-    const deliveryAddressString = data.deliveryAddress 
+    const deliveryAddressString = data.deliveryAddress
       ? `${data.deliveryAddress.street}${data.deliveryAddress.street2 ? `, ${data.deliveryAddress.street2}` : ''}, ${data.deliveryAddress.city}, ${data.deliveryAddress.state} ${data.deliveryAddress.postalCode}`
       : null;
 
     // Log tempOrderId debug info
-    console.log(`[CATERING ORDER DEBUG] tempOrderId: ${data.tempOrderId}, type: ${typeof data.tempOrderId}`);
-    const shouldUseTempOrderId = data.tempOrderId && typeof data.tempOrderId === 'string' && data.tempOrderId.trim() !== '';
+    console.log(
+      `[CATERING ORDER DEBUG] tempOrderId: ${data.tempOrderId}, type: ${typeof data.tempOrderId}`
+    );
+    const shouldUseTempOrderId =
+      data.tempOrderId && typeof data.tempOrderId === 'string' && data.tempOrderId.trim() !== '';
     console.log(`[CATERING ORDER DEBUG] Will use tempOrderId: ${shouldUseTempOrderId}`);
 
     // Build the data object explicitly to avoid conditional spread issues
@@ -441,7 +463,7 @@ export async function saveContactInfo(data: {
       status: CateringStatus.PENDING,
       notes: data.specialRequests,
       deliveryAddress: deliveryAddressString, // Keep the string format for backward compatibility
-      deliveryAddressJson: data.deliveryAddress ? data.deliveryAddress as any : null, // Store structured JSON data
+      deliveryAddressJson: data.deliveryAddress ? (data.deliveryAddress as any) : null, // Store structured JSON data
       deliveryZone: data.deliveryZone,
       deliveryFee: data.deliveryFee,
       paymentMethod: data.paymentMethod,
@@ -462,8 +484,8 @@ export async function saveContactInfo(data: {
 
     // Connect customer using the relation if customerId is provided
     if (data.customerId) {
-      orderData.customer = { 
-        connect: { id: data.customerId } 
+      orderData.customer = {
+        connect: { id: data.customerId },
       };
     }
 
@@ -496,19 +518,27 @@ export async function saveContactInfo(data: {
       };
     }
 
-    console.log(`[CATERING ORDER DEBUG] Final order data keys: ${Object.keys(orderData).join(', ')}`);
+    console.log(
+      `[CATERING ORDER DEBUG] Final order data keys: ${Object.keys(orderData).join(', ')}`
+    );
     console.log(`[CATERING ORDER DEBUG] ID field: ${orderData.id}`);
     console.log(`[CATERING ORDER DEBUG] Customer field present: ${'customer' in orderData}`);
     console.log(`[CATERING ORDER DEBUG] Items field present: ${'items' in orderData}`);
-    console.log(`[CATERING ORDER DEBUG] Items count: ${orderData.items ? orderData.items.create.length : 0}`);
+    console.log(
+      `[CATERING ORDER DEBUG] Items count: ${orderData.items ? orderData.items.create.length : 0}`
+    );
     console.log(`[CATERING ORDER DEBUG] Metadata: ${JSON.stringify(orderData.metadata)}`);
 
     // Create a new catering order with items
-    const newOrder = await withRetry(async () => {
-      return await db.cateringOrder.create({
-        data: orderData,
-      });
-    }, 3, 'createCateringOrder');
+    const newOrder = await withRetry(
+      async () => {
+        return await db.cateringOrder.create({
+          data: orderData,
+        });
+      },
+      3,
+      'createCateringOrder'
+    );
 
     console.log(`✅ [CATERING ORDER DEBUG] Order created successfully with ID: ${newOrder.id}`);
 
@@ -566,11 +596,11 @@ export async function createCateringOrderAndProcessPayment(data: {
   try {
     console.log('🔍 [CATERING-ACTION-DEBUG] Received order data:', {
       name: data.name,
-      email: data.email, 
+      email: data.email,
       phone: data.phone,
-      paymentMethod: data.paymentMethod
+      paymentMethod: data.paymentMethod,
     });
-    
+
     // Check if store is open
     const storeOpen = await isStoreOpen();
     if (!storeOpen) {
@@ -582,22 +612,24 @@ export async function createCateringOrderAndProcessPayment(data: {
 
     // Generate idempotency key if not provided (based on user, items hash, and timestamp)
     const idempotencyKey = data.idempotencyKey || generateIdempotencyKey(data);
-    
+
     // Check for duplicate orders using idempotency key
     console.log(`🔐 [IDEMPOTENCY] Starting duplicate detection for catering order`);
     console.log(`🔐 [IDEMPOTENCY] Key: ${idempotencyKey.substring(0, 20)}...`);
     console.log(`🔐 [IDEMPOTENCY] Email: ${data.email}, Amount: $${data.totalAmount}`);
-    
+
     const existingOrder = await checkForDuplicateOrder(data, idempotencyKey);
     if (existingOrder) {
       console.log(`🚫 [IDEMPOTENCY] DUPLICATE ORDER DETECTED!`);
       console.log(`🚫 [IDEMPOTENCY] Existing ID: ${existingOrder.id}`);
       console.log(`🚫 [IDEMPOTENCY] Detection source: ${existingOrder.source}`);
       console.log(`🚫 [IDEMPOTENCY] Has Square checkout: ${!!existingOrder.squareCheckoutId}`);
-      
+
       // Log duplicate attempt for monitoring
-      console.warn(`📊 [METRICS] Duplicate catering order prevented: ${existingOrder.source} detection`);
-      
+      console.warn(
+        `📊 [METRICS] Duplicate catering order prevented: ${existingOrder.source} detection`
+      );
+
       // For duplicate orders, don't return a checkoutUrl - just redirect to confirmation
       // The client will handle redirecting to the confirmation page directly
       return {
@@ -607,7 +639,7 @@ export async function createCateringOrderAndProcessPayment(data: {
         checkoutUrl: undefined,
       };
     }
-    
+
     console.log(`✅ [IDEMPOTENCY] No duplicates detected - proceeding with order creation`);
     console.log(`📊 [METRICS] New catering order creation initiated for ${data.email}`);
 
@@ -624,19 +656,16 @@ export async function createCateringOrderAndProcessPayment(data: {
         );
 
         // Add delivery fee if applicable
-        const lineItemsWithDelivery = addDeliveryFeeLineItem(
-          formattedItems,
-          data.deliveryFee || 0
-        );
+        const lineItemsWithDelivery = addDeliveryFeeLineItem(formattedItems, data.deliveryFee || 0);
 
         // --- Calculate taxes and convenience fees for Square ---
         // Calculate subtotal from items
         const subtotal = data.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
         const deliveryFee = data.deliveryFee || 0;
-        
+
         // Get tax rate from store settings
         const taxRateDecimal = await getTaxRate();
-        
+
         // Calculate tax for catering items (catering items are always taxable)
         const itemsForTaxCalculation = (data.items || []).map(item => ({
           product: {
@@ -646,14 +675,15 @@ export async function createCateringOrderAndProcessPayment(data: {
           price: item.pricePerUnit,
           quantity: item.quantity,
         }));
-        
+
         const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRateDecimal);
         const taxAmount = new Decimal(taxCalculation.taxAmount).toDecimalPlaces(2);
-        
+
         // Add delivery fee to taxable amount if present (delivery fees are taxable)
-        const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
+        const deliveryTax =
+          deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
         const totalTaxAmount = taxAmount.plus(deliveryTax);
-        
+
         // Calculate convenience fee (3.5% on subtotal + delivery fee + tax)
         const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
         const serviceFeeAmount = totalBeforeServiceFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
@@ -664,36 +694,46 @@ export async function createCateringOrderAndProcessPayment(data: {
         console.log(`[CATERING] Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)}`);
 
         // Prepare Square taxes and service charges
-        const squareTaxes = totalTaxAmount.greaterThan(0) ? [{
-          name: 'Sales Tax',
-          percentage: new Decimal(taxRateDecimal).times(100).toFixed(2), // Convert to percentage
-          scope: 'ORDER', // Apply to order subtotal (including delivery fee)
-        }] : [];
+        const squareTaxes = totalTaxAmount.greaterThan(0)
+          ? [
+              {
+                name: 'Sales Tax',
+                percentage: new Decimal(taxRateDecimal).times(100).toFixed(2), // Convert to percentage
+                scope: 'ORDER', // Apply to order subtotal (including delivery fee)
+              },
+            ]
+          : [];
 
-        const squareServiceCharges = serviceFeeAmount.greaterThan(0) ? [{
-          name: 'Convenience Fee',
-          amount_money: { 
-            amount: Math.round(serviceFeeAmount.toNumber() * 100), 
-            currency: 'USD' 
-          },
-          calculation_phase: 'TOTAL_PHASE', // Applied after tax
-          taxable: false,
-        }] : [];
+        const squareServiceCharges = serviceFeeAmount.greaterThan(0)
+          ? [
+              {
+                name: 'Convenience Fee',
+                amount_money: {
+                  amount: Math.round(serviceFeeAmount.toNumber() * 100),
+                  currency: 'USD',
+                },
+                calculation_phase: 'TOTAL_PHASE', // Applied after tax
+                taxable: false,
+              },
+            ]
+          : [];
 
         // Clean app URL to prevent double slashes
         const cleanAppUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
-        
+
         // Create a temporary order ID for Square (we'll use this for the actual order)
         const tempOrderId = generateTempOrderId();
-        
+
         // Generate idempotency key to prevent duplicate orders
-        const idempotencyKey = data.idempotencyKey || `catering_${data.email}_${tempOrderId}_${Date.now()}`;
-        
+        const idempotencyKey =
+          data.idempotencyKey || `catering_${data.email}_${tempOrderId}_${Date.now()}`;
+
         // Use the correct location ID based on environment
         const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
-        const locationId = squareEnv === 'sandbox' 
-          ? 'LMV06M1ER6HCC'                         // Use Default Test Account sandbox location ID
-          : process.env.SQUARE_LOCATION_ID;         // Use production location ID
+        const locationId =
+          squareEnv === 'sandbox'
+            ? 'LMV06M1ER6HCC' // Use Default Test Account sandbox location ID
+            : process.env.SQUARE_LOCATION_ID; // Use production location ID
 
         console.log(`💳 [SQUARE] About to create checkout link with params:`, {
           orderId: tempOrderId,
@@ -702,10 +742,14 @@ export async function createCateringOrderAndProcessPayment(data: {
           redirectUrl: `${cleanAppUrl}/catering/confirmation?orderId=${tempOrderId}`,
           customerEmail: data.email,
           customerName: data.name,
-          eventDate: data.eventDate
+          eventDate: data.eventDate,
         });
 
-        const { checkoutUrl, checkoutId, orderId: squareOrderId } = await createCheckoutLink({
+        const {
+          checkoutUrl,
+          checkoutId,
+          orderId: squareOrderId,
+        } = await createCheckoutLink({
           orderId: tempOrderId,
           locationId: locationId!,
           lineItems: lineItemsWithDelivery,
@@ -758,13 +802,17 @@ export async function createCateringOrderAndProcessPayment(data: {
         });
 
         if (!orderResult.success || !orderResult.orderId) {
-          console.error(`❌ [DATABASE] Failed to create catering order after Square checkout was created`);
+          console.error(
+            `❌ [DATABASE] Failed to create catering order after Square checkout was created`
+          );
           console.error(`❌ [DATABASE] Square checkout ID: ${checkoutId}`);
           console.error(`❌ [DATABASE] Error: ${orderResult.error}`);
-          
-          return { 
-            success: false, 
-            error: 'Failed to create catering order. Please contact support with reference: ' + checkoutId 
+
+          return {
+            success: false,
+            error:
+              'Failed to create catering order. Please contact support with reference: ' +
+              checkoutId,
           };
         }
 
@@ -788,23 +836,24 @@ export async function createCateringOrderAndProcessPayment(data: {
           orderId: orderResult.orderId,
           checkoutUrl,
         };
-        
+
         console.log(`🔍 [SERVER-ACTION-DEBUG] About to return from server action:`, {
           success: returnValue.success,
           orderId: returnValue.orderId,
           checkoutUrl: returnValue.checkoutUrl,
           checkoutUrlType: typeof returnValue.checkoutUrl,
           checkoutUrlLength: returnValue.checkoutUrl ? returnValue.checkoutUrl.length : 0,
-          serialized: JSON.stringify(returnValue)
+          serialized: JSON.stringify(returnValue),
         });
 
         return returnValue;
       } catch (squareError) {
         console.error('Error creating Square checkout link:', squareError);
-        
+
         return {
           success: false,
-          error: 'Failed to create payment checkout. Please try again or contact us for assistance.',
+          error:
+            'Failed to create payment checkout. Please try again or contact us for assistance.',
         };
       }
     } else if (data.paymentMethod === PaymentMethod.CASH) {
@@ -812,10 +861,10 @@ export async function createCateringOrderAndProcessPayment(data: {
       // --- Calculate taxes for Cash orders (convenience fees only apply to Square) ---
       const subtotal = data.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
       const deliveryFee = data.deliveryFee || 0;
-      
+
       // Get tax rate from store settings
       const taxRateDecimal = await getTaxRate();
-      
+
       // Calculate tax for catering items (catering items are always taxable)
       const itemsForTaxCalculation = (data.items || []).map(item => ({
         product: {
@@ -825,14 +874,15 @@ export async function createCateringOrderAndProcessPayment(data: {
         price: item.pricePerUnit,
         quantity: item.quantity,
       }));
-      
+
       const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRateDecimal);
       const taxAmount = new Decimal(taxCalculation.taxAmount).toDecimalPlaces(2);
-      
+
       // Add delivery fee to taxable amount if present (delivery fees are taxable)
-      const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
+      const deliveryTax =
+        deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
       const totalTaxAmount = taxAmount.plus(deliveryTax);
-      
+
       // Cash orders do not have convenience fees (only credit card orders do)
       const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
       const serviceFeeAmount = new Decimal(0); // No convenience fee for cash orders
@@ -846,7 +896,9 @@ export async function createCateringOrderAndProcessPayment(data: {
       console.log(`[CATERING CASH] Calculated Subtotal: ${subtotal}`);
       console.log(`[CATERING CASH] Calculated Delivery Fee: ${deliveryFee}`);
       console.log(`[CATERING CASH] Calculated Tax: ${totalTaxAmount.toFixed(2)}`);
-      console.log(`[CATERING CASH] Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)} (Cash orders have no convenience fee)`);
+      console.log(
+        `[CATERING CASH] Calculated Convenience Fee: ${serviceFeeAmount.toFixed(2)} (Cash orders have no convenience fee)`
+      );
       console.log(`[CATERING CASH] Final total with fees: ${finalTotalAmount.toFixed(2)}`);
 
       const orderResult = await saveContactInfo({
@@ -871,10 +923,10 @@ export async function createCateringOrderAndProcessPayment(data: {
       if (!orderResult.success || !orderResult.orderId) {
         return { success: false, error: 'Failed to create catering order' };
       }
-      
+
       // Send admin notification email
       await sendCateringOrderNotification(orderResult.orderId);
-      
+
       return {
         success: true,
         orderId: orderResult.orderId,
@@ -885,10 +937,10 @@ export async function createCateringOrderAndProcessPayment(data: {
     // Calculate fees for other payment methods too
     const subtotal = data.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
     const deliveryFee = data.deliveryFee || 0;
-    
+
     // Get tax rate from store settings
     const taxRateDecimal = await getTaxRate();
-    
+
     // Calculate tax for catering items (catering items are always taxable)
     const itemsForTaxCalculation = (data.items || []).map(item => ({
       product: {
@@ -898,14 +950,15 @@ export async function createCateringOrderAndProcessPayment(data: {
       price: item.pricePerUnit,
       quantity: item.quantity,
     }));
-    
+
     const taxCalculation = calculateTaxForItems(itemsForTaxCalculation, taxRateDecimal);
     const taxAmount = new Decimal(taxCalculation.taxAmount).toDecimalPlaces(2);
-    
+
     // Add delivery fee to taxable amount if present (delivery fees are taxable)
-    const deliveryTax = deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
+    const deliveryTax =
+      deliveryFee > 0 ? new Decimal(deliveryFee).times(taxRateDecimal) : new Decimal(0);
     const totalTaxAmount = taxAmount.plus(deliveryTax);
-    
+
     // Calculate convenience fee (3.5% on subtotal + delivery fee + tax)
     const totalBeforeServiceFee = new Decimal(subtotal).plus(deliveryFee).plus(totalTaxAmount);
     const serviceFeeAmount = totalBeforeServiceFee.times(SERVICE_FEE_RATE).toDecimalPlaces(2);
@@ -917,7 +970,9 @@ export async function createCateringOrderAndProcessPayment(data: {
       .plus(serviceFeeAmount)
       .toDecimalPlaces(2);
 
-    console.log(`[CATERING DEFAULT] Calculated fees - Tax: ${totalTaxAmount.toFixed(2)}, Service: ${serviceFeeAmount.toFixed(2)}, Total: ${finalTotalAmount.toFixed(2)}`);
+    console.log(
+      `[CATERING DEFAULT] Calculated fees - Tax: ${totalTaxAmount.toFixed(2)}, Service: ${serviceFeeAmount.toFixed(2)}, Total: ${finalTotalAmount.toFixed(2)}`
+    );
 
     const orderResult = await saveContactInfo({
       ...data,
@@ -942,16 +997,16 @@ export async function createCateringOrderAndProcessPayment(data: {
     }
 
     await sendCateringOrderNotification(orderResult.orderId);
-    
+
     return {
       success: true,
       orderId: orderResult.orderId,
     };
   } catch (error) {
     console.error('Error creating catering order and processing payment:', error);
-    return { 
-      success: false, 
-      error: 'Failed to create catering order and process payment. Please try again.' 
+    return {
+      success: false,
+      error: 'Failed to create catering order and process payment. Please try again.',
     };
   }
 }
@@ -966,37 +1021,37 @@ function generateIdempotencyKey(data: {
   items?: Array<{ name: string; quantity: number; pricePerUnit: number }>;
 }): string {
   console.log(`🔑 [IDEMPOTENCY] Generating new idempotency key`);
-  
+
   // Create a deterministic hash based on order data
-  const itemsHash = data.items 
+  const itemsHash = data.items
     ? data.items
         .map(item => `${item.name.trim()}-${item.quantity}-${item.pricePerUnit.toFixed(2)}`)
         .sort() // Sort to ensure consistent ordering
         .join('|')
     : 'no-items';
-  
+
   // Normalize email and create base string
   const normalizedEmail = data.email.toLowerCase().trim();
   const normalizedDate = new Date(data.eventDate).toISOString().split('T')[0]; // Use date only
   const normalizedAmount = data.totalAmount.toFixed(2);
-  
+
   const baseString = `${normalizedEmail}::${normalizedDate}::${normalizedAmount}::${itemsHash}`;
-  
+
   // Enhanced hash function with better distribution
   let hash = 0;
   for (let i = 0; i < baseString.length; i++) {
     const char = baseString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
-  
+
   // Add timestamp for uniqueness but maintain determinism for same-second requests
   const timestamp = Math.floor(Date.now() / 1000); // Second precision
   const key = `catering-${Math.abs(hash).toString(36)}-${timestamp.toString(36)}`;
-  
+
   console.log(`🔑 [IDEMPOTENCY] Generated key: ${key.substring(0, 30)}... (${key.length} chars)`);
   console.log(`🔑 [IDEMPOTENCY] Base data hash: ${Math.abs(hash).toString(36)}`);
-  
+
   return key;
 }
 
@@ -1011,40 +1066,51 @@ async function checkForDuplicateOrder(
     customerId?: string | null;
   },
   idempotencyKey: string
-): Promise<{ id: string; squareCheckoutId?: string | null; isDuplicate: boolean; source: string } | null> {
+): Promise<{
+  id: string;
+  squareCheckoutId?: string | null;
+  isDuplicate: boolean;
+  source: string;
+} | null> {
   const startTime = Date.now();
   console.log(`🔍 [IDEMPOTENCY] Starting duplicate check for key: ${idempotencyKey}`);
-  
+
   try {
     // Step 1: Check for orders with same idempotency key first (most reliable)
     console.log(`🔍 [IDEMPOTENCY] Checking by idempotency key...`);
-    const existingByKey = await withRetry(async () => {
-      return await db.cateringOrder.findFirst({
-        where: {
-          metadata: {
-            path: ['idempotencyKey'],
-            equals: idempotencyKey,
+    const existingByKey = await withRetry(
+      async () => {
+        return await db.cateringOrder.findFirst({
+          where: {
+            metadata: {
+              path: ['idempotencyKey'],
+              equals: idempotencyKey,
+            },
           },
-        },
-        select: { 
-          id: true, 
-          squareCheckoutId: true, 
-          createdAt: true,
-          email: true,
-          totalAmount: true,
-        },
-      });
-    }, 3, 'checkDuplicateOrderByIdempotencyKey');
+          select: {
+            id: true,
+            squareCheckoutId: true,
+            createdAt: true,
+            email: true,
+            totalAmount: true,
+          },
+        });
+      },
+      3,
+      'checkDuplicateOrderByIdempotencyKey'
+    );
 
     if (existingByKey) {
       const ageMinutes = Math.round((Date.now() - existingByKey.createdAt.getTime()) / 60000);
-      console.log(`✅ [IDEMPOTENCY] Found exact match by key: ${existingByKey.id} (${ageMinutes}min old)`);
+      console.log(
+        `✅ [IDEMPOTENCY] Found exact match by key: ${existingByKey.id} (${ageMinutes}min old)`
+      );
       console.log(`📊 [IDEMPOTENCY] Duplicate check completed in ${Date.now() - startTime}ms`);
       return {
         id: existingByKey.id,
         squareCheckoutId: existingByKey.squareCheckoutId,
         isDuplicate: true,
-        source: 'idempotency_key'
+        source: 'idempotency_key',
       };
     }
 
@@ -1052,47 +1118,56 @@ async function checkForDuplicateOrder(
     // within the last 15 minutes (extended from 10 for better coverage)
     console.log(`🔍 [IDEMPOTENCY] Checking by email/date/amount pattern...`);
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-    
-    const potentialDuplicate = await withRetry(async () => {
-      return await db.cateringOrder.findFirst({
-        where: {
-          email: data.email,
-          eventDate: new Date(data.eventDate),
-          totalAmount: data.totalAmount,
-          ...(data.customerId && { 
-            customer: { 
-              id: data.customerId 
-            } 
-          }),
-          createdAt: {
-            gte: fifteenMinutesAgo,
+
+    const potentialDuplicate = await withRetry(
+      async () => {
+        return await db.cateringOrder.findFirst({
+          where: {
+            email: data.email,
+            eventDate: new Date(data.eventDate),
+            totalAmount: data.totalAmount,
+            ...(data.customerId && {
+              customer: {
+                id: data.customerId,
+              },
+            }),
+            createdAt: {
+              gte: fifteenMinutesAgo,
+            },
           },
-        },
-        select: { 
-          id: true, 
-          squareCheckoutId: true, 
-          createdAt: true,
-          metadata: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-    }, 3, 'checkDuplicateOrderByPattern');
+          select: {
+            id: true,
+            squareCheckoutId: true,
+            createdAt: true,
+            metadata: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+      },
+      3,
+      'checkDuplicateOrderByPattern'
+    );
 
     if (potentialDuplicate) {
       const ageMinutes = Math.round((Date.now() - potentialDuplicate.createdAt.getTime()) / 60000);
-      const hasIdempotencyKey = potentialDuplicate.metadata && 
-        typeof potentialDuplicate.metadata === 'object' && 
+      const hasIdempotencyKey =
+        potentialDuplicate.metadata &&
+        typeof potentialDuplicate.metadata === 'object' &&
         (potentialDuplicate.metadata as any).idempotencyKey;
-      
-      console.log(`⚠️ [IDEMPOTENCY] Found potential duplicate: ${potentialDuplicate.id} (${ageMinutes}min old)`);
-      console.log(`⚠️ [IDEMPOTENCY] Potential duplicate has idempotency key: ${!!hasIdempotencyKey}`);
+
+      console.log(
+        `⚠️ [IDEMPOTENCY] Found potential duplicate: ${potentialDuplicate.id} (${ageMinutes}min old)`
+      );
+      console.log(
+        `⚠️ [IDEMPOTENCY] Potential duplicate has idempotency key: ${!!hasIdempotencyKey}`
+      );
       console.log(`📊 [IDEMPOTENCY] Duplicate check completed in ${Date.now() - startTime}ms`);
-      
+
       return {
         id: potentialDuplicate.id,
         squareCheckoutId: potentialDuplicate.squareCheckoutId,
         isDuplicate: true,
-        source: 'pattern_match'
+        source: 'pattern_match',
       };
     }
 
@@ -1100,11 +1175,10 @@ async function checkForDuplicateOrder(
     console.log(`✅ [IDEMPOTENCY] No duplicates found - proceeding with order creation`);
     console.log(`📊 [IDEMPOTENCY] Duplicate check completed in ${Date.now() - startTime}ms`);
     return null;
-    
   } catch (error) {
     console.error(`❌ [IDEMPOTENCY] Error during duplicate check:`, error);
     console.log(`📊 [IDEMPOTENCY] Duplicate check failed in ${Date.now() - startTime}ms`);
-    
+
     // Enhanced error handling - log the specific error type
     if (error instanceof Error) {
       if (error.message.includes('database')) {
@@ -1113,9 +1187,11 @@ async function checkForDuplicateOrder(
         console.error(`🚨 [IDEMPOTENCY] Timeout error during duplicate check`);
       }
     }
-    
+
     // If we can't check for duplicates, allow the order to proceed but log it
-    console.warn(`⚠️ [IDEMPOTENCY] Proceeding without duplicate check due to error - ORDER MAY BE DUPLICATE`);
+    console.warn(
+      `⚠️ [IDEMPOTENCY] Proceeding without duplicate check due to error - ORDER MAY BE DUPLICATE`
+    );
     return null;
   }
 }
@@ -1198,16 +1274,16 @@ export async function validateCateringOrderWithDeliveryZone(
 }> {
   try {
     const zone = determineDeliveryZone(deliveryAddress);
-    
+
     if (!zone) {
       return {
         success: false,
         error: 'Delivery zone not supported',
       };
     }
-    
+
     const zoneConfig = getZoneConfig(zone);
-    
+
     if (!zoneConfig) {
       return {
         success: false,
@@ -1216,7 +1292,7 @@ export async function validateCateringOrderWithDeliveryZone(
     }
 
     const minimumPurchaseValidation = validateMinimumPurchase(totalAmount, zone);
-    
+
     if (!minimumPurchaseValidation.isValid) {
       return {
         success: false,
@@ -1264,21 +1340,25 @@ async function saveContactSubmissionWithFallback(data: {
   status: string;
 }): Promise<{ id: string }> {
   console.log('💾 Attempting to save contact submission with unified retry system');
-  
+
   try {
     // Use the unified retry system with enhanced error handling
-    return await withRetry(async () => {
-      // Ensure connection before attempting operation
-      await ensureConnection();
-      
-      // Create the contact submission
-      const result = await db.contactSubmission.create({ data });
-      console.log('✅ Contact submission created successfully:', result.id);
-      return result;
-    }, 3, 'saveContactSubmissionWithFallback');
+    return await withRetry(
+      async () => {
+        // Ensure connection before attempting operation
+        await ensureConnection();
+
+        // Create the contact submission
+        const result = await db.contactSubmission.create({ data });
+        console.log('✅ Contact submission created successfully:', result.id);
+        return result;
+      },
+      3,
+      'saveContactSubmissionWithFallback'
+    );
   } catch (error) {
     console.error('❌ Failed to save contact submission even with unified retry:', error);
-    
+
     // Enhanced error logging for debugging
     if (error instanceof Error) {
       console.error('❌ Error details:', {
@@ -1287,19 +1367,21 @@ async function saveContactSubmissionWithFallback(data: {
         stack: error.stack?.split('\n').slice(0, 5).join('\n'), // First 5 lines of stack
       });
     }
-    
+
     // For critical contact submissions, try one more time with manual connection handling
     try {
       console.log('🆘 Last resort: Manual connection handling for contact submission');
-      
+
       // Force a fresh connection
       await ensureConnection(1);
-      
+
       // Simple direct operation
       return await db.contactSubmission.create({ data });
     } catch (finalError) {
       console.error('❌ Absolute final attempt failed:', finalError);
-      throw new Error(`Failed to save contact submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to save contact submission: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }
@@ -1313,10 +1395,10 @@ export async function saveCateringContactInfo(data: {
     // Enhanced data validation
     if (!data || typeof data !== 'object') {
       console.error('❌ Invalid data object passed to saveCateringContactInfo:', data);
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: 'Invalid data provided',
-        error: 'Data object is required'
+        error: 'Data object is required',
       };
     }
 
@@ -1327,44 +1409,44 @@ export async function saveCateringContactInfo(data: {
 
     if (!trimmedName || trimmedName.length < 2) {
       console.error('❌ Invalid name provided:', trimmedName);
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: 'Valid name is required (at least 2 characters)',
-        error: 'Invalid name'
+        error: 'Invalid name',
       };
     }
 
     if (!trimmedEmail || !trimmedEmail.includes('@') || trimmedEmail.length < 5) {
       console.error('❌ Invalid email provided:', trimmedEmail);
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: 'Valid email address is required',
-        error: 'Invalid email'
+        error: 'Invalid email',
       };
     }
 
     if (!trimmedPhone || trimmedPhone.length < 10) {
       console.error('❌ Invalid phone provided:', trimmedPhone);
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: 'Valid phone number is required (at least 10 characters)',
-        error: 'Invalid phone'
+        error: 'Invalid phone',
       };
     }
 
     const cacheKey = `${trimmedName}-${trimmedEmail}-${trimmedPhone}`;
     const now = Date.now();
     const lastCall = lastCallCache.get(cacheKey) || 0;
-    
+
     // Only save if it's been more than 5 seconds since last call with same data
     if (now - lastCall > 5000) {
-      console.log('✅ Saving catering contact info:', { 
-        name: trimmedName.substring(0, 10) + '...', 
+      console.log('✅ Saving catering contact info:', {
+        name: trimmedName.substring(0, 10) + '...',
         email: trimmedEmail,
-        phone: trimmedPhone.substring(0, 6) + '...' 
+        phone: trimmedPhone.substring(0, 6) + '...',
       });
       lastCallCache.set(cacheKey, now);
-      
+
       // Save to ContactSubmission table as a catering contact for future follow-up
       // Use a more robust approach with direct connection management
       const contactSubmission = await saveContactSubmissionWithFallback({
@@ -1375,27 +1457,27 @@ export async function saveCateringContactInfo(data: {
         type: 'catering_contact',
         status: 'auto_saved',
       });
-      
+
       console.log('✅ ContactSubmission created successfully with ID:', contactSubmission.id);
       return { success: true, message: 'Contact info saved successfully' };
     }
-    
+
     console.log('ℹ️ Contact info already saved recently, skipping database save');
     return { success: true, message: 'Contact info already saved recently' };
   } catch (error) {
     console.error('❌ Error saving catering contact info:', error);
-    
+
     // Enhanced error logging
     if (error instanceof Error) {
       console.error('❌ Error name:', error.name);
       console.error('❌ Error message:', error.message);
       console.error('❌ Error stack:', error.stack);
     }
-    
+
     // Check for specific Prisma/Database errors
     let errorMessage = 'Failed to save contact info';
     let errorDetail = error instanceof Error ? error.message : 'Unknown error';
-    
+
     if (error instanceof Error) {
       if (error.message.includes('connection')) {
         errorMessage = 'Database connection error';
@@ -1408,19 +1490,19 @@ export async function saveCateringContactInfo(data: {
         errorDetail = 'Data does not meet database requirements';
       }
     }
-    
-    return { 
-      success: false, 
+
+    return {
+      success: false,
       message: errorMessage,
-      error: errorDetail
+      error: errorDetail,
     };
   }
 }
 
-
 function mapCategoryNameToCateringCategory(categoryName: string): CateringItemCategory {
-  if (categoryName.includes('STARTER') || categoryName.includes('APPETIZER')) return CateringItemCategory.STARTER;
-  if (categoryName.includes('ENTREE')) return CateringItemCategory.ENTREE; 
+  if (categoryName.includes('STARTER') || categoryName.includes('APPETIZER'))
+    return CateringItemCategory.STARTER;
+  if (categoryName.includes('ENTREE')) return CateringItemCategory.ENTREE;
   if (categoryName.includes('SIDE')) return CateringItemCategory.SIDE;
   if (categoryName.includes('SALAD')) return CateringItemCategory.SALAD;
   if (categoryName.includes('DESSERT')) return CateringItemCategory.DESSERT;
@@ -1439,16 +1521,13 @@ export async function getBoxedLunchEntrees() {
       where: {
         active: true,
         category: {
-          name: 'CATERING- BOXED LUNCH ENTREES'
-        }
+          name: 'CATERING- BOXED LUNCH ENTREES',
+        },
       },
       include: {
-        category: true
+        category: true,
       },
-      orderBy: [
-        { ordinal: 'asc' },
-        { name: 'asc' }
-      ]
+      orderBy: [{ ordinal: 'asc' }, { name: 'asc' }],
     });
 
     return products.map((product, index) => ({
@@ -1507,10 +1586,7 @@ export async function getBoxedLunchTiers() {
  */
 export async function getBoxedLunchTiersWithEntrees() {
   try {
-    const [tiers, entrees] = await Promise.all([
-      getBoxedLunchTiers(),
-      getBoxedLunchEntrees()
-    ]);
+    const [tiers, entrees] = await Promise.all([getBoxedLunchTiers(), getBoxedLunchEntrees()]);
 
     return tiers.map(tier => ({
       tier: `TIER_${tier.tierNumber}` as any,
@@ -1518,11 +1594,10 @@ export async function getBoxedLunchTiersWithEntrees() {
       price: tier.priceCents / 100, // Convert cents to dollars
       proteinAmount: tier.proteinAmount || '',
       sides: tier.sides,
-      availableEntrees: entrees // All entrees available for all tiers
+      availableEntrees: entrees, // All entrees available for all tiers
     }));
   } catch (error) {
     console.error('Error getting boxed lunch tiers with entrees:', error);
     return [];
   }
 }
-

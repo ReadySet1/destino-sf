@@ -19,9 +19,10 @@ async function debugSyncIssue() {
     for (const envVar of requiredEnvVars) {
       const value = process.env[envVar];
       if (value) {
-        const maskedValue = envVar.includes('TOKEN') || envVar.includes('SECRET') || envVar.includes('URL')
-          ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
-          : value;
+        const maskedValue =
+          envVar.includes('TOKEN') || envVar.includes('SECRET') || envVar.includes('URL')
+            ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
+            : value;
         logger.info(`   ✅ ${envVar}: ${maskedValue}`);
       } else {
         logger.warn(`   ❌ ${envVar}: NOT SET`);
@@ -33,11 +34,10 @@ async function debugSyncIssue() {
     try {
       await prisma.$connect();
       logger.info('   ✅ Database connection successful');
-      
+
       // Check if we can query the database
       const productCount = await prisma.product.count();
       logger.info(`   ✅ Database query successful - ${productCount} products found`);
-      
     } catch (dbError) {
       logger.error('   ❌ Database connection failed:', dbError);
       return;
@@ -48,14 +48,16 @@ async function debugSyncIssue() {
     try {
       // Import Square client
       const { squareClient } = await import('../src/lib/square/client');
-      
+
       if (squareClient.catalogApi) {
         logger.info('   ✅ Square catalog API client initialized');
-        
+
         // Try a simple API call
         try {
           const response = await squareClient.catalogApi.listCatalog();
-          logger.info(`   ✅ Square API call successful - ${response.result.objects?.length || 0} objects returned`);
+          logger.info(
+            `   ✅ Square API call successful - ${response.result.objects?.length || 0} objects returned`
+          );
         } catch (apiError: any) {
           logger.warn(`   ⚠️ Square API call failed: ${apiError.message || 'Unknown error'}`);
           if (apiError.statusCode) {
@@ -72,10 +74,16 @@ async function debugSyncIssue() {
     // 4. Check sync configuration
     logger.info('\n⚙️ Sync Configuration Check:');
     try {
-      const { CATEGORY_MAPPINGS, LEGACY_CATEGORY_MAPPINGS } = await import('../src/lib/square/category-mapper');
-      logger.info(`   ✅ Category mappings loaded - ${Object.keys(CATEGORY_MAPPINGS).length} categories`);
-      logger.info(`   ✅ Legacy category mappings loaded - ${Object.keys(LEGACY_CATEGORY_MAPPINGS).length} categories`);
-      
+      const { CATEGORY_MAPPINGS, LEGACY_CATEGORY_MAPPINGS } = await import(
+        '../src/lib/square/category-mapper'
+      );
+      logger.info(
+        `   ✅ Category mappings loaded - ${Object.keys(CATEGORY_MAPPINGS).length} categories`
+      );
+      logger.info(
+        `   ✅ Legacy category mappings loaded - ${Object.keys(LEGACY_CATEGORY_MAPPINGS).length} categories`
+      );
+
       // Check specific problematic categories
       const sharePlattersId = '4YZ7LW7PRJRDICUM76U3FTGU';
       if (CATEGORY_MAPPINGS[sharePlattersId]) {
@@ -83,7 +91,6 @@ async function debugSyncIssue() {
       } else {
         logger.warn(`   ⚠️ Share Platters category not found in mappings`);
       }
-      
     } catch (configError) {
       logger.error('   ❌ Failed to load sync configuration:', configError);
     }
@@ -107,15 +114,17 @@ async function debugSyncIssue() {
         logger.info('   ℹ️ No recent sync logs found');
       } else {
         logger.info(`   📋 Found ${recentLogs.length} recent sync logs:`);
-        
+
         for (const log of recentLogs) {
-          const duration = log.endTime 
+          const duration = log.endTime
             ? log.endTime.getTime() - log.startTime.getTime()
             : Date.now() - log.startTime.getTime();
           const durationMinutes = Math.floor(duration / (1000 * 60));
-          
-          logger.info(`      ${log.status}: ${log.syncId} (${durationMinutes}m) - ${log.message || 'No message'}`);
-          
+
+          logger.info(
+            `      ${log.status}: ${log.syncId} (${durationMinutes}m) - ${log.message || 'No message'}`
+          );
+
           if (log.errors) {
             try {
               const errors = JSON.parse(log.errors as string);
@@ -157,7 +166,9 @@ async function debugSyncIssue() {
         for (const sync of stuckSyncs) {
           const duration = Date.now() - sync.startTime.getTime();
           const durationMinutes = Math.floor(duration / (1000 * 60));
-          logger.warn(`      ${sync.syncId}: Stuck for ${durationMinutes}m at step "${sync.currentStep}"`);
+          logger.warn(
+            `      ${sync.syncId}: Stuck for ${durationMinutes}m at step "${sync.currentStep}"`
+          );
         }
       }
     } catch (stuckError) {
@@ -171,7 +182,6 @@ async function debugSyncIssue() {
     logger.info('   3. Verify Square API rate limits are not exceeded');
     logger.info('   4. Check if database connection pool is exhausted');
     logger.info('   5. Ensure all environment variables are set in Vercel');
-
   } catch (error) {
     logger.error('❌ Error during debug:', error);
   } finally {

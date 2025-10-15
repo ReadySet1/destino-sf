@@ -7,13 +7,15 @@ The Products API provides comprehensive access to the product catalog, including
 ## Product Endpoints
 
 ### Get All Products
+
 ```http
 GET /api/products
 ```
 
 **Query Parameters:**
+
 - `category` (string): Filter by product category
-- `search` (string): Search in product names and descriptions  
+- `search` (string): Search in product names and descriptions
 - `limit` (number): Number of products to return (default: 20, max: 100)
 - `page` (number): Page number for pagination (default: 1)
 - `sortBy` (string): Sort field (name, price, created_at)
@@ -23,11 +25,13 @@ GET /api/products
 - `available` (boolean): Filter by availability status
 
 **Example Request:**
+
 ```http
 GET /api/products?category=appetizers&limit=10&page=1&sortBy=price&sortOrder=asc
 ```
 
 **Response:**
+
 ```typescript
 interface ProductsResponse {
   success: boolean;
@@ -60,20 +64,24 @@ interface Product {
 ```
 
 ### Get Single Product
+
 ```http
 GET /api/products/{productId}
 ```
 
 ### Get Product Recommendations
+
 ```http
 GET /api/products/{productId}/recommendations
 ```
 
 **Query Parameters:**
+
 - `limit` (number): Number of recommendations (default: 5, max: 20)
 - `type` (string): Recommendation type (related, category, popular)
 
 ### Search Products
+
 ```http
 GET /api/products/search?q=pasta&category=main&limit=10
 ```
@@ -81,11 +89,13 @@ GET /api/products/search?q=pasta&category=main&limit=10
 ## Product Categories
 
 ### Get All Categories
+
 ```http
 GET /api/products/categories
 ```
 
 **Response:**
+
 ```typescript
 interface CategoryResponse {
   success: boolean;
@@ -107,6 +117,7 @@ interface ProductCategory {
 ## Admin Endpoints (Admin Only)
 
 ### Create Product
+
 ```http
 POST /api/products
 Authorization: Bearer <admin_token>
@@ -132,18 +143,21 @@ Content-Type: application/json
 ```
 
 ### Update Product
+
 ```http
 PUT /api/products/{productId}
 Authorization: Bearer <admin_token>
 ```
 
 ### Delete Product
+
 ```http
 DELETE /api/products/{productId}
 Authorization: Bearer <admin_token>
 ```
 
 ### Bulk Update Products
+
 ```http
 PATCH /api/products/bulk
 Authorization: Bearer <admin_token>
@@ -161,6 +175,7 @@ Content-Type: application/json
 ## Error Responses
 
 ### Common Error Codes
+
 - `PRODUCT_NOT_FOUND`: Product does not exist
 - `PRODUCT_UNAVAILABLE`: Product is out of stock
 - `INVALID_CATEGORY`: Category does not exist
@@ -168,6 +183,7 @@ Content-Type: application/json
 - `VALIDATION_ERROR`: Invalid product data
 
 ### Example Error Response
+
 ```json
 {
   "success": false,

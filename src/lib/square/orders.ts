@@ -85,7 +85,7 @@ export async function createPayment(sourceId: string, orderId: string, amountCen
       },
       // CRITICAL: These fields link payment to order AND trigger auto-completion
       orderId: orderId,
-      autocomplete: true,  // This automatically transitions order from DRAFT to OPEN/COMPLETED
+      autocomplete: true, // This automatically transitions order from DRAFT to OPEN/COMPLETED
     };
 
     const result = await squareService.createPayment(paymentRequest);
@@ -94,11 +94,11 @@ export async function createPayment(sourceId: string, orderId: string, amountCen
       throw new Error('Failed to create payment or payment data is missing in the response.');
     }
 
-    logger.info('Successfully created Square payment and finalized order', { 
+    logger.info('Successfully created Square payment and finalized order', {
       paymentId: result.payment.id,
-      orderStatus: result.payment.order?.state // Should now be OPEN/COMPLETED
+      orderStatus: result.payment.order?.state, // Should now be OPEN/COMPLETED
     });
-    
+
     return result.payment;
   } catch (error) {
     logger.error('Error processing payment:', error);

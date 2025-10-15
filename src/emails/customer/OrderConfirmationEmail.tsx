@@ -204,7 +204,7 @@ export const OrderConfirmationEmail = ({
   const previewText = `Order confirmation #${order.id} - ${formatFulfillmentType(order.fulfillmentType || 'pickup')} order placed successfully`;
 
   // Calculate subtotal from items
-  const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // Convert shipping cost from cents to dollars if provided
   const shippingCost = order.shippingCostCents ? order.shippingCostCents / 100 : undefined;

@@ -18,15 +18,15 @@ interface ShippingLabelButtonProps {
   retryCount?: number;
 }
 
-export function ShippingLabelButton({ 
-  orderId, 
-  shippingRateId, 
+export function ShippingLabelButton({
+  orderId,
+  shippingRateId,
   trackingNumber,
   labelUrl,
   shippingCarrier,
   fulfillmentType,
   paymentStatus,
-  retryCount = 0
+  retryCount = 0,
 }: ShippingLabelButtonProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -49,17 +49,16 @@ export function ShippingLabelButton({
     setIsCreating(true);
     try {
       const result = await purchaseShippingLabel(orderId, shippingRateId);
-      
+
       if (result.success) {
         // Show success with label URL
-        toast.success(
-          `Label created! Tracking: ${result.trackingNumber}`, 
-          { 
-            duration: 10000,
-            description: result.labelUrl ? `PDF URL: ${result.labelUrl}` : 'Check console for PDF URL'
-          }
-        );
-        
+        toast.success(`Label created! Tracking: ${result.trackingNumber}`, {
+          duration: 10000,
+          description: result.labelUrl
+            ? `PDF URL: ${result.labelUrl}`
+            : 'Check console for PDF URL',
+        });
+
         // If we have a label URL, offer to download it immediately
         if (result.labelUrl) {
           const download = confirm('Download shipping label PDF now?');
@@ -67,19 +66,17 @@ export function ShippingLabelButton({
             window.open(result.labelUrl, '_blank');
           }
         }
-        
+
         // Refresh the page to show updated data
         window.location.reload();
       } else {
         // Handle specific error cases
         if (result.errorCode === 'CONCURRENT_PROCESSING') {
-          toast.warning(
-            'Label creation in progress',
-            { 
-              description: 'Please wait a moment and try again if the label doesn\'t appear automatically.',
-              duration: 8000
-            }
-          );
+          toast.warning('Label creation in progress', {
+            description:
+              "Please wait a moment and try again if the label doesn't appear automatically.",
+            duration: 8000,
+          });
         } else {
           toast.error(`Failed to create label: ${result.error}`);
         }
@@ -96,7 +93,7 @@ export function ShippingLabelButton({
     setIsRefreshing(true);
     try {
       const result = await refreshAndRetryLabel(orderId);
-      
+
       if (result.success) {
         toast.success(`Label created successfully! Tracking: ${result.trackingNumber}`);
         // Refresh the page to show updated data
@@ -114,10 +111,10 @@ export function ShippingLabelButton({
 
   const openTrackingLink = () => {
     if (!trackingNumber || !shippingCarrier) return;
-    
+
     let trackingUrl = '';
     const carrier = shippingCarrier.toLowerCase();
-    
+
     if (carrier.includes('ups')) {
       trackingUrl = `https://www.ups.com/track?loc=en_US&tracknum=${trackingNumber}`;
     } else if (carrier.includes('fedex')) {
@@ -130,13 +127,13 @@ export function ShippingLabelButton({
       // Generic search for unknown carriers
       trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(`track package ${trackingNumber} ${shippingCarrier}`)}`;
     }
-    
+
     window.open(trackingUrl, '_blank');
   };
 
   const downloadLabel = () => {
     if (!labelUrl) return;
-    
+
     // Create a download link and trigger download
     const link = document.createElement('a');
     link.href = labelUrl;
@@ -192,7 +189,9 @@ export function ShippingLabelButton({
             </div>
           </div>
           <div className="text-sm text-gray-600">
-            <div>Tracking: <span className="font-mono">{trackingNumber}</span></div>
+            <div>
+              Tracking: <span className="font-mono">{trackingNumber}</span>
+            </div>
             {shippingCarrier && <div>Carrier: {shippingCarrier}</div>}
           </div>
         </div>
@@ -226,7 +225,7 @@ export function ShippingLabelButton({
                   </>
                 )}
               </Button>
-              
+
               {hasRetryIssues && (
                 <Button
                   onClick={handleRefreshAndRetry}
@@ -250,16 +249,18 @@ export function ShippingLabelButton({
               )}
             </div>
           )}
-          
+
           {hasRetryIssues && (
             <div className="text-xs text-gray-500">
-              Previous attempts failed. Try &quot;Refresh &amp; Retry&quot; to get fresh shipping rates.
+              Previous attempts failed. Try &quot;Refresh &amp; Retry&quot; to get fresh shipping
+              rates.
             </div>
           )}
-          
+
           {!hasRetryIssues && paymentStatus === 'PAID' && shippingRateId && (
             <div className="text-xs text-gray-500">
-              Note: Labels are created automatically when payment is confirmed. Manual creation is for backup only.
+              Note: Labels are created automatically when payment is confirmed. Manual creation is
+              for backup only.
             </div>
           )}
         </div>

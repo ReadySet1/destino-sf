@@ -15,9 +15,11 @@
 **Sprint/Milestone**: Production Hotfix
 
 ### Problem Statement
+
 Production database sync with Square is not working as expected. Development DB syncs correctly with 129 items, but production only has 123 items. Specifically, 3 items from "CATERING- BOXED LUNCH ENTREES" category are missing in production. The Vercel configuration is already fixed but sync reports show items being skipped as duplicates.
 
 ### Success Criteria
+
 - [x] Vercel configuration fixed to prevent 30-second timeout (COMPLETED)
 - [ ] All 129 items synced to production database
 - [ ] Missing 3 items from "CATERING- BOXED LUNCH ENTREES" added:
@@ -29,9 +31,10 @@ Production database sync with Square is not working as expected. Development DB 
 - [ ] Force update mechanism working correctly
 
 ### Dependencies
+
 - **Blocked by**: None (Vercel config already deployed)
 - **Blocks**: Customer operations (3 menu items not showing)
-- **Related Issues**: 
+- **Related Issues**:
   - Vercel timeout fixed (deployed 28 Aug 2025)
   - Duplicate detection preventing legitimate items from syncing
 
@@ -42,6 +45,7 @@ Production database sync with Square is not working as expected. Development DB 
 ### 1. Code Structure & References
 
 #### File Structure (Actual Implementation)
+
 ```tsx
 /Users/ealanis/Development/current-projects/destino-sf/
 ├── src/
@@ -74,6 +78,7 @@ Production database sync with Square is not working as expected. Development DB 
 ```
 
 #### Key Interfaces & Types
+
 ```tsx
 // types/square.ts
 export interface SquareProduct {
@@ -113,6 +118,7 @@ export interface SyncStatus {
 ```
 
 #### Database Schema
+
 ```sql
 -- Current products table structure
 CREATE TABLE products (
@@ -139,6 +145,7 @@ CREATE INDEX idx_products_synced_at ON products(synced_at);
 ### 2. Architecture Patterns
 
 #### Data Flow Architecture
+
 ```mermaid
 graph TD
     A[Square API] -->|Fetch Catalog| B[Sync Service]
@@ -146,13 +153,14 @@ graph TD
     C --> D[Transform Data]
     D --> E[Batch Upsert]
     E --> F[Supabase DB]
-    
+
     B -->|Timeout 30s ❌| G[Process Killed]
     C -->|Missing Items| H[Log & Continue]
     E -->|Transaction| I[Rollback on Error]
 ```
 
 #### Current Issue Analysis (From Production Logs)
+
 ```typescript
 // ISSUE 1: Vercel Configuration ✅ FIXED
 // The timeout was fixed and deployed on Aug 28, 2025
@@ -162,9 +170,9 @@ graph TD
 // From sync logs: "skippedProducts: 6" when syncing 129 items
 // The 3 missing items are being skipped as duplicates:
 const missingItems = [
-  { name: "Acorn Squash", id: "GZNXPT6ONKIIUIMPD3PJV64U" },
-  { name: "Beef Stir Fry", id: "XXTYXJS5IH7Y7ILKUAOVSNAZ" },
-  { name: "Churrasco with Chimichurri", id: "ZDUYM3XR5JWZ4VZWN43MZM5X" }
+  { name: 'Acorn Squash', id: 'GZNXPT6ONKIIUIMPD3PJV64U' },
+  { name: 'Beef Stir Fry', id: 'XXTYXJS5IH7Y7ILKUAOVSNAZ' },
+  { name: 'Churrasco with Chimichurri', id: 'ZDUYM3XR5JWZ4VZWN43MZM5X' },
 ];
 
 // ISSUE 3: Verification Reports Misleading Discrepancy
@@ -175,6 +183,7 @@ const missingItems = [
 ### 3. Full Stack Integration Points
 
 #### API Endpoints (Production URLs)
+
 ```tsx
 // Production sync endpoints (all have 300s timeout configured):
 POST https://app.destinosf.com/api/square/unified-sync
@@ -191,6 +200,7 @@ GET https://app.destinosf.com/api/square/verify-sync
 ```
 
 #### The Root Cause: Duplicate Detection Logic
+
 ```tsx
 // lib/catering-duplicate-detector.ts - THE PROBLEM
 export class CateringDuplicateDetector {
@@ -202,16 +212,16 @@ export class CateringDuplicateDetector {
     // ISSUE: This is checking for duplicates by name across ALL products
     // Even though the items have unique Square IDs, they're being marked
     // as duplicates if a similar name exists anywhere
-    
+
     const existingProduct = await prisma.product.findFirst({
       where: {
         OR: [
           { squareId: params.squareProductId }, // This should prevent duplicates
-          { name: { equals: params.name, mode: 'insensitive' } } // But this is too broad!
-        ]
-      }
+          { name: { equals: params.name, mode: 'insensitive' } }, // But this is too broad!
+        ],
+      },
     });
-    
+
     // The 3 missing items likely have name collisions with items in other categories
     // or are being incorrectly matched due to case-insensitive comparison
   }
@@ -222,7 +232,7 @@ if (!isUpdate) {
   const { isDuplicate, existingItem } = await CateringDuplicateDetector.checkForDuplicate({
     name: item.name,
     squareProductId: item.id,
-    squareCategory: item.categoryName // This parameter is passed but not used!
+    squareCategory: item.categoryName, // This parameter is passed but not used!
   });
 
   if (isDuplicate && !forceUpdate) {
@@ -235,6 +245,7 @@ if (!isUpdate) {
 ## 🔧 Solution Implementation
 
 ### Option 1: Force Update (Immediate Fix)
+
 ```bash
 # Use the forceUpdate parameter to bypass duplicate detection
 curl -X POST https://app.destinosf.com/api/square/unified-sync \
@@ -247,20 +258,21 @@ curl -X POST https://app.destinosf.com/api/square/unified-sync \
 ```
 
 ### Option 2: Direct Database Insert (Quick Fix)
+
 ```sql
 -- Production database fix for missing items
 INSERT INTO products (
-  "squareId", 
-  name, 
-  slug, 
-  description, 
-  price, 
-  "categoryId", 
-  active, 
-  "createdAt", 
+  "squareId",
+  name,
+  slug,
+  description,
+  price,
+  "categoryId",
+  active,
+  "createdAt",
   "updatedAt"
 )
-SELECT 
+SELECT
   square_id,
   name,
   LOWER(REPLACE(name, ' ', '-')),
@@ -270,7 +282,7 @@ SELECT
   true,
   NOW(),
   NOW()
-FROM (VALUES 
+FROM (VALUES
   ('GZNXPT6ONKIIUIMPD3PJV64U', 'Acorn Squash'),
   ('XXTYXJS5IH7Y7ILKUAOVSNAZ', 'Beef Stir Fry'),
   ('ZDUYM3XR5JWZ4VZWN43MZM5X', 'Churrasco with Chimichurri')
@@ -281,6 +293,7 @@ WHERE NOT EXISTS (
 ```
 
 ### Option 3: Fix Duplicate Detection Logic (Permanent Fix)
+
 ```typescript
 // lib/catering-duplicate-detector.ts - FIXED VERSION
 export class CateringDuplicateDetector {
@@ -292,17 +305,17 @@ export class CateringDuplicateDetector {
     // First check by Square ID (this is authoritative)
     if (params.squareProductId) {
       const existingBySquareId = await prisma.product.findFirst({
-        where: { squareId: params.squareProductId }
+        where: { squareId: params.squareProductId },
       });
-      
+
       if (existingBySquareId) {
-        return { 
-          isDuplicate: true, 
-          existingItem: existingBySquareId 
+        return {
+          isDuplicate: true,
+          existingItem: existingBySquareId,
         };
       }
     }
-    
+
     // Only check name within the same category to prevent false positives
     const existingByName = await prisma.product.findFirst({
       where: {
@@ -310,15 +323,15 @@ export class CateringDuplicateDetector {
         // Add category constraint to prevent cross-category duplicates
         ...(params.squareCategory && {
           category: {
-            name: params.squareCategory
-          }
-        })
-      }
+            name: params.squareCategory,
+          },
+        }),
+      },
     });
-    
+
     return {
       isDuplicate: !!existingByName,
-      existingItem: existingByName
+      existingItem: existingByName,
     };
   }
 }
@@ -327,12 +340,13 @@ export class CateringDuplicateDetector {
 ## 📊 Current Production Status
 
 ### Database Analysis (As of Aug 28, 2025)
+
 ```yaml
 production_database:
   total_products: 123
   active_products: 123
   products_with_square_id: 123
-  
+
 catering_categories:
   CATERING-_APPETIZERS: 22 items ✅
   CATERING-_BOXED_LUNCH_ENTREES: 5 items ❌ (should be 8)
@@ -345,7 +359,7 @@ catering_categories:
   CATERING-_LUNCH_SIDES: 8 items ✅
   CATERING-_LUNCH_STARTERS: 9 items ✅
   CATERING-_SHARE_PLATTERS: 3 items ✅
-  
+
 core_products:
   ALFAJORES: 10 items ✅
   EMPANADAS: 17 items ✅
@@ -355,6 +369,7 @@ development_database:
 ```
 
 ### Recent Sync Logs Analysis
+
 ```json
 {
   "latest_sync": "unified-sync-1756399784871",
@@ -362,14 +377,14 @@ development_database:
   "duration": "49 seconds",
   "results": {
     "syncedProducts": 123,
-    "skippedProducts": 6,  // ← THE PROBLEM
+    "skippedProducts": 6, // ← THE PROBLEM
     "errors": 0,
     "message": "Sync completed successfully"
   },
   "verification": {
     "BOXED_LUNCH_ENTREES": {
       "square": 8,
-      "local": 0,  // ← Misleading, actually has 5
+      "local": 0, // ← Misleading, actually has 5
       "discrepancy": 8
     }
   }
@@ -377,6 +392,7 @@ development_database:
 ```
 
 ### Monitoring Implementation
+
 ```tsx
 // lib/monitoring/sync-monitor.ts
 export class SyncMonitor {
@@ -386,25 +402,23 @@ export class SyncMonitor {
     failedSyncs: 0,
     averageDuration: 0,
     lastSyncTime: null as Date | null,
-    missingItemsDetected: [] as string[]
+    missingItemsDetected: [] as string[],
   };
-  
+
   async checkSyncHealth(): Promise<HealthStatus> {
-    const { data: products } = await supabase
-      .from('products')
-      .select('count');
-      
+    const { data: products } = await supabase.from('products').select('count');
+
     const squareItemCount = await getSquareItemCount();
-    
+
     return {
       healthy: products.count === squareItemCount,
       productCount: products.count,
       expectedCount: squareItemCount,
       discrepancy: squareItemCount - products.count,
-      lastSync: this.metrics.lastSyncTime
+      lastSync: this.metrics.lastSyncTime,
     };
   }
-  
+
   async alertOnDiscrepancy() {
     const health = await this.checkSyncHealth();
     if (!health.healthy) {
@@ -441,6 +455,7 @@ node scripts/verify-sync-completeness.mjs
 ```
 
 ### Rollback Strategy
+
 ```bash
 # If issues occur, revert to previous deployment
 vercel rollback
@@ -454,6 +469,7 @@ if (process.env.USE_ENHANCED_SYNC === 'true') {
 ```
 
 ### Post-Deployment Verification
+
 - [ ] Check Vercel logs show full sync completion (not truncated)
 - [ ] Verify product count = 129 in production
 - [ ] Confirm all 8 BOXED LUNCH ENTREES items present
@@ -465,12 +481,15 @@ if (process.env.USE_ENHANCED_SYNC === 'true') {
 ## 📝 Action Items
 
 ### Immediate Actions (Today)
+
 1. **Deploy vercel.json fix** ⚠️ CRITICAL
+
    ```bash
    vercel --prod
    ```
 
 2. **Run missing items fix script**
+
    ```bash
    node scripts/fix-missing-boxed-lunch-items.mjs
    ```
@@ -478,19 +497,21 @@ if (process.env.USE_ENHANCED_SYNC === 'true') {
 3. **Verify sync completeness**
    ```bash
    # Check production database
-   SELECT category, COUNT(*) 
-   FROM products 
+   SELECT category, COUNT(*)
+   FROM products
    GROUP BY category
    ORDER BY category;
    ```
 
 ### Follow-up Actions (This Week)
+
 1. **Implement webhook sync** for real-time updates
 2. **Add sync monitoring dashboard**
 3. **Set up automated alerts** for sync discrepancies
 4. **Document sync process** for team
 
 ### Long-term Improvements
+
 1. **Implement incremental sync** using Square's version tracking
 2. **Add retry mechanism** with exponential backoff
 3. **Create sync audit trail** for debugging
@@ -501,12 +522,14 @@ if (process.env.USE_ENHANCED_SYNC === 'true') {
 ## 🔍 Root Cause Analysis
 
 ### Why the Sync Failed
+
 1. **Vercel Configuration Override**: Wildcard rule `app/api/**/*` with 30s timeout was overriding specific endpoint configurations
 2. **Silent Timeout**: Process killed at 30s without proper error handling
 3. **Incomplete Logging**: Logs truncated at 256 chars masked the real issue
 4. **No Monitoring**: No alerts when sync failed or item count mismatched
 
 ### Prevention Measures
+
 1. **Config Order Matters**: Always put specific rules before wildcards
 2. **Timeout Monitoring**: Add elapsed time checks during sync
 3. **Comprehensive Logging**: Use structured logging with proper error capture

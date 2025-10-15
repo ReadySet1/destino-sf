@@ -6,11 +6,13 @@ This document explains the **dual delivery zone systems** implemented in Destino
 
 Destino SF implements **two separate delivery zone systems** to accommodate different business models:
 
-### 1. **Catering Delivery Zones** 
-*For large-scale catering orders*
+### 1. **Catering Delivery Zones**
+
+_For large-scale catering orders_
 
 ### 2. **Regular Product Delivery Zones**
-*For individual products (empanadas, alfajores)*
+
+_For individual products (empanadas, alfajores)_
 
 ---
 
@@ -19,6 +21,7 @@ Destino SF implements **two separate delivery zone systems** to accommodate diff
 **Purpose**: Handle high-value catering orders with substantial minimum requirements
 
 ### Characteristics:
+
 - **High minimum orders**: $250 - $500+ depending on zone
 - **Higher delivery fees**: $50 - $150+ per delivery
 - **Longer delivery windows**: 1-4 hours
@@ -26,12 +29,13 @@ Destino SF implements **two separate delivery zone systems** to accommodate diff
 - **Business focus**: Corporate events, large gatherings
 
 ### Current Zones:
-| Zone | Areas | Minimum | Delivery Fee | Est. Time |
-|------|-------|---------|--------------|-----------|
-| San Francisco | SF and surrounding | $250.00 | $50.00 | 1-2 hours |
-| South Bay | San José, Santa Clara, Sunnyvale | $350.00 | $75.00 | 2-3 hours |
-| Lower Peninsula | Redwood City, Palo Alto, Mountain View | $400.00 | $100.00 | 2-3 hours |
-| Peninsula | San Ramón, Walnut Creek, Far Peninsula | $500.00 | $150.00 | 3-4 hours |
+
+| Zone            | Areas                                  | Minimum | Delivery Fee | Est. Time |
+| --------------- | -------------------------------------- | ------- | ------------ | --------- |
+| San Francisco   | SF and surrounding                     | $250.00 | $50.00       | 1-2 hours |
+| South Bay       | San José, Santa Clara, Sunnyvale       | $350.00 | $75.00       | 2-3 hours |
+| Lower Peninsula | Redwood City, Palo Alto, Mountain View | $400.00 | $100.00      | 2-3 hours |
+| Peninsula       | San Ramón, Walnut Creek, Far Peninsula | $500.00 | $150.00      | 3-4 hours |
 
 ### Database Table: `catering_delivery_zones`
 
@@ -42,6 +46,7 @@ Destino SF implements **two separate delivery zone systems** to accommodate diff
 **Purpose**: Handle individual product orders with reasonable delivery fees
 
 ### Characteristics:
+
 - **Low/no minimums**: $0 - $75 for free delivery
 - **Affordable fees**: $15 - $25 per delivery
 - **Quick delivery**: 30-90 minutes
@@ -49,10 +54,11 @@ Destino SF implements **two separate delivery zone systems** to accommodate diff
 - **Consumer focus**: Individual customers, small orders
 
 ### Current Zones:
-| Zone | Areas | Free Over | Delivery Fee | Est. Time |
-|------|-------|-----------|--------------|-----------|
-| SF Nearby | San Francisco, Daly City, South SF | $75.00 | $15.00 | 30-60 minutes |
-| SF Extended | Peninsula, East Bay, South Bay | $0.00 | $25.00 | 45-90 minutes |
+
+| Zone        | Areas                              | Free Over | Delivery Fee | Est. Time     |
+| ----------- | ---------------------------------- | --------- | ------------ | ------------- |
+| SF Nearby   | San Francisco, Daly City, South SF | $75.00    | $15.00       | 30-60 minutes |
+| SF Extended | Peninsula, East Bay, South Bay     | $0.00     | $25.00       | 45-90 minutes |
 
 ### Database Table: `regular_delivery_zones`
 
@@ -63,6 +69,7 @@ Destino SF implements **two separate delivery zone systems** to accommodate diff
 ### API Endpoints
 
 #### Catering Zones
+
 ```
 GET    /api/admin/delivery-zones
 POST   /api/admin/delivery-zones
@@ -70,6 +77,7 @@ DELETE /api/admin/delivery-zones?id={zoneId}
 ```
 
 #### Regular Zones
+
 ```
 GET    /api/admin/regular-delivery-zones
 POST   /api/admin/regular-delivery-zones
@@ -99,7 +107,7 @@ The system **automatically determines** which delivery zone system to use:
 const deliveryFee = await calculateDeliveryFee(address, subtotal);
 // Uses: regular_delivery_zones table
 
-// For catering products  
+// For catering products
 const cateringValidation = await validateCateringDelivery(address, items);
 // Uses: catering_delivery_zones table
 ```
@@ -127,6 +135,7 @@ Both systems use the same matching algorithm but query different tables:
 ## 🎛️ Configuration Options
 
 ### Catering Zones
+
 - `minimumAmount`: Required order value for delivery
 - `deliveryFee`: Fixed fee regardless of order size
 - `estimatedDeliveryTime`: Display to customers
@@ -136,9 +145,10 @@ Both systems use the same matching algorithm but query different tables:
 - `displayOrder`: Sorting priority
 
 ### Regular Zones
+
 - `minimumOrderForFree`: Order value for free delivery (0 = never free)
 - `deliveryFee`: Fee charged if under minimum
-- `estimatedDeliveryTime`: Display to customers  
+- `estimatedDeliveryTime`: Display to customers
 - `postalCodes`: Array of supported postal codes
 - `cities`: Array of supported city names
 - `active`: Enable/disable zone
@@ -149,6 +159,7 @@ Both systems use the same matching algorithm but query different tables:
 ## 🔄 Data Flow
 
 ### Regular Product Order Flow
+
 ```
 1. Customer adds empanadas/alfajores to cart
 2. Enters delivery address at checkout
@@ -161,6 +172,7 @@ Both systems use the same matching algorithm but query different tables:
 ```
 
 ### Catering Order Flow
+
 ```
 1. Customer selects catering items
 2. Enters delivery details
@@ -178,25 +190,30 @@ Both systems use the same matching algorithm but query different tables:
 ### Common Issues
 
 **Problem**: Customer sees "Outside delivery area"
+
 - **Check**: Address matches postal codes or cities in active zones
 - **Solution**: Add postal code/city to appropriate zone
 
 **Problem**: Wrong delivery fee calculated
+
 - **Check**: Order type (regular vs catering) matches expected system
 - **Solution**: Verify product categorization and zone configuration
 
 **Problem**: Free delivery not applying
+
 - **Check**: Order total meets `minimumOrderForFree` threshold
 - **Solution**: Review zone settings and order calculation
 
 ### Testing Tools
 
 Run comprehensive system test:
+
 ```bash
 npx tsx scripts/test-delivery-systems.ts
 ```
 
 Check specific address:
+
 ```bash
 # Test in browser console
 calculateDeliveryFee({
@@ -210,12 +227,14 @@ calculateDeliveryFee({
 ## 📈 Analytics & Monitoring
 
 ### Key Metrics
+
 - **Zone Coverage**: Percentage of orders matched to zones
 - **Average Delivery Fee**: By zone and product type
 - **Free Delivery Rate**: Orders qualifying for free delivery
 - **Geographic Distribution**: Popular delivery areas
 
 ### Admin Reports
+
 - Zone performance analytics
 - Delivery fee revenue by area
 - Customer geographic patterns
@@ -226,6 +245,7 @@ calculateDeliveryFee({
 ## 🚀 Future Enhancements
 
 ### Planned Features
+
 1. **Dynamic Pricing**: Time-based delivery fees
 2. **Distance Calculation**: GPS-based fee adjustment
 3. **Delivery Slots**: Time-specific availability
@@ -233,6 +253,7 @@ calculateDeliveryFee({
 5. **Auto-expansion**: AI-suggested new zones
 
 ### Migration Considerations
+
 - **Backward Compatibility**: Legacy orders still supported
 - **Data Integrity**: Automated validation checks
 - **Performance**: Optimized database queries
@@ -251,5 +272,5 @@ For technical issues or zone configuration questions:
 
 ---
 
-*Last Updated: January 2025*  
-*System Version: v2.0 - Dual Zone Architecture*
+_Last Updated: January 2025_  
+_System Version: v2.0 - Dual Zone Architecture_

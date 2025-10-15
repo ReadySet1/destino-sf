@@ -82,7 +82,9 @@ export const AddressForm: React.FC<AddressFormProps> = ({
           className={getError('recipientName') ? 'border-red-500' : ''}
           placeholder="Full name of the recipient"
         />
-        {getError('recipientName') && <p className="mt-1 text-sm text-red-500">{getError('recipientName')}</p>}
+        {getError('recipientName') && (
+          <p className="mt-1 text-sm text-red-500">{getError('recipientName')}</p>
+        )}
       </div>
 
       <div>
@@ -130,7 +132,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
           <Label htmlFor={`${prefix}.state`}>State</Label>
           <Select
             value={form.watch(`${prefix}.state`) || ''}
-            onValueChange={(value) => {
+            onValueChange={value => {
               form.setValue(`${prefix}.state`, value);
               if (onAddressChange) {
                 setTimeout(onAddressChange, 100);
@@ -141,7 +143,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               <SelectValue placeholder="Select state" />
             </SelectTrigger>
             <SelectContent>
-              {availableStates.map((state) => (
+              {availableStates.map(state => (
                 <SelectItem key={state.code} value={state.code}>
                   {state.code} - {state.name}
                 </SelectItem>

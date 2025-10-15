@@ -15,4 +15,4 @@ export { OrderHistory } from './OrderHistory';
 export { ProductCard } from './ProductCard';
 export { ProductDetail } from './ProductDetail';
 export { CategoryTabs } from './CategoryTabs';
-export { QuantityStepper } from './QuantityStepper'; 
+export { QuantityStepper } from './QuantityStepper';

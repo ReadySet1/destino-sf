@@ -20,14 +20,15 @@ const config: Config = {
         '^@/utils/(.*)$': '<rootDir>/src/utils/$1',
         '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
         '^@/store/(.*)$': '<rootDir>/src/store/$1',
-        
+
         // Mock external modules that don't work in Node.js (remaining mocks only)
-        '^@supabase/auth-helpers-nextjs$': '<rootDir>/src/__mocks__/@supabase/auth-helpers-nextjs.ts',
+        '^@supabase/auth-helpers-nextjs$':
+          '<rootDir>/src/__mocks__/@supabase/auth-helpers-nextjs.ts',
         '^resend$': '<rootDir>/src/__mocks__/resend.ts',
         '^next/router$': '<rootDir>/src/__mocks__/next/router.ts',
         '^next/navigation$': '<rootDir>/src/__mocks__/next/navigation.ts',
         '^@googlemaps/js-api-loader$': '<rootDir>/src/__mocks__/@googlemaps/js-api-loader.ts',
-        
+
         // Static assets
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
         '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
@@ -38,34 +39,32 @@ const config: Config = {
       ],
       // Removed global setup/teardown to fix Jest import issues
       transform: {
-        '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: {
-            jsx: 'react',
-            esModuleInterop: true,
-            allowSyntheticDefaultImports: true,
-            moduleResolution: 'node',
-            resolveJsonModule: true,
-            strict: true,
-            skipLibCheck: true,
+        '^.+\\.tsx?$': [
+          'ts-jest',
+          {
+            tsconfig: {
+              jsx: 'react',
+              esModuleInterop: true,
+              allowSyntheticDefaultImports: true,
+              moduleResolution: 'node',
+              resolveJsonModule: true,
+              strict: true,
+              skipLibCheck: true,
+            },
+            // isolatedModules moved to tsconfig.json
           },
-          // isolatedModules moved to tsconfig.json
-        }],
+        ],
       },
-      transformIgnorePatterns: [
-        'node_modules/(?!(square|shippo|@supabase|@googlemaps)/)'
-      ],
+      transformIgnorePatterns: ['node_modules/(?!(square|shippo|@supabase|@googlemaps)/)'],
       testEnvironmentOptions: {
-        customExportConditions: ['node', 'node-addons']
+        customExportConditions: ['node', 'node-addons'],
       },
     },
     {
       displayName: 'jsdom',
       preset: 'ts-jest',
       testEnvironment: 'jsdom',
-      testMatch: [
-        '<rootDir>/src/**/__tests__/**/*.test.tsx',
-        '<rootDir>/src/**/*.test.tsx',
-      ],
+      testMatch: ['<rootDir>/src/**/__tests__/**/*.test.tsx', '<rootDir>/src/**/*.test.tsx'],
       moduleNameMapper: {
         // Path mapping
         '^@/(.*)$': '<rootDir>/src/$1',
@@ -76,14 +75,15 @@ const config: Config = {
         '^@/utils/(.*)$': '<rootDir>/src/utils/$1',
         '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
         '^@/store/(.*)$': '<rootDir>/src/store/$1',
-        
+
         // Mock external modules for React environment (remaining mocks only)
-        '^@supabase/auth-helpers-nextjs$': '<rootDir>/src/__mocks__/@supabase/auth-helpers-nextjs.ts',
+        '^@supabase/auth-helpers-nextjs$':
+          '<rootDir>/src/__mocks__/@supabase/auth-helpers-nextjs.ts',
         '^resend$': '<rootDir>/src/__mocks__/resend.ts',
         '^next/router$': '<rootDir>/src/__mocks__/next/router.ts',
         '^next/navigation$': '<rootDir>/src/__mocks__/next/navigation.ts',
         '^@googlemaps/js-api-loader$': '<rootDir>/src/__mocks__/@googlemaps/js-api-loader.ts',
-        
+
         // Static assets
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
         '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
@@ -93,21 +93,24 @@ const config: Config = {
         // Test infrastructure files removed for quick ship
       ],
       transform: {
-        '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: {
-            jsx: 'react-jsx',
-            esModuleInterop: true,
-            allowSyntheticDefaultImports: true,
-            moduleResolution: 'node',
-            resolveJsonModule: true,
-            strict: true,
-            skipLibCheck: true,
+        '^.+\\.tsx?$': [
+          'ts-jest',
+          {
+            tsconfig: {
+              jsx: 'react-jsx',
+              esModuleInterop: true,
+              allowSyntheticDefaultImports: true,
+              moduleResolution: 'node',
+              resolveJsonModule: true,
+              strict: true,
+              skipLibCheck: true,
+            },
+            // isolatedModules moved to tsconfig.json
           },
-          // isolatedModules moved to tsconfig.json
-        }],
+        ],
       },
       transformIgnorePatterns: [
-        'node_modules/(?!(square|shippo|@supabase|@googlemaps|@testing-library)/)'
+        'node_modules/(?!(square|shippo|@supabase|@googlemaps|@testing-library)/)',
       ],
       testEnvironmentOptions: {
         url: 'http://localhost:3000',
@@ -177,38 +180,33 @@ const config: Config = {
   verbose: true,
   maxWorkers: 1, // Run tests serially to avoid DB conflicts
   testTimeout: 30000, // 30 seconds timeout for all tests
-  bail: false,  // Don't stop on first failure
-  
+  bail: false, // Don't stop on first failure
+
   // Error handling
   errorOnDeprecated: true,
-  
+
   // Performance
   cache: true,
   cacheDirectory: '<rootDir>/.jest-cache',
-  
+
   // Watch mode configuration
-  watchPlugins: [
-    'jest-watch-typeahead/filename',
-    'jest-watch-typeahead/testname',
-  ],
-  
+  watchPlugins: ['jest-watch-typeahead/filename', 'jest-watch-typeahead/testname'],
+
   // Reporter configuration (removed jest-junit due to compatibility issues)
-  reporters: [
-    'default',
-  ],
-  
+  reporters: ['default'],
+
   // Global test configuration
   globals: {
     'ts-jest': {
       useESM: false,
     },
   },
-  
+
   // Mock configuration
   clearMocks: true,
   resetMocks: false,
   restoreMocks: true,
-  
+
   // Snapshot configuration (removed deprecated serializers)
 };
 

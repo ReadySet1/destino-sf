@@ -11,6 +11,7 @@ This guide covers the complete process for preparing the Product Archive feature
 ### 1. Code Quality & Build Verification
 
 #### TypeScript Compilation
+
 ```bash
 # Verify TypeScript compiles without errors
 npm run type-check
@@ -21,6 +22,7 @@ npx tsc --noEmit
 ```
 
 #### Build Verification
+
 ```bash
 # Production build test
 npm run build
@@ -33,6 +35,7 @@ npm run build
 ```
 
 #### Linting
+
 ```bash
 # Run ESLint
 npm run lint
@@ -44,6 +47,7 @@ npm run lint -- --fix
 ```
 
 #### Code Formatting
+
 ```bash
 # Check formatting (if using Prettier)
 npm run format:check
@@ -59,6 +63,7 @@ npm run format
 ### 2. Database Verification
 
 #### Check Migration Status
+
 ```bash
 # View migration status
 npx prisma migrate status
@@ -67,6 +72,7 @@ npx prisma migrate status
 ```
 
 #### Verify Schema
+
 ```bash
 # Ensure Prisma schema is in sync
 npx prisma generate
@@ -78,6 +84,7 @@ npx prisma validate
 ```
 
 #### Test Database Connection
+
 ```bash
 # Run a test query (create a test script if needed)
 npx prisma studio
@@ -94,6 +101,7 @@ npx prisma studio
 #### Manual Testing Checklist
 
 **Archive Functionality:**
+
 - [ ] Archive a product from main products page
   - Navigate to `/admin/products`
   - Click archive button on a product
@@ -114,6 +122,7 @@ npx prisma studio
   - Verify URL updates with `?archived=` param
 
 **Archive Statistics:**
+
 - [ ] View archive stats dashboard
   - Navigate to `/admin/products/archived`
   - Verify total count is accurate
@@ -121,6 +130,7 @@ npx prisma studio
   - Verify breakdown by category is accurate
 
 **Pagination:**
+
 - [ ] Test pagination on archived page
   - Archive 20+ products (if needed for testing)
   - Navigate to `/admin/products/archived`
@@ -129,7 +139,9 @@ npx prisma studio
   - Verify page number in URL
 
 **Archive via API:**
+
 - [ ] Test archive API endpoint
+
 ```bash
 # Archive product
 curl -X POST http://localhost:3000/api/admin/products/PRODUCT_ID/archive \
@@ -144,6 +156,7 @@ curl http://localhost:3000/api/admin/products/PRODUCT_ID/archive
 ```
 
 **Square Sync Integration:**
+
 - [ ] Verify Square sync respects is_archived
   - Archive a product in Square dashboard
   - Run sync: `npm run sync:square` (or trigger via cron)
@@ -151,6 +164,7 @@ curl http://localhost:3000/api/admin/products/PRODUCT_ID/archive
   - Check `archived_reason` = 'square_archived'
 
 **Error Handling:**
+
 - [ ] Try to archive non-existent product
   - Should return 404 or appropriate error
 - [ ] Try to archive already archived product
@@ -159,6 +173,7 @@ curl http://localhost:3000/api/admin/products/PRODUCT_ID/archive
   - Should return error message
 
 **Mobile Responsiveness:**
+
 - [ ] Test on mobile viewport (DevTools)
   - Archive filter buttons stack properly
   - Product cards display in single column
@@ -170,6 +185,7 @@ curl http://localhost:3000/api/admin/products/PRODUCT_ID/archive
 ### 4. Performance Testing
 
 #### Page Load Times
+
 ```bash
 # Use Lighthouse or similar
 npm run lighthouse -- --url=http://localhost:3000/admin/products
@@ -182,6 +198,7 @@ npm run lighthouse -- --url=http://localhost:3000/admin/products/archived
 ```
 
 #### Database Query Performance
+
 ```typescript
 // Add this test script: scripts/test-archive-queries.ts
 
@@ -191,21 +208,21 @@ async function testQueries() {
   console.time('Get archived products');
   const archived = await prisma.product.findMany({
     where: { isArchived: true },
-    take: 20
+    take: 20,
   });
   console.timeEnd('Get archived products');
-  
+
   console.time('Get active products');
   const active = await prisma.product.findMany({
     where: { active: true, isArchived: false },
-    take: 20
+    take: 20,
   });
   console.timeEnd('Get active products');
-  
+
   console.time('Archive stats');
   const stats = await getArchivedProductsCount();
   console.timeEnd('Archive stats');
-  
+
   console.log(`Archived: ${archived.length}, Active: ${active.length}`);
 }
 
@@ -219,11 +236,13 @@ testQueries();
 ### 5. Security & Data Integrity
 
 #### Authentication Checks
+
 - [ ] Verify archive endpoints require authentication
 - [ ] Test unauthorized access to `/api/admin/products/[id]/archive`
 - [ ] Ensure only admin users can access archive pages
 
 #### Data Validation
+
 - [ ] Archive sets all required fields:
   - `isArchived = true`
   - `archivedAt` is timestamp
@@ -237,6 +256,7 @@ testQueries();
   - `active = true`
 
 #### SQL Injection Prevention
+
 - [ ] All Prisma queries use parameterized inputs
 - [ ] No raw SQL with user input
 - [ ] Search queries properly escaped
@@ -246,17 +266,20 @@ testQueries();
 ### 6. Documentation Review
 
 #### Code Documentation
+
 - [ ] All components have JSDoc comments
 - [ ] Complex logic has inline comments
 - [ ] TypeScript types are well-documented
 
 #### Feature Documentation
+
 - [ ] `PRODUCT_ARCHIVE_FEATURE.md` is up-to-date
 - [ ] Phase 2 summary reflects actual implementation
 - [ ] API endpoints documented with examples
 - [ ] Usage examples are accurate
 
 #### Developer Documentation
+
 - [ ] Update CHANGELOG.md with new features
 - [ ] Add migration instructions if needed
 - [ ] Document any new environment variables
@@ -266,6 +289,7 @@ testQueries();
 ### 7. Environment Configuration
 
 #### Environment Variables Check
+
 ```bash
 # Verify required env vars exist
 # .env.local (development)
@@ -278,6 +302,7 @@ SQUARE_ACCESS_TOKEN=...
 ```
 
 #### Configuration Files
+
 - [ ] `next.config.js` - No changes needed (verify)
 - [ ] `prisma/schema.prisma` - Archive fields present
 - [ ] `tsconfig.json` - No changes needed (verify)
@@ -391,17 +416,22 @@ git push -u origin feature/product-archive-phase-1-2
 ### 1. Create Pull Request
 
 **PR Title:**
+
 ```
 feat: Product Archive Feature - Phase 1 & 2
 ```
 
 **PR Description Template:**
-```markdown
+
+````markdown
 ## Summary
+
 Implements comprehensive product archive feature with backend API and admin UI.
 
 ## Changes
+
 ### Phase 1 - Backend & API
+
 - ✅ Database schema with archive fields
 - ✅ Square sync integration
 - ✅ Archive/restore API endpoints
@@ -409,6 +439,7 @@ Implements comprehensive product archive feature with backend API and admin UI.
 - ✅ TypeScript types
 
 ### Phase 2 - Admin UI
+
 - ✅ Archive statistics dashboard
 - ✅ Archive filter component
 - ✅ Archive/restore buttons
@@ -417,6 +448,7 @@ Implements comprehensive product archive feature with backend API and admin UI.
 - ✅ Toast notifications
 
 ## Testing
+
 - [x] Manual testing completed
 - [x] Archive/restore functionality verified
 - [x] Square sync tested
@@ -425,20 +457,26 @@ Implements comprehensive product archive feature with backend API and admin UI.
 - [x] Build successful
 
 ## Database Migration
+
 ⚠️ **Requires migration:** Yes
+
 ```bash
 npx prisma migrate deploy
 ```
+````
 
 ## Documentation
+
 - [x] Feature documentation updated
 - [x] API endpoints documented
 - [x] Code comments added
 
 ## Screenshots
+
 [Add screenshots of UI components]
 
 ## Checklist
+
 - [x] Code follows style guidelines
 - [x] Self-review performed
 - [x] Comments added to complex code
@@ -448,8 +486,10 @@ npx prisma migrate deploy
 - [x] Migration tested
 
 ## Related Issues
+
 Closes #123 (if applicable)
-```
+
+````
 
 ### 2. Automated Checks (CI/CD)
 
@@ -471,30 +511,31 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Type check
         run: npm run type-check
-      
+
       - name: Lint
         run: npm run lint
-      
+
       - name: Build
         run: npm run build
-      
+
       - name: Test database migration
         run: |
           npx prisma generate
           npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-```
+````
 
 ### 3. Code Review Preparation
 
 **Self-Review Checklist:**
+
 - [ ] No debugging code (console.log, debugger)
 - [ ] No commented-out code
 - [ ] No TODO comments without context
@@ -505,6 +546,7 @@ jobs:
 - [ ] Code is readable and maintainable
 
 **Review Focus Areas:**
+
 - Database migration safety
 - API endpoint security
 - TypeScript type safety
@@ -589,6 +631,7 @@ pm2 logs app-name
 In case of issues, have a rollback strategy:
 
 ### Database Rollback
+
 ```bash
 # If migration causes issues
 npx prisma migrate resolve --rolled-back MIGRATION_NAME
@@ -605,6 +648,7 @@ pm2 restart app-name
 ```
 
 ### Feature Flag Alternative
+
 Consider wrapping the feature in a feature flag:
 
 ```typescript
@@ -635,7 +679,7 @@ grep -i "archive" /var/log/app.log | tail -50
 
 ```sql
 -- Check query performance
-SELECT 
+SELECT
   query,
   calls,
   total_time,
@@ -645,7 +689,7 @@ WHERE query ILIKE '%is_archived%'
 ORDER BY mean_time DESC;
 
 -- Verify index usage
-SELECT 
+SELECT
   schemaname,
   tablename,
   indexname,
@@ -668,12 +712,14 @@ WHERE indexname = 'idx_products_archived_active';
 ## Final Checklist Before Merge
 
 **Code Quality:**
+
 - [ ] TypeScript compiles without errors
 - [ ] Build completes successfully
 - [ ] Linting passes
 - [ ] Code formatted consistently
 
 **Testing:**
+
 - [ ] All manual tests pass
 - [ ] Archive/restore works correctly
 - [ ] Square sync integration verified
@@ -681,30 +727,35 @@ WHERE indexname = 'idx_products_archived_active';
 - [ ] No console errors
 
 **Database:**
+
 - [ ] Migration tested locally
 - [ ] Migration reversible (if needed)
 - [ ] Index created successfully
 - [ ] Queries perform well
 
 **Documentation:**
+
 - [ ] Feature docs updated
 - [ ] API endpoints documented
 - [ ] Code comments added
 - [ ] CHANGELOG.md updated
 
 **Security:**
+
 - [ ] Authentication required
 - [ ] Input validation present
 - [ ] No SQL injection vulnerabilities
 - [ ] Sensitive data protected
 
 **Git:**
+
 - [ ] Descriptive commit message
 - [ ] Branch pushed to remote
 - [ ] PR created with description
 - [ ] No merge conflicts
 
 **Deployment:**
+
 - [ ] Environment variables documented
 - [ ] Migration commands ready
 - [ ] Rollback plan prepared
@@ -717,17 +768,20 @@ WHERE indexname = 'idx_products_archived_active';
 After deployment, track these metrics:
 
 **Usage Metrics:**
+
 - Number of products archived per day
 - Number of products restored per day
 - Archive reasons breakdown
 - Time to archive (performance)
 
 **User Metrics:**
+
 - Admin users utilizing archive feature
 - Support tickets related to archive
 - User feedback scores
 
 **Technical Metrics:**
+
 - API response times
 - Database query performance
 - Error rates
@@ -748,12 +802,14 @@ After deployment, track these metrics:
 ## Contact & Support
 
 **For Issues:**
+
 - Check logs first
 - Review error messages
 - Search documentation
 - Contact development team
 
 **For Questions:**
+
 - Refer to `PRODUCT_ARCHIVE_FEATURE.md`
 - Check API documentation
 - Review Phase 2 implementation summary
@@ -763,6 +819,7 @@ After deployment, track these metrics:
 ## Summary
 
 This deployment includes:
+
 - ✅ Database migration with 3 new fields + index
 - ✅ 7 new/modified files for backend
 - ✅ 6 new components for UI

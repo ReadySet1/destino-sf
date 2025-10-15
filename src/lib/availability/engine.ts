@@ -1,10 +1,10 @@
-import { 
-  AvailabilityState, 
-  RuleType, 
-  type AvailabilityRule, 
+import {
+  AvailabilityState,
+  RuleType,
+  type AvailabilityRule,
   type AvailabilityEvaluation,
   type SeasonalConfig,
-  type TimeRestrictions 
+  type TimeRestrictions,
 } from '@/types/availability';
 import { logger } from '@/utils/logger';
 
@@ -17,7 +17,7 @@ export class AvailabilityEngine {
    * Evaluate all rules for a product and return current availability state
    */
   static async evaluateProduct(
-    productId: string, 
+    productId: string,
     rules: AvailabilityRule[],
     currentTime: Date = new Date()
   ): Promise<AvailabilityEvaluation> {
@@ -34,7 +34,7 @@ export class AvailabilityEngine {
       for (const rule of activeRules) {
         if (this.isRuleApplicable(rule, currentTime)) {
           applicableRules.push(rule);
-          
+
           // First applicable rule wins (highest priority)
           if (applicableRules.length === 1) {
             currentState = rule.state as AvailabilityState;
@@ -50,29 +50,29 @@ export class AvailabilityEngine {
         currentState,
         appliedRules: applicableRules,
         computedAt: currentTime,
-        nextStateChange
+        nextStateChange,
       };
 
       logger.info('Product availability evaluated', {
         productId,
         currentState,
         rulesApplied: applicableRules.length,
-        nextChange: nextStateChange?.date
+        nextChange: nextStateChange?.date,
       });
 
       return evaluation;
     } catch (error) {
       logger.error('Error evaluating product availability', {
         productId,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       // Fallback to available state on error
       return {
         productId,
         currentState: AvailabilityState.AVAILABLE,
         appliedRules: [],
-        computedAt: currentTime
+        computedAt: currentTime,
       };
     }
   }
@@ -84,21 +84,21 @@ export class AvailabilityEngine {
     switch (rule.ruleType) {
       case RuleType.DATE_RANGE:
         return this.isDateRangeApplicable(rule, currentTime);
-      
+
       case RuleType.SEASONAL:
         return this.isSeasonalRuleApplicable(rule, currentTime);
-      
+
       case RuleType.TIME_BASED:
         return this.isTimeBasedRuleApplicable(rule, currentTime);
-      
+
       case RuleType.CUSTOM:
         // Custom rules are always applicable (handled by business logic)
         return true;
-      
+
       case RuleType.INVENTORY:
         // Inventory rules need additional inventory data (not implemented here)
         return true;
-      
+
       default:
         return false;
     }
@@ -109,19 +109,19 @@ export class AvailabilityEngine {
    */
   private static isDateRangeApplicable(rule: AvailabilityRule, currentTime: Date): boolean {
     const { startDate, endDate } = rule;
-    
+
     if (!startDate && !endDate) {
       return true; // No date restrictions
     }
-    
+
     if (startDate && currentTime < new Date(startDate)) {
       return false; // Before start date
     }
-    
+
     if (endDate && currentTime > new Date(endDate)) {
       return false; // After end date
     }
-    
+
     return true;
   }
 
@@ -132,22 +132,22 @@ export class AvailabilityEngine {
     if (!rule.seasonalConfig) {
       return false;
     }
-    
+
     const config = rule.seasonalConfig as SeasonalConfig;
     const now = new Date(currentTime);
-    
+
     // Convert to specified timezone
     const timeZone = config.timezone || 'America/Los_Angeles';
     const localTime = new Date(now.toLocaleString('en-US', { timeZone }));
-    
+
     const currentYear = localTime.getFullYear();
     const currentMonth = localTime.getMonth() + 1; // 0-based to 1-based
     const currentDay = localTime.getDate();
-    
+
     // Create start and end dates for current year
     const startDate = new Date(currentYear, config.startMonth - 1, config.startDay);
     const endDate = new Date(currentYear, config.endMonth - 1, config.endDay);
-    
+
     // Handle cross-year seasonal rules (e.g., Nov 15 - Feb 15)
     if (startDate > endDate) {
       // Rule spans across years
@@ -165,28 +165,28 @@ export class AvailabilityEngine {
     if (!rule.timeRestrictions) {
       return true;
     }
-    
+
     const restrictions = rule.timeRestrictions as TimeRestrictions;
     const timeZone = restrictions.timezone || 'America/Los_Angeles';
     const localTime = new Date(currentTime.toLocaleString('en-US', { timeZone }));
-    
+
     // Check day of week (0 = Sunday, 6 = Saturday)
     const currentDayOfWeek = localTime.getDay();
     if (!restrictions.daysOfWeek.includes(currentDayOfWeek)) {
       return false;
     }
-    
+
     // Check time range
     const currentHour = localTime.getHours();
     const currentMinute = localTime.getMinutes();
     const currentTimeMinutes = currentHour * 60 + currentMinute;
-    
+
     const [startHour, startMinute] = restrictions.startTime.split(':').map(Number);
     const [endHour, endMinute] = restrictions.endTime.split(':').map(Number);
-    
+
     const startTimeMinutes = startHour * 60 + startMinute;
     const endTimeMinutes = endHour * 60 + endMinute;
-    
+
     // Handle overnight time ranges (e.g., 22:00 - 06:00)
     if (startTimeMinutes > endTimeMinutes) {
       return currentTimeMinutes >= startTimeMinutes || currentTimeMinutes <= endTimeMinutes;
@@ -199,7 +199,7 @@ export class AvailabilityEngine {
    * Calculate when the next state change will occur
    */
   private static calculateNextStateChange(
-    rules: AvailabilityRule[], 
+    rules: AvailabilityRule[],
     currentTime: Date
   ): { date: Date; newState: AvailabilityState; rule: AvailabilityRule } | undefined {
     const upcomingChanges: Array<{
@@ -214,7 +214,7 @@ export class AvailabilityEngine {
         upcomingChanges.push({
           date: new Date(rule.startDate),
           state: rule.state as AvailabilityState,
-          rule
+          rule,
         });
       }
 
@@ -223,7 +223,7 @@ export class AvailabilityEngine {
         upcomingChanges.push({
           date: new Date(rule.endDate),
           state: AvailabilityState.AVAILABLE,
-          rule
+          rule,
         });
       }
 
@@ -236,51 +236,53 @@ export class AvailabilityEngine {
 
     // Sort by date and return the earliest change
     upcomingChanges.sort((a, b) => a.date.getTime() - b.date.getTime());
-    
+
     const nextChange = upcomingChanges[0];
-    return nextChange ? {
-      date: nextChange.date,
-      newState: nextChange.state,
-      rule: nextChange.rule
-    } : undefined;
+    return nextChange
+      ? {
+          date: nextChange.date,
+          newState: nextChange.state,
+          rule: nextChange.rule,
+        }
+      : undefined;
   }
 
   /**
    * Calculate upcoming seasonal rule changes
    */
   private static calculateSeasonalChanges(
-    rule: AvailabilityRule, 
+    rule: AvailabilityRule,
     currentTime: Date
   ): Array<{ date: Date; state: AvailabilityState; rule: AvailabilityRule }> {
     if (!rule.seasonalConfig) return [];
-    
+
     const config = rule.seasonalConfig as SeasonalConfig;
     const changes: Array<{ date: Date; state: AvailabilityState; rule: AvailabilityRule }> = [];
-    
+
     const currentYear = currentTime.getFullYear();
-    
+
     // Calculate start and end dates for current and next year
     for (let year = currentYear; year <= currentYear + 1; year++) {
       const startDate = new Date(year, config.startMonth - 1, config.startDay);
       const endDate = new Date(year, config.endMonth - 1, config.endDay);
-      
+
       if (startDate > currentTime) {
         changes.push({
           date: startDate,
           state: rule.state as AvailabilityState,
-          rule
+          rule,
         });
       }
-      
+
       if (endDate > currentTime) {
         changes.push({
           date: endDate,
           state: AvailabilityState.AVAILABLE,
-          rule
+          rule,
         });
       }
     }
-    
+
     return changes;
   }
 
@@ -292,12 +294,12 @@ export class AvailabilityEngine {
     currentTime: Date = new Date()
   ): Promise<Map<string, AvailabilityEvaluation>> {
     const evaluations = new Map<string, AvailabilityEvaluation>();
-    
+
     const promises = Array.from(productRules.entries()).map(async ([productId, rules]) => {
       const evaluation = await this.evaluateProduct(productId, rules, currentTime);
       evaluations.set(productId, evaluation);
     });
-    
+
     await Promise.all(promises);
     return evaluations;
   }
@@ -326,7 +328,7 @@ export class AvailabilityEngine {
           conflicts.push({
             rule1,
             rule2,
-            conflictType: 'priority'
+            conflictType: 'priority',
           });
         }
 
@@ -335,7 +337,7 @@ export class AvailabilityEngine {
           conflicts.push({
             rule1,
             rule2,
-            conflictType: 'date_overlap'
+            conflictType: 'date_overlap',
           });
         }
       }

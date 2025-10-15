@@ -45,10 +45,10 @@ interface CateringConfirmationLoaderProps {
   squareOrderId: string | null;
 }
 
-export default function CateringConfirmationLoader({ 
-  urlStatus, 
-  orderId, 
-  squareOrderId 
+export default function CateringConfirmationLoader({
+  urlStatus,
+  orderId,
+  squareOrderId,
 }: CateringConfirmationLoaderProps) {
   const [orderData, setOrderData] = useState<SerializableCateringOrderData>(null);
   const [actualStatus, setActualStatus] = useState<string>(urlStatus);
@@ -81,7 +81,7 @@ export default function CateringConfirmationLoader({
 
       try {
         logger.info(`[CATERING] Fetching catering order details for ID: ${orderId}`);
-        
+
         // Create a timeout for the fetch request
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
@@ -99,7 +99,7 @@ export default function CateringConfirmationLoader({
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          
+
           if (response.status === 404) {
             setActualStatus('not_found');
           } else if (response.status === 504 || errorData.code === 'TIMEOUT') {
@@ -113,7 +113,7 @@ export default function CateringConfirmationLoader({
         }
 
         const data = await response.json();
-        
+
         if (!data.order) {
           setActualStatus('not_found');
           return;
@@ -125,14 +125,15 @@ export default function CateringConfirmationLoader({
           eventDate: new Date(data.order.eventDate),
           createdAt: new Date(data.order.createdAt),
           lastRetryAt: data.order.lastRetryAt ? new Date(data.order.lastRetryAt) : null,
-          paymentUrlExpiresAt: data.order.paymentUrlExpiresAt ? new Date(data.order.paymentUrlExpiresAt) : null,
+          paymentUrlExpiresAt: data.order.paymentUrlExpiresAt
+            ? new Date(data.order.paymentUrlExpiresAt)
+            : null,
         };
 
         setOrderData(processedOrder);
         setActualStatus(data.status);
-        
+
         logger.info(`[CATERING] Successfully loaded order with ${data.order.items.length} items`);
-        
       } catch (fetchError) {
         // Handle specific error types without excessive logging
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
@@ -149,7 +150,6 @@ export default function CateringConfirmationLoader({
           setError('Failed to load order data. Please try again.');
         }
         setActualStatus('error');
-        
       } finally {
         setLoading(false);
       }
@@ -166,7 +166,9 @@ export default function CateringConfirmationLoader({
           <div className="mb-8 text-center">
             <div className="mb-4 text-5xl">🔄</div>
             <h1 className="mb-4 text-2xl font-bold">Loading Catering Order Details...</h1>
-            <p className="text-gray-600">Please wait while we retrieve your catering order information.</p>
+            <p className="text-gray-600">
+              Please wait while we retrieve your catering order information.
+            </p>
           </div>
         </div>
       </main>
@@ -190,7 +192,7 @@ export default function CateringConfirmationLoader({
                 Try Again
               </button>
               <button
-                onClick={() => window.location.href = '/catering'}
+                onClick={() => (window.location.href = '/catering')}
                 className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700"
               >
                 Back to Catering
@@ -202,12 +204,14 @@ export default function CateringConfirmationLoader({
     );
   }
 
-  logger.info(`[CATERING] Rendering confirmation with status: ${actualStatus}, Order: ${orderData ? 'Available' : 'Not available'}`);
+  logger.info(
+    `[CATERING] Rendering confirmation with status: ${actualStatus}, Order: ${orderData ? 'Available' : 'Not available'}`
+  );
 
   return (
-    <CateringConfirmationContent 
-      status={actualStatus} 
-      orderData={orderData} 
+    <CateringConfirmationContent
+      status={actualStatus}
+      orderData={orderData}
       squareOrderId={squareOrderId}
     />
   );

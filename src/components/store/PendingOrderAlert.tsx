@@ -17,10 +17,12 @@ interface PendingOrderAlertProps {
     paymentUrl?: string;
     paymentUrlExpiresAt?: Date;
     retryCount: number;
+    email?: string; // Order email for guest retry verification
   };
   onContinueExisting: () => void;
   onCreateNew: () => void;
   onDismiss: () => void;
+  currentUserEmail?: string; // Current user's email for guest checkout
 }
 
 export default function PendingOrderAlert({
@@ -28,6 +30,7 @@ export default function PendingOrderAlert({
   onContinueExisting,
   onCreateNew,
   onDismiss,
+  currentUserEmail,
 }: PendingOrderAlertProps) {
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -35,11 +38,15 @@ export default function PendingOrderAlert({
     setIsProcessing(true);
 
     try {
+      // Include email in request body for guest checkout verification
+      const requestBody = currentUserEmail ? { email: currentUserEmail } : {};
+
       const response = await fetch(`/api/orders/${existingOrder.id}/retry-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();
@@ -50,7 +57,7 @@ export default function PendingOrderAlert({
 
       if (result.success && result.checkoutUrl) {
         toast.success('Redirecting to payment...');
-        
+
         // Use setTimeout to ensure the redirect happens reliably
         setTimeout(() => {
           window.location.href = result.checkoutUrl;
@@ -66,9 +73,9 @@ export default function PendingOrderAlert({
   };
 
   const canRetryPayment = existingOrder.retryCount < 3;
-  const hasValidPaymentUrl = 
-    existingOrder.paymentUrl && 
-    existingOrder.paymentUrlExpiresAt && 
+  const hasValidPaymentUrl =
+    existingOrder.paymentUrl &&
+    existingOrder.paymentUrlExpiresAt &&
     new Date(existingOrder.paymentUrlExpiresAt) > new Date();
 
   const orderAge = Date.now() - new Date(existingOrder.createdAt).getTime();
@@ -81,9 +88,7 @@ export default function PendingOrderAlert({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0" />
-            <CardTitle className="text-lg text-orange-800 truncate">
-              Pending Order Found
-            </CardTitle>
+            <CardTitle className="text-lg text-orange-800 truncate">Pending Order Found</CardTitle>
           </div>
           <Button
             variant="ghost"
@@ -101,8 +106,8 @@ export default function PendingOrderAlert({
           <Clock className="h-4 w-4 text-orange-600" />
           <AlertDescription className="text-orange-800">
             You already have an order with the same products created{' '}
-            {hoursAgo > 0 ? `${hoursAgo}h ${minutesAgo}m` : `${minutesAgo}m`} ago.
-            You can complete payment for the existing order instead of creating a new one.
+            {hoursAgo > 0 ? `${hoursAgo}h ${minutesAgo}m` : `${minutesAgo}m`} ago. You can complete
+            payment for the existing order instead of creating a new one.
           </AlertDescription>
         </Alert>
 
@@ -114,11 +119,13 @@ export default function PendingOrderAlert({
                 Payment Pending
               </Badge>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
               <div>
                 <span className="text-gray-500">Total:</span>{' '}
-                <span className="font-semibold text-green-600">${existingOrder.total.toFixed(2)}</span>
+                <span className="font-semibold text-green-600">
+                  ${existingOrder.total.toFixed(2)}
+                </span>
               </div>
               <div>
                 <span className="text-gray-500">Created:</span>{' '}
@@ -126,7 +133,8 @@ export default function PendingOrderAlert({
               </div>
               {existingOrder.retryCount > 0 && (
                 <div className="sm:col-span-2">
-                  <span className="text-gray-500">Payment attempts:</span> {existingOrder.retryCount}/3
+                  <span className="text-gray-500">Payment attempts:</span>{' '}
+                  {existingOrder.retryCount}/3
                 </div>
               )}
             </div>
@@ -168,12 +176,12 @@ export default function PendingOrderAlert({
           <Alert className="border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              This order has reached the maximum payment attempt limit (3/3).
-              You can create a new order or contact support for assistance.
+              This order has reached the maximum payment attempt limit (3/3). You can create a new
+              order or contact support for assistance.
             </AlertDescription>
           </Alert>
         )}
       </CardContent>
     </Card>
   );
-} 
+}

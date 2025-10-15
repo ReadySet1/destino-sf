@@ -57,7 +57,7 @@ export function useResponsive(): ResponsiveState {
 
 export function useBreakpoint(breakpoint: 'mobile' | 'tablet' | 'desktop' | 'wide'): boolean {
   const { currentBreakpoint } = useResponsive();
-  
+
   switch (breakpoint) {
     case 'mobile':
       return currentBreakpoint === 'mobile';
@@ -86,4 +86,4 @@ export function useIsDesktop(): boolean {
 
 export function useIsWide(): boolean {
   return useBreakpoint('wide');
-} 
+}

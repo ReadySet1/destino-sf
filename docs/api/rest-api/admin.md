@@ -15,12 +15,14 @@ Authorization: Bearer <admin_token>
 ## Dashboard Analytics
 
 ### Get Dashboard Overview
+
 ```http
 GET /api/admin/dashboard
 Authorization: Bearer <admin_token>
 ```
 
 **Response:**
+
 ```typescript
 interface DashboardOverview {
   success: boolean;
@@ -48,12 +50,14 @@ interface DashboardOverview {
 ```
 
 ### Get Revenue Analytics
+
 ```http
 GET /api/admin/analytics/revenue
 Authorization: Bearer <admin_token>
 ```
 
 **Query Parameters:**
+
 - `period` (string): day, week, month, year
 - `startDate` (string): Start date in ISO format
 - `endDate` (string): End date in ISO format
@@ -61,12 +65,14 @@ Authorization: Bearer <admin_token>
 ## Order Management
 
 ### Get All Orders with Admin View
+
 ```http
 GET /api/admin/orders
 Authorization: Bearer <admin_token>
 ```
 
 **Query Parameters:**
+
 - `status` (string): Filter by order status
 - `customer` (string): Filter by customer email/name
 - `dateRange` (string): today, week, month, custom
@@ -76,6 +82,7 @@ Authorization: Bearer <admin_token>
 - `export` (boolean): Export to CSV
 
 ### Bulk Order Operations
+
 ```http
 POST /api/admin/orders/bulk
 Authorization: Bearer <admin_token>
@@ -92,6 +99,7 @@ Content-Type: application/json
 ```
 
 **Supported Bulk Actions:**
+
 - `update_status`: Change status for multiple orders
 - `archive`: Archive completed orders
 - `export`: Export order data
@@ -100,12 +108,14 @@ Content-Type: application/json
 ## Product Management
 
 ### Advanced Product Search
+
 ```http
 GET /api/admin/products
 Authorization: Bearer <admin_token>
 ```
 
 **Query Parameters:**
+
 - `status` (string): active, inactive, out_of_stock
 - `category` (string): Filter by category
 - `priceRange` (string): Format: "min-max"
@@ -113,12 +123,14 @@ Authorization: Bearer <admin_token>
 - `lowStock` (boolean): Show only low stock items
 
 ### Product Performance Analytics
+
 ```http
 GET /api/admin/products/{productId}/analytics
 Authorization: Bearer <admin_token>
 ```
 
 ### Bulk Product Operations
+
 ```http
 POST /api/admin/products/bulk
 Authorization: Bearer <admin_token>
@@ -137,12 +149,14 @@ Content-Type: application/json
 ## Customer Management
 
 ### Get All Customers
+
 ```http
 GET /api/admin/customers
 Authorization: Bearer <admin_token>
 ```
 
 ### Customer Details with Order History
+
 ```http
 GET /api/admin/customers/{customerId}
 Authorization: Bearer <admin_token>
@@ -151,12 +165,14 @@ Authorization: Bearer <admin_token>
 ## System Management
 
 ### Get System Health
+
 ```http
 GET /api/admin/system/health
 Authorization: Bearer <admin_token>
 ```
 
 ### Update System Settings
+
 ```http
 POST /api/admin/system/settings
 Authorization: Bearer <admin_token>
@@ -181,6 +197,7 @@ Content-Type: application/json
 ## Reports & Exports
 
 ### Generate Sales Report
+
 ```http
 POST /api/admin/reports/sales
 Authorization: Bearer <admin_token>
@@ -199,12 +216,14 @@ Content-Type: application/json
 ```
 
 ### Export Customer Data
+
 ```http
 GET /api/admin/export/customers
 Authorization: Bearer <admin_token>
 ```
 
 **Query Parameters:**
+
 - `format` (string): csv, xlsx, json
 - `fields` (string): Comma-separated list of fields to include
 - `dateRange` (string): Filter by registration date
@@ -212,6 +231,7 @@ Authorization: Bearer <admin_token>
 ## Error Responses
 
 ### Common Admin Error Codes
+
 - `INSUFFICIENT_ADMIN_PRIVILEGES`: User lacks admin permissions
 - `INVALID_BULK_OPERATION`: Bulk operation not supported
 - `EXPORT_GENERATION_FAILED`: Report/export generation failed
@@ -219,6 +239,7 @@ Authorization: Bearer <admin_token>
 - `CUSTOMER_DATA_RESTRICTED`: Access to customer data restricted
 
 ### Example Error Response
+
 ```json
 {
   "success": false,
@@ -243,6 +264,7 @@ Authorization: Bearer <admin_token>
 ## Audit Logging
 
 All admin actions are automatically logged with:
+
 - Admin user ID and email
 - Action performed
 - Timestamp
@@ -251,12 +273,14 @@ All admin actions are automatically logged with:
 - Before/after values (for updates)
 
 ### Get Audit Logs
+
 ```http
 GET /api/admin/audit-logs
 Authorization: Bearer <admin_token>
 ```
 
 **Query Parameters:**
+
 - `adminId` (string): Filter by admin user
 - `action` (string): Filter by action type
 - `startDate` (string): Start date for logs

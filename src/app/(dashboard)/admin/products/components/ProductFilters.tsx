@@ -104,7 +104,13 @@ export default function ProductFilters({
     router.push(pathname);
   };
 
-  const hasActiveFilters = search || category !== 'all' || status !== 'all' || featured !== 'all' || visibility !== 'all' || availability !== 'all';
+  const hasActiveFilters =
+    search ||
+    category !== 'all' ||
+    status !== 'all' ||
+    featured !== 'all' ||
+    visibility !== 'all' ||
+    availability !== 'all';
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mb-6">

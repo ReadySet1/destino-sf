@@ -48,7 +48,7 @@ export class AvailabilityProcessor {
   async processScheduledChanges(): Promise<ProcessingResult> {
     const startTime = Date.now();
     const jobId = `availability-${Date.now()}`;
-    
+
     // Prevent concurrent runs
     if (AvailabilityProcessor.isRunning) {
       throw new Error('Availability processing job is already running');
@@ -67,8 +67,8 @@ export class AvailabilityProcessor {
       summary: {
         rulesProcessed: 0,
         stateChanges: 0,
-        notificationsSent: 0
-      }
+        notificationsSent: 0,
+      },
     };
 
     try {
@@ -96,18 +96,17 @@ export class AvailabilityProcessor {
           processed: result.processed,
           updated: result.updated,
           errors: result.errors.length,
-          duration: result.duration
-        }
+          duration: result.duration,
+        },
       });
 
       return result;
-
     } catch (error) {
       result.duration = Date.now() - startTime;
       logger.error('Availability processing job failed', {
         jobId,
         error: error instanceof Error ? error.message : 'Unknown error',
-        duration: result.duration
+        duration: result.duration,
       });
       throw error;
     } finally {
@@ -122,31 +121,32 @@ export class AvailabilityProcessor {
   private async processScheduledRules(result: ProcessingResult): Promise<void> {
     try {
       const now = new Date();
-      
+
       // Find rules with scheduled changes in the next 5 minutes
       const scheduledRules = await withRetry(
-        () => prisma.availabilityRule.findMany({
-          where: {
-            enabled: true,
-            OR: [
-              {
-                startDate: {
-                  lte: now,
-                  gte: new Date(now.getTime() - 5 * 60 * 1000) // Last 5 minutes
-                }
-              },
-              {
-                endDate: {
-                  lte: now,
-                  gte: new Date(now.getTime() - 5 * 60 * 1000) // Last 5 minutes
-                }
-              }
-            ]
-          },
-          include: {
-            product: true
-          }
-        }),
+        () =>
+          prisma.availabilityRule.findMany({
+            where: {
+              enabled: true,
+              OR: [
+                {
+                  startDate: {
+                    lte: now,
+                    gte: new Date(now.getTime() - 5 * 60 * 1000), // Last 5 minutes
+                  },
+                },
+                {
+                  endDate: {
+                    lte: now,
+                    gte: new Date(now.getTime() - 5 * 60 * 1000), // Last 5 minutes
+                  },
+                },
+              ],
+            },
+            include: {
+              product: true,
+            },
+          }),
         3,
         'scheduled-rules-fetch'
       );
@@ -161,11 +161,10 @@ export class AvailabilityProcessor {
           result.errors.push({
             productId: rule.productId,
             error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
       }
-
     } catch (error) {
       logger.error('Error processing scheduled rules', { error });
       throw error;
@@ -178,21 +177,22 @@ export class AvailabilityProcessor {
   private async processExpiredRules(result: ProcessingResult): Promise<void> {
     try {
       const now = new Date();
-      
+
       // Find rules that have expired in the last 5 minutes
       const expiredRules = await withRetry(
-        () => prisma.availabilityRule.findMany({
-          where: {
-            enabled: true,
-            endDate: {
-              lte: now,
-              gte: new Date(now.getTime() - 5 * 60 * 1000) // Last 5 minutes
-            }
-          },
-          include: {
-            product: true
-          }
-        }),
+        () =>
+          prisma.availabilityRule.findMany({
+            where: {
+              enabled: true,
+              endDate: {
+                lte: now,
+                gte: new Date(now.getTime() - 5 * 60 * 1000), // Last 5 minutes
+              },
+            },
+            include: {
+              product: true,
+            },
+          }),
         3,
         'expired-rules-fetch'
       );
@@ -204,11 +204,10 @@ export class AvailabilityProcessor {
           result.errors.push({
             productId: rule.productId,
             error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
       }
-
     } catch (error) {
       logger.error('Error processing expired rules', { error });
       throw error;
@@ -222,7 +221,7 @@ export class AvailabilityProcessor {
     try {
       // Get unique product IDs that need re-evaluation
       const affectedProductIds = new Set<string>();
-      
+
       // Add products from errors (they need re-evaluation)
       result.errors.forEach(error => affectedProductIds.add(error.productId));
 
@@ -231,7 +230,7 @@ export class AvailabilityProcessor {
       }
 
       const productIds = Array.from(affectedProductIds);
-      
+
       // Fetch and re-evaluate availability for affected products
       const availabilityRules = await AvailabilityQueries.getMultipleProductRules(productIds);
       const evaluations = await AvailabilityEngine.evaluateMultipleProducts(availabilityRules);
@@ -241,7 +240,7 @@ export class AvailabilityProcessor {
           // Update product state if needed
           const product = await prisma.product.findUnique({
             where: { id: productId },
-            select: { id: true, name: true, isAvailable: true, visibility: true }
+            select: { id: true, name: true, isAvailable: true, visibility: true },
           });
 
           if (product) {
@@ -264,7 +263,7 @@ export class AvailabilityProcessor {
             if (shouldUpdate) {
               await prisma.product.update({
                 where: { id: productId },
-                data: updates
+                data: updates,
               });
 
               result.updated++;
@@ -274,7 +273,7 @@ export class AvailabilityProcessor {
                 productId,
                 productName: product.name,
                 newState,
-                updates
+                updates,
               });
             }
           }
@@ -282,11 +281,10 @@ export class AvailabilityProcessor {
           result.errors.push({
             productId,
             error: error instanceof Error ? error.message : 'Failed to update product state',
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
       }
-
     } catch (error) {
       logger.error('Error re-evaluating products', { error });
       throw error;
@@ -298,28 +296,36 @@ export class AvailabilityProcessor {
    */
   private async processRuleChange(rule: any, result: ProcessingResult): Promise<void> {
     const now = new Date();
-    
+
     // Check if rule is starting
-    if (rule.startDate && rule.startDate <= now && rule.startDate > new Date(now.getTime() - 5 * 60 * 1000)) {
+    if (
+      rule.startDate &&
+      rule.startDate <= now &&
+      rule.startDate > new Date(now.getTime() - 5 * 60 * 1000)
+    ) {
       logger.info('Processing rule activation', {
         ruleId: rule.id,
         ruleName: rule.name,
         productId: rule.productId,
-        state: rule.state
+        state: rule.state,
       });
-      
+
       // Rule is starting - apply its state
       await this.applyRuleState(rule, result);
     }
-    
+
     // Check if rule is ending
-    if (rule.endDate && rule.endDate <= now && rule.endDate > new Date(now.getTime() - 5 * 60 * 1000)) {
+    if (
+      rule.endDate &&
+      rule.endDate <= now &&
+      rule.endDate > new Date(now.getTime() - 5 * 60 * 1000)
+    ) {
       logger.info('Processing rule deactivation', {
         ruleId: rule.id,
         ruleName: rule.name,
-        productId: rule.productId
+        productId: rule.productId,
       });
-      
+
       // Rule is ending - revert to default or next highest priority rule
       await this.revertRuleState(rule, result);
     }
@@ -332,7 +338,7 @@ export class AvailabilityProcessor {
     logger.info('Processing rule expiration', {
       ruleId: rule.id,
       ruleName: rule.name,
-      productId: rule.productId
+      productId: rule.productId,
     });
 
     await this.revertRuleState(rule, result);
@@ -350,8 +356,8 @@ export class AvailabilityProcessor {
         name: true,
         isAvailable: true,
         visibility: true,
-        isPreorder: true
-      }
+        isPreorder: true,
+      },
     });
 
     if (!currentProduct) {
@@ -370,7 +376,7 @@ export class AvailabilityProcessor {
     } else {
       oldState = 'AVAILABLE';
     }
-    
+
     switch (rule.state) {
       case AvailabilityState.AVAILABLE:
         updates.isAvailable = true;
@@ -395,9 +401,9 @@ export class AvailabilityProcessor {
     if (Object.keys(updates).length > 0 && oldState !== newState) {
       await prisma.product.update({
         where: { id: rule.productId },
-        data: updates
+        data: updates,
       });
-      
+
       result.summary.stateChanges++;
 
       // Send availability change notification
@@ -410,13 +416,13 @@ export class AvailabilityProcessor {
             oldState,
             newState,
             ruleName: rule.name,
-            productName: currentProduct.name
-          }
+            productName: currentProduct.name,
+          },
         });
       } catch (error) {
         logger.error('Error sending availability change notification', {
           productId: rule.productId,
-          error
+          error,
         });
       }
     }
@@ -432,22 +438,16 @@ export class AvailabilityProcessor {
         productId: rule.productId,
         enabled: true,
         id: { not: rule.id },
-        OR: [
-          { startDate: null },
-          { startDate: { lte: new Date() } }
-        ],
+        OR: [{ startDate: null }, { startDate: { lte: new Date() } }],
         AND: [
-          { 
-            OR: [
-              { endDate: null },
-              { endDate: { gte: new Date() } }
-            ]
-          }
-        ]
+          {
+            OR: [{ endDate: null }, { endDate: { gte: new Date() } }],
+          },
+        ],
       },
       orderBy: {
-        priority: 'desc'
-      }
+        priority: 'desc',
+      },
     });
 
     // Apply highest priority rule, or revert to default
@@ -460,10 +460,10 @@ export class AvailabilityProcessor {
         data: {
           isAvailable: true,
           visibility: 'PUBLIC',
-          isPreorder: false
-        }
+          isPreorder: false,
+        },
       });
-      
+
       result.summary.stateChanges++;
     }
   }
@@ -474,7 +474,7 @@ export class AvailabilityProcessor {
   private async sendNotifications(result: ProcessingResult): Promise<void> {
     try {
       const notificationService = NotificationService.getInstance();
-      
+
       // Send system alert if there were errors
       if (result.errors.length > 0) {
         await notificationService.sendNotification({
@@ -488,9 +488,9 @@ export class AvailabilityProcessor {
               processed: result.processed,
               updated: result.updated,
               duration: result.duration,
-              errors: result.errors.slice(0, 5) // Include first 5 errors
-            }
-          }
+              errors: result.errors.slice(0, 5), // Include first 5 errors
+            },
+          },
         });
       }
 
@@ -506,9 +506,9 @@ export class AvailabilityProcessor {
               stateChanges: result.summary.stateChanges,
               processed: result.processed,
               updated: result.updated,
-              duration: result.duration
-            }
-          }
+              duration: result.duration,
+            },
+          },
         });
       }
 
@@ -519,9 +519,8 @@ export class AvailabilityProcessor {
 
       logger.info('Notifications sent for availability processing', {
         stateChanges: result.summary.stateChanges,
-        notificationsSent: result.summary.notificationsSent
+        notificationsSent: result.summary.notificationsSent,
       });
-
     } catch (error) {
       logger.error('Error sending notifications', { error });
       // Don't throw - notifications are not critical to the main process
@@ -544,7 +543,7 @@ export class AvailabilityProcessor {
     return {
       isRunning: AvailabilityProcessor.isRunning,
       lastRun: AvailabilityProcessor.lastRun,
-      currentJobId: AvailabilityProcessor.currentJobId
+      currentJobId: AvailabilityProcessor.currentJobId,
     };
   }
 

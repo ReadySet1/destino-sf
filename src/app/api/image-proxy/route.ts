@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     try {
       const urlObj = new URL(decodeURIComponent(url));
       const isAllowed = allowedDomains.some(domain => urlObj.hostname === domain);
-      
+
       if (!isAllowed) {
         return NextResponse.json({ error: 'URL not from allowed domain' }, { status: 403 });
       }
@@ -74,19 +74,17 @@ export async function GET(request: NextRequest) {
           'X-Image-Proxy': 'destino-sf',
         },
       });
-
     } catch (error) {
       clearTimeout(timeoutId);
-      
+
       if (error instanceof Error && error.name === 'AbortError') {
         console.warn(`Image fetch timeout for URL: ${url}`);
         return NextResponse.json({ error: 'Image fetch timeout' }, { status: 408 });
       }
-      
+
       console.error('Error fetching image:', error);
       return NextResponse.json({ error: 'Failed to fetch image' }, { status: 500 });
     }
-
   } catch (error) {
     console.error('Image proxy error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

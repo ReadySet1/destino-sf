@@ -11,18 +11,18 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action, alertIds } = body;
-    
+
     const alertService = new DashboardAlertService();
-    
+
     switch (action) {
       case 'mark_all_read':
         await alertService.markAllAsRead();
         return NextResponse.json({
           success: true,
           message: 'All alerts marked as read',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-      
+
       case 'mark_selected_read':
         if (!alertIds || !Array.isArray(alertIds)) {
           return NextResponse.json(
@@ -30,14 +30,14 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        
+
         await alertService.markMultipleAsRead(alertIds);
         return NextResponse.json({
           success: true,
           message: `${alertIds.length} alerts marked as read`,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-      
+
       case 'cleanup_old':
         const daysOld = body.daysOld || 30;
         const deletedCount = await alertService.deleteOldAlerts(daysOld);
@@ -45,23 +45,19 @@ export async function POST(request: NextRequest) {
           success: true,
           message: `Cleaned up ${deletedCount} old alerts`,
           deletedCount,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
-      
-      default:
-        return NextResponse.json(
-          { success: false, error: 'Invalid action' },
-          { status: 400 }
-        );
-    }
 
+      default:
+        return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
+    }
   } catch (error) {
     logger.error('Error performing bulk alert operation', { error });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

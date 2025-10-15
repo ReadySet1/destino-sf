@@ -9,14 +9,17 @@ This document outlines the required environment variables for the comprehensive 
 ### Required Variables
 
 #### `DATABASE_URL`
+
 **Purpose**: Primary database connection string with pgBouncer compatibility parameters  
 **Format**: `postgresql://[user]:[password]@[host]:[port]/[database]?[parameters]`  
-**Production Example**: 
+**Production Example**:
+
 ```bash
 DATABASE_URL="postgresql://username:password@host.pooler.supabase.com:6543/postgres?pgbouncer=true&statement_cache_size=0&prepared_statements=false"
 ```
 
 **Key Parameters for Vercel Production**:
+
 - `pgbouncer=true` - Enables pgBouncer compatibility mode
 - `statement_cache_size=0` - Disables prepared statement caching (CRITICAL)
 - `prepared_statements=false` - Explicitly disables prepared statements
@@ -25,6 +28,7 @@ DATABASE_URL="postgresql://username:password@host.pooler.supabase.com:6543/postg
 - `idle_in_transaction_session_timeout=30000` - Idle transaction timeout (30 seconds)
 
 #### `VERCEL` (Auto-populated)
+
 **Purpose**: Automatically set by Vercel to identify serverless environment  
 **Value**: `"1"` when running on Vercel  
 **Usage**: Used by Prisma client to apply Vercel-specific optimizations
@@ -32,11 +36,13 @@ DATABASE_URL="postgresql://username:password@host.pooler.supabase.com:6543/postg
 ### Optional Variables
 
 #### `DIRECT_DATABASE_URL`
+
 **Purpose**: Direct connection URL bypassing pooler (fallback option)  
 **Format**: `postgresql://[user]:[password]@[host]:5432/[database]`  
 **Usage**: Can be used as fallback for non-pooled connections if needed
 
 #### `NODE_ENV`
+
 **Purpose**: Environment identifier  
 **Values**: `"development"`, `"production"`, `"test"`  
 **Usage**: Controls logging levels and timeout configurations
@@ -44,6 +50,7 @@ DATABASE_URL="postgresql://username:password@host.pooler.supabase.com:6543/postg
 ## Environment-Specific Configurations
 
 ### Vercel Production Environment
+
 ```bash
 # Required
 DATABASE_URL="postgresql://user:pass@host.pooler.supabase.com:6543/postgres?pgbouncer=true&statement_cache_size=0&prepared_statements=false&pool_timeout=60&statement_timeout=30000&idle_in_transaction_session_timeout=30000"
@@ -57,6 +64,7 @@ DIRECT_DATABASE_URL="postgresql://user:pass@host.supabase.co:5432/postgres"
 ```
 
 ### Local Development Environment
+
 ```bash
 # Local development (no special pooling parameters needed)
 DATABASE_URL="postgresql://username:password@localhost:5432/database_name?statement_timeout=60000&idle_in_transaction_session_timeout=60000"
@@ -65,6 +73,7 @@ NODE_ENV="development"
 ```
 
 ### Staging/Preview Environment
+
 ```bash
 # Similar to production but may use different database
 DATABASE_URL="postgresql://user:pass@staging-host.pooler.supabase.com:6543/postgres?pgbouncer=true&statement_cache_size=0&prepared_statements=false"
@@ -76,6 +85,7 @@ VERCEL="1"
 ## Verification
 
 ### Health Check Endpoint
+
 Use the enhanced health check endpoint to verify configuration:
 
 ```bash
@@ -96,6 +106,7 @@ curl https://your-app.vercel.app/api/health/db
 ```
 
 ### Configuration Validation
+
 The Prisma client will log configuration details:
 
 ```
@@ -124,13 +135,14 @@ The Prisma client will log configuration details:
 ### Error Codes to Monitor
 
 - `42P05`: "prepared statement already exists"
-- `26000`: "prepared statement does not exist"  
+- `26000`: "prepared statement does not exist"
 - `P1001`: Prisma connection errors
 - `P1008`: Operation timeout errors
 
 ## Migration Path
 
 ### From Previous Configuration
+
 If migrating from a previous Prisma setup:
 
 1. **Update DATABASE_URL** with new parameters
@@ -140,6 +152,7 @@ If migrating from a previous Prisma setup:
 5. **Monitor logs** for prepared statement errors
 
 ### Rollback Plan
+
 If issues persist:
 
 1. **Revert to previous deployment** in Vercel dashboard
@@ -149,17 +162,20 @@ If issues persist:
 ## Performance Impact
 
 ### Expected Changes
+
 - **Slight increase** in query latency (5-15ms) due to disabled prepared statements
 - **Improved reliability** with zero prepared statement errors
 - **Better serverless compatibility** with pgBouncer
 
 ### Monitoring Recommendations
+
 - Monitor `/api/health/db` endpoint regularly
 - Watch for response times > 500ms (degraded status)
 - Track prepared statement error count (should be 0)
 - Monitor Vercel function execution times
 
 ## Related Documentation
+
 - [Prisma Fix Plan v2](./prisma-fix-plan-v2.md)
 - [Database Connection Management](../architecture/database-design.md)
 - [Vercel Deployment Guide](../deployment/vercel-deployment.md)

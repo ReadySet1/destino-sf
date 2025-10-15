@@ -1,6 +1,6 @@
 /**
  * Comprehensive Webhook Security Implementation
- * 
+ *
  * Implements all security measures for webhook endpoints including
  * rate limiting, IP validation, replay protection, and monitoring.
  */
@@ -13,9 +13,9 @@ import { type SquareEnvironment, WEBHOOK_CONSTANTS } from '@/types/webhook';
 
 // Square's known IP ranges (this would need to be updated based on Square's actual ranges)
 const SQUARE_IP_RANGES = [
-  '52.85.109.0/24',    // Example Square IP range
-  '54.240.0.0/16',     // Example Square IP range
-  '192.168.1.0/24'     // Add actual Square IP ranges here
+  '52.85.109.0/24', // Example Square IP range
+  '54.240.0.0/16', // Example Square IP range
+  '192.168.1.0/24', // Add actual Square IP ranges here
 ];
 
 /**
@@ -28,33 +28,32 @@ export async function validateSquareIpRange(clientIp: string): Promise<boolean> 
     if (process.env.NODE_ENV === 'development') {
       return true;
     }
-    
+
     // Skip IP validation if running locally
     if (clientIp === '127.0.0.1' || clientIp === 'localhost' || clientIp === '::1') {
       return true;
     }
-    
+
     // In production, you would implement actual IP range checking here
     // This is a simplified version
     const isValidSquareIp = SQUARE_IP_RANGES.some(range => {
       // Simple IP range check (in production, use a proper IP range library)
       return clientIp.startsWith(range.split('/')[0].substring(0, range.indexOf('.')));
     });
-    
+
     if (!isValidSquareIp) {
       console.warn(`⚠️ Webhook from non-Square IP: ${clientIp}`);
-      
+
       // Send alert for non-Square IPs
       await sendWebhookAlert({
         severity: 'low',
         title: 'Webhook from Non-Square IP',
         message: `Received webhook from IP address not in Square's known ranges: ${clientIp}`,
-        details: { clientIp, knownRanges: SQUARE_IP_RANGES }
+        details: { clientIp, knownRanges: SQUARE_IP_RANGES },
       });
     }
-    
+
     return isValidSquareIp;
-    
   } catch (error) {
     console.error('❌ IP validation error:', error);
     return true; // Don't block on validation errors
@@ -74,7 +73,7 @@ export async function validateReplayProtection(
     if (duplicateCheck.isDuplicate) {
       return {
         valid: false,
-        error: `Duplicate event detected: ${eventId} (existing: ${duplicateCheck.existingId})`
+        error: `Duplicate event detected: ${eventId} (existing: ${duplicateCheck.existingId})`,
       };
     }
 
@@ -82,29 +81,29 @@ export async function validateReplayProtection(
     const eventTime = new Date(createdAt).getTime();
     const now = Date.now();
     const age = now - eventTime;
-    
+
     if (age > WEBHOOK_CONSTANTS.MAX_EVENT_AGE_MS) {
       return {
         valid: false,
-        error: `Event too old: ${age}ms > ${WEBHOOK_CONSTANTS.MAX_EVENT_AGE_MS}ms`
+        error: `Event too old: ${age}ms > ${WEBHOOK_CONSTANTS.MAX_EVENT_AGE_MS}ms`,
       };
     }
 
     // 3. Check for future events (clock skew protection)
-    if (eventTime > now + 60000) { // Allow 1 minute of clock skew
+    if (eventTime > now + 60000) {
+      // Allow 1 minute of clock skew
       return {
         valid: false,
-        error: `Event timestamp is in the future: ${createdAt}`
+        error: `Event timestamp is in the future: ${createdAt}`,
       };
     }
 
     return { valid: true };
-    
   } catch (error) {
     console.error('❌ Replay protection validation error:', error);
     return {
       valid: false,
-      error: error instanceof Error ? error.message : 'Replay validation failed'
+      error: error instanceof Error ? error.message : 'Replay validation failed',
     };
   }
 }
@@ -139,8 +138,8 @@ export function getClientIp(request: NextRequest): string {
 export async function validateWebhookSecurity(
   request: NextRequest,
   environment: SquareEnvironment
-): Promise<{ 
-  valid: boolean; 
+): Promise<{
+  valid: boolean;
   error?: string;
   metadata?: {
     clientIp: string;
@@ -152,14 +151,14 @@ export async function validateWebhookSecurity(
   try {
     const clientIp = getClientIp(request);
     const userAgent = request.headers.get('user-agent') || 'unknown';
-    
+
     console.log(`🔒 Security validation for ${environment} webhook from IP: ${clientIp}`);
 
     // 1. Rate limiting check
     const rateLimitResult = await environmentRateLimiter.check(clientIp, environment);
     if (!rateLimitResult.allowed) {
       console.warn(`🚫 Rate limit exceeded for IP: ${clientIp}`);
-      
+
       await sendWebhookAlert({
         severity: 'medium',
         title: 'Webhook Rate Limit Exceeded',
@@ -167,10 +166,10 @@ export async function validateWebhookSecurity(
         details: {
           clientIp,
           environment,
-          rateLimitInfo: rateLimitResult
-        }
+          rateLimitInfo: rateLimitResult,
+        },
       });
-      
+
       return {
         valid: false,
         error: rateLimitResult.message,
@@ -178,8 +177,8 @@ export async function validateWebhookSecurity(
           clientIp,
           userAgent,
           rateLimitInfo: rateLimitResult,
-          ipValidation: false
-        }
+          ipValidation: false,
+        },
       };
     }
 
@@ -187,17 +186,17 @@ export async function validateWebhookSecurity(
     const contentLength = request.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > WEBHOOK_CONSTANTS.MAX_BODY_SIZE) {
       console.warn(`🚫 Request body too large: ${contentLength} bytes`);
-      
+
       return {
         valid: false,
-        error: `Request body too large: ${contentLength} bytes > ${WEBHOOK_CONSTANTS.MAX_BODY_SIZE} bytes`
+        error: `Request body too large: ${contentLength} bytes > ${WEBHOOK_CONSTANTS.MAX_BODY_SIZE} bytes`,
       };
     }
 
     // 3. User agent validation (optional but recommended)
-    const isSquareUserAgent = userAgent.toLowerCase().includes('square') || 
-                             userAgent.toLowerCase().includes('webhook');
-    
+    const isSquareUserAgent =
+      userAgent.toLowerCase().includes('square') || userAgent.toLowerCase().includes('webhook');
+
     if (!isSquareUserAgent) {
       console.warn(`⚠️ Unexpected user agent: ${userAgent}`);
       // Don't reject, just log for monitoring
@@ -208,13 +207,14 @@ export async function validateWebhookSecurity(
     // Don't reject based on IP alone, as Square's IP ranges may change
 
     // 5. Header validation
-    const hasRequiredSignature = request.headers.has(WEBHOOK_CONSTANTS.SIGNATURE_HEADER_SHA256) ||
-                                request.headers.has(WEBHOOK_CONSTANTS.SIGNATURE_HEADER_SHA1);
-    
+    const hasRequiredSignature =
+      request.headers.has(WEBHOOK_CONSTANTS.SIGNATURE_HEADER_SHA256) ||
+      request.headers.has(WEBHOOK_CONSTANTS.SIGNATURE_HEADER_SHA1);
+
     if (!hasRequiredSignature) {
       return {
         valid: false,
-        error: 'Missing required signature headers'
+        error: 'Missing required signature headers',
       };
     }
 
@@ -233,16 +233,15 @@ export async function validateWebhookSecurity(
         clientIp,
         userAgent,
         rateLimitInfo: rateLimitResult,
-        ipValidation
-      }
+        ipValidation,
+      },
     };
-
   } catch (error) {
     console.error('❌ Security validation error:', error);
-    
+
     return {
       valid: false,
-      error: error instanceof Error ? error.message : 'Security validation failed'
+      error: error instanceof Error ? error.message : 'Security validation failed',
     };
   }
 }
@@ -259,33 +258,35 @@ export async function webhookSecurityMiddleware(
   metadata?: any;
 }> {
   const securityResult = await validateWebhookSecurity(request, environment);
-  
+
   if (!securityResult.valid) {
     console.warn(`🚫 Security validation failed: ${securityResult.error}`);
-    
+
     return {
       continue: false,
       response: new Response(
         JSON.stringify({
           error: 'Security validation failed',
           details: securityResult.error,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         }),
         {
           status: 400,
           headers: {
             'Content-Type': 'application/json',
-            'X-Rate-Limit-Remaining': securityResult.metadata?.rateLimitInfo?.remaining?.toString() || '0',
-            'X-Rate-Limit-Reset': securityResult.metadata?.rateLimitInfo?.resetTime?.toString() || '0'
-          }
+            'X-Rate-Limit-Remaining':
+              securityResult.metadata?.rateLimitInfo?.remaining?.toString() || '0',
+            'X-Rate-Limit-Reset':
+              securityResult.metadata?.rateLimitInfo?.resetTime?.toString() || '0',
+          },
         }
-      )
+      ),
     };
   }
 
   return {
     continue: true,
-    metadata: securityResult.metadata
+    metadata: securityResult.metadata,
   };
 }
 
@@ -313,19 +314,20 @@ export class SecurityMonitor {
     details?: Record<string, unknown>;
   }): Promise<void> {
     const { clientIp, reason, severity, details } = params;
-    
+
     // Track suspicious IPs
     const existing = this.suspiciousIps.get(clientIp);
     this.suspiciousIps.set(clientIp, {
       count: (existing?.count || 0) + 1,
-      lastSeen: new Date()
+      lastSeen: new Date(),
     });
 
     console.warn(`🚨 Suspicious activity from ${clientIp}: ${reason}`);
 
     // Send alert for repeated suspicious activity
     const suspiciousEntry = this.suspiciousIps.get(clientIp)!;
-    if (suspiciousEntry.count >= 5) { // 5 or more suspicious activities
+    if (suspiciousEntry.count >= 5) {
+      // 5 or more suspicious activities
       await sendWebhookAlert({
         severity: 'high',
         title: 'Repeated Suspicious Webhook Activity',
@@ -335,15 +337,15 @@ export class SecurityMonitor {
           reason,
           count: suspiciousEntry.count,
           lastSeen: suspiciousEntry.lastSeen,
-          ...details
-        }
+          ...details,
+        },
       });
     } else {
       await sendWebhookAlert({
         severity,
         title: 'Suspicious Webhook Activity',
         message: reason,
-        details: { clientIp, ...details }
+        details: { clientIp, ...details },
       });
     }
   }
@@ -362,12 +364,12 @@ export class SecurityMonitor {
     const suspiciousIps = Array.from(this.suspiciousIps.entries()).map(([ip, data]) => ({
       ip,
       count: data.count,
-      lastSeen: data.lastSeen
+      lastSeen: data.lastSeen,
     }));
 
     return {
       suspiciousIps: suspiciousIps.sort((a, b) => b.count - a.count),
-      rateLimitStats: environmentRateLimiter.getStats()
+      rateLimitStats: environmentRateLimiter.getStats(),
     };
   }
 
@@ -376,7 +378,7 @@ export class SecurityMonitor {
    */
   cleanup(): void {
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    
+
     for (const [ip, data] of this.suspiciousIps.entries()) {
       if (data.lastSeen.getTime() < oneWeekAgo) {
         this.suspiciousIps.delete(ip);

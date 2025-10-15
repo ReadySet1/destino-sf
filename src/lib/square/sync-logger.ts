@@ -1,6 +1,6 @@
 /**
  * Square Sync Logger
- * 
+ *
  * Phase 1 of the fix plan: Enhanced logging to track sync flow
  * This class provides detailed logging and reporting capabilities for Square sync operations.
  */
@@ -25,16 +25,21 @@ export class SyncLogger {
   /**
    * Log that an item was processed successfully
    */
-  logItemProcessed(squareId: string, name: string, status: ItemSyncStatus['status'], reason?: string): void {
+  logItemProcessed(
+    squareId: string,
+    name: string,
+    status: ItemSyncStatus['status'],
+    reason?: string
+  ): void {
     const itemStatus: ItemSyncStatus = {
       squareId,
       name,
       status,
-      reason
+      reason,
     };
 
     this.items.set(squareId, itemStatus);
-    
+
     const emoji = this.getStatusEmoji(status);
     logger.info(`${emoji} Item ${name} (${squareId}): ${status}${reason ? ` - ${reason}` : ''}`);
   }
@@ -82,7 +87,9 @@ export class SyncLogger {
    * Log completion of a category
    */
   logCategoryComplete(categoryName: string, synced: number, skipped: number, errors: number): void {
-    logger.info(`✅ Completed category: ${categoryName} - ${synced} synced, ${skipped} skipped, ${errors} errors`);
+    logger.info(
+      `✅ Completed category: ${categoryName} - ${synced} synced, ${skipped} skipped, ${errors} errors`
+    );
   }
 
   /**
@@ -136,7 +143,7 @@ export class SyncLogger {
       synced: 0,
       missing: 0,
       duplicates: 0,
-      errors: 0
+      errors: 0,
     };
 
     for (const [, item] of this.items) {
@@ -160,7 +167,7 @@ export class SyncLogger {
       items: this.items,
       summary,
       timestamp: this.startTime,
-      duration
+      duration,
     };
 
     // Log the final summary
@@ -214,7 +221,9 @@ export class SyncLogger {
     lines.push('ITEM DETAILS:');
     for (const [, item] of report.items) {
       const emoji = this.getStatusEmoji(item.status);
-      lines.push(`  ${emoji} ${item.name} (${item.squareId}) - ${item.status}${item.reason ? `: ${item.reason}` : ''}`);
+      lines.push(
+        `  ${emoji} ${item.name} (${item.squareId}) - ${item.status}${item.reason ? `: ${item.reason}` : ''}`
+      );
     }
 
     return lines.join('\n');
@@ -289,13 +298,17 @@ export class SyncLogger {
    */
   exportJson(): string {
     const report = this.generateReport();
-    return JSON.stringify({
-      ...report,
-      items: Array.from(report.items.entries()).map(([id, item]) => ({ id, ...item })),
-      categories: Array.from(this.categories),
-      errors: this.errors,
-      warnings: this.warnings
-    }, null, 2);
+    return JSON.stringify(
+      {
+        ...report,
+        items: Array.from(report.items.entries()).map(([id, item]) => ({ id, ...item })),
+        categories: Array.from(this.categories),
+        errors: this.errors,
+        warnings: this.warnings,
+      },
+      null,
+      2
+    );
   }
 
   /**
@@ -313,7 +326,7 @@ export class SyncLogger {
       categoriesProcessed: this.categories.size,
       errors: this.errors.length,
       warnings: this.warnings.length,
-      elapsedTime: Date.now() - this.startTime.getTime()
+      elapsedTime: Date.now() - this.startTime.getTime(),
     };
   }
 }

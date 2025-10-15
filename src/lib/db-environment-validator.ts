@@ -1,6 +1,6 @@
 /**
  * Database Environment Validator
- * 
+ *
  * Validates that the correct database is being used for each environment
  * and provides early detection of configuration issues.
  */
@@ -13,18 +13,18 @@ interface DatabaseEnvironmentConfig {
 }
 
 const KNOWN_DATABASES: Record<string, DatabaseEnvironmentConfig> = {
-  'drrejylrcjbeldnzodjd': {
+  drrejylrcjbeldnzodjd: {
     host: 'db.drrejylrcjbeldnzodjd.supabase.co',
     projectId: 'drrejylrcjbeldnzodjd',
-    name: 'destino-development', 
-    environment: 'development'
+    name: 'destino-development',
+    environment: 'development',
   },
-  'ocusztulyiegeawqptrs': {
+  ocusztulyiegeawqptrs: {
     host: 'db.ocusztulyiegeawqptrs.supabase.co',
     projectId: 'ocusztulyiegeawqptrs',
     name: 'destino-production',
-    environment: 'production'
-  }
+    environment: 'production',
+  },
 };
 
 interface ValidationResult {
@@ -42,14 +42,14 @@ interface ValidationResult {
 export function validateDatabaseEnvironment(): ValidationResult {
   const currentEnv = process.env.NODE_ENV || 'development';
   const databaseUrl = process.env.DATABASE_URL;
-  
+
   const result: ValidationResult = {
     isValid: true,
     currentDatabase: null,
     expectedEnvironment: currentEnv,
     actualEnvironment: 'unknown',
     warnings: [],
-    errors: []
+    errors: [],
   };
 
   // Check if DATABASE_URL is defined
@@ -75,10 +75,10 @@ export function validateDatabaseEnvironment(): ValidationResult {
   const databaseConfig = Object.values(KNOWN_DATABASES).find(db => {
     // Direct host match
     if (host === db.host) return true;
-    
+
     // Project ID in host
     if (host.includes(db.projectId)) return true;
-    
+
     // Handle Supabase pooler URLs (format: aws-0-us-west-1.pooler.supabase.com)
     if (host.includes('pooler.supabase.com')) {
       // Extract potential project ID from the pooled URL
@@ -86,11 +86,14 @@ export function validateDatabaseEnvironment(): ValidationResult {
       const fullUrl = new URL(databaseUrl);
       const pathname = fullUrl.pathname;
       // Check if project ID is in the path or database name
-      if (pathname.includes(db.projectId) || fullUrl.searchParams.get('db')?.includes(db.projectId)) {
+      if (
+        pathname.includes(db.projectId) ||
+        fullUrl.searchParams.get('db')?.includes(db.projectId)
+      ) {
         return true;
       }
     }
-    
+
     return false;
   });
 
@@ -100,7 +103,9 @@ export function validateDatabaseEnvironment(): ValidationResult {
       // Only log pooler connection info in debug mode
       if (process.env.DB_DEBUG === 'true') {
         result.warnings.push(`Using Supabase pooler connection: ${host}`);
-        result.warnings.push('Unable to determine specific database from pooler URL - this is normal for production deployments');
+        result.warnings.push(
+          'Unable to determine specific database from pooler URL - this is normal for production deployments'
+        );
       }
       return result;
     } else {
@@ -121,19 +126,13 @@ export function validateDatabaseEnvironment(): ValidationResult {
     result.errors.push(
       `🚨 CRITICAL: Production environment is using ${databaseConfig.environment} database (${databaseConfig.name})!`
     );
-    result.errors.push(
-      `Expected: Production database (db.ocusztulyiegeawqptrs.supabase.co)`
-    );
-    result.errors.push(
-      `Actual: ${databaseConfig.environment} database (${host})`
-    );
+    result.errors.push(`Expected: Production database (db.ocusztulyiegeawqptrs.supabase.co)`);
+    result.errors.push(`Actual: ${databaseConfig.environment} database (${host})`);
   } else if (!isProduction && isProdDb) {
     result.warnings.push(
       `⚠️ WARNING: ${currentEnv} environment is using production database (${databaseConfig.name})`
     );
-    result.warnings.push(
-      'This could affect production data. Consider using development database.'
-    );
+    result.warnings.push('This could affect production data. Consider using development database.');
   }
 
   return result;
@@ -144,7 +143,7 @@ export function validateDatabaseEnvironment(): ValidationResult {
  */
 export function enforceEnvironmentValidation(): void {
   const validation = validateDatabaseEnvironment();
-  
+
   // Log warnings only in debug mode or for critical issues
   if (process.env.DB_DEBUG === 'true') {
     validation.warnings.forEach(warning => {
@@ -156,19 +155,21 @@ export function enforceEnvironmentValidation(): void {
   if (!validation.isValid) {
     const errorMessage = [
       '🚨 DATABASE ENVIRONMENT VALIDATION FAILED',
-      '=' .repeat(50),
+      '='.repeat(50),
       ...validation.errors,
-      '=' .repeat(50),
+      '='.repeat(50),
       'Application startup aborted to prevent data corruption.',
-      'Please fix the DATABASE_URL configuration and restart.'
+      'Please fix the DATABASE_URL configuration and restart.',
     ].join('\n');
-    
+
     throw new Error(errorMessage);
   }
 
   // Log successful validation
   if (validation.currentDatabase) {
-    console.log(`✅ Database validation passed: ${validation.currentDatabase.name} (${validation.actualEnvironment})`);
+    console.log(
+      `✅ Database validation passed: ${validation.currentDatabase.name} (${validation.actualEnvironment})`
+    );
   }
 }
 
@@ -182,7 +183,7 @@ export function getDatabaseInfo(): {
   projectId: string;
 } | null {
   const validation = validateDatabaseEnvironment();
-  
+
   if (!validation.currentDatabase) {
     return null;
   }
@@ -191,7 +192,7 @@ export function getDatabaseInfo(): {
     environment: validation.actualEnvironment,
     databaseName: validation.currentDatabase.name,
     host: validation.currentDatabase.host,
-    projectId: validation.currentDatabase.projectId
+    projectId: validation.currentDatabase.projectId,
   };
 }
 
@@ -201,10 +202,10 @@ export function getDatabaseInfo(): {
 export async function validateStartupDatabase(): Promise<void> {
   try {
     console.log('🔍 Validating database environment configuration...');
-    
+
     // Validate environment
     enforceEnvironmentValidation();
-    
+
     // Get database info
     const dbInfo = getDatabaseInfo();
     if (dbInfo) {
@@ -214,17 +215,16 @@ export async function validateStartupDatabase(): Promise<void> {
       console.log(`   Host: ${dbInfo.host}`);
       console.log(`   Project ID: ${dbInfo.projectId}`);
     }
-    
+
     // Test connection
     const { checkDatabaseHealth } = await import('./db-utils');
     const health = await checkDatabaseHealth();
-    
+
     if (health.connected) {
       console.log(`✅ Database connection successful (${health.responseTime}ms)`);
     } else {
       throw new Error(`Database connection failed: ${health.error}`);
     }
-    
   } catch (error) {
     console.error('❌ Database startup validation failed:', error);
     throw error;
@@ -241,12 +241,12 @@ export function withEnvironmentValidation<T>(
   return new Promise(async (resolve, reject) => {
     try {
       const validation = validateDatabaseEnvironment();
-      
+
       if (!validation.isValid) {
         reject(new Error(`${operationName} aborted: ${validation.errors.join(', ')}`));
         return;
       }
-      
+
       const result = await operation();
       resolve(result);
     } catch (error) {

@@ -37,10 +37,11 @@ async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
 
   // Wrap the database call with retry logic to handle connection issues
   const adminProfile = await withRetry(
-    () => prisma.profile.findUnique({
-      where: { id: user.id },
-      select: { role: true },
-    }),
+    () =>
+      prisma.profile.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      }),
     3,
     'isUserAdmin profile lookup'
   );
@@ -62,9 +63,10 @@ export async function GET(request: NextRequest) {
     const [storeSettings, deliveryZones] = await Promise.all([
       getStoreSettings(),
       withRetry(
-        () => prisma.cateringDeliveryZone.findMany({
-          orderBy: { displayOrder: 'asc' },
-        }),
+        () =>
+          prisma.cateringDeliveryZone.findMany({
+            orderBy: { displayOrder: 'asc' },
+          }),
         3,
         'fetch delivery zones'
       ),
@@ -135,10 +137,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!updateResult.success) {
-      return NextResponse.json(
-        { error: updateResult.error },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: updateResult.error }, { status: 500 });
     }
 
     return NextResponse.json({

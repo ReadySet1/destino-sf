@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  type AvailabilityRule, 
+import {
+  type AvailabilityRule,
   type AvailabilityEvaluation,
   type AvailabilityApiResponse,
-  AvailabilityState 
+  AvailabilityState,
 } from '@/types/availability';
 import { logger } from '@/utils/logger';
 
@@ -20,7 +20,7 @@ interface UseAvailabilityReturn {
   rules: AvailabilityRule[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Convenience getters
   currentState: AvailabilityState;
   isAvailable: boolean;
@@ -30,7 +30,7 @@ interface UseAvailabilityReturn {
   preOrderSettings: any;
   viewOnlySettings: any;
   nextStateChange: any;
-  
+
   // Actions
   refresh: () => Promise<void>;
   clearError: () => void;
@@ -44,7 +44,7 @@ export function useAvailability(
   options: UseAvailabilityOptions = {}
 ): UseAvailabilityReturn {
   const { autoRefresh = false, refreshInterval = 30000 } = options;
-  
+
   const [evaluation, setEvaluation] = useState<AvailabilityEvaluation | null>(null);
   const [rules, setRules] = useState<AvailabilityRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,11 +73,12 @@ export function useAvailability(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId,
-          rules: rulesData.data || []
-        })
+          rules: rulesData.data || [],
+        }),
       });
 
-      const evaluationData: AvailabilityApiResponse<AvailabilityEvaluation> = await evaluationResponse.json();
+      const evaluationData: AvailabilityApiResponse<AvailabilityEvaluation> =
+        await evaluationResponse.json();
 
       if (!evaluationData.success) {
         throw new Error(evaluationData.error || 'Failed to evaluate availability');
@@ -89,7 +90,7 @@ export function useAvailability(
       setError(errorMessage);
       logger.error('Error fetching availability', {
         productId,
-        error: errorMessage
+        error: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -140,7 +141,7 @@ export function useAvailability(
     viewOnlySettings,
     nextStateChange,
     refresh: fetchAvailability,
-    clearError
+    clearError,
   };
 }
 
@@ -152,7 +153,9 @@ export function useMultipleAvailability(productIds: string[]): {
   isLoading: boolean;
   refresh: () => Promise<void>;
 } {
-  const [availabilityMap, setAvailabilityMap] = useState<Map<string, UseAvailabilityReturn>>(new Map());
+  const [availabilityMap, setAvailabilityMap] = useState<Map<string, UseAvailabilityReturn>>(
+    new Map()
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMultipleAvailability = useCallback(async () => {
@@ -172,7 +175,7 @@ export function useMultipleAvailability(productIds: string[]): {
       // Group rules by product
       const rulesByProduct = new Map<string, AvailabilityRule[]>();
       productIds.forEach(id => rulesByProduct.set(id, []));
-      
+
       rulesData.data?.forEach(rule => {
         const productRules = rulesByProduct.get(rule.productId) || [];
         productRules.push(rule);
@@ -181,16 +184,17 @@ export function useMultipleAvailability(productIds: string[]): {
 
       // Evaluate each product
       const newAvailabilityMap = new Map<string, UseAvailabilityReturn>();
-      
+
       for (const [productId, rules] of rulesByProduct) {
         try {
           const evaluationResponse = await fetch('/api/availability/preview', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId, rules })
+            body: JSON.stringify({ productId, rules }),
           });
 
-          const evaluationData: AvailabilityApiResponse<AvailabilityEvaluation> = await evaluationResponse.json();
+          const evaluationData: AvailabilityApiResponse<AvailabilityEvaluation> =
+            await evaluationResponse.json();
 
           if (evaluationData.success && evaluationData.data) {
             const evaluation = evaluationData.data;
@@ -211,13 +215,13 @@ export function useMultipleAvailability(productIds: string[]): {
               viewOnlySettings: appliedRule?.viewOnlySettings || null,
               nextStateChange: evaluation.nextStateChange || null,
               refresh: async () => {},
-              clearError: () => {}
+              clearError: () => {},
             });
           }
         } catch (err) {
           logger.error('Error evaluating product availability', {
             productId,
-            error: err instanceof Error ? err.message : 'Unknown error'
+            error: err instanceof Error ? err.message : 'Unknown error',
           });
         }
       }
@@ -226,7 +230,7 @@ export function useMultipleAvailability(productIds: string[]): {
     } catch (err) {
       logger.error('Error fetching multiple availability', {
         productCount: productIds.length,
-        error: err instanceof Error ? err.message : 'Unknown error'
+        error: err instanceof Error ? err.message : 'Unknown error',
       });
     } finally {
       setIsLoading(false);
@@ -240,6 +244,6 @@ export function useMultipleAvailability(productIds: string[]): {
   return {
     availabilityMap,
     isLoading,
-    refresh: fetchMultipleAvailability
+    refresh: fetchMultipleAvailability,
   };
 }

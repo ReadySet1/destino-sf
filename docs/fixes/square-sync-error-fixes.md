@@ -8,7 +8,8 @@ This document explains the comprehensive fixes implemented to resolve the Square
 
 **Problem**: The sync failed when trying to create categories that already existed in the database.
 
-**Error**: 
+**Error**:
+
 ```
 Error Code: P2002 (PrismaClientKnownRequestError)
 Unique constraint failed on the fields: (`name`)
@@ -17,10 +18,11 @@ Unique constraint failed on the fields: (`name`)
 **Root Cause**: The category creation logic was using simple `create()` operations instead of proper "upsert" (update or insert) patterns, causing conflicts when multiple items referenced the same category.
 
 **Solution**: ✅ **FIXED**
+
 - Implemented enhanced `getOrCreateCategoryByName()` function with proper upsert logic
 - Added multi-level fallback strategy:
   1. Find by Square ID (if provided)
-  2. Find by exact name match  
+  2. Find by exact name match
   3. Find by slug
   4. Use Prisma `upsert()` for atomic create-or-update
   5. Graceful fallback with unique identifiers if still conflicts
@@ -31,6 +33,7 @@ Unique constraint failed on the fields: (`name`)
 **Problem**: Missing Square category mapping for EMPANADAS products.
 
 **Error**:
+
 ```
 [WARN] No legacy mapping found for Square category ID: SDGSB4F4YOUFY3UFJF2KWXUB
 ```
@@ -38,6 +41,7 @@ Unique constraint failed on the fields: (`name`)
 **Root Cause**: The Square category ID `SDGSB4F4YOUFY3UFJF2KWXUB` for EMPANADAS was not included in the category mapper.
 
 **Solution**: ✅ **FIXED**
+
 - Added missing Square category mapping:
   ```typescript
   'SDGSB4F4YOUFY3UFJF2KWXUB': 'EMPANADAS', // Alternative Square ID for EMPANADAS
@@ -50,6 +54,7 @@ Unique constraint failed on the fields: (`name`)
 **Problem**: Individual item failures could cause the entire sync to stop or provide limited error information.
 
 **Solution**: ✅ **ENHANCED**
+
 - Enhanced error logging with detailed context
 - Added resilience to continue sync even when individual items fail
 - Implemented comprehensive error reporting
@@ -65,22 +70,22 @@ async function getOrCreateCategoryByName(name: string, squareId?: string) {
   // 1. Find by Square ID (highest priority)
   if (squareId) {
     const categoryBySquareId = await prisma.category.findFirst({
-      where: { squareId }
+      where: { squareId },
     });
     if (categoryBySquareId) return categoryBySquareId;
   }
 
   // 2. Find by exact name match
   let category = await prisma.category.findFirst({
-    where: { name: { equals: name, mode: 'insensitive' } }
+    where: { name: { equals: name, mode: 'insensitive' } },
   });
   if (category) return category;
 
   // 3. Use atomic upsert operation
   return await prisma.category.upsert({
     where: { name },
-    create: { name, slug, squareId, /* ... */ },
-    update: { squareId, active: true }
+    create: { name, slug, squareId /* ... */ },
+    update: { squareId, active: true },
   });
 }
 ```
@@ -94,7 +99,7 @@ logger.error(`❌ Error processing item "${itemName}" (${squareItem.id}):`, {
   squareId: squareItem.id,
   itemName,
   categoryId: squareItem.item_data?.categories?.[0]?.id,
-  hasNutrition: !!squareItem.item_data?.food_and_beverage_details
+  hasNutrition: !!squareItem.item_data?.food_and_beverage_details,
 });
 
 // NEW: Categorized error handling
@@ -113,7 +118,7 @@ const syncSummary = {
   syncedProducts: syncedCount,
   totalItems: validSquareIds.length,
   successRate: ((syncedCount / validSquareIds.length) * 100).toFixed(1) + '%',
-  errors: errors.length > 0 ? errors : undefined
+  errors: errors.length > 0 ? errors : undefined,
 };
 ```
 
@@ -122,8 +127,9 @@ const syncSummary = {
 Created comprehensive test suite: `scripts/test-sync-fixes.ts`
 
 **Test Results**: ✅ **ALL PASSED**
+
 - ✅ Category Upsert Logic
-- ✅ Duplicate Category Detection  
+- ✅ Duplicate Category Detection
 - ✅ Square Category Mappings
 - ✅ Error Resilience
 
@@ -147,6 +153,7 @@ http://localhost:3000/admin/square-sync
 ### 2. What You'll See
 
 **Before (Error-prone)**:
+
 ```
 ❗ Critical Error: Unique Constraint Violation
 [ERROR] Error processing item chocolate alfajores
@@ -154,8 +161,9 @@ Script stopped at batch 9
 ```
 
 **After (Resilient)**:
+
 ```
-✅ Processed item: chocolate alfajores  
+✅ Processed item: chocolate alfajores
 📊 Sync Summary: 95.2% success rate
 ⚠️ 3 items failed to sync (see details below)
 Batch results: 8 succeeded, 0 failed
@@ -164,19 +172,21 @@ Batch results: 8 succeeded, 0 failed
 ### 3. Monitoring and Troubleshooting
 
 **Enhanced Logging**: More detailed and actionable error messages
+
 ```
 ❌ Error processing item "Chocolate Alfajores" (ZWYZBVGUNHZLV5MME3C4T7MY):
-  - Category ID: 5ZH6ON3LTLXC2775JLBI3T3V  
+  - Category ID: 5ZH6ON3LTLXC2775JLBI3T3V
   - Has Nutrition: true
   - Error: Category conflict - retrying with upsert
 ✅ Resolved: Using existing category "CATERING- DESSERTS"
 ```
 
 **Success Rate Tracking**: Know exactly how your sync performed
+
 ```
 📊 Sync Summary:
   - Synced: 247 products
-  - Total: 250 products  
+  - Total: 250 products
   - Success Rate: 98.8%
   - Errors: 3 (see details below)
 ```
@@ -184,16 +194,19 @@ Batch results: 8 succeeded, 0 failed
 ## 🔍 Prevention Measures
 
 ### 1. Database Integrity
+
 - Uses atomic `upsert()` operations to prevent race conditions
 - Implements proper unique constraint handling
 - Graceful degradation when conflicts occur
 
-### 2. Category Mapping Completeness  
+### 2. Category Mapping Completeness
+
 - Added comprehensive Square category mappings
 - Includes both normalized and legacy category formats
 - Fallback mechanisms for unmapped categories
 
 ### 3. Error Resilience
+
 - Individual item failures don't stop the entire sync
 - Detailed error context for troubleshooting
 - Automatic retry logic for transient errors
@@ -203,20 +216,23 @@ Batch results: 8 succeeded, 0 failed
 If you encounter any remaining issues:
 
 ### Check for Duplicate Categories
+
 ```sql
-SELECT name, COUNT(*) as count 
-FROM categories 
-GROUP BY name 
+SELECT name, COUNT(*) as count
+FROM categories
+GROUP BY name
 HAVING COUNT(*) > 1;
 ```
 
 ### Update Categories Without Square IDs
+
 The sync will now automatically update existing categories with their Square IDs when available.
 
 ### Manual Category Cleanup (if needed)
+
 ```sql
 -- Only run this if you have confirmed duplicates
-DELETE FROM categories 
+DELETE FROM categories
 WHERE id IN (
   SELECT id FROM (
     SELECT id, ROW_NUMBER() OVER (PARTITION BY name ORDER BY "createdAt") as rn

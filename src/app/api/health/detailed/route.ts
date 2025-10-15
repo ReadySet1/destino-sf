@@ -15,29 +15,45 @@ export async function GET() {
     ]);
 
     // Process results
-    const databaseResult = databaseHealth.status === 'fulfilled'
-      ? databaseHealth.value
-      : null;
-    
-    const database = databaseResult 
+    const databaseResult = databaseHealth.status === 'fulfilled' ? databaseHealth.value : null;
+
+    const database = databaseResult
       ? {
           status: databaseResult.connected ? 'healthy' : 'unhealthy',
           connected: databaseResult.connected,
           latency: databaseResult.latency,
           version: databaseResult.version,
-          error: databaseResult.error
+          error: databaseResult.error,
         }
-      : { status: 'unhealthy', details: { error: databaseHealth.status === 'rejected' ? databaseHealth.reason : 'Unknown error' } };
+      : {
+          status: 'unhealthy',
+          details: {
+            error: databaseHealth.status === 'rejected' ? databaseHealth.reason : 'Unknown error',
+          },
+        };
 
     const cache =
       cacheHealth.status === 'fulfilled'
         ? cacheHealth.value
-        : { status: 'unhealthy', details: { error: cacheHealth.status === 'rejected' ? cacheHealth.reason : 'Unknown error' } };
+        : {
+            status: 'unhealthy',
+            details: {
+              error: cacheHealth.status === 'rejected' ? cacheHealth.reason : 'Unknown error',
+            },
+          };
 
     const performance =
       performanceHealth.status === 'fulfilled'
         ? performanceHealth.value
-        : { status: 'unhealthy', details: { error: performanceHealth.status === 'rejected' ? performanceHealth.reason : 'Unknown error' } };
+        : {
+            status: 'unhealthy',
+            details: {
+              error:
+                performanceHealth.status === 'rejected'
+                  ? performanceHealth.reason
+                  : 'Unknown error',
+            },
+          };
 
     // Determine overall system health
     const allHealthy =

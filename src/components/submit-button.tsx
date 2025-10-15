@@ -11,21 +11,17 @@ interface SubmitButtonProps {
   pendingText?: string;
 }
 
-export function SubmitButton({ 
-  loading = false, 
-  children, 
+export function SubmitButton({
+  loading = false,
+  children,
   className,
-  pendingText 
+  pendingText,
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
   const isLoading = loading || pending;
 
   return (
-    <Button 
-      type="submit" 
-      disabled={isLoading} 
-      className={className}
-    >
+    <Button type="submit" disabled={isLoading} className={className}>
       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {isLoading && pendingText ? pendingText : children}
     </Button>

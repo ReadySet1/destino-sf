@@ -23,7 +23,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  
+
   // Check for admin and auth routes
   const isAdminRoute = pathname?.startsWith('/admin');
   const isAuthRoute =

@@ -60,18 +60,18 @@ export class EmailService {
    */
   async sendPreOrderReminder(data: PreOrderReminderData): Promise<void> {
     const template = this.generatePreOrderReminderTemplate(data);
-    
+
     await this.sendEmail({
       to: data.to,
       subject: template.subject,
       html: template.html,
-      text: template.text
+      text: template.text,
     });
 
     logger.info('Pre-order reminder sent', {
       to: data.to,
       productId: data.product.id,
-      reminderType: data.reminderType
+      reminderType: data.reminderType,
     });
   }
 
@@ -80,18 +80,18 @@ export class EmailService {
    */
   async sendWaitlistNotification(data: WaitlistNotificationData): Promise<void> {
     const template = this.generateWaitlistTemplate(data);
-    
+
     await this.sendEmail({
       to: data.to,
       subject: template.subject,
       html: template.html,
-      text: template.text
+      text: template.text,
     });
 
     logger.info('Waitlist notification sent', {
       to: data.to,
       productId: data.product.id,
-      notificationType: data.notificationType
+      notificationType: data.notificationType,
     });
   }
 
@@ -101,20 +101,20 @@ export class EmailService {
   async sendAdminAlert(data: AdminAlertData): Promise<void> {
     const template = this.generateAdminAlertTemplate(data);
     const recipients = Array.isArray(data.to) ? data.to : [data.to];
-    
+
     for (const email of recipients) {
       await this.sendEmail({
         to: email,
         subject: template.subject,
         html: template.html,
-        text: template.text
+        text: template.text,
       });
     }
 
     logger.info('Admin alert sent', {
       recipients: recipients.length,
       productId: data.product.id,
-      changeType: `${data.changeDetails.oldState} → ${data.changeDetails.newState}`
+      changeType: `${data.changeDetails.oldState} → ${data.changeDetails.newState}`,
     });
   }
 
@@ -124,20 +124,20 @@ export class EmailService {
   async sendSystemAlert(data: SystemAlertData): Promise<void> {
     const template = this.generateSystemAlertTemplate(data);
     const recipients = Array.isArray(data.to) ? data.to : [data.to];
-    
+
     for (const email of recipients) {
       await this.sendEmail({
         to: email,
         subject: template.subject,
         html: template.html,
-        text: template.text
+        text: template.text,
       });
     }
 
     logger.info('System alert sent', {
       recipients: recipients.length,
       severity: data.severity,
-      subject: data.subject
+      subject: data.subject,
     });
   }
 
@@ -146,10 +146,10 @@ export class EmailService {
    */
   private generatePreOrderReminderTemplate(data: PreOrderReminderData): EmailTemplate {
     const { customerName, product, reminderType, expectedDate } = data;
-    
+
     let subject = '';
     let message = '';
-    
+
     switch (reminderType) {
       case 'shipping_soon':
         subject = `Your pre-order is shipping soon: ${product.name}`;
@@ -173,7 +173,7 @@ export class EmailService {
       expectedDate: expectedDate ? `Expected: ${expectedDate.toLocaleDateString()}` : '',
       ctaText: 'View Your Order',
       ctaUrl: `${this.baseUrl}/account/orders`,
-      footer: 'Thank you for your business!'
+      footer: 'Thank you for your business!',
     });
 
     const text = this.generateEmailText({
@@ -182,7 +182,7 @@ export class EmailService {
       productName: product.name,
       expectedDate: expectedDate ? `Expected: ${expectedDate.toLocaleDateString()}` : '',
       ctaText: 'View Your Order',
-      ctaUrl: `${this.baseUrl}/account/orders`
+      ctaUrl: `${this.baseUrl}/account/orders`,
     });
 
     return { subject, html, text };
@@ -193,10 +193,10 @@ export class EmailService {
    */
   private generateWaitlistTemplate(data: WaitlistNotificationData): EmailTemplate {
     const { customerName, product, notificationType } = data;
-    
+
     let subject = '';
     let message = '';
-    
+
     switch (notificationType) {
       case 'available':
         subject = `Back in stock: ${product.name}`;
@@ -220,7 +220,7 @@ export class EmailService {
       productImage: product.images?.[0] || '',
       ctaText: notificationType === 'coming_soon' ? 'Learn More' : 'Shop Now',
       ctaUrl: `${this.baseUrl}/products/${product.slug}`,
-      footer: 'Happy shopping!'
+      footer: 'Happy shopping!',
     });
 
     const text = this.generateEmailText({
@@ -228,7 +228,7 @@ export class EmailService {
       message,
       productName: product.name,
       ctaText: notificationType === 'coming_soon' ? 'Learn More' : 'Shop Now',
-      ctaUrl: `${this.baseUrl}/products/${product.slug}`
+      ctaUrl: `${this.baseUrl}/products/${product.slug}`,
     });
 
     return { subject, html, text };
@@ -240,9 +240,9 @@ export class EmailService {
   private generateAdminAlertTemplate(data: AdminAlertData): EmailTemplate {
     const { product, changeDetails } = data;
     const { oldState, newState, ruleName, timestamp } = changeDetails;
-    
+
     const subject = `[Admin Alert] Product Availability Changed: ${product.name}`;
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #dc2626;">Product Availability Alert</h2>
@@ -290,12 +290,12 @@ This is an automated alert from the Destino SF availability system.
    */
   private generateSystemAlertTemplate(data: SystemAlertData): EmailTemplate {
     const { subject, message, alertData, severity } = data;
-    
+
     const severityColors = {
       low: '#10b981',
       medium: '#f59e0b',
       high: '#ef4444',
-      critical: '#dc2626'
+      critical: '#dc2626',
     };
 
     const html = `
@@ -308,12 +308,16 @@ This is an automated alert from the Destino SF availability system.
           <h3>${subject}</h3>
           <p>${message}</p>
           
-          ${alertData ? `
+          ${
+            alertData
+              ? `
             <div style="background: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
               <strong>Additional Data:</strong>
               <pre style="font-size: 12px; color: #374151;">${JSON.stringify(alertData, null, 2)}</pre>
             </div>
-          ` : ''}
+          `
+              : ''
+          }
           
           <div style="margin: 20px 0;">
             <a href="${this.baseUrl}/admin/jobs" 
@@ -360,8 +364,18 @@ Destino SF System Monitoring - ${new Date().toLocaleString()}
     ctaUrl: string;
     footer: string;
   }): string {
-    const { title, greeting, message, productName, productImage, expectedDate, ctaText, ctaUrl, footer } = data;
-    
+    const {
+      title,
+      greeting,
+      message,
+      productName,
+      productImage,
+      expectedDate,
+      ctaText,
+      ctaUrl,
+      footer,
+    } = data;
+
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white;">
         <div style="background: #1f2937; color: white; padding: 30px; text-align: center;">
@@ -410,7 +424,7 @@ Destino SF System Monitoring - ${new Date().toLocaleString()}
     ctaUrl: string;
   }): string {
     const { greeting, message, productName, expectedDate, ctaText, ctaUrl } = data;
-    
+
     return `
 DESTINO SF
 
@@ -444,7 +458,7 @@ Unsubscribe: ${this.baseUrl}/unsubscribe
       to: data.to,
       subject: data.subject,
       htmlLength: data.html.length,
-      textLength: data.text.length
+      textLength: data.text.length,
     });
 
     // Simulate email sending delay

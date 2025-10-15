@@ -7,11 +7,13 @@ We found **TWO places** creating phantom $0.00 orders. Both need to be fixed!
 ---
 
 ## 📍 LOCATION 1: Main Webhook Handler
+
 **File**: `src/app/api/webhooks/square/route.ts`
 **Function**: `handleOrderCreated` (Lines 88-290)
 **Status**: Already fixed in previous attempt
 
 ## 📍 LOCATION 2: Secondary Webhook Handler (STILL CREATING PHANTOMS!)
+
 **File**: `src/lib/webhook-handlers.ts`
 **Function**: `handleOrderCreated` (Lines 35-106)
 **Issue**: Lines 64-84 creating phantom orders
@@ -58,7 +60,9 @@ const recentCateringCheck = await prisma.cateringOrder.findFirst({
 
 if (recentCateringCheck) {
   console.log(`⚠️ [WEBHOOK-HANDLERS] Recent catering activity detected.`);
-  console.log(`⚠️ [WEBHOOK-HANDLERS] Skipping order creation for ${data.id} to prevent phantom orders.`);
+  console.log(
+    `⚠️ [WEBHOOK-HANDLERS] Skipping order creation for ${data.id} to prevent phantom orders.`
+  );
   return;
 }
 
@@ -80,7 +84,9 @@ if (existingOrder) {
   );
   console.log(`✅ Updated existing order ${data.id}`);
 } else {
-  console.log(`⚠️ [WEBHOOK-HANDLERS] Order ${data.id} not found. Skipping creation to prevent phantoms.`);
+  console.log(
+    `⚠️ [WEBHOOK-HANDLERS] Order ${data.id} not found. Skipping creation to prevent phantoms.`
+  );
   return;
 }
 ```
@@ -127,7 +133,7 @@ After fixing BOTH locations, clean up existing phantom orders:
 
 ```sql
 -- Find ALL phantom orders (including those with customerName = 'Pending')
-SELECT 
+SELECT
   id,
   "squareOrderId",
   status,
@@ -136,18 +142,18 @@ SELECT
   email,
   "createdAt"
 FROM orders
-WHERE 
+WHERE
   total = 0
-  AND ("customerName" IN ('Pending', 'Pending Order') 
+  AND ("customerName" IN ('Pending', 'Pending Order')
        OR email IN ('pending@example.com', 'pending-order@webhook.temp'))
   AND "createdAt" > NOW() - INTERVAL '7 days'
 ORDER BY "createdAt" DESC;
 
 -- Delete them after verification
-DELETE FROM orders 
-WHERE 
+DELETE FROM orders
+WHERE
   total = 0
-  AND ("customerName" IN ('Pending', 'Pending Order') 
+  AND ("customerName" IN ('Pending', 'Pending Order')
        OR email IN ('pending@example.com', 'pending-order@webhook.temp'))
   AND "createdAt" > NOW() - INTERVAL '7 days';
 ```
@@ -188,8 +194,8 @@ CREATE OR REPLACE FUNCTION check_phantom_orders()
 RETURNS void AS $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM orders 
-    WHERE total = 0 
+    SELECT 1 FROM orders
+    WHERE total = 0
     AND "createdAt" > NOW() - INTERVAL '1 hour'
   ) THEN
     RAISE NOTICE 'ALERT: Phantom $0.00 order detected!';

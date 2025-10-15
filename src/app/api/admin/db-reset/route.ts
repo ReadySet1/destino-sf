@@ -14,18 +14,12 @@ export async function POST(request: NextRequest) {
     if (process.env.NODE_ENV === 'production') {
       const authHeader = request.headers.get('authorization');
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
 
       const token = authHeader.substring(7);
       if (token !== process.env.ADMIN_RESET_TOKEN) {
-        return NextResponse.json(
-          { error: 'Invalid token' },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
       }
     }
 
@@ -42,15 +36,14 @@ export async function POST(request: NextRequest) {
       message: 'Database connection reset successful',
       latency: health.latency,
       connected: health.connected,
-      error: health.error
+      error: health.error,
     });
-
   } catch (error) {
     console.error('Error resetting database connection:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

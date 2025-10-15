@@ -16,23 +16,19 @@ export async function POST(
     const { orderId } = await params;
 
     if (!orderId) {
-      return NextResponse.json(
-        { error: 'Order ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
     }
 
     // Check authentication and admin role
     const authResult = await verifyAdminAccess();
-    
+
     if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.error },
-        { status: authResult.statusCode }
-      );
+      return NextResponse.json({ error: authResult.error }, { status: authResult.statusCode });
     }
 
-    console.log(`🔧 Admin ${authResult.user?.id} attempting to fix Square error for order ${orderId}`);
+    console.log(
+      `🔧 Admin ${authResult.user?.id} attempting to fix Square error for order ${orderId}`
+    );
 
     // Find the order
     const order = await prisma.order.findUnique({
@@ -53,16 +49,14 @@ export async function POST(
     });
 
     if (!order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     // Check if this order has issues that need fixing
-    const hasPaymentIssue = order.paymentStatus === PaymentStatus.PENDING || order.paymentStatus === 'FAILED';
+    const hasPaymentIssue =
+      order.paymentStatus === PaymentStatus.PENDING || order.paymentStatus === 'FAILED';
     const hasStatusIssue = order.status === 'PROCESSING' && order.paymentStatus === 'PENDING'; // Wrong status for unpaid orders
-    
+
     if (!hasPaymentIssue && !hasStatusIssue) {
       return NextResponse.json(
         { error: 'Order does not have payment or status issues that need fixing' },
@@ -77,7 +71,7 @@ export async function POST(
       paymentUrlExpiresAt: null, // Clear expiration
       paymentStatus: PaymentStatus.PENDING, // Reset to pending
       status: OrderStatus.PENDING, // Reset order status
-      notes: order.notes 
+      notes: order.notes
         ? `${order.notes}\n\n[${new Date().toISOString()}] Admin fixed Square error - cleared corrupted order data and corrected status for payment retry`
         : `[${new Date().toISOString()}] Admin fixed Square error - cleared corrupted order data and corrected status for payment retry`,
       // Clear potentially problematic rawData
@@ -97,7 +91,9 @@ export async function POST(
       data: updateData,
     });
 
-    console.log(`✅ Successfully fixed Square error for order ${orderId}. Cleared Square order ID: ${order.squareOrderId}`);
+    console.log(
+      `✅ Successfully fixed Square error for order ${orderId}. Cleared Square order ID: ${order.squareOrderId}`
+    );
 
     return NextResponse.json({
       success: true,
@@ -117,16 +113,12 @@ export async function POST(
         'All order items and customer information have been preserved',
       ],
     });
-
   } catch (error) {
     console.error('Failed to fix Square error for order:', error);
 
     // Handle specific Prisma errors
     if ((error as any).code === 'P2025') {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     return NextResponse.json(
@@ -147,20 +139,14 @@ export async function GET(
     const { orderId } = await params;
 
     if (!orderId) {
-      return NextResponse.json(
-        { error: 'Order ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
     }
 
     // Check authentication and admin role
     const authResult = await verifyAdminAccess();
-    
+
     if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.error },
-        { status: authResult.statusCode }
-      );
+      return NextResponse.json({ error: authResult.error }, { status: authResult.statusCode });
     }
 
     // Find the order
@@ -180,25 +166,21 @@ export async function GET(
     });
 
     if (!order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     // Determine if this order needs fixing
-    const needsFixing = 
+    const needsFixing =
       order.paymentStatus === PaymentStatus.PENDING &&
       order.squareOrderId &&
       (!order.paymentUrl || (order.paymentUrlExpiresAt && order.paymentUrlExpiresAt < new Date()));
 
-    const squareErrorDetected = 
+    const squareErrorDetected =
       order.notes?.includes('Square API Error') ||
       order.notes?.includes('payment provider error') ||
       order.notes?.includes('INVALID_VALUE');
 
-    const statusIssueDetected = 
-      order.status === 'PROCESSING' && order.paymentStatus === 'PENDING'; // Wrong status for unpaid orders
+    const statusIssueDetected = order.status === 'PROCESSING' && order.paymentStatus === 'PENDING'; // Wrong status for unpaid orders
 
     return NextResponse.json({
       orderId: order.id,
@@ -209,24 +191,29 @@ export async function GET(
         order: order.status,
         payment: order.paymentStatus,
         hasSquareOrderId: !!order.squareOrderId,
-        hasValidPaymentUrl: !!(order.paymentUrl && order.paymentUrlExpiresAt && order.paymentUrlExpiresAt > new Date()),
+        hasValidPaymentUrl: !!(
+          order.paymentUrl &&
+          order.paymentUrlExpiresAt &&
+          order.paymentUrlExpiresAt > new Date()
+        ),
       },
-      recommendations: (needsFixing || squareErrorDetected || statusIssueDetected) ? [
-        ...(statusIssueDetected ? ['Order status is PROCESSING but payment is still PENDING (incorrect status mapping)'] : []),
-        ...(squareErrorDetected ? ['This order appears to have a Square payment error'] : []),
-        ...(needsFixing ? ['Order has corrupted payment data'] : []),
-        'Use the POST endpoint to clear corrupted data and fix status',
-        'Customer will then be able to retry payment',
-      ] : [
-        'Order does not appear to need Square error fixing',
-      ],
+      recommendations:
+        needsFixing || squareErrorDetected || statusIssueDetected
+          ? [
+              ...(statusIssueDetected
+                ? [
+                    'Order status is PROCESSING but payment is still PENDING (incorrect status mapping)',
+                  ]
+                : []),
+              ...(squareErrorDetected ? ['This order appears to have a Square payment error'] : []),
+              ...(needsFixing ? ['Order has corrupted payment data'] : []),
+              'Use the POST endpoint to clear corrupted data and fix status',
+              'Customer will then be able to retry payment',
+            ]
+          : ['Order does not appear to need Square error fixing'],
     });
-
   } catch (error) {
     console.error('Failed to check Square error status:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

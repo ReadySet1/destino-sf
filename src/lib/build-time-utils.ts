@@ -27,7 +27,7 @@ export async function safeBuildTimeOperation<T>(
   operationName: string = 'database operation'
 ): Promise<T> {
   const isActualBuildTime = isBuildTime();
-  
+
   // Debug logging for production troubleshooting - only when build debug is enabled
   if (process.env.BUILD_DEBUG === 'true') {
     console.log(`[BUILD-TIME-CHECK] ${operationName}:`, {
@@ -36,10 +36,10 @@ export async function safeBuildTimeOperation<T>(
       VERCEL: process.env.VERCEL,
       VERCEL_ENV: process.env.VERCEL_ENV,
       NODE_ENV: process.env.NODE_ENV,
-      CI: process.env.CI
+      CI: process.env.CI,
     });
   }
-  
+
   if (isActualBuildTime) {
     // Only log fallback usage in debug mode to reduce build noise
     if (process.env.BUILD_DEBUG === 'true') {
@@ -83,9 +83,5 @@ export async function safeBuildTimeStaticParams<T>(
   fallbackParams: T[],
   operationName: string = 'generateStaticParams'
 ): Promise<T[]> {
-  return safeBuildTimeOperation(
-    databaseOperation,
-    fallbackParams,
-    operationName
-  );
+  return safeBuildTimeOperation(databaseOperation, fallbackParams, operationName);
 }

@@ -4,7 +4,7 @@ import { retrieveCatalogObject } from '../src/lib/square/catalog-api';
 const squareIds = [
   '2HKY7CZYFOBQMT7NLS2EKV2S', // acorn squash
   'ONJCXBF3ZAYAUYISIZLNBUCX', // Adobo Pork
-  'KPWN4NFQCFAQMGNXLHHYDRPR'  // albondigas
+  'KPWN4NFQCFAQMGNXLHHYDRPR', // albondigas
 ];
 
 async function checkDescriptions() {
@@ -27,10 +27,11 @@ async function checkDescriptions() {
 
         // Check if HTML tags are present
         const descHtml = item.item_data.description_html || '';
-        const hasHtml = descHtml.includes('<b>') ||
-                       descHtml.includes('<i>') ||
-                       descHtml.includes('<strong>') ||
-                       descHtml.includes('<em>');
+        const hasHtml =
+          descHtml.includes('<b>') ||
+          descHtml.includes('<i>') ||
+          descHtml.includes('<strong>') ||
+          descHtml.includes('<em>');
 
         console.log('\n✅ HTML Formatting Present:', hasHtml ? 'YES' : 'NO');
 

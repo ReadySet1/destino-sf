@@ -115,7 +115,7 @@ export async function POST(request: Request) {
 async function finalizeSquareOrder(squareOrderId: string): Promise<void> {
   try {
     const squareService = getSquareService();
-    
+
     // Update order to OPEN state
     const updateRequest = {
       order: {
@@ -126,7 +126,7 @@ async function finalizeSquareOrder(squareOrderId: string): Promise<void> {
       fieldsToClear: [],
       idempotencyKey: randomUUID(),
     };
-    
+
     await squareService.updateOrder(squareOrderId, updateRequest);
     console.log(`✅ Square order ${squareOrderId} finalized and visible`);
   } catch (error) {

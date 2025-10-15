@@ -1,6 +1,6 @@
 /**
  * Umami Analytics Integration Exports
- * 
+ *
  * This barrel file exports all Umami-related utilities, hooks, and components
  * for easy importing throughout the application.
  */

@@ -52,7 +52,7 @@ export default function ProductEditFormExample({
   product,
   categories,
   initialImageUrls,
-  updateProduct
+  updateProduct,
 }: ProductEditFormExampleProps) {
   return (
     <FormContainer>
@@ -65,7 +65,7 @@ export default function ProductEditFormExample({
 
       <form action={updateProduct}>
         <input type="hidden" name="productId" value={product.id} />
-        
+
         <FormStack spacing={10}>
           {/* Basic Information */}
           <FormSection
@@ -74,11 +74,7 @@ export default function ProductEditFormExample({
             icon={FormIcons.info}
           >
             <FormStack>
-              <FormField 
-                label="Product Name" 
-                required
-                helpText="Enter a descriptive product name"
-              >
+              <FormField label="Product Name" required helpText="Enter a descriptive product name">
                 <FormInput
                   name="name"
                   defaultValue={product.name}
@@ -87,7 +83,7 @@ export default function ProductEditFormExample({
                 />
               </FormField>
 
-              <FormField 
+              <FormField
                 label="Description"
                 helpText="Help customers understand what makes this product special"
               >
@@ -118,7 +114,7 @@ export default function ProductEditFormExample({
                     placeholder="Choose a category"
                     required
                   >
-                    {categories.map((category) => (
+                    {categories.map(category => (
                       <option key={category.id} value={category.id}>
                         {category.name}
                       </option>
@@ -136,7 +132,7 @@ export default function ProductEditFormExample({
             icon={FormIcons.shield}
             variant="blue"
           >
-            <FormField 
+            <FormField
               label="Square Catalog Item ID"
               helpText="The unique identifier from Square's catalog. Used for syncing inventory and pricing automatically."
             >
@@ -162,12 +158,15 @@ export default function ProductEditFormExample({
                   {FormIcons.image}
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Image Upload Component</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Image Upload Component
+                  </h3>
                   <p className="text-sm text-gray-600 mb-4">
                     Drag and drop images here, or click to browse files
                   </p>
                   <p className="text-sm text-blue-600 bg-blue-100 inline-block px-4 py-2 rounded-lg font-medium">
-                    Current images: {initialImageUrls.length > 0 ? `${initialImageUrls.length} image(s)` : 'None'}
+                    Current images:{' '}
+                    {initialImageUrls.length > 0 ? `${initialImageUrls.length} image(s)` : 'None'}
                   </p>
                 </div>
                 <input type="hidden" name="imageUrls" value={JSON.stringify(initialImageUrls)} />
@@ -224,27 +223,21 @@ export default function ProductEditFormExample({
               </FormStack>
 
               <FormStack>
-                <FormField 
+                <FormField
                   label="Site Visibility"
                   helpText="Controls whether this product appears in your public catalog and search results"
                 >
-                  <FormSelect
-                    name="visibility"
-                    defaultValue={product.visibility || 'PUBLIC'}
-                  >
+                  <FormSelect name="visibility" defaultValue={product.visibility || 'PUBLIC'}>
                     <option value="PUBLIC">Public (Visible to all customers)</option>
                     <option value="PRIVATE">Private (Hidden from customers)</option>
                   </FormSelect>
                 </FormField>
 
-                <FormField 
+                <FormField
                   label="Item State"
                   helpText="Sets the operational state of this product for inventory management"
                 >
-                  <FormSelect
-                    name="itemState"
-                    defaultValue={product.itemState || 'ACTIVE'}
-                  >
+                  <FormSelect name="itemState" defaultValue={product.itemState || 'ACTIVE'}>
                     <option value="ACTIVE">Active</option>
                     <option value="INACTIVE">Inactive</option>
                     <option value="SEASONAL">Seasonal</option>
@@ -264,13 +257,19 @@ export default function ProductEditFormExample({
               variant="indigo"
             >
               <FormStack spacing={4}>
-                {product.variants.map((variant) => (
-                  <div key={variant.id} className="flex items-center justify-between p-6 border border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                {product.variants.map(variant => (
+                  <div
+                    key={variant.id}
+                    className="flex items-center justify-between p-6 border border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
+                  >
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">{variant.name}</h3>
                       {variant.squareVariantId && (
                         <p className="text-sm text-gray-500">
-                          Square ID: <span className="font-mono text-gray-700 bg-white px-2 py-1 rounded">{variant.squareVariantId}</span>
+                          Square ID:{' '}
+                          <span className="font-mono text-gray-700 bg-white px-2 py-1 rounded">
+                            {variant.squareVariantId}
+                          </span>
                         </p>
                       )}
                     </div>
@@ -282,16 +281,25 @@ export default function ProductEditFormExample({
                   </div>
                 ))}
               </FormStack>
-              
+
               <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
                 <div className="flex items-start">
-                  <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  <svg
+                    className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   <div className="ml-3">
                     <p className="text-sm text-blue-800 leading-relaxed">
-                      <strong>Note:</strong> Product variants are managed through Square Dashboard. 
-                      Any changes to variants should be made in Square and then synced to this system using the product sync feature.
+                      <strong>Note:</strong> Product variants are managed through Square Dashboard.
+                      Any changes to variants should be made in Square and then synced to this
+                      system using the product sync feature.
                     </p>
                   </div>
                 </div>
@@ -304,10 +312,7 @@ export default function ProductEditFormExample({
             <FormButton variant="secondary" href="/admin/products">
               Cancel Changes
             </FormButton>
-            <FormButton
-              type="submit"
-              leftIcon={FormIcons.save}
-            >
+            <FormButton type="submit" leftIcon={FormIcons.save}>
               Update Product
             </FormButton>
           </FormActions>

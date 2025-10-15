@@ -42,12 +42,7 @@ export function SignOutButton({ children, className, onSignOutStart }: SignOutBu
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleSignOut}
-      disabled={isPending}
-      className={className}
-    >
+    <button type="button" onClick={handleSignOut} disabled={isPending} className={className}>
       {children}
     </button>
   );

@@ -19,15 +19,18 @@
 **Sprint/Milestone**: HOTFIX-2025-Q3-SPRINT-1
 
 ### Problem Statement
+
 Production application on Vercel experiencing critical Prisma client errors with prepared statements ("prepared statement does not exist" and "prepared statement already exists") causing API failures across multiple endpoints including orders, spotlight picks, and catering orders. The issue ONLY occurs in production (Vercel deployment) and NOT in local development. This indicates a specific incompatibility between Prisma's prepared statement caching and Supabase's connection pooler (pgBouncer) in transaction pooling mode on Vercel's serverless environment.
 
 ### Key Evidence
+
 - **Local Development**: Working perfectly - no prepared statement errors
 - **Vercel Production**: Consistent failures with error code "42P05" - "prepared statement s0 already exists"
 - **Affected Routes**: `/account/order/[orderId]`, `/api/user/orders`, and related endpoints
 - **Root Cause**: Serverless functions in Vercel create new Prisma instances that conflict with pgBouncer's transaction pooling mode
 
 ### Success Criteria
+
 - [ ] Zero prepared statement errors in Vercel production logs
 - [ ] Order detail pages load successfully (e.g., /account/order/[orderId])
 - [ ] All affected API endpoints responding successfully (orders, spotlight-picks, webhooks)
@@ -36,6 +39,7 @@ Production application on Vercel experiencing critical Prisma client errors with
 - [ ] No regression in local development environment
 
 ### Dependencies
+
 - **Blocked by**: None (Critical production issue)
 - **Blocks**: All order-related features, order detail pages, webhook processing
 - **Related PRs/Issues**: Previous Prisma prepared statement fix (partially resolved)
@@ -48,6 +52,7 @@ Production application on Vercel experiencing critical Prisma client errors with
 ### 1. Root Cause Analysis
 
 The issue is a known incompatibility between:
+
 - **Prisma's prepared statement caching**: Prisma uses prepared statements by default for performance
 - **Supabase pgBouncer in transaction mode**: Each serverless invocation gets a different connection from the pool
 - **Vercel's serverless functions**: Each invocation creates a new Prisma client instance
@@ -57,32 +62,36 @@ When a new serverless function starts, it tries to create prepared statements th
 ### 2. Solution Options (Ranked by Simplicity)
 
 #### Option 1: Disable Prepared Statements (RECOMMENDED - Quick Fix)
+
 ```typescript
 // This is the fastest solution with minimal code changes
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL + '?pgbouncer=true&statement_cache_size=0'
-    }
-  }
+      url: process.env.DATABASE_URL + '?pgbouncer=true&statement_cache_size=0',
+    },
+  },
 });
 ```
 
 #### Option 2: Use Direct Connection URL for Vercel
+
 ```typescript
 // Use direct connection (bypassing pooler) with connection limits
-const databaseUrl = process.env.NODE_ENV === 'production' 
-  ? process.env.DIRECT_DATABASE_URL // Supabase direct connection
-  : process.env.DATABASE_URL; // Local/pooled connection
+const databaseUrl =
+  process.env.NODE_ENV === 'production'
+    ? process.env.DIRECT_DATABASE_URL // Supabase direct connection
+    : process.env.DATABASE_URL; // Local/pooled connection
 
 const prisma = new PrismaClient({
   datasources: {
-    db: { url: databaseUrl }
-  }
+    db: { url: databaseUrl },
+  },
 });
 ```
 
 #### Option 3: Implement Prisma Data Proxy (More Complex)
+
 - Requires setting up Prisma Data Proxy
 - Adds latency but handles connection pooling properly
 - More suitable for long-term scaling
@@ -90,6 +99,7 @@ const prisma = new PrismaClient({
 ### 3. Implementation Plan (Option 1 - Quick Fix)
 
 #### Step 1: Update Prisma Client Configuration
+
 ```typescript
 // lib/db/prisma.ts
 import { PrismaClient } from '@prisma/client';
@@ -105,7 +115,7 @@ const isVercel = process.env.VERCEL === '1';
 function getDatabaseUrl() {
   const baseUrl = process.env.DATABASE_URL;
   if (!baseUrl) throw new Error('DATABASE_URL not defined');
-  
+
   // For Vercel production, add pgBouncer compatibility parameters
   if (isVercel && process.env.NODE_ENV === 'production') {
     const url = new URL(baseUrl);
@@ -116,7 +126,7 @@ function getDatabaseUrl() {
     url.searchParams.set('pool_timeout', '60');
     return url.toString();
   }
-  
+
   return baseUrl;
 }
 
@@ -125,12 +135,10 @@ export const prisma =
   new PrismaClient({
     datasources: {
       db: {
-        url: getDatabaseUrl()
-      }
+        url: getDatabaseUrl(),
+      },
     },
-    log: process.env.NODE_ENV === 'development' 
-      ? ['query', 'info', 'warn', 'error']
-      : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
   });
 
 if (process.env.NODE_ENV !== 'production') {
@@ -146,6 +154,7 @@ if (isVercel) {
 ```
 
 #### Step 2: Environment Variables Update
+
 ```bash
 # .env.production (Vercel)
 DATABASE_URL="postgresql://[user]:[password]@[host]:6543/postgres?pgbouncer=true"
@@ -156,6 +165,7 @@ VERCEL=1  # Automatically set by Vercel
 ```
 
 #### Step 3: Add Connection Health Check
+
 ```typescript
 // app/api/health/db/route.ts
 import { NextResponse } from 'next/server';
@@ -165,7 +175,7 @@ export async function GET() {
   try {
     // Simple query to test connection
     const result = await prisma.$queryRaw`SELECT 1 as status`;
-    
+
     // Check for prepared statement errors in recent logs
     const recentErrors = await prisma.$queryRaw`
       SELECT COUNT(*) as error_count 
@@ -173,7 +183,7 @@ export async function GET() {
       WHERE state = 'idle in transaction' 
       AND query LIKE '%prepared statement%'
     `.catch(() => ({ error_count: 0 }));
-    
+
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -182,8 +192,8 @@ export async function GET() {
       environment: {
         isVercel: process.env.VERCEL === '1',
         nodeEnv: process.env.NODE_ENV,
-        pgBouncer: process.env.DATABASE_URL?.includes('pgbouncer=true')
-      }
+        pgBouncer: process.env.DATABASE_URL?.includes('pgbouncer=true'),
+      },
     });
   } catch (error) {
     console.error('Database health check failed:', error);
@@ -191,7 +201,7 @@ export async function GET() {
       {
         status: 'unhealthy',
         error: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 503 }
     );
@@ -200,15 +210,16 @@ export async function GET() {
 ```
 
 #### Step 4: Update Critical Routes with Error Handling
+
 ```typescript
 // app/account/order/[orderId]/page.tsx
 import { prisma } from '@/lib/db/prisma';
 import { notFound } from 'next/navigation';
 
-export default async function OrderPage({ 
-  params 
-}: { 
-  params: { orderId: string } 
+export default async function OrderPage({
+  params
+}: {
+  params: { orderId: string }
 }) {
   try {
     const order = await prisma.order.findUnique({
@@ -231,14 +242,14 @@ export default async function OrderPage({
       error: error.message,
       code: error.code
     });
-    
+
     // Check if it's a prepared statement error
     if (error.code === '42P05' || error.code === '26000') {
       // Attempt one retry with a fresh connection
       try {
         await prisma.$disconnect();
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         const order = await prisma.order.findUnique({
           where: { id: params.orderId },
           include: {
@@ -246,7 +257,7 @@ export default async function OrderPage({
             user: true,
           }
         });
-        
+
         if (!order) notFound();
         return <OrderDetails order={order} />;
       } catch (retryError) {
@@ -254,7 +265,7 @@ export default async function OrderPage({
         throw retryError;
       }
     }
-    
+
     throw error;
   }
 }
@@ -263,6 +274,7 @@ export default async function OrderPage({
 ### 4. Testing Strategy
 
 #### Local Testing
+
 ```bash
 # Test with pgBouncer parameters locally
 DATABASE_URL="postgresql://localhost:5432/mydb?pgbouncer=true&statement_cache_size=0" npm run dev
@@ -272,6 +284,7 @@ npm run test
 ```
 
 #### Staging Testing on Vercel
+
 ```bash
 # Deploy to preview branch
 vercel --env preview
@@ -284,6 +297,7 @@ curl https://preview-[deployment-id].vercel.app/api/user/orders
 ```
 
 #### Production Deployment
+
 ```bash
 # Deploy with monitoring
 vercel --prod
@@ -298,6 +312,7 @@ vercel logs | grep -i "prepared statement"
 ### 5. Monitoring & Rollback Plan
 
 #### Monitoring Checklist
+
 - [ ] Vercel Functions logs show no prepared statement errors
 - [ ] Database health endpoint returns healthy status
 - [ ] Order pages load within 2 seconds
@@ -305,7 +320,9 @@ vercel logs | grep -i "prepared statement"
 - [ ] No increase in database connection errors
 
 #### Rollback Procedure
+
 If issues persist after deployment:
+
 1. Revert to previous deployment in Vercel dashboard
 2. Switch to DIRECT_DATABASE_URL temporarily
 3. Implement Option 2 (direct connection with rate limiting)
@@ -324,16 +341,19 @@ After the immediate fix is deployed and stable:
 ## 📊 Success Metrics
 
 ### Immediate (24 hours)
+
 - Zero prepared statement errors in production
 - All order pages loading successfully
 - No customer complaints about order viewing
 
 ### Short-term (1 week)
+
 - Database query performance within 10% of baseline
 - API response times stable
 - No memory leaks in serverless functions
 
 ### Long-term (1 month)
+
 - Evaluate need for more sophisticated connection management
 - Document lessons learned for future serverless deployments
 - Consider architectural improvements for database access pattern

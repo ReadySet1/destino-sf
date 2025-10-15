@@ -30,6 +30,7 @@ const isValid = await validator.validateShippoSignature(
 ```
 
 The `WebhookValidator` class:
+
 - Required Redis connection (`UPSTASH_REDIS_REST_URL`)
 - Had complex timestamp validation logic
 - Could fail silently on Redis connection issues
@@ -58,12 +59,12 @@ According to [Shippo's webhook documentation](https://docs.goshippo.com/docs/tra
 ```typescript
 // Always return 200 to prevent Shippo retries
 return NextResponse.json(
-  { 
-    received: true, 
+  {
+    received: true,
     processed: true,
     processing_time_ms: processingTime,
-    event: payload.event
-  }, 
+    event: payload.event,
+  },
   { status: 200 }
 );
 ```
@@ -87,22 +88,25 @@ return NextResponse.json(
 ✅ **RELIABLE**: Always returns HTTP 200 status  
 ✅ **DEBUGGABLE**: Comprehensive logging and error tracking  
 ✅ **TEST-SAFE**: Properly handles test webhooks without database errors  
-✅ **UUID-VALIDATED**: Prevents invalid UUID format errors  
+✅ **UUID-VALIDATED**: Prevents invalid UUID format errors
 
 ## Recent Improvements (August 22, 2025)
 
 ### 1. Test Webhook Handling
+
 - **UUID Validation**: Added proper UUID format validation before database operations
 - **Test Data Detection**: Automatically identifies and handles test webhooks gracefully
 - **Error Prevention**: Prevents database errors from invalid test data
 - **Performance**: Test webhooks now process in 1-6ms instead of 400-500ms
 
 ### 2. Enhanced Error Handling
+
 - **Graceful Degradation**: Test webhooks with invalid data are logged but don't cause failures
 - **Better Logging**: Added emoji-based logging for improved visibility
 - **Test Mode Detection**: Automatic detection of test vs production webhooks
 
 ### 3. Database Safety
+
 - **UUID Format Validation**: Ensures order IDs match expected UUID format
 - **Test Data Filtering**: Prevents test tracking numbers from triggering database queries
 - **Error Isolation**: Database errors don't affect webhook acknowledgment
@@ -110,6 +114,7 @@ return NextResponse.json(
 ## Testing Results
 
 ### Test 1: Basic Webhook
+
 ```bash
 curl -X POST https://43e142decf42.ngrok-free.app/api/webhooks/shippo \
   -H "Content-Type: application/json" \
@@ -119,6 +124,7 @@ curl -X POST https://43e142decf42.ngrok-free.app/api/webhooks/shippo \
 **Response**: `{"received":true,"processed":true,"processing_time_ms":567,"event":"track_updated"}`
 
 ### Test 2: Transaction Created
+
 ```bash
 curl -X POST https://43e142decf42.ngrok-free.app/api/webhooks/shippo \
   -H "Content-Type: application/json" \
@@ -197,11 +203,13 @@ SHIPPO_WEBHOOK_SECRET=your_webhook_secret_here
 ## Issues Resolved During Debugging
 
 ### 1. UUID Format Error (Critical - FIXED)
+
 **Error**: `Invalid \`prisma.order.update()\` invocation: Inconsistent column data: Error creating UUID, invalid character: expected an optional prefix of \`urn:uuid:\` followed by [0-9a-fA-F-], found \`o\` at 1`
 
 **Root Cause**: Test webhooks were using fake order IDs like `order-456` which don't match the UUID format expected by the database.
 
 **Solution**: Added UUID format validation before attempting database operations:
+
 ```typescript
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 if (!uuidRegex.test(orderId)) {
@@ -211,11 +219,13 @@ if (!uuidRegex.test(orderId)) {
 ```
 
 ### 2. Missing Order Warnings (Expected Behavior - IMPROVED)
+
 **Issue**: Webhooks were logging warnings when orders weren't found in the database.
 
 **Root Cause**: Test webhooks use fake tracking numbers that don't exist in the database.
 
 **Solution**: Enhanced logging to distinguish between test data and real missing orders:
+
 ```typescript
 if (trackingNumber.includes('SHIPPO_') || trackingNumber.includes('TEST_')) {
   console.log(`🧪 Test tracking number detected: ${trackingNumber}. Skipping database update.`);
@@ -224,6 +234,7 @@ if (trackingNumber.includes('SHIPPO_') || trackingNumber.includes('TEST_')) {
 ```
 
 ### 3. Performance Issues (FIXED)
+
 **Before**: Test webhooks took 400-500ms to process
 **After**: Test webhooks now process in 1-6ms
 
@@ -232,19 +243,24 @@ if (trackingNumber.includes('SHIPPO_') || trackingNumber.includes('TEST_')) {
 ## Database Schema Requirements
 
 ### Order Table
+
 - **id**: UUID (primary key) - Must be valid UUID format
 - **trackingNumber**: String - Should be unique for proper webhook processing
 - **status**: Enum - Supports OrderStatus values (PROCESSING, SHIPPING, DELIVERED, etc.)
 - **notes**: Text - Stores shipping label URLs and other metadata
 
 ### UUID Format
+
 All order IDs must follow the standard UUID format:
+
 ```
 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
+
 Example: `550e8400-e29b-41d4-a716-446655440000`
 
 ### Test Data Handling
+
 - Test webhooks with invalid UUIDs are logged but don't cause database errors
-- Test tracking numbers (containing 'SHIPPO_' or 'TEST_') are automatically filtered
+- Test tracking numbers (containing 'SHIPPO*' or 'TEST*') are automatically filtered
 - Database operations are only attempted with valid, realistic data

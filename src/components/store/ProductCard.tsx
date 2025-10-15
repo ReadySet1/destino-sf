@@ -28,18 +28,18 @@ export function ProductCard({
   product,
   featured = false,
   showAvailabilityBadge = true,
-  className
+  className,
 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  
+
   // Get availability information
   const {
     currentState,
     isHidden,
     viewOnlySettings,
     nextStateChange,
-    isLoading: availabilityLoading
+    isLoading: availabilityLoading,
   } = useAvailability(product.id);
 
   const numericPrice = serializeDecimal(product.price) || 0;
@@ -56,15 +56,17 @@ export function ProductCard({
     // TODO: Implement wishlist functionality
   };
 
-  const canShowPrice = currentState !== AvailabilityState.VIEW_ONLY || 
-    (viewOnlySettings?.showPrice !== false);
+  const canShowPrice =
+    currentState !== AvailabilityState.VIEW_ONLY || viewOnlySettings?.showPrice !== false;
 
   return (
-    <Card className={cn(
-      "group relative overflow-hidden transition-all duration-200 hover:shadow-lg",
-      featured && "ring-2 ring-primary/20",
-      className
-    )}>
+    <Card
+      className={cn(
+        'group relative overflow-hidden transition-all duration-200 hover:shadow-lg',
+        featured && 'ring-2 ring-primary/20',
+        className
+      )}
+    >
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
         {primaryImage && !imageError ? (
@@ -83,14 +85,13 @@ export function ProductCard({
         )}
 
         {/* Availability Badge */}
-        {showAvailabilityBadge && !availabilityLoading && currentState !== AvailabilityState.AVAILABLE && (
-          <div className="absolute top-2 left-2">
-            <CompactAvailabilityBadge
-              state={currentState}
-              nextStateChange={nextStateChange}
-            />
-          </div>
-        )}
+        {showAvailabilityBadge &&
+          !availabilityLoading &&
+          currentState !== AvailabilityState.AVAILABLE && (
+            <div className="absolute top-2 left-2">
+              <CompactAvailabilityBadge state={currentState} nextStateChange={nextStateChange} />
+            </div>
+          )}
 
         {/* Featured Badge */}
         {featured && (
@@ -111,18 +112,10 @@ export function ProductCard({
               className="h-8 w-8 p-0"
               onClick={handleWishlistToggle}
             >
-              <Heart className={cn(
-                "h-4 w-4",
-                isWishlisted && "fill-current text-red-500"
-              )} />
+              <Heart className={cn('h-4 w-4', isWishlisted && 'fill-current text-red-500')} />
             </Button>
-            
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-8 w-8 p-0"
-              asChild
-            >
+
+            <Button size="sm" variant="secondary" className="h-8 w-8 p-0" asChild>
               <Link href={`/products/${product.slug || product.id}`}>
                 <Eye className="h-4 w-4" />
               </Link>
@@ -136,18 +129,18 @@ export function ProductCard({
         <div className="space-y-3">
           {/* Product Name */}
           <div>
-            <Link 
+            <Link
               href={`/products/${product.slug || product.id}`}
               className="font-medium text-lg hover:text-primary transition-colors line-clamp-2"
             >
               {product.name}
             </Link>
-            
+
             {product.description && (
               <div
                 className="text-sm text-muted-foreground mt-1 line-clamp-2"
                 dangerouslySetInnerHTML={{
-                  __html: sanitizeProductDescription(product.description)
+                  __html: sanitizeProductDescription(product.description),
                 }}
               />
             )}
@@ -156,10 +149,8 @@ export function ProductCard({
           {/* Price */}
           {canShowPrice && (
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-primary">
-                ${numericPrice.toFixed(2)}
-              </span>
-              
+              <span className="text-xl font-bold text-primary">${numericPrice.toFixed(2)}</span>
+
               {/* Variant pricing indicator */}
               {product.variants && product.variants.length > 1 && (
                 <span className="text-xs text-muted-foreground">
@@ -172,7 +163,7 @@ export function ProductCard({
           {/* Dietary Information */}
           {product.dietaryPreferences && product.dietaryPreferences.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {product.dietaryPreferences.slice(0, 3).map((pref) => (
+              {product.dietaryPreferences.slice(0, 3).map(pref => (
                 <Badge key={pref} variant="outline" className="text-xs">
                   {pref}
                 </Badge>
@@ -196,9 +187,7 @@ export function ProductCard({
 
           {/* View-Only Message */}
           {currentState === AvailabilityState.VIEW_ONLY && viewOnlySettings?.message && (
-            <p className="text-xs text-muted-foreground text-center">
-              {viewOnlySettings.message}
-            </p>
+            <p className="text-xs text-muted-foreground text-center">{viewOnlySettings.message}</p>
           )}
 
           {/* Next State Change Info */}
@@ -218,14 +207,14 @@ export function ProductCard({
  */
 export function SimpleProductCard({
   product,
-  className
+  className,
 }: Omit<ProductCardProps, 'featured' | 'showAvailabilityBadge'>) {
   return (
     <ProductCard
       product={product}
       featured={false}
       showAvailabilityBadge={true}
-      className={cn("h-fit", className)}
+      className={cn('h-fit', className)}
     />
   );
 }
@@ -233,16 +222,13 @@ export function SimpleProductCard({
 /**
  * Featured product card with enhanced styling
  */
-export function FeaturedProductCard({
-  product,
-  className
-}: Omit<ProductCardProps, 'featured'>) {
+export function FeaturedProductCard({ product, className }: Omit<ProductCardProps, 'featured'>) {
   return (
     <ProductCard
       product={product}
       featured={true}
       showAvailabilityBadge={true}
-      className={cn("border-primary/20 shadow-lg", className)}
+      className={cn('border-primary/20 shadow-lg', className)}
     />
   );
 }

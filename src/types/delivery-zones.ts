@@ -48,7 +48,7 @@ export type DeliveryZoneError =
   | { type: 'DUPLICATE'; existingZone: string }
   | { type: 'DATABASE'; message: string };
 
-export type Result<T, E = DeliveryZoneError> = 
+export type Result<T, E = DeliveryZoneError> =
   | { success: true; data: T }
   | { success: false; error: E };
 
@@ -60,16 +60,15 @@ export const BulkDeliveryZoneUpdateSchema = z.object({
 export type BulkDeliveryZoneUpdate = z.infer<typeof BulkDeliveryZoneUpdateSchema>;
 
 // Zone coverage validation
-export const ZoneCoverageSchema = z.object({
-  postalCode: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-}).refine(
-  (data) => data.postalCode || data.city,
-  {
-    message: "Either postal code or city must be provided",
-    path: ["postalCode", "city"],
-  }
-);
+export const ZoneCoverageSchema = z
+  .object({
+    postalCode: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+  })
+  .refine(data => data.postalCode || data.city, {
+    message: 'Either postal code or city must be provided',
+    path: ['postalCode', 'city'],
+  });
 
 export type ZoneCoverage = z.infer<typeof ZoneCoverageSchema>;

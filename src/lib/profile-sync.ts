@@ -27,38 +27,50 @@ export async function syncPhoneToProfile(
     const trimmedPhone = phone.trim();
 
     // Find the profile by userId or email
-    const profile = await withRetry(async () => {
-      if (userId) {
-        return await prisma.profile.findUnique({
-          where: { id: userId },
-          select: { id: true, email: true, phone: true },
-        });
-      } else {
-        return await prisma.profile.findUnique({
-          where: { email },
-          select: { id: true, email: true, phone: true },
-        });
-      }
-    }, 3, 'findProfileForPhoneSync');
+    const profile = await withRetry(
+      async () => {
+        if (userId) {
+          return await prisma.profile.findUnique({
+            where: { id: userId },
+            select: { id: true, email: true, phone: true },
+          });
+        } else {
+          return await prisma.profile.findUnique({
+            where: { email },
+            select: { id: true, email: true, phone: true },
+          });
+        }
+      },
+      3,
+      'findProfileForPhoneSync'
+    );
 
     if (!profile) {
-      logger.warn(`[PROFILE-SYNC] No profile found for ${userId ? `userId: ${userId}` : `email: ${email}`}`);
+      logger.warn(
+        `[PROFILE-SYNC] No profile found for ${userId ? `userId: ${userId}` : `email: ${email}`}`
+      );
       return false;
     }
 
     // Only update if phone is different or missing
     if (profile.phone !== trimmedPhone) {
-      logger.info(`[PROFILE-SYNC] Updating phone for profile ${profile.id}: ${profile.phone || 'none'} -> ${trimmedPhone}`);
+      logger.info(
+        `[PROFILE-SYNC] Updating phone for profile ${profile.id}: ${profile.phone || 'none'} -> ${trimmedPhone}`
+      );
 
-      await withRetry(async () => {
-        return await prisma.profile.update({
-          where: { id: profile.id },
-          data: {
-            phone: trimmedPhone,
-            updated_at: new Date(),
-          },
-        });
-      }, 3, 'updateProfilePhone');
+      await withRetry(
+        async () => {
+          return await prisma.profile.update({
+            where: { id: profile.id },
+            data: {
+              phone: trimmedPhone,
+              updated_at: new Date(),
+            },
+          });
+        },
+        3,
+        'updateProfilePhone'
+      );
 
       logger.info(`[PROFILE-SYNC] Successfully updated phone for profile ${profile.id}`);
       return true;
@@ -91,22 +103,28 @@ export async function syncCustomerToProfile(
 ): Promise<boolean> {
   try {
     // Find the profile by userId or email
-    const profile = await withRetry(async () => {
-      if (userId) {
-        return await prisma.profile.findUnique({
-          where: { id: userId },
-          select: { id: true, email: true, name: true, phone: true },
-        });
-      } else {
-        return await prisma.profile.findUnique({
-          where: { email: data.email },
-          select: { id: true, email: true, name: true, phone: true },
-        });
-      }
-    }, 3, 'findProfileForCustomerSync');
+    const profile = await withRetry(
+      async () => {
+        if (userId) {
+          return await prisma.profile.findUnique({
+            where: { id: userId },
+            select: { id: true, email: true, name: true, phone: true },
+          });
+        } else {
+          return await prisma.profile.findUnique({
+            where: { email: data.email },
+            select: { id: true, email: true, name: true, phone: true },
+          });
+        }
+      },
+      3,
+      'findProfileForCustomerSync'
+    );
 
     if (!profile) {
-      logger.warn(`[PROFILE-SYNC] No profile found for ${userId ? `userId: ${userId}` : `email: ${data.email}`}`);
+      logger.warn(
+        `[PROFILE-SYNC] No profile found for ${userId ? `userId: ${userId}` : `email: ${data.email}`}`
+      );
       return false;
     }
 
@@ -126,16 +144,22 @@ export async function syncCustomerToProfile(
     if (data.phone && data.phone.trim() !== profile.phone) {
       updateData.phone = data.phone.trim();
       hasChanges = true;
-      logger.info(`[PROFILE-SYNC] Phone update: ${profile.phone || 'none'} -> ${data.phone.trim()}`);
+      logger.info(
+        `[PROFILE-SYNC] Phone update: ${profile.phone || 'none'} -> ${data.phone.trim()}`
+      );
     }
 
     if (hasChanges) {
-      await withRetry(async () => {
-        return await prisma.profile.update({
-          where: { id: profile.id },
-          data: updateData,
-        });
-      }, 3, 'updateProfileCustomerData');
+      await withRetry(
+        async () => {
+          return await prisma.profile.update({
+            where: { id: profile.id },
+            data: updateData,
+          });
+        },
+        3,
+        'updateProfileCustomerData'
+      );
 
       logger.info(`[PROFILE-SYNC] Successfully updated profile ${profile.id}`);
       return true;

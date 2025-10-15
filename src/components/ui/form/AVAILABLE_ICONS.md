@@ -5,17 +5,20 @@
 When using FormIcons in your admin pages, these icons are available:
 
 ### Layout & Navigation
+
 - `FormIcons.arrowLeft` - Back/previous navigation
 - `FormIcons.home` - Home/dashboard
 - `FormIcons.grid` - Grid/layout view
 
 ### Actions
+
 - `FormIcons.plus` - Add/create new items
 - `FormIcons.save` - Save/submit forms
 - `FormIcons.refresh` - Refresh/sync data
 - `FormIcons.archive` - Archive/view archived items
 
 ### Content Types
+
 - `FormIcons.info` - Information/details
 - `FormIcons.user` - User/profile related
 - `FormIcons.package` - Products/inventory
@@ -24,6 +27,7 @@ When using FormIcons in your admin pages, these icons are available:
 - `FormIcons.creditCard` - Payment/billing
 
 ### States & Indicators
+
 - `FormIcons.check` - Success/confirmation
 - `FormIcons.warning` - Warnings/alerts
 - `FormIcons.shield` - Security/protection
@@ -34,8 +38,8 @@ When using FormIcons in your admin pages, these icons are available:
 import { FormIcons } from '@/components/ui/form';
 
 // In FormSection
-<FormSection 
-  title="User Details" 
+<FormSection
+  title="User Details"
   icon={FormIcons.user}
 >
 
@@ -55,6 +59,7 @@ If you need a new icon:
 4. Clear Next.js cache: `rm -rf .next`
 
 Example:
+
 ```tsx
 // In FormIcons.tsx
 import { Settings } from 'lucide-react';

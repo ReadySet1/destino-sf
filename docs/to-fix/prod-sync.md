@@ -5,11 +5,13 @@
 **Issue**: The unified sync endpoint is timing out after 30 seconds in production, even though it's configured for 300 seconds (5 minutes) in `vercel.json`.
 
 **Root Causes**:
+
 1. The Vercel configuration path pattern might not be matching correctly
 2. The sync process is too slow, processing items sequentially
 3. Database operations are not optimized for batch processing
 
 **Evidence from Logs**:
+
 - Sync starts at `03:41:47.535Z`
 - Timeout occurs at `03:42:17.370Z` (exactly 30 seconds later)
 - Only processed 11 items before timeout (22 total in category)
@@ -86,9 +88,7 @@ import pLimit from 'p-limit';
 
 const limit = pLimit(5); // Process 5 items concurrently
 
-const promises = items.map(item => 
-  limit(() => processItem(item))
-);
+const promises = items.map(item => limit(() => processItem(item)));
 
 await Promise.all(promises);
 ```
@@ -103,7 +103,7 @@ for (const item of items) {
   const existingProduct = await prisma.product.findFirst({
     where: { squareId: item.id }
   });
-  
+
   if (existingProduct) {
     await prisma.product.update(...);
   } else {
@@ -134,7 +134,7 @@ if (toCreate.length > 0) {
 // Step 4: Bulk update using transactions
 if (toUpdate.length > 0) {
   await prisma.$transaction(
-    toUpdate.map(item => 
+    toUpdate.map(item =>
       prisma.product.update({
         where: { squareId: item.id },
         data: {...}
@@ -161,21 +161,21 @@ export async function POST(request: NextRequest) {
         const update = JSON.stringify({
           type: 'progress',
           category: category.name,
-          status: 'processing'
+          status: 'processing',
         });
         await writer.write(encoder.encode(`data: ${update}\n\n`));
-        
+
         // Process category
         await processCategory(category);
-        
+
         const complete = JSON.stringify({
           type: 'progress',
           category: category.name,
-          status: 'complete'
+          status: 'complete',
         });
         await writer.write(encoder.encode(`data: ${complete}\n\n`));
       }
-      
+
       await writer.close();
     } catch (error) {
       await writer.abort(error);
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }
@@ -216,19 +216,19 @@ export async function POST(request: NextRequest) {
     data: {
       status: 'pending',
       categories: request.categories,
-      progress: 0
-    }
+      progress: 0,
+    },
   });
-  
+
   // Trigger background processing
   fetch('/api/square/process-sync-job', {
     method: 'POST',
-    body: JSON.stringify({ jobId: job.id })
+    body: JSON.stringify({ jobId: job.id }),
   });
-  
-  return NextResponse.json({ 
+
+  return NextResponse.json({
     jobId: job.id,
-    message: 'Sync job queued' 
+    message: 'Sync job queued',
   });
 }
 ```
@@ -236,25 +236,30 @@ export async function POST(request: NextRequest) {
 ## 📝 Implementation Steps
 
 ### Step 1: Quick Fix (5 minutes)
+
 1. Update `vercel.json` with correct function paths
 2. Deploy to production
 3. Test sync again
 
 ### Step 2: Add Explicit Configuration (10 minutes)
+
 1. Add `export const maxDuration = 300;` to route.ts
 2. Deploy and test
 
 ### Step 3: Optimize Database Operations (2 hours)
+
 1. Implement bulk fetch for existing products
 2. Implement batch create/update operations
 3. Test locally with timing logs
 
 ### Step 4: Implement Parallel Processing (1 hour)
+
 1. Add `p-limit` package: `pnpm add p-limit`
 2. Implement concurrent processing with limit
 3. Test with different concurrency levels
 
 ### Step 5: Monitor and Adjust (ongoing)
+
 1. Add performance metrics logging
 2. Monitor sync times per category
 3. Adjust batch sizes and concurrency based on results
@@ -273,12 +278,12 @@ async function testSyncPerformance() {
     'CATERING- SHARE PLATTERS',
     // ... other categories
   ];
-  
+
   const results = [];
-  
+
   for (const category of categories) {
     const start = performance.now();
-    
+
     const response = await fetch('http://localhost:3000/api/square/unified-sync', {
       method: 'POST',
       headers: {
@@ -287,29 +292,29 @@ async function testSyncPerformance() {
       },
       body: JSON.stringify({
         categories: [category],
-        dryRun: false
-      })
+        dryRun: false,
+      }),
     });
-    
+
     const end = performance.now();
     const duration = (end - start) / 1000;
-    
+
     results.push({
       category,
       duration,
-      status: response.status
+      status: response.status,
     });
-    
+
     console.log(`${category}: ${duration.toFixed(2)}s`);
   }
-  
+
   console.table(results);
 }
 ```
 
 ## 🚨 Important Notes
 
-1. **Vercel Plan Limitations**: 
+1. **Vercel Plan Limitations**:
    - Hobby plan: 10 second max
    - Pro plan: 300 second max (5 minutes)
    - Enterprise: 900 second max (15 minutes)
@@ -333,6 +338,7 @@ async function testSyncPerformance() {
 ## ✅ Implementation Status (Updated: $(date))
 
 ### Completed Fixes:
+
 1. **Vercel Configuration**: Updated `vercel.json` to use correct path patterns (`app/api/` instead of `src/app/api/`)
 2. **Explicit Runtime Configuration**: Added `export const maxDuration = 300` to all sync route files:
    - `src/app/api/square/unified-sync/route.ts`
@@ -345,14 +351,15 @@ async function testSyncPerformance() {
    - Transaction-based bulk updates
    - Optimized variant creation
 4. **Controlled Concurrency**: Implemented p-limit with 5 concurrent operations for Square API calls
-5. **Performance Optimizations**: 
+5. **Performance Optimizations**:
    - Category cache preloading
    - Existing slugs caching
    - Bulk variant operations
 
 ### Expected Performance Improvements:
+
 - **Individual operations**: ~2.2 seconds → ~100ms per item
-- **Category processing**: 30+ seconds → 2-5 seconds per category  
+- **Category processing**: 30+ seconds → 2-5 seconds per category
 - **Full sync**: Should complete within 5 minutes (Vercel Pro limit)
 - **Optimized sync**: 30-60 seconds for full sync
 
@@ -361,6 +368,7 @@ async function testSyncPerformance() {
 ## 📊 Expected Results
 
 After implementing these fixes:
+
 - **Immediate**: Sync should complete within 5 minutes (Vercel Pro limit)
 - **Optimized**: Full sync should complete in 30-60 seconds
 - **Per category**: ~2-5 seconds (down from 30+ seconds)

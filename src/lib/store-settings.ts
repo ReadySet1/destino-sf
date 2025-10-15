@@ -1,10 +1,6 @@
 import { prisma, withRetry } from '@/lib/db';
 import { cacheService, CacheInvalidation } from '@/lib/cache-service';
-import type { 
-  StoreSettings, 
-  StoreSettingsUpdate, 
-  SettingsResult
-} from '@/types/store-settings';
+import type { StoreSettings, StoreSettingsUpdate, SettingsResult } from '@/types/store-settings';
 import { DEFAULT_STORE_SETTINGS } from '@/types/store-settings';
 import { StoreSettingsSchema, StoreSettingsUpdateSchema } from '@/types/store-settings';
 import { revalidateTag, revalidatePath } from 'next/cache';
@@ -67,7 +63,7 @@ export class StoreSettingsService {
       return validatedSettings;
     } catch (error) {
       console.error('Error fetching store settings:', error);
-      
+
       // Track error in Sentry
       Sentry.withScope(scope => {
         scope.setTag('service', 'store-settings');
@@ -76,7 +72,9 @@ export class StoreSettingsService {
           operation: 'getSettings',
           error: error instanceof Error ? error.message : 'Unknown error',
         });
-        Sentry.captureException(error instanceof Error ? error : new Error('Store settings fetch error'));
+        Sentry.captureException(
+          error instanceof Error ? error : new Error('Store settings fetch error')
+        );
       });
 
       // Return default settings as fallback
@@ -141,7 +139,9 @@ export class StoreSettingsService {
           updates: JSON.stringify(updates),
           error: error instanceof Error ? error.message : 'Unknown error',
         });
-        Sentry.captureException(error instanceof Error ? error : new Error('Store settings update error'));
+        Sentry.captureException(
+          error instanceof Error ? error : new Error('Store settings update error')
+        );
       });
 
       return {
@@ -182,7 +182,7 @@ export class StoreSettingsService {
         this.getSetting('isStoreOpen'),
         this.getSetting('temporaryClosureMsg'),
       ]);
-      
+
       return !isOpen ? message : null;
     } catch (error) {
       console.error('Error fetching closure message:', error);
@@ -216,7 +216,7 @@ export class StoreSettingsService {
         this.getSetting('minOrderAmount'),
         this.getSetting('cateringMinimumAmount'),
       ]);
-      
+
       return { regular, catering };
     } catch (error) {
       console.error('Error fetching minimum amounts:', error);
@@ -236,7 +236,7 @@ export class StoreSettingsService {
         this.getSetting('minAdvanceHours'),
         this.getSetting('maxDaysInAdvance'),
       ]);
-      
+
       return { minHours, maxDays };
     } catch (error) {
       console.error('Error fetching advance booking settings:', error);
@@ -430,7 +430,9 @@ export async function getMinimumAmounts(): Promise<{ regular: number; catering: 
 /**
  * Update store settings (admin only)
  */
-export async function updateStoreSettings(updates: StoreSettingsUpdate): Promise<SettingsResult<StoreSettings>> {
+export async function updateStoreSettings(
+  updates: StoreSettingsUpdate
+): Promise<SettingsResult<StoreSettings>> {
   return await storeSettingsService.updateSettings(updates);
 }
 

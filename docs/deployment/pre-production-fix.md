@@ -13,6 +13,7 @@ Based on comprehensive analysis, your codebase requires critical fixes before me
 ## 📊 Current Status Assessment
 
 ### ✅ What's Working
+
 - Next.js 15 with App Router configuration
 - TypeScript setup with proper configuration
 - Prisma database schema is well-structured
@@ -21,6 +22,7 @@ Based on comprehensive analysis, your codebase requires critical fixes before me
 - Git hooks and pre-commit setup
 
 ### 🔴 Critical Issues
+
 - **Test Suite**: Extensive test failures requiring immediate attention
 - **Security**: Missing Row Level Security (RLS) policies
 - **Database**: Performance and security vulnerabilities
@@ -56,8 +58,8 @@ CREATE POLICY "Users can view own orders" ON orders
 CREATE POLICY "Admins can view all orders" ON orders
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid()::text 
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid()::text
       AND role = 'ADMIN'
     )
   );
@@ -71,8 +73,8 @@ CREATE POLICY "Anyone can view active products" ON products
 CREATE POLICY "Admins can manage products" ON products
   FOR ALL USING (
     EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid()::text 
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid()::text
       AND role = 'ADMIN'
     )
   );
@@ -135,8 +137,8 @@ $$;
 import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL || 
-  process.env.DATABASE_URL?.replace('/postgres', '/postgres_test');
+const testDatabaseUrl =
+  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL?.replace('/postgres', '/postgres_test');
 
 export const testPrisma = new PrismaClient({
   datasources: {
@@ -151,7 +153,7 @@ export async function setupTestDatabase() {
     // Reset test database
     await testPrisma.$executeRaw`DROP SCHEMA IF EXISTS public CASCADE;`;
     await testPrisma.$executeRaw`CREATE SCHEMA public;`;
-    
+
     // Run migrations on test database
     execSync('npx prisma migrate deploy', {
       env: {
@@ -159,7 +161,7 @@ export async function setupTestDatabase() {
         DATABASE_URL: testDatabaseUrl,
       },
     });
-    
+
     console.log('✅ Test database setup complete');
   } catch (error) {
     console.error('❌ Test database setup failed:', error);
@@ -168,13 +170,7 @@ export async function setupTestDatabase() {
 }
 
 export async function resetTestDatabase() {
-  const tablesToClear = [
-    'order_items',
-    'orders', 
-    'products',
-    'categories',
-    'profiles'
-  ];
+  const tablesToClear = ['order_items', 'orders', 'products', 'categories', 'profiles'];
 
   for (const table of tablesToClear) {
     await testPrisma.$executeRawUnsafe(`TRUNCATE TABLE "${table}" CASCADE;`);
@@ -203,28 +199,29 @@ const config: Config = {
       },
       setupFilesAfterEnv: [
         '<rootDir>/jest.setup.enhanced.js',
-        '<rootDir>/src/__tests__/setup/test-db-setup.ts'
+        '<rootDir>/src/__tests__/setup/test-db-setup.ts',
       ],
       globalSetup: '<rootDir>/src/__tests__/setup/global-setup.ts',
       globalTeardown: '<rootDir>/src/__tests__/setup/global-teardown.ts',
       transform: {
-        '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: {
-            jsx: 'react',
-            esModuleInterop: true,
-            allowSyntheticDefaultImports: true,
+        '^.+\\.tsx?$': [
+          'ts-jest',
+          {
+            tsconfig: {
+              jsx: 'react',
+              esModuleInterop: true,
+              allowSyntheticDefaultImports: true,
+            },
           },
-        }],
+        ],
       },
       testTimeout: 30000, // Increased timeout for DB operations
     },
     {
       displayName: 'jsdom',
-      preset: 'ts-jest', 
+      preset: 'ts-jest',
       testEnvironment: 'jsdom',
-      testMatch: [
-        '<rootDir>/src/**/__tests__/**/*.test.tsx',
-      ],
+      testMatch: ['<rootDir>/src/**/__tests__/**/*.test.tsx'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
@@ -232,16 +229,19 @@ const config: Config = {
       },
       setupFilesAfterEnv: [
         '<rootDir>/jest.setup.enhanced.js',
-        '<rootDir>/src/__tests__/setup/jsdom-setup.ts'
+        '<rootDir>/src/__tests__/setup/jsdom-setup.ts',
       ],
       transform: {
-        '^.+\\.tsx?$': ['ts-jest', {
-          tsconfig: {
-            jsx: 'react',
-            esModuleInterop: true,
-            allowSyntheticDefaultImports: true,
+        '^.+\\.tsx?$': [
+          'ts-jest',
+          {
+            tsconfig: {
+              jsx: 'react',
+              esModuleInterop: true,
+              allowSyntheticDefaultImports: true,
+            },
           },
-        }],
+        ],
       },
     },
   ],
@@ -307,7 +307,7 @@ describe('/api/orders', () => {
     // Arrange
     const user = await createMockUser(testPrisma);
     const product = await createMockProduct(testPrisma);
-    
+
     const orderData = {
       items: [{ productId: product.id, quantity: 2, price: 15.99 }],
       shippingAddress: {
@@ -332,13 +332,13 @@ describe('/api/orders', () => {
     expect(response.status).toBe(201);
     expect(result.order).toBeDefined();
     expect(result.order.items).toHaveLength(1);
-    
+
     // Verify database state
     const dbOrder = await testPrisma.order.findUnique({
       where: { id: result.order.id },
       include: { items: true },
     });
-    
+
     expect(dbOrder).toBeTruthy();
     expect(dbOrder.items).toHaveLength(1);
   });
@@ -397,7 +397,7 @@ describe('CartSummary', () => {
 
   it('handles checkout process', async () => {
     const user = userEvent.setup();
-    
+
     // Test implementation with proper async handling
     render(
       <CartProvider>
@@ -444,11 +444,7 @@ export const getCachedProducts = unstable_cache(
           select: { id: true, name: true, price: true, squareId: true },
         },
       },
-      orderBy: [
-        { featured: 'desc' },
-        { ordinal: 'asc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ featured: 'desc' }, { ordinal: 'asc' }, { createdAt: 'desc' }],
     });
   },
   ['products'],
@@ -510,12 +506,9 @@ export async function GET(request: NextRequest) {
     // Rate limiting
     const identifier = request.ip || 'anonymous';
     const { success } = await rateLimit.limit(identifier);
-    
+
     if (!success) {
-      return NextResponse.json(
-        { error: 'Too many requests' },
-        { status: 429 }
-      );
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -525,7 +518,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { products, count: products.length },
-      { 
+      {
         status: 200,
         headers: {
           'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
@@ -534,11 +527,8 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('Products API error:', error);
-    
-    return NextResponse.json(
-      { error: 'Internal server error', products: [] },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: 'Internal server error', products: [] }, { status: 500 });
   }
 }
 ```
@@ -557,20 +547,20 @@ interface ProductGridProps {
   searchQuery?: string;
 }
 
-export const ProductGrid = memo<ProductGridProps>(({ 
-  products, 
-  categoryFilter, 
-  searchQuery 
+export const ProductGrid = memo<ProductGridProps>(({
+  products,
+  categoryFilter,
+  searchQuery
 }) => {
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
-      const matchesCategory = !categoryFilter || 
+      const matchesCategory = !categoryFilter ||
         product.categoryId === categoryFilter;
-      
-      const matchesSearch = !searchQuery || 
+
+      const matchesSearch = !searchQuery ||
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       return matchesCategory && matchesSearch && product.active;
     });
   }, [products, categoryFilter, searchQuery]);
@@ -586,9 +576,9 @@ export const ProductGrid = memo<ProductGridProps>(({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {filteredProducts.map((product) => (
-        <ProductCard 
-          key={product.id} 
-          product={product} 
+        <ProductCard
+          key={product.id}
+          product={product}
         />
       ))}
     </div>
@@ -612,13 +602,13 @@ import { rateLimit } from '@/lib/rate-limit';
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
-  
+
   // Security headers
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-  
+
   // CSP for production
   if (process.env.NODE_ENV === 'production') {
     response.headers.set(
@@ -632,7 +622,7 @@ export async function middleware(request: NextRequest) {
   // Auth check for protected routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     if (!session) {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
@@ -653,7 +643,7 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const identifier = request.ip || 'anonymous';
     const { success } = await rateLimit.limit(identifier);
-    
+
     if (!success) {
       return NextResponse.json(
         { error: 'Too many requests' },
@@ -666,3 +656,4 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config =
+```

@@ -29,14 +29,14 @@ export default function CateringConfirmationContent({ status, orderData, squareO
       try {
         // Clear catering cart state
         clearCart();
-        
+
         // Clear all catering-related localStorage data
         localStorage.removeItem('cateringOrderData');
         localStorage.removeItem('cateringCart');
         localStorage.removeItem('cateringCustomerInfo');
         localStorage.removeItem('cateringDeliveryAddress');
         localStorage.removeItem('cateringFulfillmentInfo');
-        
+
         console.log('✅ [CATERING] Cleared cart and localStorage after successful confirmation');
       } catch (error) {
         console.warn('🔧 [CATERING] Failed to clear cart/localStorage:', error);
@@ -78,7 +78,8 @@ export default function CateringConfirmationContent({ status, orderData, squareO
             <div className="mb-4 text-5xl">🔍</div>
             <h1 className="mb-4 text-2xl font-bold">Catering Order Not Found</h1>
             <p className="text-gray-600">
-              We couldn&apos;t find a catering order with that ID. Please check your order confirmation email or contact support.
+              We couldn&apos;t find a catering order with that ID. Please check your order
+              confirmation email or contact support.
             </p>
           </div>
           <div className="flex justify-center">
@@ -102,7 +103,8 @@ export default function CateringConfirmationContent({ status, orderData, squareO
             <div className="mb-4 text-5xl">⚠️</div>
             <h1 className="mb-4 text-2xl font-bold">Error Loading Order</h1>
             <p className="text-gray-600">
-              There was an error loading your catering order details. Please try refreshing the page or contact support.
+              There was an error loading your catering order details. Please try refreshing the page
+              or contact support.
             </p>
           </div>
           <div className="flex justify-center space-x-4">
@@ -132,19 +134,22 @@ export default function CateringConfirmationContent({ status, orderData, squareO
             <div className="mb-4 text-5xl">❌</div>
             <h1 className="mb-4 text-2xl font-bold">Payment Failed</h1>
             <p className="text-gray-600">
-              Your catering order payment was not successful. You can retry the payment or place a new order.
+              Your catering order payment was not successful. You can retry the payment or place a
+              new order.
             </p>
           </div>
           <div className="flex justify-center space-x-4">
             {/* Show retry payment button for Square payments with pending/failed payments */}
-            {orderData && orderData.id && orderData.paymentMethod === 'SQUARE' && 
-             (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
-              <RetryPaymentButton
-                orderId={orderData.id}
-                retryCount={orderData.retryCount || 0}
-                disabled={(orderData.retryCount || 0) >= 3}
-              />
-            )}
+            {orderData &&
+              orderData.id &&
+              orderData.paymentMethod === 'SQUARE' &&
+              (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
+                <RetryPaymentButton
+                  orderId={orderData.id}
+                  retryCount={orderData.retryCount || 0}
+                  disabled={(orderData.retryCount || 0) >= 3}
+                />
+              )}
             <button
               onClick={() => router.push('/catering')}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
@@ -167,22 +172,23 @@ export default function CateringConfirmationContent({ status, orderData, squareO
               {status === 'processing' ? 'Order Processing' : 'Payment Processing'}
             </h1>
             <p className="text-gray-600">
-              {status === 'processing' 
-                ? 'Your catering order is being processed. You can complete the payment or check your email for updates.' 
-                : 'Your catering order is being processed. You can retry the payment if needed or check your email for updates.'
-              }
+              {status === 'processing'
+                ? 'Your catering order is being processed. You can complete the payment or check your email for updates.'
+                : 'Your catering order is being processed. You can retry the payment if needed or check your email for updates.'}
             </p>
           </div>
           <div className="flex justify-center space-x-4">
             {/* Show retry payment button for Square payments with pending/failed payments */}
-            {orderData && orderData.id && orderData.paymentMethod === 'SQUARE' && 
-             (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
-              <RetryPaymentButton
-                orderId={orderData.id}
-                retryCount={orderData.retryCount || 0}
-                disabled={(orderData.retryCount || 0) >= 3}
-              />
-            )}
+            {orderData &&
+              orderData.id &&
+              orderData.paymentMethod === 'SQUARE' &&
+              (orderData.paymentStatus === 'PENDING' || orderData.paymentStatus === 'FAILED') && (
+                <RetryPaymentButton
+                  orderId={orderData.id}
+                  retryCount={orderData.retryCount || 0}
+                  disabled={(orderData.retryCount || 0) >= 3}
+                />
+              )}
             <button
               onClick={() => window.location.reload()}
               className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700"
@@ -200,8 +206,6 @@ export default function CateringConfirmationContent({ status, orderData, squareO
       </main>
     );
   }
-
-
 
   if (status !== 'success' && status !== 'confirmed') {
     return (
@@ -231,10 +235,7 @@ export default function CateringConfirmationContent({ status, orderData, squareO
   const transformedOrderData: CateringOrderData | null = orderData
     ? (() => {
         // Calculate subtotal from items
-        const subtotal = orderData.items.reduce(
-          (sum, item) => sum + item.totalPrice,
-          0
-        );
+        const subtotal = orderData.items.reduce((sum, item) => sum + item.totalPrice, 0);
 
         // Calculate tax amount
         const taxAmount = (() => {

@@ -18,7 +18,10 @@ interface AdminSettingsProps {
   deliveryZones?: any[];
 }
 
-export default function AdminSettingsWithDesignSystem({ storeSettings, deliveryZones }: AdminSettingsProps) {
+export default function AdminSettingsWithDesignSystem({
+  storeSettings,
+  deliveryZones,
+}: AdminSettingsProps) {
   const [activeTab, setActiveTab] = useState('store');
 
   return (
@@ -49,7 +52,7 @@ export default function AdminSettingsWithDesignSystem({ storeSettings, deliveryZ
             Product Shipping
           </TabsTrigger>
         </TabsList>
-        
+
         <div className="mt-8 space-y-10">
           <TabsContent value="store" className="mt-0">
             <FormSection
@@ -68,20 +71,30 @@ export default function AdminSettingsWithDesignSystem({ storeSettings, deliveryZ
                       Store Settings Usage
                     </h4>
                     <ul className="text-sm text-amber-800 space-y-1">
-                      <li>• <strong>Store Information:</strong> Appears on invoices, receipts, and shipping labels</li>
-                      <li>• <strong>Tax Rate:</strong> Applied to all taxable items during checkout</li>
-                      <li>• <strong>Order Minimums:</strong> Enforced for regular product orders</li>
-                      <li>• <strong>Catering Settings:</strong> General minimums and advance booking rules</li>
+                      <li>
+                        • <strong>Store Information:</strong> Appears on invoices, receipts, and
+                        shipping labels
+                      </li>
+                      <li>
+                        • <strong>Tax Rate:</strong> Applied to all taxable items during checkout
+                      </li>
+                      <li>
+                        • <strong>Order Minimums:</strong> Enforced for regular product orders
+                      </li>
+                      <li>
+                        • <strong>Catering Settings:</strong> General minimums and advance booking
+                        rules
+                      </li>
                     </ul>
                   </div>
                 </div>
               </div>
-              
+
               {/* Enhanced Store Settings Form */}
               <EnhancedStoreSettingsForm settings={storeSettings} />
             </FormSection>
           </TabsContent>
-          
+
           <TabsContent value="catering" className="mt-0">
             <FormSection
               title="Catering Delivery Zones"
@@ -92,7 +105,7 @@ export default function AdminSettingsWithDesignSystem({ storeSettings, deliveryZ
               <DeliveryZoneManager />
             </FormSection>
           </TabsContent>
-          
+
           <TabsContent value="regular" className="mt-0">
             <FormSection
               title="Regular Delivery Zones"
@@ -103,7 +116,7 @@ export default function AdminSettingsWithDesignSystem({ storeSettings, deliveryZ
               <RegularDeliveryZoneManager />
             </FormSection>
           </TabsContent>
-          
+
           <TabsContent value="shipping" className="mt-0">
             <FormSection
               title="Product Shipping Configuration"
@@ -121,22 +134,39 @@ export default function AdminSettingsWithDesignSystem({ storeSettings, deliveryZ
                       Shipping vs. Catering Delivery
                     </h4>
                     <ul className="text-sm text-indigo-800 space-y-1">
-                      <li>• <strong>Product Shipping:</strong> Nationwide delivery of packaged goods via carriers</li>
-                      <li>• <strong>Catering Delivery:</strong> Local delivery of fresh prepared food</li>
-                      <li>• <strong>Weight-based pricing:</strong> Calculated automatically for products</li>
-                      <li>• <strong>Shippo integration:</strong> Real-time shipping rates and label generation</li>
+                      <li>
+                        • <strong>Product Shipping:</strong> Nationwide delivery of packaged goods
+                        via carriers
+                      </li>
+                      <li>
+                        • <strong>Catering Delivery:</strong> Local delivery of fresh prepared food
+                      </li>
+                      <li>
+                        • <strong>Weight-based pricing:</strong> Calculated automatically for
+                        products
+                      </li>
+                      <li>
+                        • <strong>Shippo integration:</strong> Real-time shipping rates and label
+                        generation
+                      </li>
                     </ul>
                   </div>
                 </div>
               </div>
-              
+
               {/* Shipping configuration placeholder */}
               <div className="text-center py-12">
                 <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Shipping Configuration</h3>
-                <p className="text-gray-600 mb-4">Shipping configuration component will be integrated here</p>
+                <p className="text-gray-600 mb-4">
+                  Shipping configuration component will be integrated here
+                </p>
                 <p className="text-sm text-gray-500">
-                  Visit <a href="/admin/shipping" className="text-indigo-600 hover:underline font-medium">/admin/shipping</a> for current shipping config
+                  Visit{' '}
+                  <a href="/admin/shipping" className="text-indigo-600 hover:underline font-medium">
+                    /admin/shipping
+                  </a>{' '}
+                  for current shipping config
                 </p>
               </div>
             </FormSection>

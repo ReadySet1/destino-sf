@@ -1,6 +1,5 @@
-
-
 # Master Fix Planning Template v2.0
+
 ## Destino SF Design System Upgrade - Remaining UI Components
 
 ---
@@ -18,9 +17,11 @@
 **Sprint/Milestone**: UI_MODERNIZATION_Q2_2025
 
 ### Problem Statement
+
 Continue the modernization of Destino SF's food ordering platform by applying the established glass morphism design system to all remaining non-admin UI components. Multiple navigation, product, form, and catering components still use the old design patterns and need to be upgraded for consistency.
 
 ### Success Criteria
+
 - [x] Cart, Checkout, and Account pages already modernized
 - [ ] All navigation components use glass morphism effects
 - [ ] Product pages and cards match the modern design
@@ -32,6 +33,7 @@ Continue the modernization of Destino SF's food ordering platform by applying th
 - [ ] All hover states have proper text contrast
 
 ### Dependencies
+
 - **Blocked by**: None
 - **Blocks**: Final production deployment, Marketing campaign launch
 - **Related PRs/Issues**: Phase 1 Cart/Checkout upgrade
@@ -43,6 +45,7 @@ Continue the modernization of Destino SF's food ordering platform by applying th
 ### 1. Code Structure & References
 
 #### File Structure - Components to Update
+
 ```tsx
 src/
 ├── components/
@@ -92,13 +95,14 @@ src/
 ```
 
 #### Key Interfaces & Types
+
 ```tsx
 // types/ui-upgrade.ts
 export interface DesignSystemColors {
-  primary: 'destino-yellow';      // #fdc32d
-  secondary: 'destino-orange';    // #f77c22
-  text: 'destino-charcoal';       // #2d3538
-  background: 'destino-cream';    // #fcfcf5
+  primary: 'destino-yellow'; // #fdc32d
+  secondary: 'destino-orange'; // #f77c22
+  text: 'destino-charcoal'; // #2d3538
+  background: 'destino-cream'; // #fcfcf5
 }
 
 export interface GlassMorphismClasses {
@@ -118,6 +122,7 @@ export interface ComponentUpgradeStatus {
 ```
 
 #### Design System Constants
+
 ```tsx
 // lib/design-system/constants.ts
 export const DESIGN_TOKENS = {
@@ -146,6 +151,7 @@ export const DESIGN_TOKENS = {
 ### 2. Architecture Patterns
 
 #### Component Upgrade Strategy
+
 ```mermaid
 graph TD
     A[Identify Component] -->|Analyze| B[Current Design]
@@ -159,18 +165,19 @@ graph TD
 ```
 
 #### Design Implementation Pattern
+
 ```tsx
 // Pattern for upgrading components
 interface ComponentUpgradePattern {
   // 1. Container wrapper with gradient
   wrapper: `<div className="bg-gradient-to-br from-destino-cream via-white to-gray-50 min-h-screen">`;
-  
+
   // 2. Glass morphism cards
   card: `<div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-destino-yellow/10">`;
-  
+
   // 3. Button styling
   button: `<button className="bg-destino-yellow text-destino-charcoal hover:bg-destino-orange hover:text-white transition-all duration-200 hover:scale-105">`;
-  
+
   // 4. Hover effects
   interactive: `<div className="transition-all duration-200 hover:scale-105 hover:shadow-xl">`;
 }
@@ -181,6 +188,7 @@ interface ComponentUpgradePattern {
 #### Component Categories & Priorities
 
 ##### Priority 1: Navigation & Layout (2 days)
+
 ```tsx
 // Components to upgrade:
 - Navbar/index.tsx
@@ -195,6 +203,7 @@ interface ComponentUpgradePattern {
 ```
 
 ##### Priority 2: Product Components (3 days)
+
 ```tsx
 // Components to upgrade:
 - Products/ProductCard.tsx
@@ -212,6 +221,7 @@ interface ComponentUpgradePattern {
 ```
 
 ##### Priority 3: Forms & Contact (2 days)
+
 ```tsx
 // Components to upgrade:
 - ContactForm/ContactForm.tsx
@@ -227,6 +237,7 @@ interface ComponentUpgradePattern {
 ```
 
 ##### Priority 4: Catering System (2 days)
+
 ```tsx
 // Components to upgrade:
 - All Catering/* components
@@ -241,6 +252,7 @@ interface ComponentUpgradePattern {
 ```
 
 ##### Priority 5: Authentication (1 day)
+
 ```tsx
 // Components to upgrade:
 - auth/SignInForm.tsx
@@ -260,6 +272,7 @@ interface ComponentUpgradePattern {
 ## 🧪 Testing Strategy
 
 ### Visual Testing Checklist
+
 ```tsx
 // Per-component testing requirements
 interface VisualTestingChecklist {
@@ -276,7 +289,7 @@ interface VisualTestingChecklist {
     scrollPerformance: boolean;
   };
   accessibility: {
-    contrast: boolean;      // WCAG AA minimum
+    contrast: boolean; // WCAG AA minimum
     focusIndicators: boolean;
     keyboardNav: boolean;
     screenReader: boolean;
@@ -285,6 +298,7 @@ interface VisualTestingChecklist {
 ```
 
 ### Browser Compatibility Testing
+
 ```yaml
 browsers:
   - Chrome: latest, latest-1
@@ -295,12 +309,13 @@ browsers:
 ```
 
 ### Performance Budget
+
 ```yaml
 performance:
-  cls: < 0.1           # Cumulative Layout Shift
-  fid: < 100ms         # First Input Delay
-  lcp: < 2.5s          # Largest Contentful Paint
-  animations: 60fps     # Smooth animations
+  cls: < 0.1 # Cumulative Layout Shift
+  fid: < 100ms # First Input Delay
+  lcp: < 2.5s # Largest Contentful Paint
+  animations: 60fps # Smooth animations
   blur-performance: GPU # Hardware acceleration
 ```
 
@@ -309,6 +324,7 @@ performance:
 ## 🔐 Security Analysis
 
 ### Security Considerations
+
 - [ ] **CSS Injection**: Sanitize any dynamic class names
 - [ ] **Image Security**: Use Next.js Image component exclusively
 - [ ] **Form Security**: Maintain CSRF protection during styling
@@ -319,35 +335,37 @@ performance:
 ## 📊 Performance & Monitoring
 
 ### Performance Optimizations
+
 ```tsx
 // Optimize glass morphism for performance
 const performanceOptimizations = {
   // Use will-change for animated elements
   animations: 'will-change-transform will-change-opacity',
-  
+
   // Hardware acceleration
   gpu: 'transform: translateZ(0)',
-  
+
   // Reduce blur on mobile for performance
   mobileBlur: 'sm:backdrop-blur-sm backdrop-blur-none',
-  
+
   // Lazy load non-critical components
   lazyLoad: 'loading="lazy"',
 };
 ```
 
 ### Monitoring Metrics
+
 ```tsx
 // Track UI upgrade impact
 interface UIMetrics {
   // User engagement
   bounceRate: number;
   avgSessionDuration: number;
-  
+
   // Performance
   pageLoadTime: number;
   interactionLatency: number;
-  
+
   // Conversion
   cartAdditionRate: number;
   checkoutCompletionRate: number;
@@ -359,6 +377,7 @@ interface UIMetrics {
 ## 🎨 UI/UX Considerations
 
 ### Design System Rules
+
 1. **Glass Morphism**: Always use `bg-white/95 backdrop-blur-sm`
 2. **Brand Colors**: Primary actions use `destino-yellow`, secondary use `destino-orange`
 3. **Hover States**: All interactive elements need `hover:scale-105` and proper text contrast
@@ -368,24 +387,26 @@ interface UIMetrics {
 7. **Transitions**: Always include `transition-all duration-200`
 
 ### Mobile-First Approach
+
 ```tsx
 // Responsive design patterns
 const responsivePatterns = {
   // Mobile-first spacing
   spacing: 'p-4 sm:p-6 lg:p-8',
-  
+
   // Responsive text
   text: 'text-sm sm:text-base lg:text-lg',
-  
+
   // Adaptive layouts
   grid: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-  
+
   // Touch-friendly targets
   buttons: 'min-h-[44px] px-4 py-2',
 };
 ```
 
 ### Common Pitfalls to Avoid
+
 - ❌ White text on light hover backgrounds
 - ❌ Missing mobile breakpoints
 - ❌ Forgetting transition animations
@@ -397,6 +418,7 @@ const responsivePatterns = {
 ## 📦 Deployment & Rollback
 
 ### Pre-Deployment Checklist
+
 - [ ] All components upgraded per priority list
 - [ ] Visual regression tests pass
 - [ ] Mobile responsiveness verified
@@ -407,6 +429,7 @@ const responsivePatterns = {
 - [ ] Stakeholder review approved
 
 ### Rollback Strategy
+
 ```tsx
 // Feature flag for gradual rollout
 export const UI_UPGRADE_FLAGS = {
@@ -423,20 +446,24 @@ export const UI_UPGRADE_FLAGS = {
 ## 📝 Documentation Requirements
 
 ### Component Documentation Template
+
 ```markdown
 ## [Component Name] - Design System Upgrade
 
 ### Before
+
 - Old styling approach
 - Issues/inconsistencies
 
-### After  
+### After
+
 - Glass morphism applied
 - Brand colors integrated
 - Hover states fixed
 - Mobile responsive
 
 ### Classes Applied
+
 \`\`\`tsx
 // Container
 className="bg-white/95 backdrop-blur-sm rounded-xl"
@@ -449,12 +476,14 @@ className="shadow-lg hover:shadow-xl transition-all duration-200"
 \`\`\`
 
 ### Testing Notes
+
 - Desktop: ✅
-- Mobile: ✅  
+- Mobile: ✅
 - Accessibility: ✅
 ```
 
 ### Progress Tracking
+
 ```yaml
 components:
   navigation:
@@ -483,15 +512,18 @@ components:
 ## Implementation Roadmap
 
 ### Week 1
+
 - Day 1-2: Navigation components (Navbar, Footer, Mobile menu)
 - Day 3-5: Product components (Cards, Grid, Details, Menu page)
 
-### Week 2  
+### Week 2
+
 - Day 6-7: Forms and Contact pages
 - Day 8-9: Catering system components
 - Day 10: Authentication pages and final polish
 
 ### Testing & Deployment
+
 - Day 11: Full testing suite
 - Day 12: Stakeholder review and adjustments
 - Day 13: Production deployment

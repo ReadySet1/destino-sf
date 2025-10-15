@@ -12,11 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   MoreVertical,
   Edit,
@@ -33,11 +29,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import {
-  AvailabilityState,
-  RuleType,
-  type AvailabilityRule,
-} from '@/types/availability';
+import { AvailabilityState, RuleType, type AvailabilityRule } from '@/types/availability';
 import {
   getAvailabilityStateColor,
   getAvailabilityStateLabel,
@@ -105,8 +97,18 @@ export function RuleCard({
     if (primaryRule.ruleType === RuleType.SEASONAL && primaryRule.seasonalConfig) {
       const config = primaryRule.seasonalConfig;
       const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       return `${months[config.startMonth - 1]} ${config.startDay} - ${months[config.endMonth - 1]} ${config.endDay}${config.yearly ? ' (Yearly)' : ''}`;
     }
@@ -126,22 +128,25 @@ export function RuleCard({
   };
 
   // Get visible products (first 3)
-  const visibleProducts = rules.slice(0, 3).map(r => products.get(r.productId)).filter(Boolean);
+  const visibleProducts = rules
+    .slice(0, 3)
+    .map(r => products.get(r.productId))
+    .filter(Boolean);
   const remainingCount = totalProducts - visibleProducts.length;
 
   return (
-    <Card className={cn(
-      "group hover:shadow-md transition-all duration-200",
-      !allEnabled && "opacity-75"
-    )}>
+    <Card
+      className={cn(
+        'group hover:shadow-md transition-all duration-200',
+        !allEnabled && 'opacity-75'
+      )}
+    >
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
           {/* Left: Rule Name & Metadata */}
           <div className="flex-1 min-w-0 space-y-2">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-gray-900 truncate">
-                {ruleName}
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 truncate">{ruleName}</h3>
               {highPriority && (
                 <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
                   <AlertCircle className="w-3 h-3 mr-1" />
@@ -162,7 +167,7 @@ export function RuleCard({
 
             {/* Product Tags */}
             <div className="flex items-center gap-2 flex-wrap">
-              {visibleProducts.map((product) => (
+              {visibleProducts.map(product => (
                 <Badge
                   key={product!.id}
                   variant="secondary"
@@ -189,7 +194,7 @@ export function RuleCard({
               {/* State Badge */}
               <Badge
                 className={cn(
-                  "font-semibold",
+                  'font-semibold',
                   getAvailabilityStateColor(primaryRule.state as AvailabilityState)
                 )}
               >
@@ -198,16 +203,25 @@ export function RuleCard({
 
               {/* Status Badge */}
               {mixedStatus ? (
-                <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200"
+                >
                   Mixed Status
                 </Badge>
               ) : allEnabled ? (
-                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-green-50 text-green-700 border-green-200"
+                >
                   <Eye className="w-3 h-3 mr-1" />
                   Enabled
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200">
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-gray-50 text-gray-600 border-gray-200"
+                >
                   <EyeOff className="w-3 h-3 mr-1" />
                   Disabled
                 </Badge>
@@ -217,7 +231,7 @@ export function RuleCard({
               {!highPriority && primaryRule.priority > 0 && (
                 <Badge
                   variant="secondary"
-                  className={cn("text-xs font-semibold", getPriorityColor(primaryRule.priority))}
+                  className={cn('text-xs font-semibold', getPriorityColor(primaryRule.priority))}
                 >
                   Priority: {primaryRule.priority}
                 </Badge>
@@ -236,10 +250,7 @@ export function RuleCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => onEdit(primaryRule)}
-                  className="cursor-pointer"
-                >
+                <DropdownMenuItem onClick={() => onEdit(primaryRule)} className="cursor-pointer">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Rule
                 </DropdownMenuItem>
@@ -289,7 +300,7 @@ export function RuleCard({
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                  {rules.map((rule) => {
+                  {rules.map(rule => {
                     const product = products.get(rule.productId);
                     if (!product) return null;
 
@@ -297,16 +308,18 @@ export function RuleCard({
                       <div
                         key={rule.id}
                         className={cn(
-                          "flex items-center justify-between p-2 rounded-md border text-sm",
+                          'flex items-center justify-between p-2 rounded-md border text-sm',
                           rule.enabled
-                            ? "bg-green-50 border-green-200"
-                            : "bg-gray-50 border-gray-200"
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-gray-50 border-gray-200'
                         )}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 truncate">{product.name}</p>
                           {product.category && (
-                            <p className="text-xs text-gray-500 truncate">{product.category.name}</p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {product.category.name}
+                            </p>
                           )}
                         </div>
                         <Button
@@ -314,8 +327,8 @@ export function RuleCard({
                           size="sm"
                           onClick={() => onToggleEnabled(rule)}
                           className={cn(
-                            "ml-2 h-7 px-2",
-                            rule.enabled ? "text-green-600" : "text-gray-400"
+                            'ml-2 h-7 px-2',
+                            rule.enabled ? 'text-green-600' : 'text-gray-400'
                           )}
                         >
                           {rule.enabled ? (

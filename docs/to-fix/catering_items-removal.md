@@ -128,13 +128,13 @@ const productsCount = await prisma.product.count({
 // Remove tests for catering_items table
 // Update sync tests to only verify products table
 describe('Unified Sync', () => {
-  it('syncs catering products to products table', async () => {})
-  it('does not reference catering_items table', async () => {})
+  it('syncs catering products to products table', async () => {});
+  it('does not reference catering_items table', async () => {});
 });
 
 // Update duplicate detector tests
 describe('CateringDuplicateDetector', () => {
-  it('checks duplicates only in products table', () => {})
+  it('checks duplicates only in products table', () => {});
 });
 ```
 
@@ -143,8 +143,8 @@ describe('CateringDuplicateDetector', () => {
 ```tsx
 // Verify sync process
 describe('Square Sync Integration', () => {
-  it('completes sync without catering_items references', async () => {})
-  it('properly categorizes catering products', async () => {})
+  it('completes sync without catering_items references', async () => {});
+  it('properly categorizes catering products', async () => {});
 });
 ```
 
@@ -239,7 +239,7 @@ static async checkForDuplicate(item: CateringItem) {
       ]
     }
   });
-  
+
   return {
     isDuplicate: !!existingProduct,
     existingItem: existingProduct

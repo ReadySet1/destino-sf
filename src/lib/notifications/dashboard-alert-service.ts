@@ -26,13 +26,15 @@ export class DashboardAlertService {
   /**
    * Create a new dashboard alert
    */
-  async createAlert(alert: Omit<DashboardAlert, 'id' | 'isRead' | 'createdAt' | 'updatedAt'>): Promise<DashboardAlert> {
+  async createAlert(
+    alert: Omit<DashboardAlert, 'id' | 'isRead' | 'createdAt' | 'updatedAt'>
+  ): Promise<DashboardAlert> {
     const newAlert: DashboardAlert = {
       id: `alert-${DashboardAlertService.nextId++}`,
       ...alert,
       isRead: false,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // TODO: Save to database instead of in-memory storage
@@ -47,7 +49,7 @@ export class DashboardAlertService {
       alertId: newAlert.id,
       type: newAlert.type,
       priority: newAlert.priority,
-      title: newAlert.title
+      title: newAlert.title,
     });
 
     // Trigger real-time notification (WebSocket, Server-Sent Events, etc.)
@@ -59,24 +61,20 @@ export class DashboardAlertService {
   /**
    * Get all alerts with filtering and pagination
    */
-  async getAlerts(options: {
-    limit?: number;
-    offset?: number;
-    priority?: string;
-    type?: string;
-    unreadOnly?: boolean;
-  } = {}): Promise<{
+  async getAlerts(
+    options: {
+      limit?: number;
+      offset?: number;
+      priority?: string;
+      type?: string;
+      unreadOnly?: boolean;
+    } = {}
+  ): Promise<{
     alerts: DashboardAlert[];
     total: number;
     unreadCount: number;
   }> {
-    const {
-      limit = 20,
-      offset = 0,
-      priority,
-      type,
-      unreadOnly = false
-    } = options;
+    const { limit = 20, offset = 0, priority, type, unreadOnly = false } = options;
 
     // TODO: Replace with database query
     let filteredAlerts = [...DashboardAlertService.alerts];
@@ -101,7 +99,7 @@ export class DashboardAlertService {
     return {
       alerts: paginatedAlerts,
       total: filteredAlerts.length,
-      unreadCount
+      unreadCount,
     };
   }
 
@@ -114,7 +112,7 @@ export class DashboardAlertService {
     if (alert) {
       alert.isRead = true;
       alert.updatedAt = new Date();
-      
+
       logger.info('Alert marked as read', { alertId });
     }
   }
@@ -168,7 +166,7 @@ export class DashboardAlertService {
     );
 
     const deletedCount = initialCount - DashboardAlertService.alerts.length;
-    
+
     if (deletedCount > 0) {
       logger.info('Old alerts cleaned up', { deletedCount, daysOld });
     }
@@ -196,7 +194,7 @@ export class DashboardAlertService {
       unread: alerts.filter(a => !a.isRead).length,
       byPriority: {} as Record<string, number>,
       byType: {} as Record<string, number>,
-      recent: alerts.filter(a => a.createdAt && a.createdAt > last24Hours).length
+      recent: alerts.filter(a => a.createdAt && a.createdAt > last24Hours).length,
     };
 
     // Count by priority
@@ -222,13 +220,13 @@ export class DashboardAlertService {
     const priorityMap = {
       healthy: 'low' as const,
       warning: 'medium' as const,
-      error: 'high' as const
+      error: 'high' as const,
     };
 
     const messageMap = {
       healthy: 'System is operating normally',
       warning: 'System performance warning detected',
-      error: 'System error detected - attention required'
+      error: 'System error detected - attention required',
     };
 
     return await this.createAlert({
@@ -238,8 +236,8 @@ export class DashboardAlertService {
       priority: priorityMap[status],
       data: {
         healthStatus: status,
-        ...details
-      }
+        ...details,
+      },
     });
   }
 
@@ -259,8 +257,8 @@ export class DashboardAlertService {
       data: {
         jobType,
         error,
-        ...jobDetails
-      }
+        ...jobDetails,
+      },
     });
   }
 
@@ -282,8 +280,8 @@ export class DashboardAlertService {
         productId,
         productName,
         currentStock,
-        threshold
-      }
+        threshold,
+      },
     });
   }
 
@@ -296,7 +294,7 @@ export class DashboardAlertService {
     logger.info('Alert broadcast not implemented yet', {
       alertId: alert.id,
       type: alert.type,
-      priority: alert.priority
+      priority: alert.priority,
     });
 
     // TODO: Implement WebSocket broadcast or Server-Sent Events

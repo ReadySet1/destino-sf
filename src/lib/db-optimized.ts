@@ -10,36 +10,36 @@ class OptimizedPrismaClient {
   private static instance: PrismaClient;
   private static connectionCount = 0;
   private static lastActivity = Date.now();
-  
+
   static getInstance(): PrismaClient {
     if (!this.instance) {
       this.instance = this.createClient();
       this.startConnectionMonitor();
     }
-    
+
     this.lastActivity = Date.now();
     return this.instance;
   }
-  
+
   private static createClient(): PrismaClient {
     const baseUrl = process.env.DATABASE_URL;
     if (!baseUrl) throw new Error('DATABASE_URL environment variable is required');
-    
+
     const url = new URL(baseUrl);
-    
+
     // Check if using Supabase pooler
     const isSupabasePooler = url.hostname.includes('pooler.supabase.com');
-    
+
     // Vercel-specific optimizations
     if (process.env.VERCEL) {
       if (process.env.DB_DEBUG === 'true') {
         console.log('🚀 Configuring database for Vercel environment');
       }
-      
+
       url.searchParams.set('pgbouncer', 'true');
       url.searchParams.set('prepared_statements', 'false');
       url.searchParams.set('statement_cache_size', '0');
-      
+
       if (isSupabasePooler) {
         // For Supabase pooler, let Supabase handle connection pooling
         // Remove connection_limit to avoid conflicts with Supabase pooler
@@ -59,13 +59,13 @@ class OptimizedPrismaClient {
         }
       }
     }
-    
+
     return new PrismaClient({
       datasources: { db: { url: url.toString() } },
       log: ['error', 'warn'],
     });
   }
-  
+
   private static startConnectionMonitor(): void {
     // Auto-disconnect after 5 seconds of inactivity on Vercel
     if (process.env.VERCEL) {
@@ -76,10 +76,8 @@ class OptimizedPrismaClient {
       }, 5000);
     }
   }
-  
-  static async withConnection<T>(
-    operation: (prisma: PrismaClient) => Promise<T>
-  ): Promise<T> {
+
+  static async withConnection<T>(operation: (prisma: PrismaClient) => Promise<T>): Promise<T> {
     const client = this.getInstance();
     try {
       this.connectionCount++;
@@ -107,40 +105,40 @@ export const withConnection = async <T>(
  */
 export const webhookQueries = {
   // Use select to minimize data transfer
-  findCateringOrderForPayment: (squareOrderId: string) => 
+  findCateringOrderForPayment: (squareOrderId: string) =>
     prismaOptimized.cateringOrder.findUnique({
       where: { squareOrderId },
       select: {
         id: true,
         paymentStatus: true,
         status: true,
-      }
+      },
     }),
-  
-  findOrderForPayment: (squareOrderId: string) => 
+
+  findOrderForPayment: (squareOrderId: string) =>
     prismaOptimized.order.findUnique({
       where: { squareOrderId },
       select: {
         id: true,
         paymentStatus: true,
         status: true,
-      }
+      },
     }),
-  
+
   // Batch updates to reduce round trips
-  updatePaymentStatus: async (updates: Array<{id: string, status: PaymentStatus}>) => {
-    const queries = updates.map(u => 
+  updatePaymentStatus: async (updates: Array<{ id: string; status: PaymentStatus }>) => {
+    const queries = updates.map(u =>
       prismaOptimized.order.update({
         where: { id: u.id },
-        data: { paymentStatus: u.status }
+        data: { paymentStatus: u.status },
       })
     );
     return prismaOptimized.$transaction(queries);
   },
-  
+
   // Use raw queries for complex operations
   checkOrderExists: (squareOrderId: string) =>
-    prismaOptimized.$queryRaw<{exists: boolean}[]>`
+    prismaOptimized.$queryRaw<{ exists: boolean }[]>`
       SELECT EXISTS(
         SELECT 1 FROM "Order" WHERE "squareOrderId" = ${squareOrderId}
         UNION ALL
@@ -162,7 +160,7 @@ export const webhookQueries = {
         payload,
         status: 'PENDING',
         attempts: 0,
-      }
+      },
     }),
 
   getNextWebhook: () =>
@@ -177,12 +175,12 @@ export const webhookQueries = {
   updateWebhookStatus: (id: string, status: string, errorMessage?: string) =>
     prismaOptimized.webhookQueue.update({
       where: { id },
-      data: { 
+      data: {
         status,
         lastAttemptAt: new Date(),
         attempts: { increment: 1 },
         errorMessage,
-        ...(status === 'COMPLETED' && { processedAt: new Date() })
-      }
+        ...(status === 'COMPLETED' && { processedAt: new Date() }),
+      },
     }),
 };

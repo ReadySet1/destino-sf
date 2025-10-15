@@ -55,15 +55,25 @@ export function EnhancedSyncButton() {
   const handlePreview = async () => {
     try {
       setIsLoading(true);
-      
+
       const response = await fetch('/api/square/unified-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           strategy: 'PRODUCTS_ONLY',
           dryRun: true,
-          categories: ['CATERING- APPETIZERS', 'CATERING- BUFFET, STARTERS', 'CATERING- BUFFET, ENTREES', 'CATERING- BUFFET, SIDES', 'CATERING- SHARE PLATTERS', 'CATERING- DESSERTS', 'CATERING- LUNCH, STARTERS', 'CATERING- LUNCH, ENTREES', 'CATERING- LUNCH, SIDES']
-        })
+          categories: [
+            'CATERING- APPETIZERS',
+            'CATERING- BUFFET, STARTERS',
+            'CATERING- BUFFET, ENTREES',
+            'CATERING- BUFFET, SIDES',
+            'CATERING- SHARE PLATTERS',
+            'CATERING- DESSERTS',
+            'CATERING- LUNCH, STARTERS',
+            'CATERING- LUNCH, ENTREES',
+            'CATERING- LUNCH, SIDES',
+          ],
+        }),
       });
 
       if (!response.ok) {
@@ -71,16 +81,18 @@ export function EnhancedSyncButton() {
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Convert unified sync dry-run response to preview format
         const previewData = {
           totalMissing: result.data.verification?.missingInDB || 0,
-          categories: result.data.report?.categoryBreakdown || []
+          categories: result.data.report?.categoryBreakdown || [],
         };
         setPreviewData(previewData);
         setShowPreview(true);
-        toast.success(`Found ${previewData.totalMissing} items to sync (${result.strategy} strategy)`);
+        toast.success(
+          `Found ${previewData.totalMissing} items to sync (${result.strategy} strategy)`
+        );
       } else {
         toast.error(`Preview failed: ${result.message}`);
       }
@@ -96,16 +108,26 @@ export function EnhancedSyncButton() {
     try {
       setIsLoading(true);
       setShowPreview(false);
-      
+
       const response = await fetch('/api/square/unified-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           strategy: 'PRODUCTS_ONLY',
           dryRun: false,
-          categories: ['CATERING- APPETIZERS', 'CATERING- BUFFET, STARTERS', 'CATERING- BUFFET, ENTREES', 'CATERING- BUFFET, SIDES', 'CATERING- SHARE PLATTERS', 'CATERING- DESSERTS', 'CATERING- LUNCH, STARTERS', 'CATERING- LUNCH, ENTREES', 'CATERING- LUNCH, SIDES'],
-          forceUpdate: true // Always update existing products with latest Square data
-        })
+          categories: [
+            'CATERING- APPETIZERS',
+            'CATERING- BUFFET, STARTERS',
+            'CATERING- BUFFET, ENTREES',
+            'CATERING- BUFFET, SIDES',
+            'CATERING- SHARE PLATTERS',
+            'CATERING- DESSERTS',
+            'CATERING- LUNCH, STARTERS',
+            'CATERING- LUNCH, ENTREES',
+            'CATERING- LUNCH, SIDES',
+          ],
+          forceUpdate: true, // Always update existing products with latest Square data
+        }),
       });
 
       if (!response.ok) {
@@ -113,7 +135,7 @@ export function EnhancedSyncButton() {
       }
 
       const result = await response.json();
-      
+
       setSyncResult(result);
 
       if (result.success) {
@@ -141,11 +163,7 @@ export function EnhancedSyncButton() {
           variant="outline"
           className="flex items-center gap-2"
         >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Info className="h-4 w-4" />
-          )}
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Info className="h-4 w-4" />}
           Preview Missing Items
         </Button>
 
@@ -170,8 +188,8 @@ export function EnhancedSyncButton() {
           <div className="text-sm">
             <p className="font-medium text-blue-800 mb-1">Unified Products-Only Sync</p>
             <p className="text-blue-700">
-              Syncs ALL missing catering items from Square directly to the products table using 
-              our unified data model. Uses intelligent duplicate detection to prevent conflicts.
+              Syncs ALL missing catering items from Square directly to the products table using our
+              unified data model. Uses intelligent duplicate detection to prevent conflicts.
             </p>
           </div>
         </div>
@@ -184,19 +202,24 @@ export function EnhancedSyncButton() {
             <Info className="h-5 w-5 text-blue-500" />
             Missing Items Preview
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{previewData.totalMissing}</div>
               <div className="text-sm text-blue-700">Total Missing Items</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{previewData.categories.length}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {previewData.categories.length}
+              </div>
               <div className="text-sm text-green-700">Categories Affected</div>
             </div>
             <div className="bg-purple-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-purple-600">
-                {previewData.categories.reduce((acc, cat) => acc + cat.items.filter(item => item.hasImage).length, 0)}
+                {previewData.categories.reduce(
+                  (acc, cat) => acc + cat.items.filter(item => item.hasImage).length,
+                  0
+                )}
               </div>
               <div className="text-sm text-purple-700">Items with Images</div>
             </div>
@@ -215,7 +238,9 @@ export function EnhancedSyncButton() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
                   {category.items.slice(0, 6).map((item, itemIndex) => (
                     <div key={itemIndex} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                      <div className={`w-2 h-2 rounded-full ${item.hasImage ? 'bg-green-500' : 'bg-gray-400'}`} />
+                      <div
+                        className={`w-2 h-2 rounded-full ${item.hasImage ? 'bg-green-500' : 'bg-gray-400'}`}
+                      />
                       <span className="truncate">{item.name}</span>
                       <span className="ml-auto text-xs font-medium">
                         {item.price === 0 ? 'FREE' : `$${item.price}`}
@@ -238,7 +263,7 @@ export function EnhancedSyncButton() {
               <div className="text-sm">
                 <p className="font-medium text-yellow-800 mb-1">Protected Items</p>
                 <p className="text-yellow-700">
-                  Existing appetizers, empanadas, and alfajores will be protected from modification. 
+                  Existing appetizers, empanadas, and alfajores will be protected from modification.
                   Only new items will be added.
                 </p>
               </div>
@@ -265,7 +290,9 @@ export function EnhancedSyncButton() {
               <div className="text-sm text-green-700">Items Synced to {syncResult.targetTable}</div>
             </div>
             <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">{syncResult.data.skippedItems}</div>
+              <div className="text-2xl font-bold text-yellow-600">
+                {syncResult.data.skippedItems}
+              </div>
               <div className="text-sm text-yellow-700">Items Skipped</div>
             </div>
             <div className="bg-red-50 p-4 rounded-lg">
@@ -274,21 +301,25 @@ export function EnhancedSyncButton() {
             </div>
           </div>
 
-          {syncResult.data.report?.categoryBreakdown && syncResult.data.report.categoryBreakdown.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="font-medium">Category Breakdown:</h4>
-              <div className="space-y-1">
-                {syncResult.data.report.categoryBreakdown.map((cat, index) => (
-                  <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <span className="font-medium">{cat.category}</span>
-                    <div className="text-sm text-gray-600">
-                      {cat.synced} synced, {cat.skipped} skipped
+          {syncResult.data.report?.categoryBreakdown &&
+            syncResult.data.report.categoryBreakdown.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium">Category Breakdown:</h4>
+                <div className="space-y-1">
+                  {syncResult.data.report.categoryBreakdown.map((cat, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center p-2 bg-gray-50 rounded"
+                    >
+                      <span className="font-medium">{cat.category}</span>
+                      <div className="text-sm text-gray-600">
+                        {cat.synced} synced, {cat.skipped} skipped
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {syncResult.data.errors > 0 && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">

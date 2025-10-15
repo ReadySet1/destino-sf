@@ -4,25 +4,16 @@ import { Product, Category } from '@prisma/client';
  * Categories and products that are tax-exempt
  * According to business requirements:
  * - Empanadas: NON-taxable
- * - Alfajores: NON-taxable  
+ * - Alfajores: NON-taxable
  * - Sauces: NON-taxable
  * - Catering items: Taxable (only catering should be taxed)
  */
 
 // Product types that are tax-exempt (non-catering items)
-const TAX_EXEMPT_CATEGORIES = [
-  'EMPANADAS',
-  'ALFAJORES',
-  'SAUCES',
-];
+const TAX_EXEMPT_CATEGORIES = ['EMPANADAS', 'ALFAJORES', 'SAUCES'];
 
 // Keywords in product names that indicate tax-exempt items
-const TAX_EXEMPT_KEYWORDS = [
-  'empanada',
-  'alfajor',
-  'sauce',
-  'salsa',
-];
+const TAX_EXEMPT_KEYWORDS = ['empanada', 'alfajor', 'sauce', 'salsa'];
 
 /**
  * Determines if a product should be tax-exempt based on its category and name
@@ -40,7 +31,7 @@ export function isProductTaxExempt(product: {
 
   // Check if this is a catering item - catering items are the ONLY taxable items
   const isCateringItem = categoryName.includes('CATERING');
-  
+
   // If it's a catering item, it should be taxed (not exempt)
   if (isCateringItem) {
     return false;
@@ -56,9 +47,7 @@ export function isProductTaxExempt(product: {
   }
 
   // Check if product name contains tax-exempt keywords
-  const isNameExempt = TAX_EXEMPT_KEYWORDS.some(keyword =>
-    productName.includes(keyword)
-  );
+  const isNameExempt = TAX_EXEMPT_KEYWORDS.some(keyword => productName.includes(keyword));
 
   if (isNameExempt) {
     return true;
@@ -76,7 +65,7 @@ export function isCategoryTaxExempt(categoryName: string): boolean {
   if (!categoryName) return true;
 
   const normalizedName = categoryName.toUpperCase();
-  
+
   // Only catering categories are taxable
   if (normalizedName.includes('CATERING')) {
     return false;
@@ -111,7 +100,7 @@ export function calculateTaxForItems(
 
   items.forEach(item => {
     const itemTotal = item.price * item.quantity;
-    
+
     if (item.product && isProductTaxExempt(item.product)) {
       exemptSubtotal += itemTotal;
     } else {

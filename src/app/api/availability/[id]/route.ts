@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  AvailabilityRuleSchema, 
+import {
+  AvailabilityRuleSchema,
   type AvailabilityRule,
-  type AvailabilityApiResponse 
+  type AvailabilityApiResponse,
 } from '@/types/availability';
 import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityValidators } from '@/lib/availability/validators';
@@ -22,40 +22,49 @@ export async function GET(
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const { id } = await params;
     const rule = await AvailabilityQueries.getRuleById(id);
-    
+
     if (!rule) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Rule not found' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rule not found',
+        },
+        { status: 404 }
+      );
     }
 
     logger.info('Retrieved availability rule via API', {
       ruleId: id,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      data: rule 
+    return NextResponse.json({
+      success: true,
+      data: rule,
     });
   } catch (error) {
     logger.error('Error in GET /api/availability/[id]', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to retrieve availability rule' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to retrieve availability rule',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -70,10 +79,13 @@ export async function PUT(
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({
-        success: false,
-        error: authResult.error
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const body = await request.json();
@@ -99,10 +111,13 @@ export async function PUT(
         skipFutureDateCheck,
         errors: validation.errors,
       });
-      return NextResponse.json({
-        success: false,
-        error: `Validation failed: ${validation.errors.join(', ')}`
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Validation failed: ${validation.errors.join(', ')}`,
+        },
+        { status: 400 }
+      );
     }
 
     const validated = AvailabilityRuleSchema.parse(body);
@@ -117,10 +132,13 @@ export async function PUT(
     });
 
     if (!result) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Rule not found' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rule not found',
+        },
+        { status: 404 }
+      );
     }
 
     // Update scheduled changes
@@ -131,22 +149,25 @@ export async function PUT(
     logger.info('Updated availability rule via API', {
       ruleId: result.id,
       productId: result.productId,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      data: result 
+    return NextResponse.json({
+      success: true,
+      data: result,
     });
   } catch (error) {
     logger.error('Error in PUT /api/availability/[id]', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to update availability rule' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to update availability rule',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -161,10 +182,13 @@ export async function DELETE(
   try {
     const authResult = await verifyAdminAccess();
     if (!authResult.authorized) {
-      return NextResponse.json({ 
-        success: false, 
-        error: authResult.error 
-      }, { status: authResult.statusCode });
+      return NextResponse.json(
+        {
+          success: false,
+          error: authResult.error,
+        },
+        { status: authResult.statusCode }
+      );
     }
 
     const { id } = await params;
@@ -173,29 +197,35 @@ export async function DELETE(
     });
 
     if (!result) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Rule not found' 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rule not found',
+        },
+        { status: 404 }
+      );
     }
 
     logger.info('Deleted availability rule via API', {
       ruleId: id,
-      userId: authResult.user!.id
+      userId: authResult.user!.id,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      data: { id } 
+    return NextResponse.json({
+      success: true,
+      data: { id },
     });
   } catch (error) {
     logger.error('Error in DELETE /api/availability/[id]', {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Failed to delete availability rule' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to delete availability rule',
+      },
+      { status: 500 }
+    );
   }
 }

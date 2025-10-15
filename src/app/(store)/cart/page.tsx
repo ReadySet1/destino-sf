@@ -87,8 +87,12 @@ export default function CartPage() {
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-destino-yellow to-destino-orange rounded-full flex items-center justify-center shadow-lg">
                     <span className="text-2xl">🛒</span>
                   </div>
-                  <p className="text-destino-charcoal text-lg mb-2 font-semibold">Your {activeTab} cart is empty</p>
-                  <p className="text-gray-500 text-sm mb-4">Add some delicious items to get started!</p>
+                  <p className="text-destino-charcoal text-lg mb-2 font-semibold">
+                    Your {activeTab} cart is empty
+                  </p>
+                  <p className="text-gray-500 text-sm mb-4">
+                    Add some delicious items to get started!
+                  </p>
                   <Button
                     variant="link"
                     className="text-destino-orange hover:text-destino-charcoal font-medium transition-colors hover:no-underline"
@@ -105,9 +109,9 @@ export default function CartPage() {
                     onUpdateQuantity={currentUpdateQuantity}
                   />
                   <div className="p-4 border-t bg-gradient-to-r from-gray-50 to-destino-cream/30 rounded-b-xl">
-                    <Button 
-                      variant="outline" 
-                      className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 hover:shadow-md transition-all duration-200" 
+                    <Button
+                      variant="outline"
+                      className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 hover:shadow-md transition-all duration-200"
                       onClick={currentClearCart}
                     >
                       Clear {activeTab === 'catering' ? 'Catering' : 'Regular'} Cart
@@ -120,11 +124,11 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div className="bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-lg lg:shadow-xl p-4 lg:p-6">
-          <CartSummary
-            subtotal={currentTotalPrice}
-            totalItems={currentTotalItems}
-            cartType={activeTab}
-          />
+            <CartSummary
+              subtotal={currentTotalPrice}
+              totalItems={currentTotalItems}
+              cartType={activeTab}
+            />
 
             <div className="mt-4 space-y-3">
               <Link
@@ -135,8 +139,8 @@ export default function CartPage() {
                 <Button
                   size="lg"
                   className={`w-full py-4 text-base font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100 ${
-                    activeTab === 'catering' 
-                      ? 'bg-gradient-to-r from-destino-orange to-amber-600 hover:from-amber-600 hover:to-destino-orange text-white shadow-lg hover:shadow-xl' 
+                    activeTab === 'catering'
+                      ? 'bg-gradient-to-r from-destino-orange to-amber-600 hover:from-amber-600 hover:to-destino-orange text-white shadow-lg hover:shadow-xl'
                       : 'bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl'
                   }`}
                   disabled={cartToShow.length === 0 || isCheckoutLoading}
@@ -153,8 +157,8 @@ export default function CartPage() {
               </Link>
 
               <Link href={activeTab === 'catering' ? '/catering' : '/menu'} className="block">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="lg"
                   className="w-full py-3 text-base text-destino-charcoal hover:text-destino-charcoal hover:bg-destino-cream/50 rounded-xl transition-all duration-200 border border-transparent hover:border-destino-yellow/30"
                 >
@@ -162,7 +166,7 @@ export default function CartPage() {
                 </Button>
               </Link>
             </div>
-        </div>
+          </div>
         </div>
       </div>
     </main>

@@ -4,7 +4,11 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient } from './client';
 import CategoryMapper from './category-mapper';
 import type { Prisma } from '@prisma/client';
-import type { SquareItemAvailability, ProductAvailability, EnhancedSyncResult } from '@/types/square-sync';
+import type {
+  SquareItemAvailability,
+  ProductAvailability,
+  EnhancedSyncResult,
+} from '@/types/square-sync';
 
 // Type definitions
 interface SquareCatalogObject {
@@ -311,10 +315,10 @@ export class ProductionSyncManager {
     // Check if product exists and get visibility override status
     const existingProduct = await prisma.product.findUnique({
       where: { squareId },
-      select: { 
-        id: true, 
-        images: true, 
-        name: true, 
+      select: {
+        id: true,
+        images: true,
+        name: true,
         updatedAt: true,
         // Visibility fields to check for manual overrides
         visibility: true,
@@ -324,8 +328,8 @@ export class ProductionSyncManager {
         // Check if product has availability rules (indicates manual management)
         availabilityRules: {
           select: { id: true },
-          where: { deletedAt: null }
-        }
+          where: { deletedAt: null },
+        },
       },
     });
 
@@ -337,7 +341,11 @@ export class ProductionSyncManager {
     );
 
     // Determine category
-    const categoryId = await this.determineProductCategory(squareProduct, relatedObjects, defaultCategory);
+    const categoryId = await this.determineProductCategory(
+      squareProduct,
+      relatedObjects,
+      defaultCategory
+    );
 
     // Process variations
     const { variants, basePrice } = this.processVariations(
@@ -349,12 +357,12 @@ export class ProductionSyncManager {
 
     // Extract availability metadata from Square
     const availabilityMeta = this.extractAvailabilityMetadata(squareProduct);
-    
+
     // Check for manual visibility overrides
     const hasManualOverrides = this.hasManualVisibilityOverrides(existingProduct);
-    
+
     // Determine availability, preserving manual overrides
-    const availability = hasManualOverrides 
+    const availability = hasManualOverrides
       ? this.preserveManualOverrides(existingProduct, availabilityMeta, productName)
       : this.determineAvailability(availabilityMeta, productName);
 
@@ -363,7 +371,7 @@ export class ProductionSyncManager {
     if (availability.isPreorder) this.stats.preorderItems++;
     if (availability.visibility === 'PRIVATE') this.stats.hiddenItems++;
     if (availability.seasonalDates) this.stats.seasonalItems++;
-    
+
     // Log visibility changes for audit trail
     this.logVisibilityChanges(existingProduct, availability, hasManualOverrides, productName);
 
@@ -654,18 +662,19 @@ export class ProductionSyncManager {
   ): Promise<string> {
     try {
       // Get Square category ID from product
-      const squareCategoryId = product.item_data?.category_id || 
-                              product.item_data?.categories?.[0]?.id;
-      
+      const squareCategoryId =
+        product.item_data?.category_id || product.item_data?.categories?.[0]?.id;
+
       if (!squareCategoryId) {
         logger.warn(`No category found for product ${product.item_data?.name}, using default`);
         return defaultCategory.id;
       }
 
       // Check if we have a mapping for this Square category
-      const localCategoryName = CategoryMapper.getLegacyLocalCategory(squareCategoryId) ||
-                                CategoryMapper.getLocalCategory(squareCategoryId);
-      
+      const localCategoryName =
+        CategoryMapper.getLegacyLocalCategory(squareCategoryId) ||
+        CategoryMapper.getLocalCategory(squareCategoryId);
+
       if (!localCategoryName) {
         logger.warn(`No mapping for Square category ${squareCategoryId}, using default`);
         return defaultCategory.id;
@@ -674,11 +683,8 @@ export class ProductionSyncManager {
       // Find or create the local category
       let localCategory = await prisma.category.findFirst({
         where: {
-          OR: [
-            { squareId: squareCategoryId },
-            { name: localCategoryName }
-          ]
-        }
+          OR: [{ squareId: squareCategoryId }, { name: localCategoryName }],
+        },
       });
 
       if (!localCategory) {
@@ -690,22 +696,23 @@ export class ProductionSyncManager {
             slug: CategoryMapper.normalizeCategory(localCategoryName).toLowerCase(),
             description: `Category synced from Square`,
             active: true,
-            order: 0
-          }
+            order: 0,
+          },
         });
-        logger.info(`Created new category: ${localCategoryName} with Square ID: ${squareCategoryId}`);
+        logger.info(
+          `Created new category: ${localCategoryName} with Square ID: ${squareCategoryId}`
+        );
       } else if (!localCategory.squareId) {
         // Update existing category with Square ID
         await prisma.category.update({
           where: { id: localCategory.id },
-          data: { squareId: squareCategoryId }
+          data: { squareId: squareCategoryId },
         });
         logger.info(`Updated category ${localCategoryName} with Square ID: ${squareCategoryId}`);
       }
 
       logger.debug(`Product ${product.item_data?.name} assigned to category ${localCategoryName}`);
       return localCategory.id;
-      
     } catch (error) {
       logger.error(`Error determining category for product ${product.item_data?.name}:`, error);
       return defaultCategory.id;
@@ -754,14 +761,14 @@ export class ProductionSyncManager {
   private async restoreCateringPackages(): Promise<void> {
     try {
       logger.info('🍽️ Restoring catering packages after sync...');
-      
+
       // Check if packages already exist to avoid duplicates
       const existingPackages = await prisma.cateringPackage.count({
         where: {
           name: {
-            contains: 'Appetizer Selection'
-          }
-        }
+            contains: 'Appetizer Selection',
+          },
+        },
       });
 
       if (existingPackages >= 3) {
@@ -772,31 +779,31 @@ export class ProductionSyncManager {
       // Use enhanced catering setup directly instead of API endpoint
       // This ensures we get the latest intelligent image assignment logic
       logger.info(`🔧 Running enhanced catering setup with intelligent image assignment...`);
-      
+
       try {
         // Import and run the enhanced setup script
         const { spawn } = await import('child_process');
-        
+
         // Run the enhanced setup script
         const scriptPath = 'scripts/enhanced-catering-setup.ts';
         const child = spawn('npx', ['tsx', scriptPath], {
           stdio: 'pipe',
-          cwd: process.cwd()
+          cwd: process.cwd(),
         });
-        
+
         let output = '';
         let errorOutput = '';
-        
-        child.stdout?.on('data', (data) => {
+
+        child.stdout?.on('data', data => {
           output += data.toString();
         });
-        
-        child.stderr?.on('data', (data) => {
+
+        child.stderr?.on('data', data => {
           errorOutput += data.toString();
         });
-        
+
         await new Promise((resolve, reject) => {
-          child.on('close', (code) => {
+          child.on('close', code => {
             if (code === 0) {
               resolve(void 0);
             } else {
@@ -804,17 +811,16 @@ export class ProductionSyncManager {
             }
           });
         });
-        
+
         logger.info(`✅ Enhanced catering setup completed successfully`);
         logger.info(`📊 Setup output: ${output.split('\n').pop()}`); // Last line summary
-        
       } catch (scriptError) {
         // Fallback to API endpoint if script execution fails
         logger.warn(`⚠️ Script execution failed, falling back to API endpoint: ${scriptError}`);
-        
+
         const setupUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/catering/setup-menu`;
         logger.info(`📞 Calling catering setup endpoint: ${setupUrl}`);
-        
+
         const response = await fetch(setupUrl, {
           method: 'POST',
           headers: {
@@ -827,14 +833,15 @@ export class ProductionSyncManager {
         }
 
         const result = await response.json();
-        
+
         if (result.success) {
-          logger.info(`✅ Catering packages restored via API: ${result.summary?.packages || 'Unknown count'} packages created/updated`);
+          logger.info(
+            `✅ Catering packages restored via API: ${result.summary?.packages || 'Unknown count'} packages created/updated`
+          );
         } else {
           logger.warn(`⚠️ Catering setup completed with warnings: ${result.message}`);
         }
       }
-      
     } catch (error) {
       logger.error('❌ Failed to restore catering packages:', error);
       // Don't throw - this is a non-critical post-sync operation
@@ -857,9 +864,7 @@ export class ProductionSyncManager {
   /**
    * Extract availability metadata from Square catalog object
    */
-  private extractAvailabilityMetadata(
-    catalogObject: SquareCatalogObject
-  ): SquareItemAvailability {
+  private extractAvailabilityMetadata(catalogObject: SquareCatalogObject): SquareItemAvailability {
     const itemData = catalogObject.item_data;
 
     // Note: Square's "Site visibility" settings (Visible/Hidden/Unavailable) are NOT
@@ -886,9 +891,13 @@ export class ProductionSyncManager {
     const presentAtAllLocations = itemData?.present_at_all_locations ?? true;
 
     // Determine item state based on Square status (priority order: deleted > archived > inactive > active)
-    const itemState = isDeleted ? 'ARCHIVED' :
-                     isArchived ? 'ARCHIVED' :
-                     (!presentAtAllLocations ? 'INACTIVE' : 'ACTIVE');
+    const itemState = isDeleted
+      ? 'ARCHIVED'
+      : isArchived
+        ? 'ARCHIVED'
+        : !presentAtAllLocations
+          ? 'INACTIVE'
+          : 'ACTIVE';
 
     // Determine effective visibility based on Square settings
     let effectiveVisibility = visibility;
@@ -923,18 +932,20 @@ export class ProductionSyncManager {
    */
   private extractCustomAttributes(catalogObject: any): Record<string, any> {
     const attributes: Record<string, any> = {};
-    
+
     if (catalogObject.custom_attribute_values) {
       for (const [key, value] of Object.entries(catalogObject.custom_attribute_values)) {
         // Look for pre-order and seasonal attributes
-        if (key.toLowerCase().includes('preorder') || 
-            key.toLowerCase().includes('seasonal') ||
-            key.toLowerCase().includes('availability')) {
+        if (
+          key.toLowerCase().includes('preorder') ||
+          key.toLowerCase().includes('seasonal') ||
+          key.toLowerCase().includes('availability')
+        ) {
           attributes[key] = value;
         }
       }
     }
-    
+
     // Also check item_data for modifier lists that might indicate availability
     if (catalogObject.item_data?.modifier_list_info) {
       catalogObject.item_data.modifier_list_info.forEach((modifier: any) => {
@@ -943,7 +954,7 @@ export class ProductionSyncManager {
         }
       });
     }
-    
+
     return attributes;
   }
 
@@ -955,7 +966,7 @@ export class ProductionSyncManager {
     productName: string
   ): ProductAvailability {
     const now = new Date();
-    
+
     // PRIORITY 1: Square's explicit visibility settings
     // Check if item is archived first
     if (metadata.state === 'ARCHIVED') {
@@ -967,7 +978,7 @@ export class ProductionSyncManager {
         availabilityReason: 'Item is archived in Square',
       };
     }
-    
+
     // Check if item is set to "Hidden" in Square (present_at_all_locations: false)
     if (metadata.state === 'INACTIVE' || metadata.visibility === 'PRIVATE') {
       return {
@@ -978,7 +989,7 @@ export class ProductionSyncManager {
         availabilityReason: 'Hidden in Square Dashboard',
       };
     }
-    
+
     // Check if item is not available online according to Square
     if (metadata.availableOnline === false) {
       return {
@@ -989,35 +1000,34 @@ export class ProductionSyncManager {
         availabilityReason: 'Not available online (Square setting)',
       };
     }
-    
+
     // Check for pre-order indicators in name or attributes
-    const isPreorderItem = 
+    const isPreorderItem =
       productName.toLowerCase().includes('pre-order') ||
       productName.toLowerCase().includes('preorder') ||
       productName.toLowerCase().includes('gingerbread') ||
       productName.toLowerCase().includes('coming soon') ||
       metadata.customAttributes?.preorder_enabled === 'true' ||
       metadata.customAttributes?.has_preorder_modifier;
-    
+
     // Check for seasonal indicators (Pride Alfajores case)
-    const isSeasonalItem = 
+    const isSeasonalItem =
       productName.toLowerCase().includes('pride') ||
       productName.toLowerCase().includes('seasonal') ||
       productName.toLowerCase().includes('holiday') ||
       productName.toLowerCase().includes('halloween') ||
       productName.toLowerCase().includes('christmas') ||
       metadata.customAttributes?.seasonal_item === 'true';
-    
+
     // Extract dates from custom attributes if available
     let preorderDates = null;
     let seasonalDates = null;
-    
+
     if (isPreorderItem) {
       // Check for custom attributes first
       let startDate = metadata.customAttributes?.preorder_start_date;
-      let endDate = metadata.customAttributes?.preorder_end_date || 
-                   metadata.preorderCutoffDate;
-      
+      let endDate = metadata.customAttributes?.preorder_end_date || metadata.preorderCutoffDate;
+
       // If no custom dates, use defaults based on product name
       if (!startDate && !endDate) {
         if (productName.toLowerCase().includes('gingerbread')) {
@@ -1025,7 +1035,7 @@ export class ProductionSyncManager {
           endDate = '2025-02-14';
         }
       }
-      
+
       if (startDate || endDate) {
         preorderDates = {
           start: startDate ? new Date(startDate) : null,
@@ -1033,12 +1043,12 @@ export class ProductionSyncManager {
         };
       }
     }
-    
+
     if (isSeasonalItem) {
       // Check for custom attributes first
       let startDate = metadata.customAttributes?.seasonal_start_date;
       let endDate = metadata.customAttributes?.seasonal_end_date;
-      
+
       // If no custom dates, use defaults based on product name
       if (!startDate && !endDate) {
         if (productName.toLowerCase().includes('pride')) {
@@ -1052,13 +1062,13 @@ export class ProductionSyncManager {
           endDate = '2025-12-31';
         }
       }
-      
+
       if (startDate && endDate) {
         seasonalDates = {
           start: new Date(startDate),
           end: new Date(endDate),
         };
-        
+
         // Check if currently in season
         if (now < seasonalDates.start || now > seasonalDates.end) {
           return {
@@ -1072,7 +1082,7 @@ export class ProductionSyncManager {
         }
       }
     }
-    
+
     // Check if item is marked as unavailable online
     if (!metadata.availableOnline) {
       return {
@@ -1083,7 +1093,7 @@ export class ProductionSyncManager {
         availabilityReason: 'Not available online',
       };
     }
-    
+
     return {
       isAvailable: true, // Pre-order items are available for purchase (pre-order)
       isPreorder: isPreorderItem,
@@ -1100,20 +1110,22 @@ export class ProductionSyncManager {
    */
   private hasManualVisibilityOverrides(existingProduct: any): boolean {
     if (!existingProduct) return false;
-    
+
     // Check if product has availability rules (indicates manual management)
     const hasAvailabilityRules = existingProduct.availabilityRules?.length > 0;
-    
+
     // Check if visibility was manually set to PRIVATE (likely manual override)
     const hasManualPrivateVisibility = existingProduct.visibility === 'PRIVATE';
-    
+
     // Check if item state is manually set to non-ACTIVE
     const hasManualItemState = existingProduct.itemState && existingProduct.itemState !== 'ACTIVE';
-    
+
     // Check if pre-order state seems manually configured
     const hasManualPreorder = existingProduct.isPreorder === true;
-    
-    return hasAvailabilityRules || hasManualPrivateVisibility || hasManualItemState || hasManualPreorder;
+
+    return (
+      hasAvailabilityRules || hasManualPrivateVisibility || hasManualItemState || hasManualPreorder
+    );
   }
 
   /**
@@ -1130,9 +1142,9 @@ export class ProductionSyncManager {
       isAvailable: existingProduct.isAvailable ?? true,
       isPreorder: existingProduct.isPreorder ?? false,
       state: existingProduct.itemState || 'ACTIVE',
-      availabilityReason: 'Manual override preserved during sync'
+      availabilityReason: 'Manual override preserved during sync',
     };
-    
+
     // Only override if Square indicates the item is definitively unavailable/archived
     if (squareMetadata.state === 'ARCHIVED') {
       preserved.isAvailable = false;
@@ -1141,9 +1153,10 @@ export class ProductionSyncManager {
     } else if (squareMetadata.availableOnline === false) {
       // If Square explicitly says not available online, respect that
       preserved.isAvailable = false;
-      preserved.availabilityReason = 'Not available online per Square (preserving other manual settings)';
+      preserved.availabilityReason =
+        'Not available online per Square (preserving other manual settings)';
     }
-    
+
     // Enhanced pre-order detection with manual preference
     if (!preserved.isPreorder) {
       const squareIndicatesPreorder = this.detectPreorderFromSquare(squareMetadata, productName);
@@ -1152,13 +1165,13 @@ export class ProductionSyncManager {
         preserved.availabilityReason = 'Pre-order detected from Square (enhanced detection)';
       }
     }
-    
+
     // Enhanced seasonal detection
     const seasonalInfo = this.detectSeasonalFromSquare(squareMetadata, productName);
     if (seasonalInfo.isSeasonal) {
       preserved.seasonalDates = seasonalInfo.dates;
     }
-    
+
     return preserved;
   }
 
@@ -1168,64 +1181,89 @@ export class ProductionSyncManager {
   private detectPreorderFromSquare(metadata: SquareItemAvailability, productName: string): boolean {
     // Enhanced keyword detection for pre-orders
     const preorderKeywords = [
-      'pre-order', 'preorder', 'pre order',
-      'coming soon', 'available soon',
-      'advance order', 'early access',
-      'reservation', 'waitlist',
+      'pre-order',
+      'preorder',
+      'pre order',
+      'coming soon',
+      'available soon',
+      'advance order',
+      'early access',
+      'reservation',
+      'waitlist',
       'gingerbread', // Known seasonal pre-order item
-      'holiday special', 'limited edition'
+      'holiday special',
+      'limited edition',
     ];
-    
-    const nameHasPreorderKeyword = preorderKeywords.some(keyword => 
+
+    const nameHasPreorderKeyword = preorderKeywords.some(keyword =>
       productName.toLowerCase().includes(keyword.toLowerCase())
     );
-    
+
     // Check custom attributes for pre-order indicators
-    const attributesIndicatePreorder = 
+    const attributesIndicatePreorder =
       metadata.customAttributes?.preorder_enabled === 'true' ||
       metadata.customAttributes?.has_preorder_modifier === true ||
       metadata.customAttributes?.availability_type === 'preorder';
-    
+
     return nameHasPreorderKeyword || attributesIndicatePreorder;
   }
 
   /**
    * Enhanced seasonal detection from Square data and product names
    */
-  private detectSeasonalFromSquare(metadata: SquareItemAvailability, productName: string): {
+  private detectSeasonalFromSquare(
+    metadata: SquareItemAvailability,
+    productName: string
+  ): {
     isSeasonal: boolean;
     dates?: { start: Date; end: Date };
   } {
     // Enhanced keyword detection for seasonal items
     const seasonalKeywords = [
-      'pride', 'seasonal', 'holiday', 'halloween', 'christmas', 'valentine',
-      'easter', 'thanksgiving', 'new year', 'spring special', 'summer special',
-      'fall special', 'winter special', 'limited time', 'special edition'
+      'pride',
+      'seasonal',
+      'holiday',
+      'halloween',
+      'christmas',
+      'valentine',
+      'easter',
+      'thanksgiving',
+      'new year',
+      'spring special',
+      'summer special',
+      'fall special',
+      'winter special',
+      'limited time',
+      'special edition',
     ];
-    
-    const nameHasSeasonalKeyword = seasonalKeywords.some(keyword => 
+
+    const nameHasSeasonalKeyword = seasonalKeywords.some(keyword =>
       productName.toLowerCase().includes(keyword.toLowerCase())
     );
-    
-    const attributesIndicateSeasonal = 
+
+    const attributesIndicateSeasonal =
       metadata.customAttributes?.seasonal_item === 'true' ||
       metadata.customAttributes?.availability_type === 'seasonal';
-    
+
     // Extract dates from custom attributes if available
     let dates = undefined;
-    if (metadata.customAttributes?.seasonal_start_date || metadata.customAttributes?.seasonal_end_date) {
+    if (
+      metadata.customAttributes?.seasonal_start_date ||
+      metadata.customAttributes?.seasonal_end_date
+    ) {
       dates = {
-        start: metadata.customAttributes.seasonal_start_date ? 
-          new Date(metadata.customAttributes.seasonal_start_date) : new Date(),
-        end: metadata.customAttributes.seasonal_end_date ? 
-          new Date(metadata.customAttributes.seasonal_end_date) : 
-          new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // Default 90 days
+        start: metadata.customAttributes.seasonal_start_date
+          ? new Date(metadata.customAttributes.seasonal_start_date)
+          : new Date(),
+        end: metadata.customAttributes.seasonal_end_date
+          ? new Date(metadata.customAttributes.seasonal_end_date)
+          : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // Default 90 days
       };
     }
-    
+
     return {
       isSeasonal: nameHasSeasonalKeyword || attributesIndicateSeasonal,
-      dates
+      dates,
     };
   }
 
@@ -1244,36 +1282,36 @@ export class ProductionSyncManager {
         visibility: newAvailability.visibility,
         isAvailable: newAvailability.isAvailable,
         isPreorder: newAvailability.isPreorder,
-        reason: newAvailability.availabilityReason
+        reason: newAvailability.availabilityReason,
       });
       return;
     }
-    
+
     const changes: string[] = [];
-    
+
     if (existingProduct.visibility !== newAvailability.visibility) {
       changes.push(`visibility: ${existingProduct.visibility} → ${newAvailability.visibility}`);
     }
-    
+
     if (existingProduct.isAvailable !== newAvailability.isAvailable) {
       changes.push(`available: ${existingProduct.isAvailable} → ${newAvailability.isAvailable}`);
     }
-    
+
     if (existingProduct.isPreorder !== newAvailability.isPreorder) {
       changes.push(`preorder: ${existingProduct.isPreorder} → ${newAvailability.isPreorder}`);
     }
-    
+
     if (existingProduct.itemState !== newAvailability.state) {
       changes.push(`state: ${existingProduct.itemState} → ${newAvailability.state}`);
     }
-    
+
     if (changes.length > 0) {
       logger.info(`🔄 Product visibility changes detected`, {
         product: productName,
         hasManualOverrides,
         changes,
         reason: newAvailability.availabilityReason,
-        preservedManualSettings: hasManualOverrides
+        preservedManualSettings: hasManualOverrides,
       });
     }
   }
@@ -1334,7 +1372,9 @@ export class ProductionSyncManager {
 }
 
 // Convenience function for immediate use
-export async function syncProductsProduction(options?: ProductSyncOptions): Promise<EnhancedSyncResult> {
+export async function syncProductsProduction(
+  options?: ProductSyncOptions
+): Promise<EnhancedSyncResult> {
   const syncManager = new ProductionSyncManager(options);
   return await syncManager.syncProducts();
 }

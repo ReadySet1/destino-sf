@@ -2,11 +2,11 @@
 
 /**
  * Production webhook debugging tool
- * 
+ *
  * This tool helps diagnose webhook processing issues in production environments.
  * It can investigate specific orders, payments, or recent webhook failures.
- * 
- * Usage: 
+ *
+ * Usage:
  *   pnpm tsx scripts/debug-webhook-payment.ts --order-id=<order-id>
  *   pnpm tsx scripts/debug-webhook-payment.ts --square-order-id=<square-order-id>
  *   pnpm tsx scripts/debug-webhook-payment.ts --payment-id=<square-payment-id>
@@ -69,7 +69,7 @@ async function debugSpecificOrder(orderId: string): Promise<void> {
     // Consistency checks
     console.log('🔍 Consistency Checks:');
     console.log('======================');
-    
+
     if (order.paymentStatus === 'PAID' && order.payments.length === 0) {
       console.log('⚠️ WARNING: Order marked as PAID but no payment records');
     } else if (order.paymentStatus === 'PENDING' && order.payments.length > 0) {
@@ -84,7 +84,6 @@ async function debugSpecificOrder(orderId: string): Promise<void> {
       console.log('Run the following to fix payment status:');
       console.log(`pnpm tsx scripts/production-webhook-test.ts --fix-order=${order.id}`);
     }
-
   } catch (error) {
     console.error('❌ Error debugging order:', error);
   }
@@ -123,7 +122,7 @@ async function debugBySquareOrderId(squareOrderId: string): Promise<void> {
     }
 
     console.log(`❌ No order found with Square Order ID: ${squareOrderId}`);
-    
+
     // Show recent orders for comparison
     console.log('\n📋 Recent orders for comparison:');
     const recentOrders = await prisma.order.findMany({
@@ -139,7 +138,6 @@ async function debugBySquareOrderId(squareOrderId: string): Promise<void> {
       },
     });
     console.table(recentOrders);
-
   } catch (error) {
     console.error('❌ Error debugging Square order:', error);
   }
@@ -179,7 +177,6 @@ async function debugByPaymentId(paymentId: string): Promise<void> {
       console.log(`Payment Status: ${payment.order.paymentStatus}`);
       console.log(`Customer: ${payment.order.customerName}`);
     }
-
   } catch (error) {
     console.error('❌ Error debugging payment:', error);
   }
@@ -195,15 +192,17 @@ async function analyzeRecentFailures(): Promise<void> {
       where: {
         AND: [
           { paymentStatus: 'PENDING' },
-          { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } // Last 24 hours
-        ]
+          { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }, // Last 24 hours
+        ],
       },
       include: { payments: true },
       orderBy: { createdAt: 'desc' },
       take: 10,
     });
 
-    console.log(`📊 Found ${inconsistentOrders.length} potentially problematic orders from last 24 hours:\n`);
+    console.log(
+      `📊 Found ${inconsistentOrders.length} potentially problematic orders from last 24 hours:\n`
+    );
 
     inconsistentOrders.forEach((order, index) => {
       console.log(`${index + 1}. Order ${order.id}`);
@@ -217,7 +216,6 @@ async function analyzeRecentFailures(): Promise<void> {
     if (inconsistentOrders.length === 0) {
       console.log('✅ No recent problematic orders found');
     }
-
   } catch (error) {
     console.error('❌ Error analyzing recent failures:', error);
   }
@@ -225,7 +223,7 @@ async function analyzeRecentFailures(): Promise<void> {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  
+
   try {
     if (args.length === 0) {
       console.log('🔧 Webhook Debugging Tool');
@@ -254,7 +252,6 @@ async function main(): Promise<void> {
         console.log(`❌ Unknown argument: ${arg}`);
       }
     }
-
   } catch (error) {
     console.error('❌ Debug tool failed:', error);
     process.exit(1);
@@ -264,4 +261,4 @@ async function main(): Promise<void> {
 }
 
 // Run the debug tool
-main().catch(console.error); 
+main().catch(console.error);

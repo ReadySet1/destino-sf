@@ -13,15 +13,18 @@
 **Sprint/Milestone**: Current Sprint - UI/UX Critical Fixes
 
 ### Problem Statement
+
 The calendar component in the Availability Management page is displaying corrupted month text, showing fragmented characters instead of proper month names. This affects the date picker functionality in the availability rule creation form.
 
 ### Success Criteria
+
 - [ ] Calendar displays proper month names (e.g., "December 2024")
 - [ ] Date selection works correctly without visual artifacts
 - [ ] All date pickers throughout the application function properly
 - [ ] No console errors related to date formatting
 
 ### Dependencies
+
 - **Blocked by**: None
 - **Blocks**: Availability rule creation workflow
 - **Related PRs/Issues**: N/A
@@ -33,6 +36,7 @@ The calendar component in the Availability Management page is displaying corrupt
 ### 1. Code Structure & References
 
 #### Affected Files
+
 ```tsx
 src/
 ├── components/
@@ -62,6 +66,7 @@ The issue appears to be related to:
 ### 3. Technical Solution
 
 #### Fix Option 1: Update Locale Import (Recommended)
+
 ```tsx
 // components/ui/calendar.tsx
 // Update the import to use the new date-fns v4 locale structure
@@ -72,6 +77,7 @@ import enUS from 'date-fns/locale/en-US';
 ```
 
 #### Fix Option 2: Update Calendar Component Implementation
+
 ```tsx
 // components/ui/calendar.tsx
 'use client';
@@ -87,12 +93,7 @@ import { buttonVariants } from '@/components/ui/button';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-function Calendar({ 
-  className, 
-  classNames, 
-  showOutsideDays = true, 
-  ...props 
-}: CalendarProps) {
+function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
   return (
     <DayPicker
       locale={enUS}
@@ -150,12 +151,13 @@ export { Calendar };
 ```
 
 #### Fix Option 3: Downgrade to Compatible Versions (Quick Fix)
+
 ```json
 // package.json
 {
   "dependencies": {
-    "date-fns": "^3.6.0",  // Downgrade from 4.1.0
-    "react-day-picker": "8.10.1"  // Keep current version
+    "date-fns": "^3.6.0", // Downgrade from 4.1.0
+    "react-day-picker": "8.10.1" // Keep current version
   }
 }
 ```
@@ -165,6 +167,7 @@ export { Calendar };
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 ```tsx
 // components/ui/__tests__/calendar.test.tsx
 import { render, screen } from '@testing-library/react';
@@ -173,9 +176,9 @@ import { Calendar } from '../calendar';
 describe('Calendar', () => {
   it('displays month names correctly', () => {
     render(<Calendar />);
-    const currentMonth = new Date().toLocaleDateString('en-US', { 
-      month: 'long', 
-      year: 'numeric' 
+    const currentMonth = new Date().toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
     });
     expect(screen.getByText(currentMonth)).toBeInTheDocument();
   });
@@ -189,15 +192,16 @@ describe('Calendar', () => {
 ```
 
 ### Integration Tests
+
 ```tsx
 // Test the calendar within AvailabilityForm
 describe('AvailabilityForm Calendar Integration', () => {
   it('allows date selection without visual artifacts', async () => {
     render(<AvailabilityForm productId="test-123" />);
-    
+
     const dateButton = screen.getByText('Select start date');
     await userEvent.click(dateButton);
-    
+
     // Calendar should open with proper month display
     expect(screen.getByRole('grid')).toBeInTheDocument();
     expect(screen.queryByText(/[^\w\s]/)).not.toBeInTheDocument();
@@ -206,6 +210,7 @@ describe('AvailabilityForm Calendar Integration', () => {
 ```
 
 ### Manual Testing Checklist
+
 - [ ] Open Availability Management page
 - [ ] Click "Create Rule" button
 - [ ] Click on date picker fields
@@ -219,6 +224,7 @@ describe('AvailabilityForm Calendar Integration', () => {
 ## 🔧 Implementation Steps
 
 ### Step 1: Debug Current Issue
+
 ```tsx
 // Add debugging to calendar.tsx temporarily
 console.log('Locale object:', enUS);
@@ -226,22 +232,26 @@ console.log('DayPicker version:', DayPicker.version);
 ```
 
 ### Step 2: Apply Fix
+
 1. Update the locale import in `calendar.tsx`
 2. Fix the incorrect import path (`@/lib/slug` → `@/lib/utils`)
 3. Add formatters if needed for date-fns v4
 
 ### Step 3: Update Related Components
+
 ```tsx
 // Update AvailabilityForm.tsx date formatting
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 
 // Use the locale consistently
-format(field.value, 'PPP', { locale: enUS })
+format(field.value, 'PPP', { locale: enUS });
 ```
 
 ### Step 4: Verify All Date Pickers
+
 Check these locations for similar issues:
+
 - Pre-order expected delivery date picker
 - Seasonal configuration date inputs
 - Any other date selection components
@@ -251,6 +261,7 @@ Check these locations for similar issues:
 ## 🚀 Deployment & Rollback
 
 ### Pre-Deployment Checklist
+
 - [ ] All calendar instances tested locally
 - [ ] No console errors or warnings
 - [ ] Cross-browser testing completed
@@ -258,7 +269,9 @@ Check these locations for similar issues:
 - [ ] Visual regression tests (if applicable)
 
 ### Rollback Strategy
+
 If the fix causes issues:
+
 1. Revert the calendar.tsx changes
 2. Pin date-fns to previous working version
 3. Clear Next.js cache: `rm -rf .next`
@@ -269,15 +282,17 @@ If the fix causes issues:
 ## 📊 Performance Considerations
 
 ### Bundle Size Impact
+
 - Monitor bundle size changes after fix
 - Consider lazy loading calendar component if not already implemented
 
 ### Optimization Opportunities
+
 ```tsx
 // Lazy load the calendar for better performance
 const Calendar = dynamic(() => import('@/components/ui/calendar'), {
   ssr: false,
-  loading: () => <div className="h-[300px] animate-pulse bg-muted rounded" />
+  loading: () => <div className="h-[300px] animate-pulse bg-muted rounded" />,
 });
 ```
 
@@ -286,11 +301,13 @@ const Calendar = dynamic(() => import('@/components/ui/calendar'), {
 ## 🎨 UI/UX Considerations
 
 ### Visual Consistency
+
 - Ensure calendar styling matches the design system
 - Verify dark mode compatibility
 - Check mobile responsiveness
 
 ### Accessibility
+
 - [ ] Keyboard navigation works properly
 - [ ] Screen reader announces dates correctly
 - [ ] Focus indicators are visible
@@ -301,6 +318,7 @@ const Calendar = dynamic(() => import('@/components/ui/calendar'), {
 ## 📝 Documentation Updates
 
 ### Code Comments
+
 ```tsx
 // Add version compatibility note
 /**
@@ -311,12 +329,16 @@ const Calendar = dynamic(() => import('@/components/ui/calendar'), {
 ```
 
 ### README Update
+
 Add to troubleshooting section:
+
 ```markdown
 ## Troubleshooting
 
 ### Calendar Display Issues
+
 If month names appear corrupted:
+
 1. Check date-fns version compatibility
 2. Verify locale imports use correct v4 syntax
 3. Clear Next.js cache and rebuild
@@ -327,12 +349,14 @@ If month names appear corrupted:
 ## ✅ Final Verification
 
 ### Success Metrics
+
 - Zero rendering artifacts in calendar
 - All date pickers functional
 - No performance degradation
 - No new TypeScript errors
 
 ### Post-Fix Monitoring
+
 - Monitor error tracking (Sentry) for calendar-related issues
 - Check user feedback for date selection problems
 - Verify no regression in other date-dependent features
@@ -342,6 +366,7 @@ If month names appear corrupted:
 ## 🔍 Quick Fix Summary
 
 **Immediate Action Required:**
+
 1. Update `src/components/ui/calendar.tsx`:
    - Fix import: `import { enUS } from 'date-fns/locale/en-US';`
    - Fix utils import: `import { cn } from '@/lib/utils';`

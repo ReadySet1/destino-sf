@@ -3,13 +3,15 @@
 ## Issues Resolved ✅
 
 ### 1. **Race Condition Between Webhook and Manual Actions**
+
 - **Problem**: Both automatic webhook and manual admin button triggered the same `purchaseShippingLabel` function simultaneously
 - **Solution**: Established single source of truth - only `lib/webhook-handlers.ts` triggers automatic label creation
-- **Files Modified**: 
+- **Files Modified**:
   - `src/app/api/webhooks/square/route.ts` - Removed duplicate trigger
   - `src/lib/webhook-handlers.ts` - Enhanced primary trigger with better logging
 
 ### 2. **Database Transaction Lock Contention**
+
 - **Problem**: Long-running transactions held database locks while calling external Shippo API (2+ minutes)
 - **Solution**: Restructured `purchaseShippingLabel` to call Shippo API first, then do quick database update
 - **Key Changes in `src/app/actions/labels.ts`**:
@@ -19,11 +21,13 @@
   - Added graceful handling of already-existing labels
 
 ### 3. **Database Cleanup**
+
 - **Problem**: 7 idle transactions hanging for 3000+ seconds, blocking order updates
 - **Solution**: Terminated all long-running idle transactions
 - **Cleaned**: Reset stuck order `1f8d7794-63a3-498b-a63e-44b54a2ae18a` retry state
 
 ### 4. **Improved User Experience**
+
 - **Enhanced Admin UI** (`src/app/(dashboard)/admin/orders/components/ShippingLabelButton.tsx`):
   - Added specific handling for concurrent processing errors
   - Added informational note that automatic creation is preferred
@@ -32,6 +36,7 @@
 ## Technical Architecture Changes
 
 ### Before (Problematic)
+
 ```
 Payment Webhook ──┐
                   ├──► purchaseShippingLabel() ──► [LONG DB LOCK] ──► Shippo API ──► DB Update
@@ -40,6 +45,7 @@ Manual Button  ────┘
 ```
 
 ### After (Fixed)
+
 ```
 Payment Webhook (ONLY) ──► purchaseShippingLabel() ──► Shippo API ──► [QUICK DB UPDATE]
                                      ▲
@@ -73,6 +79,7 @@ Manual Button (Backup) ─────────────┘
 ## Monitoring
 
 Watch for these improved log messages:
+
 - `🔄 Payment confirmed for shipping order X. Triggering label purchase`
 - `📦 Creating Shippo transaction for Order ID: X`
 - `✅ Successfully purchased label for order X`

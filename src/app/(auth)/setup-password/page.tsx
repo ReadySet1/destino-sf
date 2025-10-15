@@ -27,7 +27,11 @@ export default async function SetupPasswordPage({ searchParams }: PageProps) {
     >
       <ToastHandler />
       <div className="pt-2">
-        <SetupPasswordForm displayMessage={displayMessage} messageType={messageType} email={email} />
+        <SetupPasswordForm
+          displayMessage={displayMessage}
+          messageType={messageType}
+          email={email}
+        />
       </div>
     </AuthContainer>
   );

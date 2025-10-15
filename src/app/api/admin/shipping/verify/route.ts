@@ -49,7 +49,7 @@ export async function GET() {
 
     // Analyze product matching
     const productMatching = await Promise.all(
-      products.map(async (product) => {
+      products.map(async product => {
         const productType = getProductTypeFromName(product.name);
         const appliedConfig = await getShippingWeightConfig(productType);
 
@@ -66,7 +66,9 @@ export async function GET() {
                 applicableForNationwideOnly: appliedConfig.applicableForNationwideOnly,
               }
             : null,
-          source: databaseConfigs.some((c) => c.productName === productType) ? 'DATABASE' : 'HARDCODED',
+          source: databaseConfigs.some(c => c.productName === productType)
+            ? 'DATABASE'
+            : 'HARDCODED',
         };
       })
     );
@@ -75,13 +77,16 @@ export async function GET() {
     const warnings: string[] = [];
 
     // Count products by type
-    const productsByType = productMatching.reduce((acc, p) => {
-      acc[p.matchedType] = (acc[p.matchedType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const productsByType = productMatching.reduce(
+      (acc, p) => {
+        acc[p.matchedType] = (acc[p.matchedType] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     // Warning: Products using default weights
-    const defaultProducts = productMatching.filter((p) => p.matchedType === 'default');
+    const defaultProducts = productMatching.filter(p => p.matchedType === 'default');
     if (defaultProducts.length > 0) {
       warnings.push(
         `${defaultProducts.length} products are using 'default' weights. Consider adding specific weight configurations for these product types.`
@@ -90,7 +95,7 @@ export async function GET() {
 
     // Warning: Missing database configs
     const missingDbConfigs = ['alfajores', 'empanadas', 'default'].filter(
-      (type) => !databaseConfigs.some((c) => c.productName === type)
+      type => !databaseConfigs.some(c => c.productName === type)
     );
     if (missingDbConfigs.length > 0) {
       warnings.push(
@@ -106,8 +111,8 @@ export async function GET() {
     }
 
     // Compare database vs hardcoded
-    const configComparison = hardcodedDefaults.map((hardcoded) => {
-      const dbConfig = databaseConfigs.find((c) => c.productName === hardcoded.productName);
+    const configComparison = hardcodedDefaults.map(hardcoded => {
+      const dbConfig = databaseConfigs.find(c => c.productName === hardcoded.productName);
 
       return {
         productType: hardcoded.productName,
@@ -139,7 +144,7 @@ export async function GET() {
         productsByType,
         warningCount: warnings.length,
       },
-      databaseConfigs: databaseConfigs.map((c) => ({
+      databaseConfigs: databaseConfigs.map(c => ({
         id: c.id,
         productName: c.productName,
         baseWeightLb: Number(c.baseWeightLb),
@@ -152,7 +157,7 @@ export async function GET() {
       hardcodedDefaults,
       configComparison,
       productMatching: productMatching.slice(0, 50), // Limit to first 50 for readability
-      defaultProducts: defaultProducts.map((p) => ({
+      defaultProducts: defaultProducts.map(p => ({
         name: p.productName,
         id: p.productId,
       })),

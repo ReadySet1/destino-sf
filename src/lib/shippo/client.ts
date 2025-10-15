@@ -48,7 +48,7 @@ class ShippoClientManager {
     }
 
     const apiKey = process.env.SHIPPO_API_KEY;
-    
+
     if (!apiKey) {
       throw new Error('Shippo API key is required but not configured');
     }
@@ -99,10 +99,14 @@ class ShippoClientManager {
   /**
    * Validate client connection
    */
-  static async validateConnection(): Promise<{ connected: boolean; version: string; error?: string }> {
+  static async validateConnection(): Promise<{
+    connected: boolean;
+    version: string;
+    error?: string;
+  }> {
     try {
       const client = this.getInstance();
-      
+
       // Try to make a simple API call to validate connection
       // This is a lightweight check that doesn't create any resources
       if (client && typeof client === 'object') {
@@ -111,7 +115,7 @@ class ShippoClientManager {
           version: 'v2.15+',
         };
       }
-      
+
       return {
         connected: false,
         version: 'unknown',

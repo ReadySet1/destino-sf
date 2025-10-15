@@ -2,7 +2,7 @@
 
 /**
  * Script to automatically fix API routes with database connection resilience
- * 
+ *
  * This script:
  * 1. Scans all API routes for Prisma usage
  * 2. Identifies routes that don't have resilience patterns
@@ -45,14 +45,14 @@ interface FixReport {
  */
 function findApiRoutes(dir: string): string[] {
   const routes: string[] = [];
-  
+
   function scanDirectory(currentDir: string) {
     const entries = fs.readdirSync(currentDir);
-    
+
     for (const entry of entries) {
       const fullPath = path.join(currentDir, entry);
       const stat = fs.statSync(fullPath);
-      
+
       if (stat.isDirectory()) {
         scanDirectory(fullPath);
       } else if (entry === 'route.ts' || entry === 'route.js') {
@@ -60,7 +60,7 @@ function findApiRoutes(dir: string): string[] {
       }
     }
   }
-  
+
   scanDirectory(dir);
   return routes;
 }
@@ -71,24 +71,24 @@ function findApiRoutes(dir: string): string[] {
 function analyzeRoute(filePath: string): RouteAnalysis {
   const content = fs.readFileSync(filePath, 'utf8');
   const relativePath = path.relative(projectRoot, filePath);
-  
+
   // Check for Prisma usage
   const hasPrisma = /import.*prisma|prisma\./i.test(content);
-  
+
   // Check for existing resilience patterns
-  const hasResiliencePattern = 
+  const hasResiliencePattern =
     /isBuildTime|safeBuildTimeOperation|safeCateringApiOperation|isConnectionError/.test(content) ||
     /Can't reach database server.*fallback|Connection terminated.*fallback/i.test(content);
-  
+
   const needsFix = hasPrisma && !hasResiliencePattern;
-  
+
   return {
     filePath,
     relativePath,
     hasPrisma,
     hasResiliencePattern,
     needsFix,
-    content
+    content,
   };
 }
 
@@ -100,23 +100,25 @@ function generateResilienceImports(content: string): string {
   if (content.includes('isBuildTime') || content.includes('safeBuildTimeOperation')) {
     return content;
   }
-  
+
   // Find the last import statement
   const importRegex = /^import.*from.*['"'];?$/gm;
   const imports = content.match(importRegex) || [];
-  
+
   if (imports.length === 0) {
     // No imports found, add at the top
     return `import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';\n${content}`;
   }
-  
+
   // Add after the last import
   const lastImport = imports[imports.length - 1];
   const lastImportIndex = content.indexOf(lastImport) + lastImport.length;
-  
-  return content.slice(0, lastImportIndex) + 
+
+  return (
+    content.slice(0, lastImportIndex) +
     `\nimport { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';` +
-    content.slice(lastImportIndex);
+    content.slice(lastImportIndex)
+  );
 }
 
 /**
@@ -127,8 +129,15 @@ function wrapDatabaseOperations(content: string): string {
   const patterns = [
     // Pattern 1: Direct prisma calls in try/catch
     {
-      regex: /(try\s*{[\s\S]*?)(const\s+\w+\s*=\s*await\s+(?:withRetry\(.*?\)|prisma\.\w+\.[\s\S]*?))([\s\S]*?return\s+NextResponse\.json\([^}]+\)[\s\S]*?}\s*catch)/g,
-      replacement: (match: string, tryPart: string, dbCall: string, returnPart: string, catchPart: string) => {
+      regex:
+        /(try\s*{[\s\S]*?)(const\s+\w+\s*=\s*await\s+(?:withRetry\(.*?\)|prisma\.\w+\.[\s\S]*?))([\s\S]*?return\s+NextResponse\.json\([^}]+\)[\s\S]*?}\s*catch)/g,
+      replacement: (
+        match: string,
+        tryPart: string,
+        dbCall: string,
+        returnPart: string,
+        catchPart: string
+      ) => {
         return `${tryPart}// Handle build time or database unavailability
     if (isBuildTime()) {
       console.log('🔧 Build-time detected: Using fallback data');
@@ -136,12 +145,13 @@ function wrapDatabaseOperations(content: string): string {
     }
 
     ${dbCall}${returnPart}${catchPart}`;
-      }
+      },
     },
-    
+
     // Pattern 2: API routes without existing try/catch
     {
-      regex: /(export\s+async\s+function\s+GET\s*\([^)]*\)\s*{[\s\S]*?)(const\s+\w+\s*=\s*await\s+(?:withRetry\(.*?\)|prisma\.\w+\.[\s\S]*?))([\s\S]*?return\s+NextResponse\.json\([^}]+\))/g,
+      regex:
+        /(export\s+async\s+function\s+GET\s*\([^)]*\)\s*{[\s\S]*?)(const\s+\w+\s*=\s*await\s+(?:withRetry\(.*?\)|prisma\.\w+\.[\s\S]*?))([\s\S]*?return\s+NextResponse\.json\([^}]+\))/g,
       replacement: (match: string, fnStart: string, dbCall: string, returnPart: string) => {
         return `${fnStart}try {
     // Handle build time or database unavailability
@@ -175,16 +185,16 @@ function wrapDatabaseOperations(content: string): string {
       { status: 500 }
     );
   }`;
-      }
-    }
+      },
+    },
   ];
-  
+
   let updatedContent = content;
-  
+
   for (const pattern of patterns) {
     updatedContent = updatedContent.replace(pattern.regex, pattern.replacement as any);
   }
-  
+
   return updatedContent;
 }
 
@@ -194,19 +204,19 @@ function wrapDatabaseOperations(content: string): string {
 function fixRoute(analysis: RouteAnalysis): boolean {
   try {
     let content = analysis.content;
-    
+
     // Step 1: Add resilience imports
     content = generateResilienceImports(content);
-    
+
     // Step 2: Wrap database operations with error handling
     content = wrapDatabaseOperations(content);
-    
+
     // Only write if content actually changed
     if (content !== analysis.content) {
       fs.writeFileSync(analysis.filePath, content, 'utf8');
       return true;
     }
-    
+
     return false;
   } catch (error) {
     console.error(`Error fixing route ${analysis.relativePath}:`, error);
@@ -219,7 +229,7 @@ function fixRoute(analysis: RouteAnalysis): boolean {
  */
 async function main() {
   console.log('🔍 Scanning API routes for database resilience issues...\n');
-  
+
   const report: FixReport = {
     totalRoutesScanned: 0,
     routesWithPrisma: 0,
@@ -228,32 +238,32 @@ async function main() {
     routesSkipped: 0,
     fixedRoutes: [],
     skippedRoutes: [],
-    errors: []
+    errors: [],
   };
-  
+
   if (!fs.existsSync(apiDir)) {
     console.error(`❌ API directory not found: ${apiDir}`);
     process.exit(1);
   }
-  
+
   // Find all API routes
   const routeFiles = findApiRoutes(apiDir);
   report.totalRoutesScanned = routeFiles.length;
-  
+
   console.log(`Found ${routeFiles.length} API route files\n`);
-  
+
   // Analyze each route
   const analyses: RouteAnalysis[] = [];
-  
+
   for (const routeFile of routeFiles) {
     try {
       const analysis = analyzeRoute(routeFile);
       analyses.push(analysis);
-      
+
       if (analysis.hasPrisma) {
         report.routesWithPrisma++;
       }
-      
+
       if (analysis.needsFix) {
         report.routesNeedingFix++;
       }
@@ -261,45 +271,45 @@ async function main() {
       report.errors.push(`Failed to analyze ${routeFile}: ${error}`);
     }
   }
-  
+
   console.log(`📊 Analysis Results:`);
   console.log(`   Total routes: ${report.totalRoutesScanned}`);
   console.log(`   Routes with Prisma: ${report.routesWithPrisma}`);
   console.log(`   Routes needing fixes: ${report.routesNeedingFix}\n`);
-  
+
   if (report.routesNeedingFix === 0) {
     console.log('✅ All routes already have resilience patterns!');
     return;
   }
-  
+
   // Ask for confirmation before making changes
   const readline = require('readline');
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
-  
-  const shouldProceed = await new Promise<boolean>((resolve) => {
-    rl.question(`\n🔧 Apply fixes to ${report.routesNeedingFix} routes? (y/N): `, (answer) => {
+
+  const shouldProceed = await new Promise<boolean>(resolve => {
+    rl.question(`\n🔧 Apply fixes to ${report.routesNeedingFix} routes? (y/N): `, answer => {
       rl.close();
       resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
     });
   });
-  
+
   if (!shouldProceed) {
     console.log('❌ Operation cancelled by user');
     return;
   }
-  
+
   console.log('\n🔧 Applying fixes...\n');
-  
+
   // Apply fixes
   for (const analysis of analyses) {
     if (!analysis.needsFix) continue;
-    
+
     try {
       const wasFixed = fixRoute(analysis);
-      
+
       if (wasFixed) {
         console.log(`✅ Fixed: ${analysis.relativePath}`);
         report.routesFixed++;
@@ -314,7 +324,7 @@ async function main() {
       report.errors.push(`Failed to fix ${analysis.relativePath}: ${error}`);
     }
   }
-  
+
   // Generate final report
   console.log('\n📋 Final Report:');
   console.log(`   Routes scanned: ${report.totalRoutesScanned}`);
@@ -323,17 +333,17 @@ async function main() {
   console.log(`   Routes fixed: ${report.routesFixed}`);
   console.log(`   Routes skipped: ${report.routesSkipped}`);
   console.log(`   Errors: ${report.errors.length}`);
-  
+
   if (report.fixedRoutes.length > 0) {
     console.log('\n✅ Fixed routes:');
     report.fixedRoutes.forEach(route => console.log(`   - ${route}`));
   }
-  
+
   if (report.errors.length > 0) {
     console.log('\n❌ Errors:');
     report.errors.forEach(error => console.log(`   - ${error}`));
   }
-  
+
   console.log('\n🎉 Database resilience fixes completed!');
   console.log('\nNext steps:');
   console.log('   1. Review the changes made to ensure they look correct');

@@ -20,7 +20,7 @@ The current "Build Your Own Box" feature on the catering page displays test item
 - [ ] Maintain 3-tier pricing structure ($14, $15, $17)
 - [ ] Support proper inventory tracking through existing Square integration
 
-------
+---
 
 ## 📋 Planning Phase
 
@@ -132,11 +132,11 @@ VALUES (
 ) ON CONFLICT (name) DO NOTHING;
 
 -- Add metadata column to products if not exists (for tier configuration)
-ALTER TABLE products 
+ALTER TABLE products
 ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
 
 -- Create index for faster boxed lunch queries
-CREATE INDEX IF NOT EXISTS idx_products_category_active 
+CREATE INDEX IF NOT EXISTS idx_products_category_active
 ON products(categoryId, active);
 
 -- Store tier configuration in a dedicated table (optional)
@@ -206,24 +206,24 @@ export async function getBoxedLunchEntrees(): Promise<BoxedLunchEntree[]> {
     where: {
       active: true,
       category: {
-        name: 'BOXED_LUNCH_ENTREES'
-      }
+        name: 'BOXED_LUNCH_ENTREES',
+      },
     },
-    orderBy: { ordinal: 'asc' }
+    orderBy: { ordinal: 'asc' },
   });
-  
+
   return products.map(transformToBoxedLunchEntree);
 }
 
 export async function getBoxedLunchTiers(): Promise<BoxedLunchTierWithEntrees[]> {
   const [tiers, entrees] = await Promise.all([
     prisma.$queryRaw`SELECT * FROM boxed_lunch_tiers WHERE active = true`,
-    getBoxedLunchEntrees()
+    getBoxedLunchEntrees(),
   ]);
-  
+
   return tiers.map(tier => ({
     ...tier,
-    availableEntrees: entrees
+    availableEntrees: entrees,
   }));
 }
 
@@ -242,7 +242,7 @@ export async function createBoxedLunchOrder(
 4. Square webhook updates handled by existing `/api/square/webhook`
 5. Background sync managed by existing sync utilities
 
-------
+---
 
 ## 🧪 Testing Strategy (Using Your Test Setup)
 
@@ -256,7 +256,7 @@ import { BoxedLunchBuilder } from '@/components/Catering/BoxedLunchBuilder';
 describe('BoxedLunchBuilder', () => {
   it('displays all 8 required entrees', async () => {
     render(<BoxedLunchBuilder />);
-    
+
     const entrees = [
       'Chicken with Mojo',
       'Tamarind Chicken',
@@ -265,14 +265,14 @@ describe('BoxedLunchBuilder', () => {
       'Acorn Squash',
       'Quinoa Bowl',
       'Beef Stir Fry',
-      'Churrasco with Chimichurri'
+      'Churrasco with Chimichurri',
     ];
-    
+
     for (const entree of entrees) {
       expect(await screen.findByText(entree)).toBeInTheDocument();
     }
   });
-  
+
   it('does not display Pastel de Choclo', () => {
     render(<BoxedLunchBuilder />);
     expect(screen.queryByText('Pastel de Choclo')).not.toBeInTheDocument();
@@ -284,9 +284,9 @@ describe('API: /api/catering/boxed-lunches', () => {
   it('returns correct tier configurations', async () => {
     const response = await GET(new NextRequest('http://localhost:3000/api/catering/boxed-lunches'));
     const data = await response.json();
-    
+
     expect(data.tiers).toHaveLength(3);
-    expect(data.tiers[0].price).toBe(14.00);
+    expect(data.tiers[0].price).toBe(14.0);
   });
 });
 ```
@@ -302,7 +302,7 @@ describe('Boxed Lunch Square Sync', () => {
     const result = await syncBoxedLunchEntrees();
     expect(result.categoryCreated).toBe(true);
   });
-  
+
   it('syncs all 8 entrees with images', async () => {
     const result = await syncBoxedLunchEntrees();
     expect(result.entreesSynced).toBe(8);
@@ -320,29 +320,29 @@ import { test, expect } from '@playwright/test';
 test.describe('Build Your Own Boxed Lunch', () => {
   test('complete boxed lunch order flow', async ({ page }) => {
     await page.goto('/catering');
-    
+
     // Navigate to Build Your Own Box
     await page.click('text="Build Your Own Box"');
-    
+
     // Select Tier 2
     await page.click('[data-testid="tier-2"]');
-    
+
     // Select Tamarind Chicken
     await page.click('[data-testid="entree-tamarind-chicken"]');
-    
+
     // Set quantity
     await page.fill('[data-testid="quantity"]', '5');
-    
+
     // Add to cart
     await page.click('[data-testid="add-to-cart"]');
-    
+
     // Verify cart update
     await expect(page.locator('[data-testid="cart-count"]')).toHaveText('5');
   });
 });
 ```
 
-------
+---
 
 ## 🔐 Security Analysis
 
@@ -363,10 +363,12 @@ const BoxedLunchOrderSchema = z.object({
   tierId: z.enum(['TIER_1', 'TIER_2', 'TIER_3']),
   entreeId: z.string().uuid(),
   quantity: z.number().int().min(1).max(100),
-  customizations: z.object({
-    notes: z.string().max(500).optional(),
-    nameLabel: z.string().max(100).optional()
-  }).optional()
+  customizations: z
+    .object({
+      notes: z.string().max(500).optional(),
+      nameLabel: z.string().max(100).optional(),
+    })
+    .optional(),
 });
 
 // Leverage existing Square webhook validation
@@ -379,16 +381,16 @@ import { validateWebhookSignature } from '@/lib/square/webhook-validator';
 // Use Prisma's parameterized queries (your existing pattern)
 const getEntreeById = async (entreeId: string) => {
   return await prisma.product.findUnique({
-    where: { 
+    where: {
       id: entreeId,
       category: { name: 'BOXED_LUNCH_ENTREES' },
-      active: true
-    }
+      active: true,
+    },
   });
 };
 ```
 
-------
+---
 
 ## 📊 Performance Considerations
 
@@ -402,8 +404,8 @@ const getEntreeById = async (entreeId: string) => {
 -- - products(squareId, active)
 
 -- Add composite index for boxed lunch queries
-CREATE INDEX IF NOT EXISTS idx_products_boxed_lunch 
-ON products(categoryId, active, ordinal) 
+CREATE INDEX IF NOT EXISTS idx_products_boxed_lunch
+ON products(categoryId, active, ordinal)
 WHERE active = true;
 ```
 
@@ -421,11 +423,11 @@ const { data: entrees, isLoading } = useQuery({
   queryKey: ['boxed-lunch-entrees'],
   queryFn: getBoxedLunchEntrees,
   staleTime: 5 * 60 * 1000, // 5 minutes
-  cacheTime: 10 * 60 * 1000 // 10 minutes
+  cacheTime: 10 * 60 * 1000, // 10 minutes
 });
 ```
 
-------
+---
 
 ## 🚦 Implementation Checklist
 
@@ -455,7 +457,7 @@ const { data: entrees, isLoading } = useQuery({
 - [ ] Verify on staging environment
 - [ ] Update documentation
 
-------
+---
 
 ## 📝 Square Integration Commands (Using Your Scripts)
 
@@ -491,7 +493,7 @@ const BOXED_LUNCH_ENTREES = [
   { name: 'Acorn Squash', description: 'Roasted seasonal squash (Vegetarian)' },
   { name: 'Quinoa Bowl', description: 'Protein-packed grain bowl (Vegetarian)' },
   { name: 'Beef Stir Fry', description: 'Wok-seared beef with vegetables' },
-  { name: 'Churrasco with Chimichurri', description: 'Grilled steak with herb sauce' }
+  { name: 'Churrasco with Chimichurri', description: 'Grilled steak with herb sauce' },
 ];
 
 export async function syncBoxedLunchEntrees() {
@@ -501,13 +503,13 @@ export async function syncBoxedLunchEntrees() {
       objectTypes: ['CATEGORY'],
       query: {
         textFilter: {
-          keywords: ['Boxed Lunch Entrees']
-        }
-      }
+          keywords: ['Boxed Lunch Entrees'],
+        },
+      },
     });
 
     let categoryId = categoryResponse.result.objects?.[0]?.id;
-    
+
     if (!categoryId) {
       // Create category following your existing pattern
       const createResponse = await squareClient.catalogApi.upsertCatalogObject({
@@ -516,9 +518,9 @@ export async function syncBoxedLunchEntrees() {
           type: 'CATEGORY',
           id: '#boxed-lunch-entrees',
           categoryData: {
-            name: 'Boxed Lunch Entrees'
-          }
-        }
+            name: 'Boxed Lunch Entrees',
+          },
+        },
       });
       categoryId = createResponse.result.catalogObject.id;
     }
@@ -527,7 +529,7 @@ export async function syncBoxedLunchEntrees() {
     for (const entree of BOXED_LUNCH_ENTREES) {
       // Implementation following your existing sync pattern
     }
-    
+
     logger.info('✅ Boxed lunch entrees synced successfully');
   } catch (error) {
     logger.error('❌ Boxed lunch sync failed:', error);
@@ -536,7 +538,7 @@ export async function syncBoxedLunchEntrees() {
 }
 ```
 
-------
+---
 
 ## 🎨 Component Implementation (Using Your Patterns)
 
@@ -562,13 +564,13 @@ export const BoxedLunchBuilder: React.FC = () => {
   const [selectedEntree, setSelectedEntree] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [nameLabel, setNameLabel] = useState('');
-  
+
   const { addItem } = useCateringCartStore();
-  
+
   const { data: tiers, isLoading } = useQuery({
     queryKey: ['boxed-lunch-tiers'],
     queryFn: getBoxedLunchTiers,
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleAddToCart = () => {
@@ -588,11 +590,11 @@ export const BoxedLunchBuilder: React.FC = () => {
       price: tier.price,
       quantity,
       image: entree.imageUrl || undefined,
-      variantId: nameLabel || undefined // Store name label as variant
+      variantId: nameLabel || undefined, // Store name label as variant
     });
 
     toast.success('Added to cart!');
-    
+
     // Reset form
     setSelectedEntree(null);
     setQuantity(1);
@@ -604,7 +606,7 @@ export const BoxedLunchBuilder: React.FC = () => {
 };
 ```
 
-------
+---
 
 ## 📄 Rollback Plan
 
@@ -626,20 +628,23 @@ DROP TABLE IF EXISTS boxed_lunch_tiers;
 const ENABLE_NEW_BOXED_LUNCH = process.env.NEXT_PUBLIC_ENABLE_BOXED_LUNCH === 'true';
 
 // In your catering page
-{ENABLE_NEW_BOXED_LUNCH ? (
-  <BoxedLunchBuilder />
-) : (
-  <BoxedLunchMenu /> // Existing component
-)}
+{
+  ENABLE_NEW_BOXED_LUNCH ? (
+    <BoxedLunchBuilder />
+  ) : (
+    <BoxedLunchMenu /> // Existing component
+  );
+}
 ```
 
-------
+---
 
 ## Implementation Priority & Next Steps
 
 ### Recommended Approach: Leverage Existing Square Integration
 
 Since you already have a robust Square integration with:
+
 - Working catalog sync (`src/lib/square/sync.ts`)
 - Webhook handling (`src/lib/square/webhooks.ts`)
 - Category mapping (`src/lib/square/category-mapper.ts`)

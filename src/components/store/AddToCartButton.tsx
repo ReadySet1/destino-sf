@@ -29,7 +29,7 @@ export function AddToCartButton({
   const { addToCart, isInAnyCart } = useSmartCart();
   const [isAdded, setIsAdded] = useState(false);
   const alreadyInCart = isInAnyCart(product.id, product.variants?.[0]?.id);
-  
+
   // Get availability state for this product
   const {
     currentState,
@@ -40,10 +40,14 @@ export function AddToCartButton({
     preOrderSettings,
     viewOnlySettings,
     isLoading: availabilityLoading,
-    error: availabilityError
+    error: availabilityError,
   } = useAvailability(product.id);
 
-  const handleAddToCart = async (productId: string, qty: number, isPreOrderItem: boolean = false) => {
+  const handleAddToCart = async (
+    productId: string,
+    qty: number,
+    isPreOrderItem: boolean = false
+  ) => {
     // Convert price to number if it's a Decimal
     const numericPrice = serializeDecimal(product.price) || 0;
 
@@ -60,8 +64,8 @@ export function AddToCartButton({
       // Add pre-order metadata
       ...(isPreOrderItem && {
         isPreOrder: true,
-        preOrderSettings
-      })
+        preOrderSettings,
+      }),
     };
 
     addToCart(cartProduct, qty);
@@ -84,12 +88,7 @@ export function AddToCartButton({
   // Handle loading state
   if (availabilityLoading) {
     return (
-      <Button
-        variant="outline"
-        size={size}
-        className={className}
-        disabled
-      >
+      <Button variant="outline" size={size} className={className} disabled>
         <div className="h-4 w-4 mr-2 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
         Loading...
       </Button>
@@ -136,7 +135,7 @@ export function AddToCartButton({
               id: product.id,
               name: product.name,
               price: serializeDecimal(product.price) || 0,
-              images: product.images
+              images: product.images,
             }}
             settings={preOrderSettings}
             onAddToCart={handleAddToCart}
@@ -146,12 +145,7 @@ export function AddToCartButton({
       }
       // Fallback to disabled button
       return (
-        <Button
-          variant="outline"
-          size={size}
-          className={className}
-          disabled
-        >
+        <Button variant="outline" size={size} className={className} disabled>
           <Calendar className="h-4 w-4 mr-2" />
           Pre-Order Only
         </Button>
@@ -161,31 +155,19 @@ export function AddToCartButton({
       // Render view-only message
       return (
         <div className="space-y-2">
-          <Button
-            variant="outline"
-            size={size}
-            className={className}
-            disabled
-          >
+          <Button variant="outline" size={size} className={className} disabled>
             <Eye className="h-4 w-4 mr-2" />
             View Only
           </Button>
           {showAvailabilityMessages && viewOnlySettings?.message && (
-            <p className="text-xs text-muted-foreground">
-              {viewOnlySettings.message}
-            </p>
+            <p className="text-xs text-muted-foreground">{viewOnlySettings.message}</p>
           )}
         </div>
       );
 
     case AvailabilityState.COMING_SOON:
       return (
-        <Button
-          variant="outline"
-          size={size}
-          className={className}
-          disabled
-        >
+        <Button variant="outline" size={size} className={className} disabled>
           <Calendar className="h-4 w-4 mr-2" />
           Coming Soon
         </Button>
@@ -193,12 +175,7 @@ export function AddToCartButton({
 
     case AvailabilityState.SOLD_OUT:
       return (
-        <Button
-          variant="outline"
-          size={size}
-          className={className}
-          disabled
-        >
+        <Button variant="outline" size={size} className={className} disabled>
           <AlertTriangle className="h-4 w-4 mr-2" />
           Sold Out
         </Button>
@@ -206,12 +183,7 @@ export function AddToCartButton({
 
     case AvailabilityState.RESTRICTED:
       return (
-        <Button
-          variant="outline"
-          size={size}
-          className={className}
-          disabled
-        >
+        <Button variant="outline" size={size} className={className} disabled>
           <AlertTriangle className="h-4 w-4 mr-2" />
           Restricted
         </Button>

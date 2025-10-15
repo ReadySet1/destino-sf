@@ -15,13 +15,13 @@ interface FormFieldProps {
  * Standard form field wrapper
  * Provides consistent label styling, help text, and error states
  */
-export function FormField({ 
-  label, 
-  required = false, 
-  helpText, 
-  error, 
-  children, 
-  className = '' 
+export function FormField({
+  label,
+  required = false,
+  helpText,
+  error,
+  children,
+  className = '',
 }: FormFieldProps) {
   return (
     <div className={className}>
@@ -31,15 +31,9 @@ export function FormField({
       </label>
       {children}
       {helpText && !error && (
-        <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-          {helpText}
-        </p>
+        <p className="mt-2 text-sm text-gray-500 leading-relaxed">{helpText}</p>
       )}
-      {error && (
-        <p className="mt-2 text-sm text-red-600 leading-relaxed">
-          {error}
-        </p>
-      )}
+      {error && <p className="mt-2 text-sm text-red-600 leading-relaxed">{error}</p>}
     </div>
   );
 }

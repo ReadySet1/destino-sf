@@ -14,6 +14,7 @@ The solution implements conditional tipping (delivery-only) with 0% default and 
 ### 1. Conditional Tipping Logic (DES-41)
 
 **Files Modified:**
+
 - `src/lib/square/tip-settings.ts`
 - `src/app/actions/orders.ts`
 - `src/lib/square/checkout-links.ts`
@@ -31,6 +32,7 @@ Tips are meant for delivery drivers. Customers picking up their own orders or re
 ### 2. Tip Capture and Display (DES-42)
 
 **Files Modified:**
+
 - `src/lib/webhook-handlers.ts`
 
 **Implementation:**
@@ -41,6 +43,7 @@ Tips are meant for delivery drivers. Customers picking up their own orders or re
 - ✅ Admin panel already displays gratuity when present (no UI changes needed)
 
 **Square Payment Structure:**
+
 ```typescript
 {
   "amount_money": { "amount": 7245 },  // Base amount in cents
@@ -52,6 +55,7 @@ Tips are meant for delivery drivers. Customers picking up their own orders or re
 ## 🧪 Testing Performed
 
 ### ✅ Validation
+
 - [x] TypeScript type checking passed
 - [x] ESLint linting passed
 - [x] Production build successful
@@ -61,6 +65,7 @@ Tips are meant for delivery drivers. Customers picking up their own orders or re
 ### 🔍 Manual Testing Checklist
 
 **Tip Selection (DES-41):**
+
 - [ ] Delivery order shows 0%, 10%, 15% tip options with 0% pre-selected
 - [ ] Pickup order shows no tip option
 - [ ] Nationwide shipping order shows no tip option
@@ -69,6 +74,7 @@ Tips are meant for delivery drivers. Customers picking up their own orders or re
 - [ ] Custom tip amount field works correctly
 
 **Tip Display (DES-42):**
+
 - [ ] Create test order with tip via Square sandbox
 - [ ] Verify webhook receives `tip_money` in payment object
 - [ ] Verify `order.gratuityAmount` saved correctly in database
@@ -78,6 +84,7 @@ Tips are meant for delivery drivers. Customers picking up their own orders or re
 ### 🧪 Test Scenarios
 
 **Scenario 1: Delivery Order with Tip**
+
 1. Add items to cart
 2. Select local delivery fulfillment
 3. Proceed to checkout
@@ -88,6 +95,7 @@ Tips are meant for delivery drivers. Customers picking up their own orders or re
 8. Check admin panel shows tip in order details
 
 **Scenario 2: Pickup Order (No Tip)**
+
 1. Add items to cart
 2. Select pickup fulfillment
 3. Proceed to checkout
@@ -96,6 +104,7 @@ Tips are meant for delivery drivers. Customers picking up their own orders or re
 6. Check admin panel order shows no gratuity line item
 
 **Scenario 3: Shipping Order (No Tip)**
+
 1. Add items to cart
 2. Select nationwide shipping
 3. Proceed to checkout
@@ -108,6 +117,7 @@ Tips are meant for delivery drivers. Customers picking up their own orders or re
 **No new migrations required.**
 
 Existing schema already supports tips via `orders.gratuityAmount` field:
+
 ```prisma
 model Order {
   // ...
@@ -119,6 +129,7 @@ model Order {
 ## ⚠️ Breaking Changes
 
 **None.** This is a backward-compatible fix:
+
 - Existing orders without tips continue to work (gratuityAmount defaults to 0)
 - Existing checkout flows enhanced with better tip control
 - No API contract changes
@@ -127,10 +138,12 @@ model Order {
 ## 📸 Visual Changes
 
 ### Before:
+
 - Tip automatically pre-selected at 15% for all order types
 - No tip amount visible in admin panel
 
 ### After:
+
 - **Delivery orders**: Tip defaults to 0% (customer must explicitly choose)
 - **Pickup/Shipping**: No tip option shown
 - **Admin panel**: Tip displays as "Gratuity/Tip" line item when present
@@ -138,6 +151,7 @@ model Order {
 ## 🔧 Technical Details
 
 ### Code Quality
+
 - ✅ No new `any` types introduced
 - ✅ Proper TypeScript typing throughout
 - ✅ Consistent with existing code patterns
@@ -145,6 +159,7 @@ model Order {
 - ✅ Error handling for edge cases
 
 ### Files Changed Summary
+
 ```
 src/app/actions/orders.ts        | 15 +++++++++++----
 src/lib/square/checkout-links.ts |  5 +++--
@@ -154,10 +169,12 @@ src/lib/webhook-handlers.ts      | 29 +++++++++++++++++++++++------
 ```
 
 ### New Functions Added
+
 - `createDeliveryOrderTipSettings()` - 0%, 10%, 15% with 0% default
 - `createNoTipSettings()` - Disables tipping entirely
 
 ### Modified Functions
+
 - `handlePaymentCreated()` - Now captures tip_money
 - `handlePaymentUpdated()` - Now captures tip_money
 - `createOrderAndGenerateCheckoutUrl()` - Conditional tip logic based on fulfillment method
@@ -181,7 +198,9 @@ src/lib/webhook-handlers.ts      | 29 +++++++++++++++++++++++------
 ## 📚 Additional Context
 
 ### Why Conditional Tipping?
+
 The client requested that tips should only be available for delivery orders since:
+
 - Tips are meant for delivery drivers
 - Pickup customers don't need to tip (they're picking up themselves)
 - Shipping customers don't need to tip (no driver involved)
@@ -189,10 +208,13 @@ The client requested that tips should only be available for delivery orders sinc
 This approach is cleaner than showing tips for all methods but defaulting to 0%, as it makes the intent explicit and prevents customer confusion.
 
 ### Why 0% Default for Delivery?
+
 Previously, tips were pre-selected at 15%, which resulted in customers being charged tips they didn't intentionally choose. By defaulting to 0%, customers must make an explicit choice to add a tip, ensuring informed consent.
 
 ### Implementation Decision
+
 We chose to conditionally show/hide the tip option rather than always showing it with 0% default because:
+
 1. **Clarity**: Makes it clear when tipping is appropriate
 2. **User Experience**: Prevents confusion about why a tip option exists for pickup/shipping
 3. **Best Practices**: Follows Square's recommendations for different fulfillment types

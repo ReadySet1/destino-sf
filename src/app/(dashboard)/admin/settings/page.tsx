@@ -12,7 +12,9 @@ export const metadata = {
 export default async function SettingsPage() {
   // Check authentication
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect('/auth/login');
@@ -47,11 +49,11 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <AdminSettingsWithDesignSystem 
+      <AdminSettingsWithDesignSystem
         storeSettings={processedSettings}
         deliveryZones={processedDeliveryZones}
       />
-      
+
       {/* Debugger for development */}
       {process.env.NODE_ENV === 'development' && (
         <div className="mt-8">

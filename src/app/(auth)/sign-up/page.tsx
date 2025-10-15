@@ -124,7 +124,7 @@ export default function Signup() {
             </div>
           </div>
 
-          <SubmitButton 
+          <SubmitButton
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
             loading={isLoading}
             pendingText="Creating account..."

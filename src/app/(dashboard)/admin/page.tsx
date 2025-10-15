@@ -30,7 +30,7 @@ export default async function AdminDashboard() {
   try {
     // Use the new profile sync middleware to ensure profile exists
     const profileSyncResult = await ensureUserProfile(user.id, user.email);
-    
+
     if (!profileSyncResult.success) {
       logger.error('Failed to ensure user profile:', profileSyncResult.error);
       return redirect('/');
@@ -76,7 +76,12 @@ export default async function AdminDashboard() {
                 <div className="flex-shrink-0">
                   <div className="w-6 h-6 text-indigo-600">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -90,7 +95,11 @@ export default async function AdminDashboard() {
             </div>
             <div className="px-8 py-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <DashboardCard title="Orders" href="/admin/orders" description="Manage customer orders" />
+                <DashboardCard
+                  title="Orders"
+                  href="/admin/orders"
+                  description="Manage customer orders"
+                />
                 <DashboardCard
                   title="Manual Orders"
                   href="/admin/orders/manual"
@@ -117,7 +126,12 @@ export default async function AdminDashboard() {
                 <div className="flex-shrink-0">
                   <div className="w-6 h-6 text-blue-600">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -157,7 +171,12 @@ export default async function AdminDashboard() {
                 <div className="flex-shrink-0">
                   <div className="w-6 h-6 text-purple-600">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -171,7 +190,11 @@ export default async function AdminDashboard() {
             </div>
             <div className="px-8 py-8">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <DashboardCard title="Users" href="/admin/users" description="Manage user accounts" />
+                <DashboardCard
+                  title="Users"
+                  href="/admin/users"
+                  description="Manage user accounts"
+                />
                 <DashboardCard
                   title="Store Settings"
                   href="/admin/settings"
@@ -208,9 +231,7 @@ function DashboardCard({
       <h5 className="mb-2 text-lg md:text-xl font-bold tracking-tight text-gray-900 group-hover:text-gray-700">
         {title}
       </h5>
-      <p className="text-sm md:text-base text-gray-600 group-hover:text-gray-500">
-        {description}
-      </p>
+      <p className="text-sm md:text-base text-gray-600 group-hover:text-gray-500">{description}</p>
     </Link>
   );
 }

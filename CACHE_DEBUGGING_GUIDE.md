@@ -5,24 +5,28 @@ This guide helps diagnose and fix persistent cache issues in the availability ru
 ## Understanding Next.js 15 Cache Layers
 
 ### 1. **Client-Side Router Cache** (30 seconds default)
+
 - **What it caches**: React Server Component payloads
 - **When it's used**: Navigation via `<Link>` or `router.push()`
 - **How to clear**: `router.refresh()`
 - **Status**: ✅ **IMPLEMENTED** in AvailabilityForm
 
 ### 2. **Server-Side Full Route Cache** (until revalidated)
+
 - **What it caches**: Rendered HTML and RSC payload
 - **When it's used**: Production builds
 - **How to clear**: `revalidatePath()` or `export const dynamic = 'force-dynamic'`
 - **Status**: ✅ **IMPLEMENTED** in actions and pages
 
 ### 3. **Server-Side Data Cache** (until revalidated)
+
 - **What it caches**: `fetch()` results and database queries
 - **When it's used**: All data fetching
 - **How to clear**: `revalidatePath()` or `revalidateTag()`
 - **Status**: ✅ **IMPLEMENTED** in server actions
 
 ### 4. **Browser Cache** (controlled by headers)
+
 - **What it caches**: Static assets and API responses
 - **When it's used**: All HTTP requests
 - **How to clear**: Cache-Control headers
@@ -35,6 +39,7 @@ This guide helps diagnose and fix persistent cache issues in the availability ru
 If the UI still shows stale data after updating availability rules:
 
 ### Step 1: Verify Database Update
+
 ```bash
 # Connect to your database and check
 psql $DATABASE_URL -c "SELECT id, name, state, \"updatedAt\" FROM availability_rules WHERE id = 'YOUR_RULE_ID';"
@@ -43,6 +48,7 @@ psql $DATABASE_URL -c "SELECT id, name, state, \"updatedAt\" FROM availability_r
 **Expected**: `state` should be 'pre_order' and `updatedAt` should be recent.
 
 ### Step 2: Check Server Cache
+
 Add this to `/admin/products/page.tsx`:
 
 ```tsx
@@ -59,6 +65,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
 ```
 
 **Expected Output**:
+
 ```
 [Cache Debug: products-page] {
   timestamp: '2025-01-09T...',
@@ -68,15 +75,17 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
 ```
 
 ### Step 3: Check Client Router Cache
+
 Add this to your browser console after navigating back:
 
 ```js
 // Check if router cache is being used
-performance.getEntriesByType('navigation')[0].type
+performance.getEntriesByType('navigation')[0].type;
 // Expected: 'reload' or 'navigate' (NOT 'back_forward')
 ```
 
 ### Step 4: Verify router.refresh() is Called
+
 Add console.log to `AvailabilityForm.tsx`:
 
 ```tsx
@@ -99,7 +108,7 @@ if (successCount.length > 0) {
   toast.success('Rule updated successfully');
 
   // Force refresh router cache
-  router.refresh();  // ✅ Already implemented
+  router.refresh(); // ✅ Already implemented
 
   if (onSuccess) {
     onSuccess({} as any);
@@ -128,11 +137,11 @@ Add to `next.config.js`:
 const nextConfig = {
   experimental: {
     staleTimes: {
-      dynamic: 0,      // Disable router cache for dynamic routes
-      static: 0,       // Disable router cache for static routes
+      dynamic: 0, // Disable router cache for dynamic routes
+      static: 0, // Disable router cache for static routes
     },
   },
-}
+};
 ```
 
 ⚠️ **Warning**: This disables ALL router caching and may impact performance.
@@ -144,10 +153,7 @@ const nextConfig = {
 ```tsx
 import { revalidateTag } from 'next/cache';
 
-export async function updateAvailabilityRule(
-  ruleId: string,
-  updates: Partial<AvailabilityRule>
-) {
+export async function updateAvailabilityRule(ruleId: string, updates: Partial<AvailabilityRule>) {
   // ... existing code ...
 
   // Instead of revalidatePath, use tags
@@ -170,14 +176,10 @@ const productsFromDb = await prisma.product.findMany({
 // Tag this query
 if (typeof productsFromDb !== 'undefined') {
   // Use Next.js cache API
-  unstable_cache(
-    async () => productsFromDb,
-    ['products'],
-    {
-      tags: ['products', 'availability-rules'],
-      revalidate: false,
-    }
-  );
+  unstable_cache(async () => productsFromDb, ['products'], {
+    tags: ['products', 'availability-rules'],
+    revalidate: false,
+  });
 }
 ```
 
@@ -227,6 +229,7 @@ describe('Availability Cache Invalidation', () => {
 **Symptom**: After clicking "Back", badge shows "view only" instead of "Pre-Order"
 
 **Diagnosis**:
+
 1. Check if `router.refresh()` is being called
 2. Check browser network tab - should see new request to `/admin/products`
 3. Verify `revalidatePath('/admin/products')` in server action
@@ -238,16 +241,18 @@ describe('Availability Cache Invalidation', () => {
 **Symptom**: Cache invalidation works locally but not on Vercel
 
 **Diagnosis**:
+
 1. Check Vercel logs for cache headers
 2. Verify `export const dynamic = 'force-dynamic'` in page.tsx
 3. Check if Vercel is applying additional caching
 
 **Fix**:
+
 ```tsx
 // Add to page.tsx
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const runtime = 'nodejs';  // Use Node.js runtime (not Edge)
+export const runtime = 'nodejs'; // Use Node.js runtime (not Edge)
 ```
 
 ### Issue 3: Multiple Users See Each Other's Changes
@@ -257,6 +262,7 @@ export const runtime = 'nodejs';  // Use Node.js runtime (not Edge)
 **Diagnosis**: This is actually CORRECT behavior with revalidatePath()
 
 **Fix**: If you want user-specific caching:
+
 ```tsx
 // Use cache tags with user ID
 revalidateTag(`products-user-${userId}`);
@@ -275,6 +281,7 @@ revalidateTag(`products-user-${userId}`);
 ### Monitoring
 
 Add to your monitoring dashboard:
+
 ```tsx
 // Track cache invalidation frequency
 logger.info('Cache invalidated', {
@@ -296,12 +303,12 @@ logger.info('Cache invalidated', {
 
 ## Quick Reference
 
-| Cache Issue | Solution | Implementation Status |
-|------------|----------|---------------------|
-| Stale Router Cache | `router.refresh()` | ✅ Implemented |
-| Stale Server Data | `revalidatePath()` | ✅ Implemented |
-| Stale Full Route | `dynamic = 'force-dynamic'` | ✅ Implemented |
-| Browser Cache | Cache-Control headers | ⚠️ Use if needed |
+| Cache Issue        | Solution                    | Implementation Status |
+| ------------------ | --------------------------- | --------------------- |
+| Stale Router Cache | `router.refresh()`          | ✅ Implemented        |
+| Stale Server Data  | `revalidatePath()`          | ✅ Implemented        |
+| Stale Full Route   | `dynamic = 'force-dynamic'` | ✅ Implemented        |
+| Browser Cache      | Cache-Control headers       | ⚠️ Use if needed      |
 
 ---
 

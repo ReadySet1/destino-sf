@@ -15,9 +15,7 @@ const webhookPrismaClientSingleton = () => {
         url: process.env.DATABASE_URL,
       },
     },
-    log: process.env.NODE_ENV === 'development' 
-      ? ['error', 'warn'] 
-      : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     errorFormat: 'minimal',
   });
 };

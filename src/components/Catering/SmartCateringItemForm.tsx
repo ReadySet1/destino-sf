@@ -21,11 +21,11 @@ export const SmartCateringItemForm: React.FC<SmartCateringItemFormProps> = ({
         Smart Catering Item Form Disabled
       </h3>
       <p className="text-gray-600">
-        Individual catering items are now managed through our Square integration. 
-        This form has been temporarily disabled.
+        Individual catering items are now managed through our Square integration. This form has been
+        temporarily disabled.
       </p>
       {onCancel && (
-        <button 
+        <button
           onClick={onCancel}
           className="mt-4 px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
         >

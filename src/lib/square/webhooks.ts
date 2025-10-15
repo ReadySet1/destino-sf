@@ -80,10 +80,12 @@ function mapSquareFulfillmentToStatus(
 // ❌ DEPRECATED: Square webhook signature verification moved to webhook-validator.ts
 // Use validateWebhookSignature from @/lib/square/webhook-validator instead
 // This function had issues with URL construction and environment variable handling
-// 
+//
 // @deprecated Use validateWebhookSignature from @/lib/square/webhook-validator
 export function verifySquareSignature(signatureHeader: string | undefined, body: string): boolean {
-  throw new Error('❌ DEPRECATED: Use validateWebhookSignature from @/lib/square/webhook-validator instead. This function had signature validation issues.');
+  throw new Error(
+    '❌ DEPRECATED: Use validateWebhookSignature from @/lib/square/webhook-validator instead. This function had signature validation issues.'
+  );
 }
 
 // Types for Square webhook events
@@ -106,5 +108,7 @@ interface SquareWebhookEvent {
 export async function handleSquareWebhook(
   req: Pick<NextApiRequest, 'body' | 'headers'>
 ): Promise<{ success: boolean; message: string }> {
-  throw new Error('❌ DEPRECATED: Use the webhook endpoint at /api/webhooks/square instead. This function used broken signature validation.');
+  throw new Error(
+    '❌ DEPRECATED: Use the webhook endpoint at /api/webhooks/square instead. This function used broken signature validation.'
+  );
 }

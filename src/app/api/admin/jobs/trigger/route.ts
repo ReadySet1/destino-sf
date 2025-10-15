@@ -12,13 +12,13 @@ export async function POST() {
   try {
     // Check if a job is already running
     const status = AvailabilityProcessor.getStatus();
-    
+
     if (status.isRunning) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'A job is already running',
-          currentJobId: status.currentJobId
+          currentJobId: status.currentJobId,
         },
         { status: 409 }
       );
@@ -34,7 +34,7 @@ export async function POST() {
       processed: result.processed,
       updated: result.updated,
       errors: result.errors.length,
-      duration: result.duration
+      duration: result.duration,
     });
 
     return NextResponse.json({
@@ -45,22 +45,21 @@ export async function POST() {
         updated: result.updated,
         errors: result.errors.length,
         duration: result.duration,
-        summary: result.summary
+        summary: result.summary,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     logger.error('Manual job trigger failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error instanceof Error ? error.message : 'Job execution failed',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
@@ -72,10 +71,10 @@ export async function POST() {
  */
 export async function GET() {
   const status = AvailabilityProcessor.getStatus();
-  
+
   return NextResponse.json({
     canTrigger: !status.isRunning,
     currentStatus: status,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }

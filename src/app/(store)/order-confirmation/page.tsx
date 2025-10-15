@@ -91,69 +91,73 @@ export default async function OrderConfirmationPage({ searchParams }: OrderConfi
 
   if (status === 'success' && orderId) {
     console.log(`Fetching order details for ID: ${orderId}`);
-    
+
     try {
       orderData = await prisma.order.findUnique({
-          where: { id: orderId },
-          select: {
-            // Select only needed fields
-            id: true,
-            status: true,
-            total: true,
-            customerName: true,
-            pickupTime: true,
-            paymentStatus: true,
-            trackingNumber: true,
-            shippingCarrier: true,
-            fulfillmentType: true,
-            notes: true,
-            // Pricing breakdown fields
-            taxAmount: true,
-            deliveryFee: true,
-            serviceFee: true,
-            gratuityAmount: true,
-            shippingCostCents: true,
-            items: {
-              select: {
-                id: true,
-                quantity: true,
-                price: true,
-                product: {
-                  select: {
-                    name: true,
-                    isPreorder: true,
-                    preorderEndDate: true,
-                  },
+        where: { id: orderId },
+        select: {
+          // Select only needed fields
+          id: true,
+          status: true,
+          total: true,
+          customerName: true,
+          pickupTime: true,
+          paymentStatus: true,
+          trackingNumber: true,
+          shippingCarrier: true,
+          fulfillmentType: true,
+          notes: true,
+          // Pricing breakdown fields
+          taxAmount: true,
+          deliveryFee: true,
+          serviceFee: true,
+          gratuityAmount: true,
+          shippingCostCents: true,
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              price: true,
+              product: {
+                select: {
+                  name: true,
+                  isPreorder: true,
+                  preorderEndDate: true,
                 },
-                variant: { select: { name: true } },
               },
+              variant: { select: { name: true } },
             },
           },
-        });
-        if (!orderData) {
-          console.warn(`Order with ID ${orderId} not found in database.`);
-        }
-        // Convert Decimal fields to numbers for serialization
-        if (orderData) {
-          serializableOrderData = {
-            ...orderData,
-            total: orderData.total?.toNumber() ?? null,
-            taxAmount: orderData.taxAmount?.toNumber() ?? null,
-            deliveryFee: orderData.deliveryFee?.toNumber() ?? null,
-            serviceFee: orderData.serviceFee?.toNumber() ?? null,
-            gratuityAmount: orderData.gratuityAmount?.toNumber() ?? null,
-            shippingCost: orderData.shippingCostCents ? orderData.shippingCostCents / 100 : null,
-            items: orderData.items.map(item => ({
-              ...item,
-              price: item.price.toNumber(),
-              product: item.product ? {
-                name: item.product.name,
-                isPreorder: item.product.isPreorder,
-                preorderEndDate: item.product.preorderEndDate ? item.product.preorderEndDate.toISOString() : null,
-              } : null,
-            })),
-          };
-        }
+        },
+      });
+      if (!orderData) {
+        console.warn(`Order with ID ${orderId} not found in database.`);
+      }
+      // Convert Decimal fields to numbers for serialization
+      if (orderData) {
+        serializableOrderData = {
+          ...orderData,
+          total: orderData.total?.toNumber() ?? null,
+          taxAmount: orderData.taxAmount?.toNumber() ?? null,
+          deliveryFee: orderData.deliveryFee?.toNumber() ?? null,
+          serviceFee: orderData.serviceFee?.toNumber() ?? null,
+          gratuityAmount: orderData.gratuityAmount?.toNumber() ?? null,
+          shippingCost: orderData.shippingCostCents ? orderData.shippingCostCents / 100 : null,
+          items: orderData.items.map(item => ({
+            ...item,
+            price: item.price.toNumber(),
+            product: item.product
+              ? {
+                  name: item.product.name,
+                  isPreorder: item.product.isPreorder,
+                  preorderEndDate: item.product.preorderEndDate
+                    ? item.product.preorderEndDate.toISOString()
+                    : null,
+                }
+              : null,
+          })),
+        };
+      }
     } catch (error) {
       console.error(`Error fetching order ${orderId}:`, error);
       // Keep orderData as null, the client component can show an error message

@@ -38,8 +38,11 @@ export function AuthStateProvider({ children }: AuthStateProviderProps) {
     // Get initial session
     const getInitialSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
         if (error) {
           console.warn('Error getting initial session:', error);
           setSession(null);
@@ -60,51 +63,51 @@ export function AuthStateProvider({ children }: AuthStateProviderProps) {
     getInitialSession();
 
     // Listen for auth changes with enhanced error handling
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Auth state change:', event, session ? 'user authenticated' : 'no user');
-        }
-        
-        try {
-          if (event === 'SIGNED_IN' && session) {
-            setUser(session.user);
-            setSession(session);
-            if (process.env.NODE_ENV === 'development') {
-              console.log('User signed in successfully');
-            }
-          } else if (event === 'SIGNED_OUT') {
-            setUser(null);
-            setSession(null);
-            if (process.env.NODE_ENV === 'development') {
-              console.log('User signed out');
-            }
-            // Optional: redirect to sign-in page
-            // router.push('/sign-in');
-          } else if (event === 'TOKEN_REFRESHED' && session) {
-            setUser(session.user);
-            setSession(session);
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Token refreshed successfully');
-            }
-          } else if (event === 'USER_UPDATED' && session) {
-            setUser(session.user);
-            setSession(session);
-            if (process.env.NODE_ENV === 'development') {
-              console.log('User updated successfully');
-            }
-          } else if (event === 'PASSWORD_RECOVERY') {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Password recovery initiated');
-            }
-          }
-        } catch (error) {
-          console.error('Error handling auth state change:', error);
-        }
-        
-        setLoading(false);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Auth state change:', event, session ? 'user authenticated' : 'no user');
       }
-    );
+
+      try {
+        if (event === 'SIGNED_IN' && session) {
+          setUser(session.user);
+          setSession(session);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('User signed in successfully');
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setSession(null);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('User signed out');
+          }
+          // Optional: redirect to sign-in page
+          // router.push('/sign-in');
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          setUser(session.user);
+          setSession(session);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Token refreshed successfully');
+          }
+        } else if (event === 'USER_UPDATED' && session) {
+          setUser(session.user);
+          setSession(session);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('User updated successfully');
+          }
+        } else if (event === 'PASSWORD_RECOVERY') {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Password recovery initiated');
+          }
+        }
+      } catch (error) {
+        console.error('Error handling auth state change:', error);
+      }
+
+      setLoading(false);
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -134,15 +137,18 @@ export function AuthStateProvider({ children }: AuthStateProviderProps) {
   const refreshSession = async () => {
     try {
       setLoading(true);
-      const { data: { session }, error } = await supabase.auth.refreshSession();
-      
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.refreshSession();
+
       if (error) {
         console.error('Error refreshing session:', error);
         // If refresh fails, sign out user
         await signOut();
         throw error;
       }
-      
+
       if (session) {
         setSession(session);
         setUser(session.user);
@@ -166,9 +172,5 @@ export function AuthStateProvider({ children }: AuthStateProviderProps) {
     refreshSession,
   };
 
-  return (
-    <AuthStateContext.Provider value={value}>
-      {children}
-    </AuthStateContext.Provider>
-  );
+  return <AuthStateContext.Provider value={value}>{children}</AuthStateContext.Provider>;
 }

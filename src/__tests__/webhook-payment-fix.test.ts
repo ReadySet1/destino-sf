@@ -7,27 +7,27 @@ import { NextRequest } from 'next/server';
 
 // Mock the webhook payload that was failing
 const mockPaymentUpdatedPayload = {
-  merchant_id: "MLJD4JJXS3YSP",
-  type: "payment.updated" as const,
-  event_id: "test-event-id-123",
+  merchant_id: 'MLJD4JJXS3YSP',
+  type: 'payment.updated' as const,
+  event_id: 'test-event-id-123',
   created_at: new Date().toISOString(),
   data: {
-    type: "payment" as const,
-    id: "test-payment-id-123",
+    type: 'payment' as const,
+    id: 'test-payment-id-123',
     object: {
       payment: {
-        id: "test-payment-id-123",
-        order_id: "test-order-id-123",
-        status: "COMPLETED",
+        id: 'test-payment-id-123',
+        order_id: 'test-order-id-123',
+        status: 'COMPLETED',
         amount_money: {
           amount: 1500, // $15.00
-          currency: "USD"
+          currency: 'USD',
         },
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    }
-  }
+        updated_at: new Date().toISOString(),
+      },
+    },
+  },
 };
 
 // Test the mapSquarePaymentStatus function
@@ -114,15 +114,15 @@ describe('Error Handling', () => {
         object: {
           payment: {
             ...mockPaymentUpdatedPayload.data.object.payment,
-            order_id: undefined
-          }
-        }
-      }
+            order_id: undefined,
+          },
+        },
+      },
     };
 
     const paymentData = invalidPayload.data.object.payment;
     const squareOrderId = paymentData.order_id;
-    
+
     expect(squareOrderId).toBeUndefined();
     // This should trigger the early return in the webhook handler
   });
@@ -133,9 +133,9 @@ describe('Error Handling', () => {
       data: {
         ...mockPaymentUpdatedPayload.data,
         object: {
-          payment: undefined
-        }
-      }
+          payment: undefined,
+        },
+      },
     };
 
     const paymentData = invalidPayload.data.object.payment;

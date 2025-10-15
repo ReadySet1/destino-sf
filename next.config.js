@@ -21,7 +21,7 @@ const nextConfig = {
 
   // Configure external packages for Prisma compatibility with Next.js 15.3.2
   serverExternalPackages: ['@prisma/client', 'prisma'],
-  
+
   // Optimize output
   output: 'standalone',
   // Experimental features
@@ -70,7 +70,7 @@ const nextConfig = {
   // Security headers configuration
   async headers() {
     const isDev = process.env.NODE_ENV === 'development';
-    
+
     return [
       {
         source: '/:path*',
@@ -86,10 +86,14 @@ const nextConfig = {
             value: 'nosniff',
           },
           // Enable XSS protection (disabled in dev for Safari)
-          ...(isDev ? [] : [{
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          }]),
+          ...(isDev
+            ? []
+            : [
+                {
+                  key: 'X-XSS-Protection',
+                  value: '1; mode=block',
+                },
+              ]),
           // Control referrer information
           {
             key: 'Referrer-Policy',
@@ -98,47 +102,59 @@ const nextConfig = {
           // Control browser features (relaxed for dev)
           {
             key: 'Permissions-Policy',
-            value: isDev ? 'camera=*, microphone=*, geolocation=*' : 'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
+            value: isDev
+              ? 'camera=*, microphone=*, geolocation=*'
+              : 'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
           },
           // Skip HTTPS enforcement in development
-          ...(isDev ? [] : [{
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload',
-          }]),
+          ...(isDev
+            ? []
+            : [
+                {
+                  key: 'Strict-Transport-Security',
+                  value: 'max-age=63072000; includeSubDomains; preload',
+                },
+              ]),
           // Content Security Policy - Safari-friendly version, relaxed for development
-          ...(isDev ? [] : [{
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://analytics.readysetllc.com https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com",
-              "style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com data: blob:",
-              "font-src 'self' https://fonts.gstatic.com data:",
-              "img-src 'self' data: blob: https://*.s3.us-west-2.amazonaws.com https://*.s3.amazonaws.com https://*.squarecdn.com https://*.supabase.co https://destino-sf.square.site https://maps.googleapis.com https://maps.gstatic.com",
-              "connect-src 'self' https://analytics.readysetllc.com https://*.supabase.co https://connect.squareup.com https://connect.squareupsandbox.com https://*.upstash.io https://api.resend.com https://vitals.vercel-insights.com https://maps.googleapis.com https://maps.google.com https://*.googleapis.com https://*.gstatic.com ws: wss:",
-              "frame-src 'self' https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com",
-              "media-src 'self' data: blob:",
-              "object-src 'self' data:",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'self'",
-              "worker-src 'self' blob:",
-            ].join('; '),
-          }]),
+          ...(isDev
+            ? []
+            : [
+                {
+                  key: 'Content-Security-Policy',
+                  value: [
+                    "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:",
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://analytics.readysetllc.com https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com",
+                    "style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com data: blob:",
+                    "font-src 'self' https://fonts.gstatic.com data:",
+                    "img-src 'self' data: blob: https://*.s3.us-west-2.amazonaws.com https://*.s3.amazonaws.com https://*.squarecdn.com https://*.supabase.co https://destino-sf.square.site https://maps.googleapis.com https://maps.gstatic.com",
+                    "connect-src 'self' https://analytics.readysetllc.com https://*.supabase.co https://connect.squareup.com https://connect.squareupsandbox.com https://*.upstash.io https://api.resend.com https://vitals.vercel-insights.com https://maps.googleapis.com https://maps.google.com https://*.googleapis.com https://*.gstatic.com ws: wss:",
+                    "frame-src 'self' https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com",
+                    "media-src 'self' data: blob:",
+                    "object-src 'self' data:",
+                    "base-uri 'self'",
+                    "form-action 'self'",
+                    "frame-ancestors 'self'",
+                    "worker-src 'self' blob:",
+                  ].join('; '),
+                },
+              ]),
           // Add Safari development compatibility headers
-          ...(isDev ? [
-            {
-              key: 'Access-Control-Allow-Origin',
-              value: '*',
-            },
-            {
-              key: 'Cross-Origin-Embedder-Policy',
-              value: 'unsafe-none',
-            },
-            {
-              key: 'Cross-Origin-Opener-Policy',
-              value: 'unsafe-none',
-            },
-          ] : []),
+          ...(isDev
+            ? [
+                {
+                  key: 'Access-Control-Allow-Origin',
+                  value: '*',
+                },
+                {
+                  key: 'Cross-Origin-Embedder-Policy',
+                  value: 'unsafe-none',
+                },
+                {
+                  key: 'Cross-Origin-Opener-Policy',
+                  value: 'unsafe-none',
+                },
+              ]
+            : []),
         ],
       },
       // API routes specific headers
@@ -173,7 +189,7 @@ const nextConfig = {
           },
         ],
       },
-      // Next.js CSS files specific headers  
+      // Next.js CSS files specific headers
       {
         source: '/_next/static/css/:path*.css',
         headers: [
