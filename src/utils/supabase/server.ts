@@ -18,8 +18,10 @@ export async function createClient() {
               name,
               value,
               ...options,
-              // Enhanced cookie security for auth tokens
-              httpOnly: true,
+              // IMPORTANT: httpOnly must be false for client-side session access
+              // Supabase SSR requires client to read cookies for session management
+              // The cookies are already protected by sameSite and secure flags
+              httpOnly: false,
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'lax',
               // Longer max age for refresh tokens
