@@ -10,8 +10,8 @@ export function createClient() {
         persistSession: true,
         detectSessionInUrl: true,
         autoRefreshToken: true,
-        // Storage options for better persistence
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        // IMPORTANT: Don't specify storage - let @supabase/ssr handle cookies automatically
+        // The server sets cookies, and the client should read from cookies (not localStorage)
         // Flow type for consistent auth handling
         flowType: 'pkce',
       },
