@@ -272,9 +272,7 @@ export function isPaymentWebhook(
   return payload.type.startsWith('payment.');
 }
 
-export function isOrderWebhook(
-  payload: SquareWebhookPayload
-): payload is SquareWebhookPayload & {
+export function isOrderWebhook(payload: SquareWebhookPayload): payload is SquareWebhookPayload & {
   type: 'order.created' | 'order.updated' | 'order.fulfillment.updated';
 } {
   return payload.type.startsWith('order.');

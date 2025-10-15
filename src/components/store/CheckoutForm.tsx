@@ -500,7 +500,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
     const checkAndRefreshSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
         const timeSinceMount = Date.now() - mountTime;
 
         if (error) {
@@ -539,9 +542,12 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         if (session && session.expires_at) {
           // Proactive session refresh: refresh if less than 5 minutes until expiration
           const expiresIn = session.expires_at - Date.now() / 1000;
-          console.log(`🕐 [SESSION-CHECK] Session expires in ${Math.floor(expiresIn / 60)} minutes`);
+          console.log(
+            `🕐 [SESSION-CHECK] Session expires in ${Math.floor(expiresIn / 60)} minutes`
+          );
 
-          if (expiresIn < 300) { // Less than 5 minutes
+          if (expiresIn < 300) {
+            // Less than 5 minutes
             console.log('🔄 [SESSION-CHECK] Proactively refreshing session...');
             const { error: refreshError } = await supabase.auth.refreshSession();
 
@@ -574,7 +580,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     checkAndRefreshSession();
 
     // Set up auth state listener for real-time session updates
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       console.log(`🔔 [SESSION-CHECK] Auth state change: ${event}`);
 
       if (event === 'SIGNED_OUT') {
@@ -761,7 +769,11 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   // Function to check for duplicate orders with timeout and retry logic
   const checkForDuplicates = async (email: string, isRetry: boolean = false): Promise<boolean> => {
-    console.log('🔍 [DUPLICATE-CHECK] Starting duplicate check for:', email, isRetry ? '(retry)' : '');
+    console.log(
+      '🔍 [DUPLICATE-CHECK] Starting duplicate check for:',
+      email,
+      isRetry ? '(retry)' : ''
+    );
     setPendingOrderCheck(prev => ({ ...prev, isChecking: true }));
 
     // Set up 10-second timeout protection
@@ -873,7 +885,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       // This prevents server-side session validation failures
       if (initialUserData) {
         console.log('🔄 [SESSION] Refreshing session before submission (no duplicate check)...');
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
         if (sessionError || !session) {
           console.error('❌ [SESSION] Session validation failed before submission:', sessionError);
@@ -884,7 +899,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         }
 
         // Proactively refresh if session expires soon (< 5 minutes)
-        if (session.expires_at && (session.expires_at - Date.now() / 1000) < 300) {
+        if (session.expires_at && session.expires_at - Date.now() / 1000 < 300) {
           console.log('🔄 [SESSION] Session expiring soon, refreshing...');
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
 
@@ -898,7 +913,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
           console.log('✅ [SESSION] Session refreshed successfully');
         } else {
-          console.log(`✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`);
+          console.log(
+            `✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`
+          );
         }
 
         // Clear any session errors since session is valid
@@ -1100,7 +1117,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       // This prevents server-side session validation failures
       if (initialUserData) {
         console.log('🔄 [SESSION] Refreshing session before submission...');
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
         if (sessionError || !session) {
           console.error('❌ [SESSION] Session validation failed before submission:', sessionError);
@@ -1111,7 +1131,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         }
 
         // Proactively refresh if session expires soon (< 5 minutes)
-        if (session.expires_at && (session.expires_at - Date.now() / 1000) < 300) {
+        if (session.expires_at && session.expires_at - Date.now() / 1000 < 300) {
           console.log('🔄 [SESSION] Session expiring soon, refreshing...');
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
 
@@ -1125,7 +1145,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
           console.log('✅ [SESSION] Session refreshed successfully');
         } else {
-          console.log(`✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`);
+          console.log(
+            `✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`
+          );
         }
 
         // Clear any session errors since session is valid
@@ -1391,7 +1413,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     <>
       {/* DES-52: Session Expiration Alert */}
       {sessionError && (
-        <Alert variant="destructive" className="mb-6 bg-red-50/90 backdrop-blur-sm border-red-400 shadow-lg">
+        <Alert
+          variant="destructive"
+          className="mb-6 bg-red-50/90 backdrop-blur-sm border-red-400 shadow-lg"
+        >
           <AlertDescription className="text-red-800 font-medium">
             <div className="flex flex-col gap-3">
               <div>
@@ -1737,39 +1762,51 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         )}
 
         {/* Form Validation Helper (DES-52 Fix) */}
-        {!isValid && isMounted && !isSubmitting && !pendingOrderCheck.isChecking && items.length > 0 && (
-          <Alert className="bg-amber-50/80 backdrop-blur-sm border-amber-300/50">
-            <AlertDescription className="text-amber-800">
-              {currentMethod === 'nationwide_shipping' && !currentRateId ? (
-                <>
-                  <strong>Missing shipping information:</strong> Please complete the shipping address,
-                  click &quot;Fetch Shipping Rates&quot;, and select a shipping method before continuing.
-                </>
-              ) : (
-                <>
-                  <strong>Please complete all required fields.</strong> Check the form above for any
-                  validation errors highlighted in red.
-                </>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
+        {!isValid &&
+          isMounted &&
+          !isSubmitting &&
+          !pendingOrderCheck.isChecking &&
+          items.length > 0 && (
+            <Alert className="bg-amber-50/80 backdrop-blur-sm border-amber-300/50">
+              <AlertDescription className="text-amber-800">
+                {currentMethod === 'nationwide_shipping' && !currentRateId ? (
+                  <>
+                    <strong>Missing shipping information:</strong> Please complete the shipping
+                    address, click &quot;Fetch Shipping Rates&quot;, and select a shipping method
+                    before continuing.
+                  </>
+                ) : (
+                  <>
+                    <strong>Please complete all required fields.</strong> Check the form above for
+                    any validation errors highlighted in red.
+                  </>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
         {/* Submit Button */}
         <Button
           type="submit"
           className="w-full py-4 text-base font-semibold rounded-xl bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100 disabled:opacity-60 disabled:cursor-not-allowed"
-          disabled={isSubmitting || pendingOrderCheck.isChecking || !isMounted || items.length === 0 || !isValid || !!sessionError}
+          disabled={
+            isSubmitting ||
+            pendingOrderCheck.isChecking ||
+            !isMounted ||
+            items.length === 0 ||
+            !isValid ||
+            !!sessionError
+          }
         >
           {sessionError
             ? 'Session Expired - Please Log In'
             : pendingOrderCheck.isChecking
-            ? 'Checking for existing orders...'
-            : isSubmitting
-              ? 'Processing...'
-              : currentPaymentMethod === PaymentMethod.SQUARE
-                ? 'Continue to Payment'
-                : 'Place Order'}
+              ? 'Checking for existing orders...'
+              : isSubmitting
+                ? 'Processing...'
+                : currentPaymentMethod === PaymentMethod.SQUARE
+                  ? 'Continue to Payment'
+                  : 'Place Order'}
         </Button>
       </form>
 
