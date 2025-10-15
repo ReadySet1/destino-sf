@@ -492,9 +492,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     setIsMounted(true);
   }, []);
 
-  // DES-52: Check session status on mount and periodically
+  // DES-73: Enhanced session management with proactive refresh and auth state listener
   useEffect(() => {
-    const checkSession = async () => {
+    const checkAndRefreshSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
 
@@ -508,8 +508,31 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           // User was logged in but session is now expired
           console.warn('⚠️ [SESSION-CHECK] Session expired during checkout');
           setSessionError('Your session has expired. Please log in to continue.');
-        } else {
-          // Session is valid or user is guest
+          return;
+        }
+
+        if (session && session.expires_at) {
+          // Proactive session refresh: refresh if less than 5 minutes until expiration
+          const expiresIn = session.expires_at - Date.now() / 1000;
+          console.log(`🕐 [SESSION-CHECK] Session expires in ${Math.floor(expiresIn / 60)} minutes`);
+
+          if (expiresIn < 300) { // Less than 5 minutes
+            console.log('🔄 [SESSION-CHECK] Proactively refreshing session...');
+            const { error: refreshError } = await supabase.auth.refreshSession();
+
+            if (refreshError) {
+              console.error('❌ [SESSION-CHECK] Failed to refresh session:', refreshError);
+              setSessionError('Your session has expired. Please log in to continue.');
+            } else {
+              console.log('✅ [SESSION-CHECK] Session refreshed successfully');
+              setSessionError(null);
+            }
+          } else {
+            // Session is valid and not expiring soon
+            setSessionError(null);
+          }
+        } else if (!initialUserData) {
+          // Guest checkout - no session required
           setSessionError(null);
         }
       } catch (error) {
@@ -517,12 +540,34 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       }
     };
 
-    if (isMounted) {
-      checkSession();
-      // Check session every 60 seconds
-      const interval = setInterval(checkSession, 60000);
-      return () => clearInterval(interval);
-    }
+    if (!isMounted) return;
+
+    // Initial session check
+    checkAndRefreshSession();
+
+    // Set up auth state listener for real-time session updates
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`🔔 [SESSION-CHECK] Auth state change: ${event}`);
+
+      if (event === 'SIGNED_OUT') {
+        if (initialUserData) {
+          setSessionError('Your session has expired. Please log in to continue.');
+        }
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('✅ [SESSION-CHECK] Token refreshed via auth state listener');
+        setSessionError(null);
+      } else if (event === 'SIGNED_IN') {
+        setSessionError(null);
+      }
+    });
+
+    // Periodic check every 2 minutes as backup (reduced from 60 seconds)
+    const interval = setInterval(checkAndRefreshSession, 120000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(interval);
+    };
   }, [isMounted, supabase, initialUserData]);
 
   // Watch form values and save to localStorage
