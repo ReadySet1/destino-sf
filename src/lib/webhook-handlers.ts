@@ -43,13 +43,13 @@ function mapSquareStateToOrderStatus(state: string): OrderStatus {
  */
 function getSquareClient(): SquareClient {
   // Check if we're using sandbox mode
-  const useSandbox = process.env.USE_SQUARE_SANDBOX === 'true' ||
-                     process.env.SQUARE_ENVIRONMENT === 'sandbox';
+  const useSandbox =
+    process.env.USE_SQUARE_SANDBOX === 'true' || process.env.SQUARE_ENVIRONMENT === 'sandbox';
 
   // Select the appropriate token and environment
   const accessToken = useSandbox
     ? process.env.SQUARE_SANDBOX_TOKEN
-    : (process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN);
+    : process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
 
   const environment = useSandbox ? SquareEnvironment.Sandbox : SquareEnvironment.Production;
 

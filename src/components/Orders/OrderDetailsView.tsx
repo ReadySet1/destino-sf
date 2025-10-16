@@ -91,11 +91,15 @@ export function OrderDetailsView({ order, isAuthenticated }: Props) {
     setIsRetrying(true);
 
     try {
+      // For guest users, include email in the request body for verification
+      const requestBody = !isAuthenticated ? { email: order.email } : {};
+
       const response = await fetch(`/api/orders/${order.id}/retry-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();
