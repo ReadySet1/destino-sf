@@ -3,6 +3,7 @@
  * Handles consistent product fetching with visibility rules and availability evaluation
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityEngine } from '@/lib/availability/engine';
@@ -252,9 +253,11 @@ export class ProductVisibilityService {
           ...product,
           price: product.price ? parseFloat(product.price.toString()) : 0,
           ordinal: product.ordinal !== null ? Number(product.ordinal) : null,
+          visibility: product.visibility as 'PUBLIC' | 'PRIVATE' | null,
+          itemState: product.itemState as 'ACTIVE' | 'INACTIVE' | 'SEASONAL' | 'ARCHIVED' | null,
           variants:
             includeVariants && product.variants
-              ? product.variants.map((variant: any) => ({
+              ? product.variants.map(variant => ({
                   ...variant,
                   price: variant.price ? parseFloat(variant.price.toString()) : null,
                 }))
@@ -283,13 +286,6 @@ export class ProductVisibilityService {
               hasPreviousPage: page > 1,
             }
           : undefined;
-
-      logger.info('Products fetched with visibility service', {
-        count: serializedProducts.length,
-        withAvailabilityEvaluation: includeAvailabilityEvaluation,
-        categoryId,
-        onlyActive,
-      });
 
       return {
         products: serializedProducts,
@@ -326,7 +322,7 @@ export class ProductVisibilityService {
     const { categoryId, featured, search, exclude, onlyActive, excludeCatering, includePrivate } =
       options;
 
-    const whereCondition: any = {
+    const whereCondition: Record<string, unknown> = {
       active: onlyActive ? true : undefined,
       categoryId: categoryId,
       featured: featured,
@@ -349,8 +345,8 @@ export class ProductVisibilityService {
     // Exclude catering products by default (unless explicitly requested)
     // Only apply if we're NOT filtering by a specific categoryId
     if (excludeCatering && !categoryId) {
-      if (whereCondition.NOT) {
-        whereCondition.NOT.OR.push({
+      if (whereCondition.NOT && typeof whereCondition.NOT === 'object' && 'OR' in whereCondition.NOT) {
+        (whereCondition.NOT as { OR: unknown[] }).OR.push({
           category: {
             name: {
               startsWith: 'CATERING',
@@ -409,7 +405,7 @@ export class ProductVisibilityService {
       key => whereCondition[key] === undefined && delete whereCondition[key]
     );
 
-    return whereCondition;
+    return whereCondition as Prisma.ProductWhereInput;
   }
 
   /**
@@ -437,10 +433,10 @@ export class ProductVisibilityService {
   /**
    * Filter products based on evaluated availability
    */
-  private static async filterByEvaluatedAvailability(
-    products: any[],
+  private static async filterByEvaluatedAvailability<T extends { id: string; isAvailable?: boolean | null; visibility?: string | null; itemState?: string | null }>(
+    products: T[],
     evaluations: Map<string, AvailabilityEvaluation>
-  ): Promise<any[]> {
+  ): Promise<T[]> {
     return products.filter(product => {
       const evaluation = evaluations.get(product.id);
 
@@ -449,7 +445,7 @@ export class ProductVisibilityService {
         return (
           product.isAvailable &&
           product.visibility !== 'PRIVATE' &&
-          !['INACTIVE', 'ARCHIVED'].includes(product.itemState)
+          (product.itemState ? !['INACTIVE', 'ARCHIVED'].includes(product.itemState) : true)
         );
       }
 
@@ -458,7 +454,7 @@ export class ProductVisibilityService {
         return (
           product.isAvailable &&
           product.visibility !== 'PRIVATE' &&
-          !['INACTIVE', 'ARCHIVED'].includes(product.itemState)
+          (product.itemState ? !['INACTIVE', 'ARCHIVED'].includes(product.itemState) : true)
         );
       }
 
