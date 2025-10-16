@@ -67,13 +67,6 @@ export async function GET(request: NextRequest, context: RouteParams) {
       ...(result.pagination && { pagination: result.pagination }),
     };
 
-    logger.info('Products fetched by category', {
-      categoryId,
-      count: mappedProducts.length,
-      includeInactive,
-      includeAvailabilityEvaluation,
-    });
-
     return NextResponse.json(response);
   } catch (error) {
     logger.error('Error fetching products by category:', { categoryId: context.params, error });
