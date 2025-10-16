@@ -58,7 +58,9 @@ test-results/
 playwright-report/
 
 # archive and backups
+# (Exclude src/app/api/** from this rule to allow API routes)
 archive/
+!src/app/api/**/archive/
 backups/
 
 # logs
