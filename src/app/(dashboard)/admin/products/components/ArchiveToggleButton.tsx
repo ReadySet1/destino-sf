@@ -6,6 +6,7 @@ import { Archive, ArchiveRestore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/utils/logger';
 
 interface ArchiveToggleButtonProps {
   productId: string;
@@ -44,7 +45,7 @@ export function ArchiveToggleButton({
       });
 
       // Check if response has content before parsing JSON
-      let data: any = null;
+      let data: { success?: boolean; message?: string; error?: string } | null = null;
       const contentType = response.headers.get('content-type');
       const hasJsonContent = contentType?.includes('application/json');
 
@@ -57,11 +58,20 @@ export function ArchiveToggleButton({
           try {
             data = JSON.parse(text);
           } catch (parseError) {
-            console.error('JSON parse error:', parseError, 'Response text:', text);
+            logger.error('JSON parse error in archive toggle', {
+              parseError,
+              responseText: text,
+              productId,
+              action
+            });
             throw new Error('Server returned invalid JSON response');
           }
         } else {
-          console.warn('Empty response body received from server');
+          logger.warn('Empty response body received from server', {
+            productId,
+            productName,
+            action
+          });
           // For successful responses without content, create a default success object
           if (response.ok) {
             data = {
@@ -92,7 +102,12 @@ export function ArchiveToggleButton({
       router.refresh(); // Refresh server component data
       onSuccess?.();
     } catch (error) {
-      console.error('Archive toggle error:', error);
+      logger.error('Archive toggle error', {
+        error,
+        productId,
+        productName,
+        action
+      });
       toast.error(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setIsLoading(false);
