@@ -19,7 +19,7 @@ export function ProductOrderManager({ categories, defaultCategoryId }: ProductOr
   const [allProducts, setAllProducts] = useState<ProductDisplayOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSort, setIsLoadingSort] = useState(false);
-  const [showUnavailable, setShowUnavailable] = useState(false);
+  const [showUnavailable, setShowUnavailable] = useState(true);
 
   // Filter products based on availability settings
   const filterProducts = useCallback(
@@ -205,12 +205,12 @@ export function ProductOrderManager({ categories, defaultCategoryId }: ProductOr
                     htmlFor="showUnavailable"
                     className="ml-2 text-sm font-medium text-gray-700"
                   >
-                    Show unavailable products
+                    Show all products (including inactive/unavailable)
                   </label>
                 </div>
                 {!showUnavailable && (
                   <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    Hiding {allProducts.length - products.length} products
+                    Hiding {allProducts.length - products.length} inactive/unavailable products
                   </div>
                 )}
               </div>
