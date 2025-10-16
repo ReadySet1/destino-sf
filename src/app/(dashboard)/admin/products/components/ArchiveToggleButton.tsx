@@ -43,16 +43,56 @@ export function ArchiveToggleButton({
         headers: { 'Content-Type': 'application/json' },
       });
 
-      const data = await response.json();
+      // Check if response has content before parsing JSON
+      let data: any = null;
+      const contentType = response.headers.get('content-type');
+      const hasJsonContent = contentType?.includes('application/json');
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update archive status');
+      // Only attempt to parse JSON if the response indicates JSON content
+      if (hasJsonContent) {
+        const text = await response.text();
+
+        // Verify we have actual content to parse
+        if (text && text.trim().length > 0) {
+          try {
+            data = JSON.parse(text);
+          } catch (parseError) {
+            console.error('JSON parse error:', parseError, 'Response text:', text);
+            throw new Error('Server returned invalid JSON response');
+          }
+        } else {
+          console.warn('Empty response body received from server');
+          // For successful responses without content, create a default success object
+          if (response.ok) {
+            data = {
+              success: true,
+              message: `Product "${productName}" has been ${action}d successfully`
+            };
+          } else {
+            throw new Error('Server returned empty response');
+          }
+        }
+      } else {
+        // Non-JSON response (shouldn't happen but handle gracefully)
+        if (response.ok) {
+          data = {
+            success: true,
+            message: `Product "${productName}" has been ${action}d successfully`
+          };
+        } else {
+          throw new Error(`Server returned non-JSON response (${response.status})`);
+        }
       }
 
-      toast.success(data.message);
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to update archive status');
+      }
+
+      toast.success(data?.message || `Product "${productName}" has been ${action}d successfully`);
       router.refresh(); // Refresh server component data
       onSuccess?.();
     } catch (error) {
+      console.error('Archive toggle error:', error);
       toast.error(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setIsLoading(false);
