@@ -65,6 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
     }
 
     // Try to find as regular order first
+    // DES-57: Include shipping and delivery fields for fee calculation
     let order = await prisma.order.findUnique({
       where: {
         id: orderId,
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
           },
         },
       },
+      // Select all fields including shipping and delivery details
     });
 
     // If not found as regular order, try as catering order
@@ -183,6 +185,55 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
       },
     }));
 
+    // DES-57 FIX: Add shipping cost as a line item if applicable
+    if (isRegularOrder && order) {
+      const shippingCostCents = order.shippingCostCents || 0;
+      if (shippingCostCents > 0) {
+        lineItems.push({
+          name: order.shippingMethodName || `Shipping (${order.shippingCarrier || 'Standard'})`,
+          quantity: '1',
+          basePriceMoney: {
+            amount: shippingCostCents, // Already in cents from DB
+            currency: 'USD',
+          },
+        });
+        console.log(`🔧 [RETRY-PAYMENT] Added shipping cost: $${(shippingCostCents / 100).toFixed(2)}`);
+      }
+    }
+
+    // DES-57 FIX: Add delivery fee as a line item if applicable
+    if (isRegularOrder && order) {
+      const deliveryFee = order.deliveryFee ? Number(order.deliveryFee) : 0;
+      if (deliveryFee > 0) {
+        lineItems.push({
+          name: `Delivery Fee`,
+          quantity: '1',
+          basePriceMoney: {
+            amount: Math.round(deliveryFee * 100), // Convert to cents
+            currency: 'USD',
+          },
+        });
+        console.log(`🔧 [RETRY-PAYMENT] Added delivery fee: $${deliveryFee.toFixed(2)}`);
+      }
+    }
+
+    // DES-57 FIX: Calculate and add service/convenience fee (3.5% of subtotal)
+    const SERVICE_FEE_RATE = 0.035; // 3.5%
+    const subtotal = orderItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+    const serviceFeeAmount = Math.round(subtotal * SERVICE_FEE_RATE * 100); // Convert to cents
+
+    // DES-57 FIX: Prepare service charges array if service fee > 0
+    const serviceCharges = serviceFeeAmount > 0 ? [{
+      name: 'Convenience Fee',
+      amount_money: { amount: serviceFeeAmount, currency: 'USD' },
+      calculation_phase: 'TOTAL_PHASE',
+      taxable: false,
+    }] : undefined;
+
+    if (serviceFeeAmount > 0) {
+      console.log(`🔧 [RETRY-PAYMENT] Added convenience fee: $${(serviceFeeAmount / 100).toFixed(2)}`);
+    }
+
     // Use the existing working Square checkout function (handles sandbox/production logic)
     const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
     const locationId =
@@ -200,6 +251,8 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
         customerEmail: targetOrder!.email,
         customerName: isRegularOrder ? order!.customerName : cateringOrder!.name,
         customerPhone: targetOrder!.phone,
+        // DES-57 FIX: Include service charges in checkout params
+        ...(serviceCharges && { serviceCharges }),
       };
 
       // Add eventDate for catering orders to ensure proper pickup_at scheduling
@@ -213,6 +266,8 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
       console.log(
         `🔧 [RETRY-PAYMENT] Creating checkout link for ${isRegularOrder ? 'regular' : 'catering'} order`
       );
+      console.log(`🔧 [RETRY-PAYMENT] Total line items: ${lineItems.length}`);
+      console.log(`🔧 [RETRY-PAYMENT] Service charges: ${serviceCharges ? 'Yes' : 'No'}`);
       const result = await createCheckoutLink(checkoutParams);
       checkoutUrl = result.checkoutUrl;
     } catch (error) {
