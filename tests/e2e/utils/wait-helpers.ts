@@ -36,12 +36,12 @@ export class WaitHelpers {
 
     // Additional stability check - element position shouldn't change
     const box1 = await locator.boundingBox();
-    await page.waitForTimeout(100); // Minimal wait
+    await locator.page().waitForTimeout(100); // Minimal wait
     const box2 = await locator.boundingBox();
 
     // If positions don't match, element is still animating
     if (box1 && box2 && (box1.x !== box2.x || box1.y !== box2.y)) {
-      await page.waitForTimeout(300); // Wait for animation to complete
+      await locator.page().waitForTimeout(300); // Wait for animation to complete
     }
   }
 

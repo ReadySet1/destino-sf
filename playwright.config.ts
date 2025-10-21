@@ -39,9 +39,6 @@ export default defineConfig({
 
     /* Global timeout for navigation - increased for reliability */
     navigationTimeout: 30 * 1000,
-
-    /* Wait for network idle before considering navigation complete */
-    waitUntil: 'networkidle',
   },
 
   /* Configure projects for major browsers */
