@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { TestHelpers } from './utils/test-helpers';
+import { WaitHelpers } from './utils/wait-helpers';
 import { testProducts } from './fixtures/test-data';
 
 /**
@@ -69,7 +70,7 @@ test.describe('Cart Management', () => {
     if (await increaseButton.isVisible()) {
       // Use increase button to go from 1 to 2
       await increaseButton.click();
-      await page.waitForTimeout(500); // Wait for cart to update
+      await WaitHelpers.waitForCartUpdate(page);
 
       // Verify quantity increased to 2
       await expect(page.getByTestId('order-subtotal')).toContainText('Subtotal (2 items)');
@@ -77,7 +78,7 @@ test.describe('Cart Management', () => {
       // Try one more increase
       if (await increaseButton.isEnabled()) {
         await increaseButton.click();
-        await page.waitForTimeout(500);
+        await WaitHelpers.waitForCartUpdate(page);
 
         // Verify quantity increased to 3
         await expect(page.getByTestId('order-subtotal')).toContainText('Subtotal (3 items)');

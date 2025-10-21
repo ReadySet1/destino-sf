@@ -7,6 +7,7 @@ import {
   TestCustomer,
   TestAddress,
 } from '../fixtures/test-data';
+import { WaitHelpers } from './wait-helpers';
 
 /**
  * Helper utilities for Destino SF E2E tests
@@ -74,26 +75,15 @@ export class TestHelpers {
         throw new Error(`Add to cart button not found for product ${productSlug}`);
       }
 
-      // Wait for confirmation with more flexible text matching
-      const confirmationSelectors = [
-        'text=Added to cart',
-        'text=Added to Cart!',
-        'text=Added to Cart',
-        '[data-testid="cart-notification"]',
-      ];
+      // Wait for confirmation notification
+      await WaitHelpers.waitForNotification(page, /added to cart/i, { timeout: 5000 });
 
-      for (const selector of confirmationSelectors) {
-        try {
-          await expect(page.locator(selector)).toBeVisible({ timeout: 3000 });
-          break;
-        } catch (e) {
-          // Continue to next selector
-        }
-      }
+      // Wait for cart to update
+      await WaitHelpers.waitForCartUpdate(page);
 
-      // Small delay between additions
+      // Small delay between additions only if adding multiple
       if (i < quantity - 1) {
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(200);
       }
     }
   }
@@ -193,13 +183,13 @@ export class TestHelpers {
       const tab = page.getByRole('button', { name: new RegExp(tabName, 'i') });
       if (await tab.isVisible()) {
         await tab.click();
-        await page.waitForTimeout(500); // Wait for tab switch
+        await WaitHelpers.waitForNetworkIdle(page); // Wait for tab switch
 
         // Clear this cart if it has items
         const clearButton = page.getByRole('button', { name: new RegExp(`Clear.*Cart`, 'i') });
         if (await clearButton.isVisible()) {
           await clearButton.click();
-          await page.waitForTimeout(500);
+          await WaitHelpers.waitForCartUpdate(page);
         }
 
         // Alternative: Remove items individually
@@ -212,7 +202,7 @@ export class TestHelpers {
           const button = removeButtons.first();
           if (await button.isVisible()) {
             await button.click();
-            await page.waitForTimeout(500); // Wait for removal animation
+            await WaitHelpers.waitForCartUpdate(page);
           }
         }
       }
