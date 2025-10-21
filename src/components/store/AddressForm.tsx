@@ -81,6 +81,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
           }}
           className={getError('recipientName') ? 'border-red-500' : ''}
           placeholder="Full name of the recipient"
+          data-testid="address-recipient-name"
         />
         {getError('recipientName') && (
           <p className="mt-1 text-sm text-red-500">{getError('recipientName')}</p>
@@ -97,6 +98,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
             handleInputChange(e);
           }}
           className={getError('street') ? 'border-red-500' : ''}
+          data-testid="address-line1"
         />
         {getError('street') && <p className="mt-1 text-sm text-red-500">{getError('street')}</p>}
       </div>
@@ -110,6 +112,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
             register(`${prefix}.street2`).onChange(e);
             handleInputChange(e);
           }}
+          data-testid="address-line2"
         />
       </div>
 
@@ -124,6 +127,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               handleInputChange(e);
             }}
             className={getError('city') ? 'border-red-500' : ''}
+            data-testid="city"
           />
           {getError('city') && <p className="mt-1 text-sm text-red-500">{getError('city')}</p>}
         </div>
@@ -139,7 +143,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               }
             }}
           >
-            <SelectTrigger className={getError('state') ? 'border-red-500' : ''}>
+            <SelectTrigger className={getError('state') ? 'border-red-500' : ''} data-testid="state">
               <SelectValue placeholder="Select state" />
             </SelectTrigger>
             <SelectContent>
@@ -165,6 +169,7 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               handleInputChange(e);
             }}
             className={getError('postalCode') ? 'border-red-500' : ''}
+            data-testid="zip"
           />
           {getError('postalCode') && (
             <p className="mt-1 text-sm text-red-500">{getError('postalCode')}</p>

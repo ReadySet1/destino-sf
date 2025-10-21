@@ -197,9 +197,6 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
             currency: 'USD',
           },
         });
-        console.log(
-          `🔧 [RETRY-PAYMENT] Added shipping cost: $${(shippingCostCents / 100).toFixed(2)}`
-        );
       }
     }
 
@@ -215,7 +212,6 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
             currency: 'USD',
           },
         });
-        console.log(`🔧 [RETRY-PAYMENT] Added delivery fee: $${deliveryFee.toFixed(2)}`);
       }
     }
 
@@ -237,11 +233,7 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
           ]
         : undefined;
 
-    if (serviceFeeAmount > 0) {
-      console.log(
-        `🔧 [RETRY-PAYMENT] Added convenience fee: $${(serviceFeeAmount / 100).toFixed(2)}`
-      );
-    }
+    // Service fee will be added to Square checkout if > 0
 
     // Use the existing working Square checkout function (handles sandbox/production logic)
     const squareEnv = process.env.USE_SQUARE_SANDBOX === 'true' ? 'sandbox' : 'production';
@@ -267,16 +259,8 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
       // Add eventDate for catering orders to ensure proper pickup_at scheduling
       if (isCateringOrder && cateringOrder) {
         checkoutParams.eventDate = cateringOrder.eventDate.toISOString();
-        console.log(
-          `🔧 [RETRY-PAYMENT] Added eventDate for catering order: ${checkoutParams.eventDate}`
-        );
       }
 
-      console.log(
-        `🔧 [RETRY-PAYMENT] Creating checkout link for ${isRegularOrder ? 'regular' : 'catering'} order`
-      );
-      console.log(`🔧 [RETRY-PAYMENT] Total line items: ${lineItems.length}`);
-      console.log(`🔧 [RETRY-PAYMENT] Service charges: ${serviceCharges ? 'Yes' : 'No'}`);
       const result = await createCheckoutLink(checkoutParams);
       checkoutUrl = result.checkoutUrl;
     } catch (error) {

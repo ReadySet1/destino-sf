@@ -22,7 +22,7 @@ export function QuantityStepper({ value, min = 1, max = 99, onChange }: Quantity
   };
 
   return (
-    <div className="inline-flex items-center rounded-lg border border-destino-yellow/40 bg-white shadow-sm">
+    <div className="inline-flex items-center rounded-lg border border-destino-yellow/40 bg-white shadow-sm" data-testid="quantity-stepper">
       <Button
         variant="ghost"
         size="icon"
@@ -31,11 +31,12 @@ export function QuantityStepper({ value, min = 1, max = 99, onChange }: Quantity
         disabled={value <= min}
         type="button"
         aria-label="Decrease quantity"
+        data-testid="quantity-decrease"
       >
         <Minus className="h-4 w-4 sm:h-3 sm:w-3" />
       </Button>
 
-      <div className="w-12 sm:w-10 h-10 sm:h-8 flex items-center justify-center text-sm font-medium bg-destino-cream/30 text-destino-charcoal">
+      <div className="w-12 sm:w-10 h-10 sm:h-8 flex items-center justify-center text-sm font-medium bg-destino-cream/30 text-destino-charcoal" data-testid="quantity-value">
         <span>{value}</span>
       </div>
 
@@ -47,6 +48,7 @@ export function QuantityStepper({ value, min = 1, max = 99, onChange }: Quantity
         disabled={value >= max}
         type="button"
         aria-label="Increase quantity"
+        data-testid="quantity-increase"
       >
         <Plus className="h-4 w-4 sm:h-3 sm:w-3" />
       </Button>

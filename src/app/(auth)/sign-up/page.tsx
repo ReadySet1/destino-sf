@@ -79,6 +79,7 @@ export default function Signup() {
                   required
                   className="pl-10"
                   disabled={isLoading}
+                  data-testid="email"
                 />
               </div>
             </div>
@@ -116,6 +117,7 @@ export default function Signup() {
                   required
                   className="pl-10"
                   disabled={isLoading}
+                  data-testid="password"
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -128,6 +130,7 @@ export default function Signup() {
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
             loading={isLoading}
             pendingText="Creating account..."
+            data-testid="register-button"
           >
             Sign up
           </SubmitButton>
