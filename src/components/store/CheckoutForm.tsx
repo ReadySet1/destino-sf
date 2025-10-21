@@ -1468,14 +1468,14 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           </div>
           <div>
             <Label htmlFor="name">Full Name</Label>
-            <Input id="name" {...register('name')} placeholder="John Doe" />
+            <Input id="name" {...register('name')} placeholder="John Doe" data-testid="customer-name" />
             {getErrorMessage('name') && (
               <p className="text-sm text-red-600 mt-1">{getErrorMessage('name')}</p>
             )}
           </div>
           <div>
             <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" {...register('email')} placeholder="you@example.com" />
+            <Input id="email" type="email" {...register('email')} placeholder="you@example.com" data-testid="customer-email" />
             {getErrorMessage('email') && (
               <p className="text-sm text-red-600 mt-1">{getErrorMessage('email')}</p>
             )}
@@ -1487,6 +1487,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
               type="tel"
               {...register('phone')}
               placeholder="+1 (555) 123-4567 or 555-123-4567"
+              data-testid="customer-phone"
             />
             {getErrorMessage('phone') && (
               <p className="text-sm text-red-600 mt-1">{getErrorMessage('phone')}</p>
@@ -1682,6 +1683,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
                   className="w-full rounded-md border border-destino-yellow/40 focus:border-destino-orange focus:ring-2 focus:ring-destino-orange/20 p-2 mt-1 transition-all bg-white/80 backdrop-blur-sm"
                   placeholder="Gate code, delivery preferences, etc."
                   {...register('deliveryInstructions')}
+                  data-testid="delivery-instructions"
                 />
               </div>
             </div>
@@ -1704,6 +1706,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
               disabled={shippingLoading}
               variant="outline"
               className="w-full border-destino-yellow hover:bg-destino-cream/50 hover:border-destino-orange hover:text-destino-charcoal transition-all"
+              data-testid="fetch-shipping-rates"
             >
               {shippingLoading ? 'Fetching Rates...' : 'Fetch Shipping Rates'}
             </Button>
@@ -1797,6 +1800,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             !isValid ||
             !!sessionError
           }
+          data-testid="place-order"
         >
           {sessionError
             ? 'Session Expired - Please Log In'

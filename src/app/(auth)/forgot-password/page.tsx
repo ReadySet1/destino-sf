@@ -33,6 +33,7 @@ function ForgotPasswordForm() {
               required
               className="pl-10"
               disabled={pending}
+              data-testid="email"
             />
           </div>
         </div>
@@ -41,6 +42,7 @@ function ForgotPasswordForm() {
       <SubmitButton
         className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
         pendingText="Sending reset link..."
+        data-testid="reset-password-button"
       >
         Reset Password
       </SubmitButton>

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { testProducts, testCustomer, testPaymentInfo } from './fixtures/test-data';
+import { WaitHelpers } from './utils/wait-helpers';
 
 /**
  * Critical Test 1: Complete Purchase Journey
@@ -9,6 +10,7 @@ test.describe('Complete Purchase Journey', () => {
   test.beforeEach(async ({ page }) => {
     // Ensure clean state - navigate to home and clear any existing cart
     await page.goto('/');
+    await WaitHelpers.waitForNetworkIdle(page);
   });
 
   test('should complete full purchase flow - single item', async ({ page }) => {
@@ -25,13 +27,13 @@ test.describe('Complete Purchase Journey', () => {
     await addToCartButton.click();
 
     // Verify "Added to Cart" alert appears
-    await expect(page.getByText(/Added to Cart/i)).toBeVisible({ timeout: 5000 });
+    await WaitHelpers.waitForNotification(page, /Added to Cart/i);
 
     // Step 3: Go to cart using the URL directly to avoid selector conflicts
     await page.goto('/cart');
 
     // Wait for cart to load
-    await page.waitForLoadState('networkidle');
+    await WaitHelpers.waitForCartUpdate(page);
 
     // Verify item in cart
     await expect(page.getByText(testProducts.empanada.name)).toBeVisible();
@@ -72,9 +74,7 @@ test.describe('Complete Purchase Journey', () => {
 
     // Step 7: Fill in payment information
     // Wait for Square payment form to load
-    await page.waitForSelector('iframe[title="Secure card payment input frame"]', {
-      timeout: 10000,
-    });
+    await WaitHelpers.waitForAnySelector(page, ['iframe[title="Secure card payment input frame"]']);
 
     // Switch to Square payment form iframe
     const paymentFrame = page.frameLocator('iframe[title="Secure card payment input frame"]');
@@ -91,7 +91,7 @@ test.describe('Complete Purchase Journey', () => {
 
     // Step 9: Verify order confirmation
     // Wait for redirect to confirmation page
-    await page.waitForURL(/\/order-confirmation/, { timeout: 30000 });
+    await WaitHelpers.waitForURL(page, /\/order-confirmation/, { timeout: 30000 });
 
     // Verify confirmation page elements
     await expect(page.getByText(/order confirmed|thank you for your order/i)).toBeVisible();
@@ -105,15 +105,16 @@ test.describe('Complete Purchase Journey', () => {
     // Add first product
     await page.goto(`/products/${testProducts.empanada.slug}`);
     await page.getByRole('button', { name: /Add to Cart/i }).click();
-    await expect(page.getByText(/Added to Cart/i)).toBeVisible();
+    await WaitHelpers.waitForNotification(page, /Added to Cart/i);
 
     // Add second product
     await page.goto(`/products/${testProducts.alfajor.slug}`);
     await page.getByRole('button', { name: /Add to Cart/i }).click();
-    await expect(page.getByText(/Added to Cart/i)).toBeVisible();
+    await WaitHelpers.waitForNotification(page, /Added to Cart/i);
 
     // Go to cart using URL to avoid selector conflicts
     await page.goto('/cart');
+    await WaitHelpers.waitForCartUpdate(page);
 
     // Verify both products are in cart
     await expect(page.getByText(testProducts.empanada.name)).toBeVisible();
@@ -165,7 +166,7 @@ test.describe('Complete Purchase Journey', () => {
     await page.goto('/');
 
     // Wait for page to fully load
-    await page.waitForLoadState('networkidle');
+    await WaitHelpers.waitForNetworkIdle(page);
 
     // Debug: Take a screenshot to see what's on the page
     await page.screenshot({ path: 'debug-homepage.png' });
@@ -173,7 +174,7 @@ test.describe('Complete Purchase Journey', () => {
     // Navigate to empanadas category - use .first() to avoid strict mode violation
     // (there are multiple "Our Empanadas" links on the page)
     const empanadasLink = page.getByRole('link', { name: /Our Empanadas/i }).first();
-    await expect(empanadasLink).toBeVisible({ timeout: 10000 });
+    await expect(empanadasLink).toBeVisible();
 
     // Debug: Log the href attribute before clicking
     const href = await empanadasLink.getAttribute('href');
@@ -193,10 +194,10 @@ test.describe('Complete Purchase Journey', () => {
 
     // Navigate to alfajores category
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await WaitHelpers.waitForNetworkIdle(page);
 
     const alfajoresLink = page.getByRole('link', { name: /Our Alfajores/i }).first();
-    await expect(alfajoresLink).toBeVisible({ timeout: 10000 });
+    await expect(alfajoresLink).toBeVisible();
 
     await Promise.all([
       page.waitForURL('/products/category/alfajores', { timeout: 10000 }),

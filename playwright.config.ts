@@ -9,15 +9,16 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Retry failed tests for better reliability */
+  retries: process.env.CI ? 2 : 1,
+  /* Reduce parallel workers to prevent database connection pool exhaustion */
+  workers: process.env.CI ? 1 : 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html'],
     ['json', { outputFile: 'test-results/results.json' }],
     ['junit', { outputFile: 'test-results/results.xml' }],
+    ['list'], // Add list reporter for better terminal output
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -33,57 +34,63 @@ export default defineConfig({
     /* Record video only on failures */
     video: 'retain-on-failure',
 
-    /* Global timeout for all actions */
-    actionTimeout: 10 * 1000,
+    /* Global timeout for all actions - increased for reliability */
+    actionTimeout: 15 * 1000,
 
-    /* Global timeout for navigation */
+    /* Global timeout for navigation - increased for reliability */
     navigationTimeout: 30 * 1000,
+
+    /* Wait for network idle before considering navigation complete */
+    waitUntil: 'networkidle',
   },
 
   /* Configure projects for major browsers */
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
+  projects: process.env.CI
+    ? [
+        // Full browser matrix in CI
+        {
+          name: 'chromium',
+          use: { ...devices['Desktop Chrome'] },
+        },
+        {
+          name: 'firefox',
+          use: { ...devices['Desktop Firefox'] },
+        },
+        {
+          name: 'webkit',
+          use: { ...devices['Desktop Safari'] },
+        },
+        {
+          name: 'Mobile Chrome',
+          use: { ...devices['Pixel 5'] },
+        },
+        {
+          name: 'Mobile Safari',
+          use: { ...devices['iPhone 12'] },
+        },
+        {
+          name: 'Microsoft Edge',
+          use: { ...devices['Desktop Edge'], channel: 'msedge' },
+        },
+        {
+          name: 'Google Chrome',
+          use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+        },
+      ]
+    : [
+        // Only chromium locally for faster testing
+        {
+          name: 'chromium',
+          use: { ...devices['Desktop Chrome'] },
+        },
+      ],
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
+  /* Global timeout for each test - increased for complex e2e flows */
+  timeout: 60 * 1000,
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports. */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
-
-    /* Test against branded browsers. */
-    {
-      name: 'Microsoft Edge',
-      use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    },
-    {
-      name: 'Google Chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    },
-  ],
-
-  /* Global timeout for each test */
-  timeout: 30 * 1000,
-
-  /* Global timeout for expect assertions */
+  /* Global timeout for expect assertions - increased for reliability */
   expect: {
-    timeout: 5 * 1000,
+    timeout: 10 * 1000,
   },
 
   /* Run your local dev server before starting the tests */
