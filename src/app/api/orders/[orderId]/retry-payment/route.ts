@@ -197,9 +197,6 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
             currency: 'USD',
           },
         });
-        console.log(
-          `🔧 [RETRY-PAYMENT] Added shipping cost: $${(shippingCostCents / 100).toFixed(2)}`
-        );
       }
     }
 
