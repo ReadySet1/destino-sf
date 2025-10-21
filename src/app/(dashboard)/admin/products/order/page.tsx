@@ -2,6 +2,8 @@ import { Suspense } from 'react';
 import { prisma } from '@/lib/db';
 import { getCategoriesWithProductCounts } from '@/lib/products/display-order';
 import { ProductOrderManager } from './components/ProductOrderManager';
+import { FormHeader } from '@/components/ui/form/FormHeader';
+import { FormIcons } from '@/components/ui/form/FormIcons';
 
 async function getInitialData() {
   const categories = await getCategoriesWithProductCounts();
@@ -19,26 +21,31 @@ export default async function ProductOrderPage() {
   const { categories, defaultCategoryId } = await getInitialData();
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Product Display Order</h1>
-          <p className="mt-2 text-gray-600">
-            Manage the order in which products appear on your website. Changes are saved
-            automatically and will be visible to customers immediately.
-          </p>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <FormHeader
+        title="Product Display Order"
+        description="Manage the order in which products appear on your website. Changes are saved automatically and will be visible to customers immediately."
+        backUrl="/admin/products"
+        backLabel="Back to Products"
+      />
 
+      <div className="mt-8 space-y-6">
         {/* Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-blue-900 mb-2">How to use:</h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Select a category to view and reorder its products</li>
-            <li>• Drag and drop products to change their display order</li>
-            <li>• Use quick sort options for automatic ordering</li>
-            <li>• Changes are saved automatically when you move items</li>
-          </ul>
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <div className="w-5 h-5 text-blue-400">{FormIcons.info}</div>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-semibold text-blue-900 mb-2">How to use:</h3>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Select a category to view and reorder its products</li>
+                <li>• Drag and drop products to change their display order</li>
+                <li>• Use quick sort options for automatic ordering</li>
+                <li>• Changes are saved automatically when you move items</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         {/* Main Interface */}

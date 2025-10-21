@@ -49,9 +49,9 @@ export function FormSection({
 
   return (
     <div
-      className={`bg-white shadow-sm rounded-xl border ${borderClass} overflow-hidden ${className}`}
+      className={`bg-white rounded-lg border ${borderClass} overflow-hidden ${className}`}
     >
-      <div className={`px-8 py-6 border-b ${borderClass} ${headerClass}`}>
+      <div className={`px-6 py-6 border-b ${borderClass} ${headerClass}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             {icon && (
@@ -67,7 +67,7 @@ export function FormSection({
           {action && <div className="flex-shrink-0">{action}</div>}
         </div>
       </div>
-      <div className="px-8 py-8">{children}</div>
+      <div className="px-6 py-6">{children}</div>
     </div>
   );
 }

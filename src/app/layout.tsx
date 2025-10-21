@@ -25,7 +25,14 @@ const greatVibes = Great_Vibes({
 const baseUrl =
   process.env.NODE_ENV === 'development'
     ? 'http://localhost:3000'
-    : 'https://development.destinosf.com';
+    : process.env.NEXT_PUBLIC_APP_URL || 'https://destinosf.com';
+
+// Determine if this is development/staging
+const isDevelopment =
+  process.env.NODE_ENV === 'development' ||
+  baseUrl.includes('development.') ||
+  baseUrl.includes('staging.') ||
+  baseUrl.includes('localhost');
 
 // Add viewport configuration
 export const viewport: Viewport = {
@@ -93,17 +100,26 @@ export const metadata: Metadata = {
   alternates: {
     canonical: baseUrl,
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
+  robots: isDevelopment
+    ? {
+        index: false,
+        follow: false,
+        noarchive: true,
+        nosnippet: true,
+        noimageindex: true,
+        nocache: true,
+      }
+    : {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
   verification: {
     other: {
       'msvalidate.01': '',

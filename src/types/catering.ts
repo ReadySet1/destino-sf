@@ -37,12 +37,14 @@ export enum CateringStatus {
   CANCELLED = 'CANCELLED',
 }
 
-// Delivery Zones for Minimum Purchase Requirements
+// Delivery Zones for Minimum Purchase Requirements (updated DES-52)
 export enum DeliveryZone {
   SAN_FRANCISCO = 'SAN_FRANCISCO',
   SOUTH_BAY = 'SOUTH_BAY',
   LOWER_PENINSULA = 'LOWER_PENINSULA',
-  PENINSULA = 'PENINSULA',
+  EAST_BAY = 'EAST_BAY',
+  MARIN_COUNTY = 'MARIN_COUNTY',
+  PENINSULA = 'PENINSULA', // Deprecated - kept for backwards compatibility
 }
 
 // Zone Configuration Interface
@@ -56,7 +58,7 @@ export interface ZoneMinimumConfig {
   active: boolean;
 }
 
-// Default Zone Minimums Configuration
+// Default Zone Minimums Configuration (updated pricing - DES-52)
 export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
   [DeliveryZone.SAN_FRANCISCO]: {
     zone: DeliveryZone.SAN_FRANCISCO,
@@ -70,7 +72,7 @@ export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
   [DeliveryZone.SOUTH_BAY]: {
     zone: DeliveryZone.SOUTH_BAY,
     name: 'South Bay',
-    minimumAmount: 350.0,
+    minimumAmount: 400.0,
     description: 'San José, Santa Clara, Sunnyvale and surrounding areas',
     deliveryFee: 75.0,
     estimatedDeliveryTime: '2-3 hours',
@@ -79,9 +81,27 @@ export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
   [DeliveryZone.LOWER_PENINSULA]: {
     zone: DeliveryZone.LOWER_PENINSULA,
     name: 'Lower Peninsula',
-    minimumAmount: 400.0,
+    minimumAmount: 350.0,
     description: 'Redwood City, Palo Alto, Mountain View and surrounding areas',
-    deliveryFee: 100.0,
+    deliveryFee: 65.0,
+    estimatedDeliveryTime: '2-3 hours',
+    active: true,
+  },
+  [DeliveryZone.EAST_BAY]: {
+    zone: DeliveryZone.EAST_BAY,
+    name: 'East Bay',
+    minimumAmount: 400.0,
+    description: 'Oakland, Berkeley, and surrounding East Bay cities',
+    deliveryFee: 75.0,
+    estimatedDeliveryTime: '2-3 hours',
+    active: true,
+  },
+  [DeliveryZone.MARIN_COUNTY]: {
+    zone: DeliveryZone.MARIN_COUNTY,
+    name: 'Marin County',
+    minimumAmount: 400.0,
+    description: 'Marin County and surrounding areas',
+    deliveryFee: 65.0,
     estimatedDeliveryTime: '2-3 hours',
     active: true,
   },
@@ -89,10 +109,10 @@ export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
     zone: DeliveryZone.PENINSULA,
     name: 'Peninsula',
     minimumAmount: 500.0,
-    description: 'San Ramón, Walnut Creek and far Peninsula areas',
+    description: 'San Ramón, Walnut Creek and far Peninsula areas (deprecated)',
     deliveryFee: 150.0,
     estimatedDeliveryTime: '3-4 hours',
-    active: true,
+    active: false, // Deprecated - replaced by EAST_BAY and MARIN_COUNTY
   },
 };
 

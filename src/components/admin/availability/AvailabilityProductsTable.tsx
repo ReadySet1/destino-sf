@@ -73,7 +73,7 @@ export function AvailabilityProductsTable({
 
   if (isLoading) {
     return (
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="p-8 text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-gray-600">Loading products...</p>
@@ -83,7 +83,7 @@ export function AvailabilityProductsTable({
   }
 
   return (
-    <div className="bg-white shadow-md rounded-lg overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       {/* Bulk Actions Toolbar */}
       {selectedProducts.length > 0 && (
         <div className="bg-indigo-50 px-6 py-3 border-b border-indigo-200">

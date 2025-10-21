@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import ProductTypeBadgeManager from '@/components/admin/ProductTypeBadgeManager';
+import { FormHeader } from '@/components/ui/form/FormHeader';
 
 export const metadata = {
   title: 'Product Type Badges | Admin',
@@ -32,15 +33,17 @@ export default async function ProductBadgesPage() {
   }));
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Product Type Badges</h1>
-        <p className="text-gray-600 mt-1">
-          Manage badge text displayed on product detail pages for each product type
-        </p>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <FormHeader
+        title="Product Type Badges"
+        description="Manage badge text displayed on product detail pages for each product type"
+        backUrl="/admin"
+        backLabel="Back to Dashboard"
+      />
 
-      <ProductTypeBadgeManager initialBadges={badges} />
+      <div className="mt-8">
+        <ProductTypeBadgeManager initialBadges={badges} />
+      </div>
     </div>
   );
 }

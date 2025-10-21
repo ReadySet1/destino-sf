@@ -4,8 +4,26 @@ export default function robots(): MetadataRoute.Robots {
   const baseUrl =
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000'
-      : 'https://development.destinosf.com';
+      : process.env.NEXT_PUBLIC_APP_URL || 'https://destinosf.com';
 
+  // Determine if this is a development/staging environment
+  const isDevelopment =
+    process.env.NODE_ENV === 'development' ||
+    baseUrl.includes('development.') ||
+    baseUrl.includes('staging.') ||
+    baseUrl.includes('localhost');
+
+  // Block ALL crawlers on development/staging domains
+  if (isDevelopment) {
+    return {
+      rules: {
+        userAgent: '*',
+        disallow: '/',
+      },
+    };
+  }
+
+  // Production rules - allow crawling with restrictions
   return {
     rules: [
       {
@@ -27,6 +45,7 @@ export default function robots(): MetadataRoute.Robots {
           '/checkout/cancel',
           '/payment/',
           '/refund/',
+          '/account/',
         ],
       },
       {

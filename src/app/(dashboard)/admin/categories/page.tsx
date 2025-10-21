@@ -1,6 +1,5 @@
 import { getCategories } from './actions';
 import DeleteCategoryForm from './DeleteCategoryForm';
-import { FormContainer } from '@/components/ui/form/FormContainer';
 import { FormHeader } from '@/components/ui/form/FormHeader';
 import { FormSection } from '@/components/ui/form/FormSection';
 import { FormIcons } from '@/components/ui/form/FormIcons';
@@ -12,7 +11,7 @@ export default async function CategoriesPage() {
   const categories = await getCategories();
 
   return (
-    <FormContainer>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <FormHeader
         title="Category Management"
         description="Organize your products with custom categories"
@@ -20,8 +19,9 @@ export default async function CategoriesPage() {
         backLabel="Back to Products"
       />
 
-      {/* Warning about Square categories */}
-      <FormSection
+      <div className="mt-8 space-y-8">
+        {/* Warning about Square categories */}
+        <FormSection
         title="Category Information"
         description="Categories are managed locally and used for organizing products in your store. While products sync from Square, categories are independent and help you structure your online catalog."
         icon={FormIcons.info}
@@ -125,6 +125,7 @@ export default async function CategoriesPage() {
           </div>
         )}
       </FormSection>
-    </FormContainer>
+      </div>
+    </div>
   );
 }

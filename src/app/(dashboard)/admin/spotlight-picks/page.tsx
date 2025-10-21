@@ -5,7 +5,6 @@ import React from 'react';
 import { SpotlightPicksManager } from '@/components/admin/SpotlightPicks/SpotlightPicksManager';
 import { SpotlightPick } from '@/types/spotlight';
 import { prisma } from '@/lib/db';
-import { FormContainer } from '@/components/ui/form/FormContainer';
 import { FormHeader } from '@/components/ui/form/FormHeader';
 
 export const metadata = {
@@ -99,7 +98,7 @@ export default async function SpotlightPicksPage() {
   }
 
   return (
-    <FormContainer>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <FormHeader
         title="Spotlight Picks Management"
         description="Manage the 4 featured products that appear in the spotlight section on the homepage"
@@ -107,7 +106,9 @@ export default async function SpotlightPicksPage() {
         backLabel="Back to Dashboard"
       />
 
-      <SpotlightPicksManager initialPicks={initialPicks} />
-    </FormContainer>
+      <div className="mt-8">
+        <SpotlightPicksManager initialPicks={initialPicks} />
+      </div>
+    </div>
   );
 }

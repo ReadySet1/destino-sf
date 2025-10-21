@@ -1,39 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FormContainer } from '@/components/ui/form/FormContainer';
 import { FormHeader } from '@/components/ui/form/FormHeader';
 import { FormSection } from '@/components/ui/form/FormSection';
 import { FormIcons } from '@/components/ui/form/FormIcons';
-import { Store, Utensils, Package, ShoppingBag, Info } from 'lucide-react';
+import { Store, Utensils, Package, Info, Truck } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 // Import the enhanced components
 import DeliveryZoneManager from '@/components/admin/DeliveryZoneManager';
 import RegularDeliveryZoneManager from '@/components/admin/RegularDeliveryZoneManager';
 import EnhancedStoreSettingsForm from '@/components/admin/EnhancedStoreSettingsForm';
+import ShippingConfigurationForm from '@/app/(dashboard)/admin/shipping/components/ShippingConfigurationForm';
+import type { ShippingWeightConfig } from '@/lib/shippingUtils';
 
 interface AdminSettingsProps {
   storeSettings?: any;
   deliveryZones?: any[];
+  shippingConfigurations?: ShippingWeightConfig[];
 }
 
 export default function AdminSettingsWithDesignSystem({
   storeSettings,
   deliveryZones,
+  shippingConfigurations = [],
 }: AdminSettingsProps) {
-  const [activeTab, setActiveTab] = useState('store');
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'store');
+
+  useEffect(() => {
+    if (tabFromUrl && ['store', 'catering', 'regular', 'shipping'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   return (
-    <FormContainer>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <FormHeader
-        title="Admin Settings"
+        title="Store Settings"
         description="Manage your store configuration and business rules"
         backUrl="/admin"
         backLabel="Back to Dashboard"
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <div className="mt-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="store" className="flex items-center gap-2">
             <Store className="h-4 w-4" />
@@ -48,8 +62,8 @@ export default function AdminSettingsWithDesignSystem({
             Regular Zones
           </TabsTrigger>
           <TabsTrigger value="shipping" className="flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4" />
-            Product Shipping
+            <Truck className="h-4 w-4" />
+            Shipping Config
           </TabsTrigger>
         </TabsList>
 
@@ -119,8 +133,8 @@ export default function AdminSettingsWithDesignSystem({
 
           <TabsContent value="shipping" className="mt-0">
             <FormSection
-              title="Product Shipping Configuration"
-              description="Configure shipping rates and weight calculations for empanadas, alfajores, and other products. This section is separate from catering delivery zones and handles nationwide shipping via Shippo."
+              title="Shipping Configuration"
+              description="Configure weight calculations for different product types to optimize shipping costs for nationwide delivery."
               icon={FormIcons.shipping}
               variant="indigo"
             >
@@ -131,48 +145,31 @@ export default function AdminSettingsWithDesignSystem({
                   </div>
                   <div className="ml-3">
                     <h4 className="text-sm font-semibold text-indigo-900 mb-2">
-                      Shipping vs. Catering Delivery
+                      How Weight Calculation Works
                     </h4>
                     <ul className="text-sm text-indigo-800 space-y-1">
                       <li>
-                        • <strong>Product Shipping:</strong> Nationwide delivery of packaged goods
-                        via carriers
+                        • <strong>Base Weight:</strong> Weight of the first unit including packaging
                       </li>
                       <li>
-                        • <strong>Catering Delivery:</strong> Local delivery of fresh prepared food
+                        • <strong>Per-Unit Weight:</strong> Additional weight for each extra unit
                       </li>
                       <li>
-                        • <strong>Weight-based pricing:</strong> Calculated automatically for
-                        products
+                        • <strong>Total Weight = Base Weight + (Additional Units × Per-Unit Weight)</strong>
                       </li>
-                      <li>
-                        • <strong>Shippo integration:</strong> Real-time shipping rates and label
-                        generation
-                      </li>
+                      <li>• These settings only apply to nationwide shipping via Shippo</li>
+                      <li>• Separate from local delivery zones (catering & regular)</li>
                     </ul>
                   </div>
                 </div>
               </div>
 
-              {/* Shipping configuration placeholder */}
-              <div className="text-center py-12">
-                <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Shipping Configuration</h3>
-                <p className="text-gray-600 mb-4">
-                  Shipping configuration component will be integrated here
-                </p>
-                <p className="text-sm text-gray-500">
-                  Visit{' '}
-                  <a href="/admin/shipping" className="text-indigo-600 hover:underline font-medium">
-                    /admin/shipping
-                  </a>{' '}
-                  for current shipping config
-                </p>
-              </div>
+              <ShippingConfigurationForm configurations={shippingConfigurations} />
             </FormSection>
           </TabsContent>
         </div>
       </Tabs>
-    </FormContainer>
+      </div>
+    </div>
   );
 }
