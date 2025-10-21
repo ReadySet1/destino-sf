@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import AdminSettingsWithDesignSystem from '@/components/admin/AdminSettingsWithDesignSystem';
 import DeliveryZoneDebugger from '@/components/admin/DeliveryZoneDebugger';
+import { getAllShippingConfigurations } from '@/lib/shippingUtils';
 
 export const metadata = {
   title: 'Store Settings | Admin',
@@ -20,7 +21,14 @@ export default async function SettingsPage() {
     redirect('/auth/login');
   }
 
-  // Fetch store settings and delivery zones
+  // Fetch store settings, delivery zones, and shipping configurations
+  let shippingConfigurations: Awaited<ReturnType<typeof getAllShippingConfigurations>> = [];
+  try {
+    shippingConfigurations = await getAllShippingConfigurations();
+  } catch (error) {
+    console.error('Error fetching shipping configurations:', error);
+  }
+
   const [storeSettings, deliveryZones] = await Promise.all([
     prisma.storeSettings.findFirst({
       orderBy: { createdAt: 'asc' },
@@ -52,6 +60,7 @@ export default async function SettingsPage() {
       <AdminSettingsWithDesignSystem
         storeSettings={processedSettings}
         deliveryZones={processedDeliveryZones}
+        shippingConfigurations={shippingConfigurations}
       />
 
       {/* Debugger for development */}
