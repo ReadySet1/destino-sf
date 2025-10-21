@@ -51,7 +51,9 @@ export async function getDeliveryZones(): Promise<ZoneMinimumConfig[]> {
  */
 export async function getZoneConfig(zone: DeliveryZone): Promise<ZoneMinimumConfig | null> {
   const zones = await getDeliveryZones();
-  return zones.find(z => z.zone === zone) || null;
+  // Convert enum to lowercase with underscores for database matching
+  const dbZoneName = zone.toLowerCase();
+  return zones.find(z => z.zone.toString().toLowerCase() === dbZoneName) || null;
 }
 
 /**
@@ -184,7 +186,7 @@ export function clearDeliveryZonesCache(): void {
 }
 
 /**
- * Fallback delivery zones (same as hardcoded values)
+ * Fallback delivery zones (updated pricing - DES-52)
  */
 function getFallbackDeliveryZones(): ZoneMinimumConfig[] {
   return [
@@ -200,7 +202,7 @@ function getFallbackDeliveryZones(): ZoneMinimumConfig[] {
     {
       zone: DeliveryZone.SOUTH_BAY,
       name: 'South Bay',
-      minimumAmount: 350.0,
+      minimumAmount: 400.0,
       description: 'San José, Santa Clara, Sunnyvale and surrounding areas',
       deliveryFee: 75.0,
       estimatedDeliveryTime: '2-3 hours',
@@ -209,19 +211,28 @@ function getFallbackDeliveryZones(): ZoneMinimumConfig[] {
     {
       zone: DeliveryZone.LOWER_PENINSULA,
       name: 'Lower Peninsula',
-      minimumAmount: 400.0,
+      minimumAmount: 350.0,
       description: 'Redwood City, Palo Alto, Mountain View and surrounding areas',
-      deliveryFee: 100.0,
+      deliveryFee: 65.0,
       estimatedDeliveryTime: '2-3 hours',
       active: true,
     },
     {
-      zone: DeliveryZone.PENINSULA,
-      name: 'Peninsula',
-      minimumAmount: 500.0,
-      description: 'San Ramón, Walnut Creek and far Peninsula areas',
-      deliveryFee: 150.0,
-      estimatedDeliveryTime: '3-4 hours',
+      zone: DeliveryZone.EAST_BAY,
+      name: 'East Bay',
+      minimumAmount: 400.0,
+      description: 'Oakland, Berkeley, and surrounding East Bay cities',
+      deliveryFee: 75.0,
+      estimatedDeliveryTime: '2-3 hours',
+      active: true,
+    },
+    {
+      zone: DeliveryZone.MARIN_COUNTY,
+      name: 'Marin County',
+      minimumAmount: 400.0,
+      description: 'Marin County and surrounding areas',
+      deliveryFee: 65.0,
+      estimatedDeliveryTime: '2-3 hours',
       active: true,
     },
   ];
