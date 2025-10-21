@@ -166,8 +166,7 @@ const MenuFaqSection: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl py-8">
-      {' '}
+    <div className="mx-auto w-full max-w-4xl py-8 px-4">
       <AnimatePresence>
         {isMapOpen && <MapModal isOpen={isMapOpen} onClose={() => setIsMapOpen(false)} />}
       </AnimatePresence>
@@ -178,13 +177,13 @@ const MenuFaqSection: React.FC = () => {
           duration: 0.6,
           ease: [0.22, 1, 0.36, 1],
         }}
-        className={`text-4xl font-bold tracking-tight text-amber-900 sm:text-5xl text-center ${dancingScript.className}`}
+        className={`text-4xl font-bold tracking-tight text-amber-900 sm:text-5xl text-center mb-8 ${dancingScript.className}`}
       >
         Menu: Frequently Asked Questions
         <div className="mt-2 h-1 w-16 bg-yellow-400 mx-auto" />
       </motion.h2>
       <motion.div
-        className="space-y-4"
+        className="space-y-4 mt-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -234,12 +233,10 @@ const MenuFaqSection: React.FC = () => {
                   animate="visible"
                   exit="exit"
                   variants={contentVariants}
-                  className="bg-amber-50/30 border-t border-amber-100 overflow-hidden" // Fondo y borde de la respuesta actualizados
-                  id={`faq-answer-${index}`} // ID para accesibilidad
+                  className="bg-amber-50/30 border-t border-amber-100 overflow-hidden"
+                  id={`faq-answer-${index}`}
                 >
-                  <div className="p-5">
-                    {' '}
-                    {/* Padding consistente */}
+                  <div className="p-6">
                     <motion.p
                       initial={{ opacity: 0, y: 10 }}
                       animate={{
@@ -255,7 +252,7 @@ const MenuFaqSection: React.FC = () => {
                         opacity: 0,
                         transition: { duration: 0.2 },
                       }}
-                      className="text-amber-900/80 leading-relaxed" // Estilos de la respuesta actualizados
+                      className="text-amber-900/80 leading-relaxed text-base"
                     >
                       {faq.answer}
                     </motion.p>

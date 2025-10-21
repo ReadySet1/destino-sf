@@ -16,11 +16,6 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    console.log('Cart items:', items);
-    console.log('Total items:', totalItems);
-  }, [items, totalItems]);
-
   const closeSheet = () => {
     setIsMobileMenuOpen(false);
   };
@@ -139,6 +134,15 @@ export default function Navbar() {
                         </span>
                       </Link>
                       <Link
+                        href="/locations"
+                        onClick={closeSheet}
+                        className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
+                      >
+                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">
+                          Locations
+                        </span>
+                      </Link>
+                      <Link
                         href="/about"
                         onClick={closeSheet}
                         className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
@@ -249,6 +253,15 @@ export default function Navbar() {
                       >
                         <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">
                           Catering
+                        </span>
+                      </Link>
+                      <Link
+                        href="/locations"
+                        onClick={closeSheet}
+                        className="flex items-center py-3 px-4 rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200 group"
+                      >
+                        <span className="text-lg font-medium group-hover:translate-x-1 transition-transform">
+                          Locations
                         </span>
                       </Link>
                       <Link
