@@ -12,7 +12,6 @@ import {
   Users,
   Clock,
   UtensilsCrossed,
-  Truck,
   Star,
   RefreshCw,
   User2,
@@ -154,12 +153,6 @@ export function AdminSidebar({ user, profileRole }: AdminSidebarProps) {
           label: 'Store Settings',
           icon: <Settings className="h-4 w-4" />,
           description: 'Configure store options',
-        },
-        {
-          href: '/admin/shipping',
-          label: 'Shipping Config',
-          icon: <Truck className="h-4 w-4" />,
-          description: 'Manage shipping settings',
         },
         {
           href: '/admin/spotlight-picks',

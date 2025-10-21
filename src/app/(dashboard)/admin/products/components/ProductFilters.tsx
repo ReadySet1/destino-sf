@@ -113,7 +113,7 @@ export default function ProductFilters({
     availability !== 'all';
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+    <div className="bg-white p-6 rounded-lg border border-gray-200">
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search Input */}
