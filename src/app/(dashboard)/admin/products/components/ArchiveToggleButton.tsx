@@ -62,7 +62,7 @@ export function ArchiveToggleButton({
               parseError,
               responseText: text,
               productId,
-              action
+              action,
             });
             throw new Error('Server returned invalid JSON response');
           }
@@ -70,13 +70,13 @@ export function ArchiveToggleButton({
           logger.warn('Empty response body received from server', {
             productId,
             productName,
-            action
+            action,
           });
           // For successful responses without content, create a default success object
           if (response.ok) {
             data = {
               success: true,
-              message: `Product "${productName}" has been ${action}d successfully`
+              message: `Product "${productName}" has been ${action}d successfully`,
             };
           } else {
             throw new Error('Server returned empty response');
@@ -87,7 +87,7 @@ export function ArchiveToggleButton({
         if (response.ok) {
           data = {
             success: true,
-            message: `Product "${productName}" has been ${action}d successfully`
+            message: `Product "${productName}" has been ${action}d successfully`,
           };
         } else {
           throw new Error(`Server returned non-JSON response (${response.status})`);
@@ -106,7 +106,7 @@ export function ArchiveToggleButton({
         error,
         productId,
         productName,
-        action
+        action,
       });
       toast.error(error instanceof Error ? error.message : 'An error occurred');
     } finally {

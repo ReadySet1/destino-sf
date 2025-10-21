@@ -10,6 +10,7 @@ export function NavBar() {
     { name: 'Home', href: '/' },
     { name: 'Menu', href: '/menu' },
     { name: 'Catering', href: '/catering' },
+    { name: 'Locations', href: '/locations' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];

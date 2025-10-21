@@ -19,10 +19,7 @@ export const dynamic = 'force-dynamic';
  * Archive a product
  * POST /api/admin/products/[id]/archive
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Await params (Next.js 15 requirement)
     const { id: productId } = await params;
@@ -44,14 +41,11 @@ export async function POST(
     // Check if user is admin
     const userProfile = await prisma.profile.findUnique({
       where: { id: user.id },
-      select: { role: true }
+      select: { role: true },
     });
 
     if (userProfile?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Admin access required' },
-        { status: 403 }
-      );
+      return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
 
     // Find the product
@@ -62,15 +56,12 @@ export async function POST(
         name: true,
         squareId: true,
         isArchived: true,
-        active: true
-      }
+        active: true,
+      },
     });
 
     if (!product) {
-      return NextResponse.json(
-        { success: false, error: 'Product not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
     }
 
     // Check if already archived
@@ -82,8 +73,8 @@ export async function POST(
           product: {
             id: product.id,
             name: product.name,
-            isArchived: true
-          }
+            isArchived: true,
+          },
         },
         { status: 400 }
       );
@@ -97,14 +88,14 @@ export async function POST(
         archivedAt: new Date(),
         archivedReason: 'manual', // Manual archiving by admin
         active: false,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     logger.info(`✅ Product archived by admin: "${product.name}" (${product.squareId})`, {
       userId: user.id,
       productId: product.id,
-      productName: product.name
+      productName: product.name,
     });
 
     return NextResponse.json({
@@ -117,16 +108,15 @@ export async function POST(
         isArchived: archivedProduct.isArchived,
         archivedAt: archivedProduct.archivedAt,
         archivedReason: archivedProduct.archivedReason,
-        active: archivedProduct.active
-      }
+        active: archivedProduct.active,
+      },
     });
-
   } catch (error) {
     logger.error('❌ Error archiving product:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to archive product'
+        error: error instanceof Error ? error.message : 'Failed to archive product',
       },
       { status: 500 }
     );
@@ -162,14 +152,11 @@ export async function DELETE(
     // Check if user is admin
     const userProfile = await prisma.profile.findUnique({
       where: { id: user.id },
-      select: { role: true }
+      select: { role: true },
     });
 
     if (userProfile?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Admin access required' },
-        { status: 403 }
-      );
+      return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
 
     // Find the product
@@ -180,15 +167,12 @@ export async function DELETE(
         name: true,
         squareId: true,
         isArchived: true,
-        active: true
-      }
+        active: true,
+      },
     });
 
     if (!product) {
-      return NextResponse.json(
-        { success: false, error: 'Product not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
     }
 
     // Check if already active
@@ -200,8 +184,8 @@ export async function DELETE(
           product: {
             id: product.id,
             name: product.name,
-            isArchived: false
-          }
+            isArchived: false,
+          },
         },
         { status: 400 }
       );
@@ -215,14 +199,14 @@ export async function DELETE(
         archivedAt: null,
         archivedReason: null,
         active: true,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     logger.info(`🔄 Product restored by admin: "${product.name}" (${product.squareId})`, {
       userId: user.id,
       productId: product.id,
-      productName: product.name
+      productName: product.name,
     });
 
     return NextResponse.json({
@@ -235,16 +219,15 @@ export async function DELETE(
         isArchived: restoredProduct.isArchived,
         archivedAt: restoredProduct.archivedAt,
         archivedReason: restoredProduct.archivedReason,
-        active: restoredProduct.active
-      }
+        active: restoredProduct.active,
+      },
     });
-
   } catch (error) {
     logger.error('❌ Error restoring product:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to restore product'
+        error: error instanceof Error ? error.message : 'Failed to restore product',
       },
       { status: 500 }
     );
@@ -255,10 +238,7 @@ export async function DELETE(
  * Get archive status and statistics
  * GET /api/admin/products/[id]/archive
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Await params (Next.js 15 requirement)
     const { id: productId } = await params;
@@ -288,15 +268,12 @@ export async function GET(
         archivedAt: true,
         archivedReason: true,
         active: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
 
     if (!product) {
-      return NextResponse.json(
-        { success: false, error: 'Product not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -309,16 +286,15 @@ export async function GET(
         archivedAt: product.archivedAt,
         archivedReason: product.archivedReason,
         active: product.active,
-        updatedAt: product.updatedAt
-      }
+        updatedAt: product.updatedAt,
+      },
     });
-
   } catch (error) {
     logger.error('❌ Error getting product archive status:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get archive status'
+        error: error instanceof Error ? error.message : 'Failed to get archive status',
       },
       { status: 500 }
     );

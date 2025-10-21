@@ -345,7 +345,11 @@ export class ProductVisibilityService {
     // Exclude catering products by default (unless explicitly requested)
     // Only apply if we're NOT filtering by a specific categoryId
     if (excludeCatering && !categoryId) {
-      if (whereCondition.NOT && typeof whereCondition.NOT === 'object' && 'OR' in whereCondition.NOT) {
+      if (
+        whereCondition.NOT &&
+        typeof whereCondition.NOT === 'object' &&
+        'OR' in whereCondition.NOT
+      ) {
         (whereCondition.NOT as { OR: unknown[] }).OR.push({
           category: {
             name: {
@@ -433,10 +437,14 @@ export class ProductVisibilityService {
   /**
    * Filter products based on evaluated availability
    */
-  private static async filterByEvaluatedAvailability<T extends { id: string; isAvailable?: boolean | null; visibility?: string | null; itemState?: string | null }>(
-    products: T[],
-    evaluations: Map<string, AvailabilityEvaluation>
-  ): Promise<T[]> {
+  private static async filterByEvaluatedAvailability<
+    T extends {
+      id: string;
+      isAvailable?: boolean | null;
+      visibility?: string | null;
+      itemState?: string | null;
+    },
+  >(products: T[], evaluations: Map<string, AvailabilityEvaluation>): Promise<T[]> {
     return products.filter(product => {
       const evaluation = evaluations.get(product.id);
 
