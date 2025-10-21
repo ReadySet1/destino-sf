@@ -8,6 +8,7 @@ import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
 import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityEngine } from '@/lib/availability/engine';
+import { shouldIndexProduct, isCateringProduct } from '@/lib/seo/product-helpers';
 
 // Helper function to convert product name to URL-friendly slug
 function slugify(text: string): string {
@@ -104,21 +105,38 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           : dbProduct.images
         : '/opengraph-image';
 
+    // Determine if this is a catering product
+    const isCatering = isCateringProduct(dbProduct);
+    const shouldIndex = shouldIndexProduct(dbProduct);
+
+    // Generate appropriate keywords based on product type
+    const keywords = isCatering
+      ? [
+          dbProduct.name.toLowerCase(),
+          dbProduct.category?.name.toLowerCase() || 'catering',
+          'catering',
+          'event catering',
+          'corporate catering',
+          'san francisco catering',
+          'latin catering',
+        ]
+      : [
+          dbProduct.name.toLowerCase(),
+          dbProduct.category?.name.toLowerCase() || 'food',
+          'empanadas',
+          'alfajores',
+          'latin food',
+          'san francisco',
+          'handcrafted',
+          'authentic',
+        ];
+
     return generateSEO({
       title: `${dbProduct.name} | Destino SF`,
       description:
         dbProduct.description ||
         `Discover our delicious ${dbProduct.name}. Handcrafted with authentic flavors and premium ingredients.`,
-      keywords: [
-        dbProduct.name.toLowerCase(),
-        dbProduct.category?.name.toLowerCase() || 'food',
-        'empanadas',
-        'alfajores',
-        'latin food',
-        'san francisco',
-        'handcrafted',
-        'authentic',
-      ],
+      keywords,
       type: 'product',
       image: productImage,
       imageAlt: `${dbProduct.name} - Destino SF`,
@@ -126,6 +144,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       price: dbProduct.price ? dbProduct.price.toString() : undefined,
       availability: 'in_stock',
       category: dbProduct.category?.name,
+      // Conditional indexing - catering products are NOT indexed in general search
+      robots: shouldIndex
+        ? undefined // Use default robots (index, follow)
+        : {
+            index: false,
+            follow: false,
+            noarchive: true,
+            nosnippet: true,
+          },
     });
   } catch (error) {
     console.error('Error generating product metadata:', error);

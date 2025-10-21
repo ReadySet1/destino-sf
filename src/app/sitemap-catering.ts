@@ -4,7 +4,7 @@ import { withRetry } from '@/lib/db-unified';
 import { isBuildTime } from '@/lib/build-time-utils';
 import { logger } from '@/utils/logger';
 
-// Create isolated Prisma client for sitemap generation to avoid prepared statement conflicts
+// Create isolated Prisma client for sitemap generation
 const createSitemapPrismaClient = () => {
   return new PrismaClient({
     log: ['error'],
@@ -17,57 +17,25 @@ const createSitemapPrismaClient = () => {
   });
 };
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+/**
+ * Sitemap for catering products only
+ * These products are intentionally excluded from the main sitemap
+ * to prevent them from appearing in general product searches
+ */
+export default async function cateringSitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000'
       : process.env.NEXT_PUBLIC_APP_URL || 'https://destinosf.com';
 
-  // Static pages
-  const staticPages = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/menu`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.9,
-    },
+  // Static catering pages
+  const staticCateringPages = [
     {
       url: `${baseUrl}/catering`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.9,
     },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/contact`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly' as const,
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly' as const,
-      priority: 0.3,
-    },
-    // Catering sub-pages
     {
       url: `${baseUrl}/catering/browse-options`,
       lastModified: new Date(),
@@ -106,31 +74,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // During build time or if database is unavailable, return static pages only
+  // During build time, return static pages only
   if (isBuildTime()) {
-    // Only log in debug mode to reduce build noise
     if (process.env.BUILD_DEBUG === 'true') {
-      logger.info('🔧 Build-time detected: Using static sitemap without dynamic product pages');
+      logger.info('🔧 Build-time detected: Using static catering sitemap');
     }
-    return staticPages;
+    return staticCateringPages;
   }
 
-  // Use isolated Prisma client to avoid prepared statement conflicts during build
   let prismaClient: PrismaClient | null = null;
 
   try {
     prismaClient = createSitemapPrismaClient();
 
-    // Dynamic product pages - ONLY include regular products (not catering)
-    // Catering products should not appear in general search results
-    const products = await withRetry(
+    // Get catering product pages (categories that start with "CATERING-")
+    const cateringProducts = await withRetry(
       () =>
         prismaClient!.product.findMany({
           where: {
             active: true,
             category: {
               slug: {
-                in: ['alfajores', 'empanadas'], // Only regular product categories
+                startsWith: 'catering-',
               },
             },
           },
@@ -139,39 +104,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             updatedAt: true,
           },
         }),
-      3, // maxRetries
-      'sitemap product query'
+      3,
+      'catering sitemap product query'
     );
 
-    const productPages = products.map(product => ({
+    const cateringProductPages = cateringProducts.map(product => ({
       url: `${baseUrl}/products/${product.slug}`,
       lastModified: product.updatedAt,
       changeFrequency: 'weekly' as const,
-      priority: 0.7, // Higher priority for main products
+      priority: 0.5, // Lower priority - catering-specific
     }));
 
-    // Only log success in debug mode to reduce build noise
     if (process.env.BUILD_DEBUG === 'true') {
       logger.info(
-        `✅ Generated sitemap with ${staticPages.length} static pages and ${productPages.length} product pages`
+        `✅ Generated catering sitemap with ${staticCateringPages.length} static pages and ${cateringProductPages.length} catering product pages`
       );
     }
-    return [...staticPages, ...productPages];
+
+    return [...staticCateringPages, ...cateringProductPages];
   } catch (error) {
-    logger.error('❌ Error generating sitemap:', error);
-    // Return static pages if database query fails
-    return staticPages;
+    logger.error('❌ Error generating catering sitemap:', error);
+    return staticCateringPages;
   } finally {
-    // Always disconnect the isolated client
     if (prismaClient) {
       try {
         await prismaClient.$disconnect();
-        // Only log disconnect in debug mode
         if (process.env.BUILD_DEBUG === 'true') {
-          logger.info('✅ Sitemap Prisma client disconnected gracefully');
+          logger.info('✅ Catering sitemap Prisma client disconnected');
         }
       } catch (disconnectError) {
-        logger.warn('⚠️ Error disconnecting sitemap Prisma client:', disconnectError);
+        logger.warn('⚠️ Error disconnecting catering sitemap Prisma client:', disconnectError);
       }
     }
   }

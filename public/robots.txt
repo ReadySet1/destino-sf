@@ -1,0 +1,14 @@
+# Robots.txt for Destino SF
+# This file controls search engine crawler access
+
+# Default rules for production (destinosf.com)
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /account/
+Sitemap: https://destinosf.com/sitemap.xml
+
+# Block all crawlers on development and staging environments
+# Note: This will be overridden by middleware for non-production domains

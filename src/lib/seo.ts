@@ -20,12 +20,20 @@ export interface SEOConfig {
   reviewCount?: number;
   noIndex?: boolean;
   noFollow?: boolean;
+  robots?: {
+    index?: boolean;
+    follow?: boolean;
+    noarchive?: boolean;
+    nosnippet?: boolean;
+    noimageindex?: boolean;
+    nocache?: boolean;
+  };
 }
 
 const baseUrl =
   process.env.NODE_ENV === 'development'
     ? 'http://localhost:3000'
-    : 'https://development.destinosf.com';
+    : process.env.NEXT_PUBLIC_APP_URL || 'https://destinosf.com';
 
 export const defaultSEO: SEOConfig = {
   title: 'Destino SF - Authentic Handcrafted Empanadas & Alfajores',
@@ -67,6 +75,7 @@ export function generateSEO(config: SEOConfig): Metadata {
     availability,
     noIndex = false,
     noFollow = false,
+    robots,
   } = config;
 
   // Generate dynamic OpenGraph image URL if not provided
@@ -84,6 +93,18 @@ export function generateSEO(config: SEOConfig): Metadata {
     creator: author,
     publisher: 'Destino SF',
     category,
+
+    // Robots configuration - supports custom robots object or legacy noIndex/noFollow
+    ...(robots
+      ? { robots }
+      : noIndex || noFollow
+        ? {
+            robots: {
+              index: !noIndex,
+              follow: !noFollow,
+            },
+          }
+        : {}),
 
     // OpenGraph
     openGraph: {
@@ -159,11 +180,6 @@ export function generateSEO(config: SEOConfig): Metadata {
           'product:price:currency': 'USD',
           'product:availability': availability || 'in_stock',
         }),
-
-      // SEO directives
-      ...(noIndex && { robots: 'noindex' }),
-      ...(noFollow && { robots: 'nofollow' }),
-      ...(noIndex && noFollow && { robots: 'noindex, nofollow' }),
     },
 
     // Schema.org structured data will be added via generateStructuredData function
