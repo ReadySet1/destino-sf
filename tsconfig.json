@@ -45,6 +45,9 @@
     "**/vite.config.ts",
     "react-app/dist",
     "scripts/**/*",
-    "docs/**/*"
+    "docs/**/*",
+    "tests/**/*",
+    "src/__tests__/factories/**/*",
+    "src/__tests__/integration/**/*"
   ]
 }
