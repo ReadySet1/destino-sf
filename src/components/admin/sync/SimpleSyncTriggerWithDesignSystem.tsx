@@ -69,8 +69,7 @@ export function SimpleSyncTriggerWithDesignSystem({
 
         toast.success(title, { description });
 
-        // Note: This sync is synchronous - no need for progress tracking
-        // Only call onSyncStarted if parent component specifically needs it
+        // Notify parent that sync completed (no syncId needed)
         onSyncStarted?.('sync-completed');
 
         // Reset state after showing success
@@ -149,7 +148,7 @@ export function SimpleSyncTriggerWithDesignSystem({
 
       {isLoading && (
         <div className="text-sm text-gray-500 text-center">
-          This process may take a few minutes...
+          This process may take a few seconds...
         </div>
       )}
     </FormStack>

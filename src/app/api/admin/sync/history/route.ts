@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     // 3. Parse query parameters
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50); // Max 50 results
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0')); // Start from offset
     const status = searchParams.get('status');
     const days = parseInt(searchParams.get('days') || '30'); // Last 30 days by default
 
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
     const syncHistory = await prisma.userSyncLog.findMany({
       where,
       orderBy: { startTime: 'desc' },
+      skip: offset,
       take: limit,
       select: {
         id: true,
@@ -146,6 +148,7 @@ export async function GET(request: NextRequest) {
       stats,
       pagination: {
         limit,
+        offset,
         returned: formattedHistory.length,
         hasMore: formattedHistory.length === limit,
       },

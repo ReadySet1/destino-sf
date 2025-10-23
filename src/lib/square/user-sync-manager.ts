@@ -311,7 +311,7 @@ export class UserSyncManager {
             clearProgressInterval();
           }
         }
-      }, 3000); // Update every 3 seconds
+      }, 5000); // Update every 5 seconds (reduced from 3 for better performance)
 
       try {
         // Execute sync

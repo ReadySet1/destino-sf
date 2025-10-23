@@ -18,8 +18,8 @@ const syncOptionsSchema = z.object({
   customDuration: z.number().optional(),
 });
 
-// Rate limiting: max 3 syncs per hour per user
-const RATE_LIMIT_SYNCS_PER_HOUR = 3;
+// Rate limiting: max 5 syncs per hour per user
+const RATE_LIMIT_SYNCS_PER_HOUR = 5;
 const COOLDOWN_MINUTES = 10;
 
 export async function POST(request: NextRequest) {
@@ -66,10 +66,18 @@ export async function POST(request: NextRequest) {
     // 4. Check rate limiting
     const rateLimitCheck = await checkUserRateLimit(user.id);
     if (!rateLimitCheck.allowed) {
+      // Format the next available time for better UX
+      const nextAvailableDate = rateLimitCheck.nextAllowed
+        ? new Date(rateLimitCheck.nextAllowed)
+        : null;
+      const timeUntilNext = nextAvailableDate
+        ? Math.ceil((nextAvailableDate.getTime() - Date.now()) / 60000)
+        : 0;
+
       return NextResponse.json(
         {
           error: 'Rate limit exceeded',
-          message: `You can only trigger ${RATE_LIMIT_SYNCS_PER_HOUR} syncs per hour. Next available: ${rateLimitCheck.nextAllowed}`,
+          message: `You can only trigger ${RATE_LIMIT_SYNCS_PER_HOUR} syncs per hour. Please wait ${timeUntilNext} minutes before trying again.`,
           nextAllowed: rateLimitCheck.nextAllowed,
         },
         { status: 429 }
