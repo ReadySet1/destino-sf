@@ -68,31 +68,61 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          # Read the diff
-          DIFF=$(cat pr_diff.txt)
-          FILES=$(cat changed_files.txt)
-          PR_TITLE="${{ fromJson(steps.pr-info.outputs.result).title }}"
-          PR_BODY="${{ fromJson(steps.pr-info.outputs.result).body }}"
+          # Write PR info to files to avoid shell escaping issues
+          echo "${{ fromJson(steps.pr-info.outputs.result).title }}" > pr_title.txt
+          echo "${{ fromJson(steps.pr-info.outputs.result).body }}" > pr_body.txt
 
-          # Create the review request
-          cat > review_request.json <<'EOF'
-          {
-            "model": "claude-sonnet-4-20250514",
-            "max_tokens": 4096,
-            "messages": [
-              {
-                "role": "user",
-                "content": "You are an expert code reviewer for a Next.js 15 TypeScript project called Destino SF (Argentine food e-commerce platform).\n\nPlease review this pull request and provide:\n\n1. **Summary**: Brief overview of the changes\n2. **Code Quality**: Assessment of code quality, patterns, and best practices\n3. **Potential Issues**: Any bugs, security concerns, or performance issues\n4. **Testing**: Whether tests are adequate and any missing test cases\n5. **Suggestions**: Specific improvements with code examples if applicable\n6. **Security**: Any security concerns (SQL injection, XSS, auth issues, etc.)\n7. **Performance**: Any performance concerns or optimizations\n8. **Overall Rating**: Approve, Needs Minor Changes, or Needs Major Changes\n\nBe constructive and specific. Focus on:\n- Next.js 15 best practices (Server Components, App Router)\n- TypeScript type safety\n- React patterns and performance\n- Database operations (Prisma)\n- Security (authentication, authorization, input validation)\n- Test coverage\n\n**PR Title:** $PR_TITLE\n\n**PR Description:**\n$PR_BODY\n\n**Files Changed:**\n$FILES\n\n**Diff:**\n```diff\n$DIFF\n```\n\nProvide your review in markdown format."
-              }
-            ]
-          }
-          EOF
+          # Build the review prompt
+          PROMPT="You are an expert code reviewer for a Next.js 15 TypeScript project called Destino SF (Argentine food e-commerce platform).
 
-          # Replace placeholders
-          sed -i "s/\$PR_TITLE/$PR_TITLE/g" review_request.json
-          jq --arg body "$PR_BODY" '.messages[0].content |= sub("\\$PR_BODY"; $body)' review_request.json > temp.json && mv temp.json review_request.json
-          jq --arg files "$FILES" '.messages[0].content |= sub("\\$FILES"; $files)' review_request.json > temp.json && mv temp.json review_request.json
-          jq --arg diff "$DIFF" '.messages[0].content |= sub("\\$DIFF"; $diff)' review_request.json > temp.json && mv temp.json review_request.json
+Please review this pull request and provide:
+
+1. **Summary**: Brief overview of the changes
+2. **Code Quality**: Assessment of code quality, patterns, and best practices
+3. **Potential Issues**: Any bugs, security concerns, or performance issues
+4. **Testing**: Whether tests are adequate and any missing test cases
+5. **Suggestions**: Specific improvements with code examples if applicable
+6. **Security**: Any security concerns (SQL injection, XSS, auth issues, etc.)
+7. **Performance**: Any performance concerns or optimizations
+8. **Overall Rating**: Approve, Needs Minor Changes, or Needs Major Changes
+
+Be constructive and specific. Focus on:
+- Next.js 15 best practices (Server Components, App Router)
+- TypeScript type safety
+- React patterns and performance
+- Database operations (Prisma)
+- Security (authentication, authorization, input validation)
+- Test coverage
+
+**PR Title:** $(cat pr_title.txt)
+
+**PR Description:**
+$(cat pr_body.txt)
+
+**Files Changed:**
+$(cat changed_files.txt)
+
+**Diff:**
+\`\`\`diff
+$(cat pr_diff.txt)
+\`\`\`
+
+Provide your review in markdown format."
+
+          # Create JSON request using jq to properly escape everything
+          jq -n \
+            --arg model "claude-sonnet-4-20250514" \
+            --arg prompt "$PROMPT" \
+            '{
+              "model": $model,
+              "max_tokens": 4096,
+              "messages": [
+                {
+                  "role": "user",
+                  "content": $prompt
+                }
+              ]
+            }' > review_request.json
 
           # Call Claude API
           RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
@@ -102,7 +132,7 @@ jobs:
             -d @review_request.json)
 
           # Extract the review text
-          REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text')
+          REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text // "Error: No review generated"')
 
           # Save to file
           echo "$REVIEW" > review.txt
