@@ -5,7 +5,7 @@ import {
   updateOrderPayment,
   getOrderById,
 } from '@/app/actions/orders';
-import { prisma } from '@/lib/db';
+import { prismaMock } from '@/__tests__/setup/prisma';
 import { PaymentMethod, OrderStatus } from '@/types/order';
 
 // Mock dependencies - using the global mock setup
@@ -46,7 +46,7 @@ jest.mock('@/lib/delivery-zones', () => ({
   validateMinimumPurchase: jest.fn(),
 }));
 
-const mockPrisma = prisma as any;
+const mockPrisma = prismaMock;
 
 // Test fixtures
 const validCartItems = [
@@ -170,22 +170,16 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     });
 
     // Setup default Prisma mock responses
-    mockPrisma.storeSettings = {
-      findFirst: jest.fn().mockResolvedValue({
-        minOrderAmount: 25.0,
-        cateringMinimumAmount: 150.0,
-      }),
-    };
+    (mockPrisma.storeSettings.findFirst as jest.Mock).mockResolvedValue({
+      minOrderAmount: 25.0,
+      cateringMinimumAmount: 150.0,
+    });
 
-    mockPrisma.product = {
-      findMany: jest.fn().mockResolvedValue([]),
-    };
+    (mockPrisma.product.findMany as jest.Mock).mockResolvedValue([]);
 
-    mockPrisma.order = {
-      create: jest.fn().mockResolvedValue(mockCreatedOrder),
-      update: jest.fn().mockResolvedValue(mockCreatedOrder),
-      findUnique: jest.fn().mockResolvedValue(mockCreatedOrder),
-    };
+    (mockPrisma.order.create as jest.Mock).mockResolvedValue(mockCreatedOrder);
+    (mockPrisma.order.update as jest.Mock).mockResolvedValue(mockCreatedOrder);
+    (mockPrisma.order.findUnique as jest.Mock).mockResolvedValue(mockCreatedOrder);
   });
 
   afterEach(() => {
@@ -218,12 +212,12 @@ describe('Orders Actions - Comprehensive Coverage', () => {
       ];
 
       // Mock catering product detection - products with catering category
-      mockPrisma.product.findMany.mockResolvedValue([
+      (mockPrisma.product.findMany as jest.Mock).mockResolvedValue([
         {
           id: 'catering-1',
           name: 'Catering Platter',
           category: { name: 'Catering Platters' },
-        },
+        } as any,
       ]);
 
       const deliveryAddress = {
@@ -243,12 +237,12 @@ describe('Orders Actions - Comprehensive Coverage', () => {
       ];
 
       // Mock catering product detection - products with catering category
-      mockPrisma.product.findMany.mockResolvedValue([
+      (mockPrisma.product.findMany as jest.Mock).mockResolvedValue([
         {
           id: 'catering-1',
           name: 'Small Catering',
           category: { name: 'Catering Items' },
-        },
+        } as any,
       ]);
 
       const result = await validateOrderMinimumsServer(smallCateringItems);
@@ -307,6 +301,9 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     });
 
     test('should create local delivery order successfully', async () => {
+      const { validateOrderMinimums } = require('@/lib/cart-helpers');
+      validateOrderMinimums.mockResolvedValue({ isValid: true });
+
       const formData = {
         ...baseFormData,
         fulfillment: validLocalDeliveryFulfillment,
@@ -325,6 +322,9 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     });
 
     test('should create nationwide shipping order successfully', async () => {
+      const { validateOrderMinimums } = require('@/lib/cart-helpers');
+      validateOrderMinimums.mockResolvedValue({ isValid: true });
+
       const formData = {
         ...baseFormData,
         fulfillment: validNationwideShippingFulfillment,
@@ -546,7 +546,7 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     };
 
     test('should retrieve order successfully', async () => {
-      mockPrisma.order.findUnique.mockResolvedValue(mockOrderWithItems);
+      (mockPrisma.order.findUnique as jest.Mock).mockResolvedValue(mockOrderWithItems as any);
 
       const result = await getOrderById('order-123');
 
@@ -584,7 +584,7 @@ describe('Orders Actions - Comprehensive Coverage', () => {
         notes: 'invalid-json',
       };
 
-      mockPrisma.order.findUnique.mockResolvedValue(orderWithInvalidNotes);
+      (mockPrisma.order.findUnique as jest.Mock).mockResolvedValue(orderWithInvalidNotes as any);
 
       const result = await getOrderById('order-123');
 
