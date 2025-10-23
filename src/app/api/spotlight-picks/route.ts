@@ -75,14 +75,22 @@ async function getSpotlightPicks(): Promise<SpotlightPick[]> {
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick[]>>> {
-  // Fallback data for when database is unavailable
-  const fallbackData: SpotlightPick[] = [];
+  try {
+    const spotlightPicks = await getSpotlightPicks();
 
-  const response = await safeCateringApiOperation(
-    () => getSpotlightPicks(),
-    fallbackData,
-    'spotlight-picks'
-  );
+    return NextResponse.json({
+      success: true,
+      data: spotlightPicks,
+    });
+  } catch (error) {
+    console.error('Failed to fetch spotlight picks:', error);
 
-  return response as NextResponse<SpotlightAPIResponse<SpotlightPick[]>>;
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch spotlight picks',
+      },
+      { status: 500 }
+    );
+  }
 }

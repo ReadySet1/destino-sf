@@ -5,7 +5,7 @@ import {
   updateOrderPayment,
   getOrderById,
 } from '@/app/actions/orders';
-import { prisma } from '@/lib/db';
+import { prismaMock } from '@/__tests__/setup/prisma';
 import { PaymentMethod, OrderStatus } from '@/types/order';
 
 // Mock dependencies - using the global mock setup
@@ -46,7 +46,7 @@ jest.mock('@/lib/delivery-zones', () => ({
   validateMinimumPurchase: jest.fn(),
 }));
 
-const mockPrisma = prisma as any;
+const mockPrisma = prismaMock;
 
 // Test fixtures
 const validCartItems = [
@@ -307,6 +307,9 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     });
 
     test('should create local delivery order successfully', async () => {
+      const { validateOrderMinimums } = require('@/lib/cart-helpers');
+      validateOrderMinimums.mockResolvedValue({ isValid: true });
+
       const formData = {
         ...baseFormData,
         fulfillment: validLocalDeliveryFulfillment,
@@ -325,6 +328,9 @@ describe('Orders Actions - Comprehensive Coverage', () => {
     });
 
     test('should create nationwide shipping order successfully', async () => {
+      const { validateOrderMinimums } = require('@/lib/cart-helpers');
+      validateOrderMinimums.mockResolvedValue({ isValid: true });
+
       const formData = {
         ...baseFormData,
         fulfillment: validNationwideShippingFulfillment,
