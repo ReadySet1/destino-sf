@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { seedTestDatabase, cleanTestDatabase } from './database-seeder';
 
 let testPrisma: PrismaClient | null = null;
 
@@ -20,8 +21,21 @@ export async function setupTestDatabase() {
     await testPrisma.$connect();
     console.log('✅ Test database connected successfully');
 
-    // Optionally seed test data
-    await seedTestData();
+    // Check if test data already exists
+    const existingProducts = await testPrisma.product.count();
+
+    if (existingProducts > 0) {
+      console.log('✅ Test data already exists, skipping seed');
+      return testPrisma;
+    }
+
+    // Seed test data using the new seeder
+    await seedTestDatabase(testPrisma, {
+      includeUsers: true,
+      includeProducts: true,
+      includeOrders: false,
+      minimal: false, // Use full product catalog
+    });
 
     return testPrisma;
   } catch (error) {
@@ -36,8 +50,8 @@ export async function cleanupTestDatabase() {
   console.log('🧹 Cleaning up test database...');
 
   try {
-    // Clean up test data (optional - depends on your test strategy)
-    // await cleanupTestData();
+    // Clean up test data using the seeder
+    await cleanTestDatabase(testPrisma);
 
     // Disconnect from database
     await testPrisma.$disconnect();
@@ -46,57 +60,6 @@ export async function cleanupTestDatabase() {
     console.error('❌ Failed to cleanup test database:', error);
   } finally {
     testPrisma = null;
-  }
-}
-
-async function seedTestData() {
-  if (!testPrisma) return;
-
-  console.log('🌱 Seeding test data...');
-
-  try {
-    // Check if test products already exist
-    const existingProducts = await testPrisma.product.count();
-
-    if (existingProducts > 0) {
-      console.log('✅ Test data already exists, skipping seed');
-      return;
-    }
-
-    // Seed minimal test data
-    const testCategory = await testPrisma.category.upsert({
-      where: { slug: 'empanadas' },
-      update: {},
-      create: {
-        name: 'Empanadas',
-        slug: 'empanadas',
-        description: 'Authentic Argentine empanadas',
-        squareId: 'test-category-empanadas',
-        active: true,
-      },
-    });
-
-    const testProduct = await testPrisma.product.upsert({
-      where: { slug: 'empanadas-argentine-beef-frozen-4-pack' },
-      update: {},
-      create: {
-        name: 'Empanadas- Argentine Beef (frozen- 4 pack)',
-        slug: 'empanadas-argentine-beef-frozen-4-pack',
-        description: 'Authentic Argentine beef empanadas, frozen for freshness',
-        price: 1899, // $18.99 in cents
-        squareId: 'test-product-empanada-beef',
-        categoryId: testCategory.id,
-        active: true,
-        images: [
-          'https://destino-sf.square.site/uploads/1/3/4/5/134556177/s153623720258963617_p9_i1_w1000.jpeg',
-        ],
-      },
-    });
-
-    console.log('✅ Test data seeded successfully');
-  } catch (error) {
-    console.error('❌ Failed to seed test data:', error);
-    // Don't throw here - tests can still run without seed data
   }
 }
 

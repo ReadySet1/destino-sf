@@ -1,0 +1,154 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - development
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    name: Automated Code Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          # Get the diff between base and head
+          git fetch origin ${{ github.base_ref }}
+          DIFF=$(git diff origin/${{ github.base_ref }}...HEAD)
+
+          # Truncate if too large (max 100KB)
+          if [ ${#DIFF} -gt 100000 ]; then
+            DIFF="${DIFF:0:100000}... (truncated)"
+          fi
+
+          # Save diff to file
+          echo "$DIFF" > pr_diff.txt
+
+          # Get file list
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "$FILES" > changed_files.txt
+
+          echo "Files changed:"
+          cat changed_files.txt
+
+      - name: Get PR information
+        id: pr-info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            return {
+              title: pr.data.title,
+              body: pr.data.body || 'No description provided',
+              author: pr.data.user.login,
+              base: pr.data.base.ref,
+              head: pr.data.head.ref
+            };
+
+      - name: Review code with Claude
+        id: review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Read the diff
+          DIFF=$(cat pr_diff.txt)
+          FILES=$(cat changed_files.txt)
+          PR_TITLE="${{ fromJson(steps.pr-info.outputs.result).title }}"
+          PR_BODY="${{ fromJson(steps.pr-info.outputs.result).body }}"
+
+          # Create the review request
+          cat > review_request.json <<'EOF'
+          {
+            "model": "claude-sonnet-4-20250514",
+            "max_tokens": 4096,
+            "messages": [
+              {
+                "role": "user",
+                "content": "You are an expert code reviewer for a Next.js 15 TypeScript project called Destino SF (Argentine food e-commerce platform).\n\nPlease review this pull request and provide:\n\n1. **Summary**: Brief overview of the changes\n2. **Code Quality**: Assessment of code quality, patterns, and best practices\n3. **Potential Issues**: Any bugs, security concerns, or performance issues\n4. **Testing**: Whether tests are adequate and any missing test cases\n5. **Suggestions**: Specific improvements with code examples if applicable\n6. **Security**: Any security concerns (SQL injection, XSS, auth issues, etc.)\n7. **Performance**: Any performance concerns or optimizations\n8. **Overall Rating**: Approve, Needs Minor Changes, or Needs Major Changes\n\nBe constructive and specific. Focus on:\n- Next.js 15 best practices (Server Components, App Router)\n- TypeScript type safety\n- React patterns and performance\n- Database operations (Prisma)\n- Security (authentication, authorization, input validation)\n- Test coverage\n\n**PR Title:** $PR_TITLE\n\n**PR Description:**\n$PR_BODY\n\n**Files Changed:**\n$FILES\n\n**Diff:**\n```diff\n$DIFF\n```\n\nProvide your review in markdown format."
+              }
+            ]
+          }
+          EOF
+
+          # Replace placeholders
+          sed -i "s/\$PR_TITLE/$PR_TITLE/g" review_request.json
+          jq --arg body "$PR_BODY" '.messages[0].content |= sub("\\$PR_BODY"; $body)' review_request.json > temp.json && mv temp.json review_request.json
+          jq --arg files "$FILES" '.messages[0].content |= sub("\\$FILES"; $files)' review_request.json > temp.json && mv temp.json review_request.json
+          jq --arg diff "$DIFF" '.messages[0].content |= sub("\\$DIFF"; $diff)' review_request.json > temp.json && mv temp.json review_request.json
+
+          # Call Claude API
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "content-type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d @review_request.json)
+
+          # Extract the review text
+          REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text')
+
+          # Save to file
+          echo "$REVIEW" > review.txt
+
+          # Set output (escape for GitHub Actions)
+          {
+            echo 'review<<EOF'
+            cat review.txt
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post review comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const review = `## 🤖 Claude Code Review
+
+            ${{ steps.review.outputs.review }}
+
+            ---
+
+            *This review was automatically generated by Claude (Sonnet 4.0). Please use your judgment when addressing feedback.*
+
+            <details>
+            <summary>About this review</summary>
+
+            This automated review uses Claude AI to analyze code changes for:
+            - Code quality and best practices
+            - Potential bugs and security issues
+            - Performance optimizations
+            - Test coverage
+            - TypeScript/React/Next.js patterns
+
+            The review is meant to supplement (not replace) human code review.
+            </details>`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: review
+            });
+
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-review
+          path: review.txt
+          retention-days: 30
