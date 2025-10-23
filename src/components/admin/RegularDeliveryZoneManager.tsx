@@ -4,21 +4,18 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import {
   PlusCircle,
-  Save,
   Trash2,
   MapPin,
   DollarSign,
   Clock,
   Info,
   ShoppingBag,
+  Edit,
 } from 'lucide-react';
+import RegularDeliveryZoneModal from '@/components/admin/RegularDeliveryZoneModal';
 
 interface RegularDeliveryZone {
   id: string;
@@ -173,6 +170,7 @@ function ZoneCard({
               className="flex items-center gap-1"
               disabled={isDeleting}
             >
+              <Edit className="h-4 w-4" />
               Edit
             </Button>
             <Button
@@ -199,29 +197,14 @@ function ZoneCard({
 export default function RegularDeliveryZoneManager({ className }: RegularDeliveryZoneManagerProps) {
   const [zones, setZones] = useState<RegularDeliveryZone[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingZone, setEditingZone] = useState<RegularDeliveryZone | null>(null);
-  const [isNewZone, setIsNewZone] = useState(false);
 
   // Track loading states for individual zone toggles
   const [togglingZones, setTogglingZones] = useState<Set<string>>(new Set());
 
   // Track loading states for individual zone deletes
   const [deletingZones, setDeletingZones] = useState<Set<string>>(new Set());
-
-  // Form state for editing zone
-  const [formData, setFormData] = useState({
-    zone: '',
-    name: '',
-    description: '',
-    minimumOrderForFree: 0,
-    deliveryFee: 0,
-    estimatedDeliveryTime: '',
-    isActive: true,
-    postalCodes: '',
-    cities: '',
-    displayOrder: 0,
-  });
 
   const loadDeliveryZones = useCallback(async () => {
     try {
@@ -246,91 +229,18 @@ export default function RegularDeliveryZoneManager({ className }: RegularDeliver
     loadDeliveryZones();
   }, [loadDeliveryZones]);
 
-  const resetForm = () => {
-    setFormData({
-      zone: '',
-      name: '',
-      description: '',
-      minimumOrderForFree: 0,
-      deliveryFee: 0,
-      estimatedDeliveryTime: '',
-      isActive: true,
-      postalCodes: '',
-      cities: '',
-      displayOrder: zones.length,
-    });
-    setEditingZone(null);
-    setIsNewZone(false);
-  };
-
   const startNewZone = () => {
-    resetForm();
-    setIsNewZone(true);
     setEditingZone(null);
+    setModalOpen(true);
   };
 
   const startEditZone = (zone: RegularDeliveryZone) => {
-    setFormData({
-      zone: zone.zone,
-      name: zone.name,
-      description: zone.description || '',
-      minimumOrderForFree: zone.minimumOrderForFree,
-      deliveryFee: zone.deliveryFee,
-      estimatedDeliveryTime: zone.estimatedDeliveryTime || '',
-      isActive: zone.isActive,
-      postalCodes: zone.postalCodes.join(', '),
-      cities: zone.cities.join(', '),
-      displayOrder: zone.displayOrder,
-    });
     setEditingZone(zone);
-    setIsNewZone(false);
+    setModalOpen(true);
   };
 
-  const saveZone = async () => {
-    if (!formData.name.trim() || !formData.zone.trim()) {
-      toast.error('Zone name and identifier are required');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const zoneData = {
-        ...formData,
-        id: editingZone?.id,
-        postalCodes: formData.postalCodes
-          .split(',')
-          .map(code => code.trim())
-          .filter(code => code.length > 0),
-        cities: formData.cities
-          .split(',')
-          .map(city => city.trim())
-          .filter(city => city.length > 0),
-      };
-
-      const response = await fetch('/api/admin/regular-delivery-zones', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(zoneData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save regular delivery zone');
-      }
-
-      const result = await response.json();
-      toast.success(result.message);
-
-      // Reload zones and reset form
-      await loadDeliveryZones();
-      resetForm();
-    } catch (error) {
-      console.error('Error saving regular delivery zone:', error);
-      toast.error('Failed to save regular delivery zone');
-    } finally {
-      setSaving(false);
-    }
+  const handleModalSuccess = async () => {
+    await loadDeliveryZones();
   };
 
   const updateZoneStatus = async (zoneId: string, isActive: boolean) => {
@@ -450,11 +360,6 @@ export default function RegularDeliveryZoneManager({ className }: RegularDeliver
       // Remove zone from UI
       setZones(prevZones => prevZones.filter(z => z.id !== zoneId));
 
-      // Clear editing state if this zone was being edited
-      if (editingZone?.id === zoneId) {
-        resetForm();
-      }
-
       toast.success(`Regular delivery zone "${zone.name}" deleted successfully`);
     } catch (error) {
       console.error('❌ Error deleting regular zone:', error);
@@ -548,173 +453,18 @@ export default function RegularDeliveryZoneManager({ className }: RegularDeliver
                 />
               ))
             )}
-
-            {/* Add/Edit Zone Form */}
-            {(isNewZone || editingZone) && (
-              <>
-                <Separator />
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ShoppingBag className="h-5 w-5 text-blue-600" />
-                      {isNewZone ? 'Add New Regular Zone' : 'Edit Regular Zone'}
-                    </CardTitle>
-                    <CardDescription>
-                      {isNewZone
-                        ? 'Configure delivery fees for regular products in a new delivery area'
-                        : 'Update the delivery settings for this regular product zone'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="zone">Zone Identifier</Label>
-                        <Input
-                          id="zone"
-                          value={formData.zone}
-                          onChange={e => setFormData({ ...formData, zone: e.target.value })}
-                          placeholder="e.g., sf_nearby"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="name">Zone Name</Label>
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={e => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="e.g., San Francisco Nearby"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={e => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Brief description of the delivery zone"
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="deliveryFee" className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-blue-600" />
-                          Delivery Fee ($)
-                        </Label>
-                        <Input
-                          id="deliveryFee"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.deliveryFee}
-                          onChange={e =>
-                            setFormData({
-                              ...formData,
-                              deliveryFee: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Fixed delivery charge for regular products to this zone
-                        </p>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="minimumOrderForFree" className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-green-600" />
-                          Free Delivery Over ($)
-                        </Label>
-                        <Input
-                          id="minimumOrderForFree"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.minimumOrderForFree}
-                          onChange={e =>
-                            setFormData({
-                              ...formData,
-                              minimumOrderForFree: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Minimum order value for free delivery (0 = no free delivery)
-                        </p>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="estimatedDeliveryTime" className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-orange-600" />
-                          Estimated Delivery Time
-                        </Label>
-                        <Input
-                          id="estimatedDeliveryTime"
-                          value={formData.estimatedDeliveryTime}
-                          onChange={e =>
-                            setFormData({ ...formData, estimatedDeliveryTime: e.target.value })
-                          }
-                          placeholder="e.g., 30-60 minutes"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Typical delivery time customers can expect
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="cities">Cities (comma-separated)</Label>
-                      <Input
-                        id="cities"
-                        value={formData.cities}
-                        onChange={e => setFormData({ ...formData, cities: e.target.value })}
-                        placeholder="San Francisco, Daly City, South San Francisco"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="postalCodes">Postal Codes (comma-separated)</Label>
-                      <Textarea
-                        id="postalCodes"
-                        value={formData.postalCodes}
-                        onChange={e => setFormData({ ...formData, postalCodes: e.target.value })}
-                        placeholder="94102, 94103, 94104..."
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="isActive"
-                        checked={formData.isActive}
-                        onCheckedChange={checked => setFormData({ ...formData, isActive: checked })}
-                      />
-                      <Label htmlFor="isActive">Zone is active</Label>
-                    </div>
-
-                    <div className="flex gap-2 pt-4">
-                      <Button
-                        onClick={saveZone}
-                        disabled={saving}
-                        className="flex items-center gap-2"
-                      >
-                        <Save className="h-4 w-4" />
-                        {saving ? 'Saving...' : 'Save Zone'}
-                      </Button>
-                      <Button variant="outline" onClick={resetForm}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal for Add/Edit */}
+      <RegularDeliveryZoneModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        zone={editingZone}
+        onSuccess={handleModalSuccess}
+        totalZones={zones.length}
+      />
     </div>
   );
 }
