@@ -4,15 +4,15 @@ import { useState } from 'react';
 import { FormSection } from '@/components/ui/form/FormSection';
 import { FormIcons } from '@/components/ui/form/FormIcons';
 import { SimpleSyncTriggerWithDesignSystem } from './SimpleSyncTriggerWithDesignSystem';
-import { SyncProgressWithDesignSystem } from './SyncProgressWithDesignSystem';
-import { SimpleSyncHistoryWithDesignSystem } from './SimpleSyncHistoryWithDesignSystem';
+import { EnhancedSyncProgress } from './EnhancedSyncProgress';
+import { SyncHistoryWithDetails } from './SyncHistoryWithDetails';
 
 export function SyncDashboard() {
   const [currentSyncId, setCurrentSyncId] = useState<string | null>(null);
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
 
   const handleSyncStarted = (syncId: string) => {
-    // Only track async syncs, not synchronous completions
+    // Only track async syncs with real syncIds, not synchronous completions
     if (syncId !== 'sync-completed') {
       setCurrentSyncId(syncId);
     } else {
@@ -46,25 +46,22 @@ export function SyncDashboard() {
       {currentSyncId && (
         <FormSection
           title="Sync Progress"
-          description="Monitor the current synchronization progress and status."
+          description="Monitor the current synchronization progress with real-time activity updates."
           icon={FormIcons.refresh}
           variant="amber"
         >
-          <SyncProgressWithDesignSystem
-            syncId={currentSyncId}
-            onSyncComplete={handleSyncComplete}
-          />
+          <EnhancedSyncProgress syncId={currentSyncId} onSyncComplete={handleSyncComplete} />
         </FormSection>
       )}
 
       {/* Sync History */}
       <FormSection
         title="Synchronization History"
-        description="View recent synchronization attempts and their results."
+        description="View recent synchronization attempts and their results. Click on any sync to see detailed changes."
         icon={FormIcons.archive}
         variant="default"
       >
-        <SimpleSyncHistoryWithDesignSystem refreshTrigger={historyRefreshTrigger} />
+        <SyncHistoryWithDetails refreshTrigger={historyRefreshTrigger} />
       </FormSection>
     </div>
   );
