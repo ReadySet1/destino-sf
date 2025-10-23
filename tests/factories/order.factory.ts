@@ -4,14 +4,14 @@
  */
 
 import { faker } from '@faker-js/faker';
-import { Prisma, OrderStatus, PaymentStatus, FulfillmentType, PaymentMethod } from '@prisma/client';
+import { Prisma, OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
 
 export interface OrderFactoryOptions {
   profileId?: string;
   orderNumber?: string;
   status?: OrderStatus;
   paymentStatus?: PaymentStatus;
-  fulfillmentType?: FulfillmentType;
+  fulfillmentType?: string;
   paymentMethod?: PaymentMethod;
   customerName?: string;
   customerEmail?: string;
@@ -37,7 +37,7 @@ export function buildOrder(options: OrderFactoryOptions = {}): Prisma.OrderUnche
     orderNumber: options.orderNumber || `ORD-${faker.string.alphanumeric(8).toUpperCase()}`,
     status: options.status || OrderStatus.PENDING,
     paymentStatus: options.paymentStatus || PaymentStatus.PENDING,
-    fulfillmentType: options.fulfillmentType || faker.helpers.enumValue(FulfillmentType),
+    fulfillmentType: options.fulfillmentType || faker.helpers.arrayElement(['PICKUP', 'LOCAL_DELIVERY', 'NATIONWIDE_SHIPPING']),
     paymentMethod: options.paymentMethod || faker.helpers.enumValue(PaymentMethod),
     customerName: options.customerName || faker.person.fullName(),
     customerEmail: options.customerEmail || faker.internet.email().toLowerCase(),
@@ -93,7 +93,7 @@ export function buildCancelledOrder(options: Omit<OrderFactoryOptions, 'status' 
  * Generate order with specific fulfillment type
  */
 export function buildOrderWithFulfillment(
-  fulfillmentType: FulfillmentType,
+  fulfillmentType: string,
   options: Omit<OrderFactoryOptions, 'fulfillmentType'> = {}
 ): Prisma.OrderUncheckedCreateInput {
   return buildOrder({
@@ -112,7 +112,7 @@ export function buildTestOrder(suffix: string = ''): Prisma.OrderUncheckedCreate
     orderNumber: `TEST-ORDER${suffix}`,
     status: OrderStatus.PENDING,
     paymentStatus: PaymentStatus.PENDING,
-    fulfillmentType: FulfillmentType.PICKUP,
+    fulfillmentType: 'PICKUP',
     paymentMethod: PaymentMethod.CARD,
     customerName: `Test Customer${suffix}`,
     customerEmail: `test${suffix}@example.com`,
