@@ -3,15 +3,16 @@
  * Provides transaction management and isolation for database tests
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 let prisma: PrismaClient;
-let transactionClient: any = null;
+let transactionClient: Prisma.TransactionClient | null = null;
+let rollbackFn: (() => void) | null = null;
 
 /**
  * Initialize test database connection
  */
-export function initTestDb() {
+export function initTestDb(): PrismaClient {
   if (!prisma) {
     prisma = new PrismaClient({
       datasources: {
@@ -28,6 +29,8 @@ export function initTestDb() {
  * Start a database transaction for test isolation
  * All database operations within the transaction will be rolled back after the test
  *
+ * This uses a special error-based rollback mechanism to ensure isolation
+ *
  * @example
  * beforeEach(async () => {
  *   await startTransaction();
@@ -37,32 +40,64 @@ export function initTestDb() {
  *   await rollbackTransaction();
  * });
  */
-export async function startTransaction() {
+export async function startTransaction(): Promise<Prisma.TransactionClient> {
   const db = initTestDb();
 
-  // Start an interactive transaction
-  transactionClient = await db.$transaction(
-    async tx => {
-      // Store the transaction client for use in tests
-      return tx;
+  // Create a promise that will be used to control transaction rollback
+  let rollbackPromise: Promise<void>;
+  let doRollback: () => void;
+
+  rollbackPromise = new Promise<void>((resolve) => {
+    doRollback = resolve;
+  });
+
+  // Start an interactive transaction that will wait until we explicitly rollback
+  const transactionPromise = db.$transaction(
+    async (tx) => {
+      transactionClient = tx;
+
+      // Wait for rollback signal
+      await rollbackPromise;
+
+      // Throw error to force rollback
+      throw new Error('ROLLBACK');
     },
     {
-      maxWait: 5000,
-      timeout: 10000,
+      maxWait: 10000, // 10 seconds max wait
+      timeout: 60000, // 60 seconds transaction timeout
     }
-  );
+  ).catch((error) => {
+    // Expected rollback error
+    if (error.message !== 'ROLLBACK') {
+      console.error('Transaction error:', error);
+      throw error;
+    }
+  });
 
-  return transactionClient;
+  // Store the rollback function
+  rollbackFn = doRollback!;
+
+  // Wait a bit for the transaction to start
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  return transactionClient!;
 }
 
 /**
  * Rollback the current transaction
  * This ensures test isolation by undoing all database changes
  */
-export async function rollbackTransaction() {
-  if (transactionClient) {
-    // The transaction will automatically rollback when we close it
+export async function rollbackTransaction(): Promise<void> {
+  if (rollbackFn) {
+    // Trigger the rollback
+    rollbackFn();
+
+    // Wait a bit for the transaction to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Clean up
     transactionClient = null;
+    rollbackFn = null;
   }
 }
 
@@ -70,7 +105,7 @@ export async function rollbackTransaction() {
  * Get the current database client
  * Returns transaction client if in a transaction, otherwise returns main client
  */
-export function getTestDb() {
+export function getTestDb(): Prisma.TransactionClient | PrismaClient {
   return transactionClient || initTestDb();
 }
 
