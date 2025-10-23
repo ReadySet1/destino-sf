@@ -4,14 +4,13 @@
  */
 
 import { faker } from '@faker-js/faker';
-import { Prisma, ProductType } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 export interface ProductFactoryOptions {
   name?: string;
   slug?: string;
   description?: string;
   price?: number;
-  type?: ProductType;
   categoryId?: string;
   squareId?: string;
   active?: boolean;
@@ -32,7 +31,6 @@ export function buildProduct(options: ProductFactoryOptions = {}): Prisma.Produc
     slug,
     description: options.description || faker.commerce.productDescription(),
     price: Math.round(price * 100), // Convert to cents
-    type: options.type || ProductType.EMPANADA,
     categoryId: options.categoryId || faker.string.uuid(),
     squareId: options.squareId || `sq_${faker.string.alphanumeric(16)}`,
     active: options.active ?? true,
@@ -51,14 +49,13 @@ export function buildProducts(count: number, options: ProductFactoryOptions = {}
 /**
  * Generate empanada product
  */
-export function buildEmpanada(options: Omit<ProductFactoryOptions, 'type'> = {}): Prisma.ProductUncheckedCreateInput {
+export function buildEmpanada(options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput {
   const flavors = ['Beef', 'Chicken', 'Vegetarian', 'Spinach & Cheese', 'Ham & Cheese'];
   const flavor = faker.helpers.arrayElement(flavors);
 
   return buildProduct({
     ...options,
     name: options.name || `Empanadas - ${flavor} (frozen - 4 pack)`,
-    type: ProductType.EMPANADA,
     price: options.price || faker.helpers.arrayElement([1700, 1800, 1900]), // $17-19
   });
 }
@@ -66,7 +63,7 @@ export function buildEmpanada(options: Omit<ProductFactoryOptions, 'type'> = {})
 /**
  * Generate alfajor product
  */
-export function buildAlfajor(options: Omit<ProductFactoryOptions, 'type'> = {}): Prisma.ProductUncheckedCreateInput {
+export function buildAlfajor(options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput {
   const types = ['Classic', 'Chocolate', 'Dulce de Leche', 'Mixed'];
   const type = faker.helpers.arrayElement(types);
   const count = faker.helpers.arrayElement([6, 12]);
@@ -74,7 +71,6 @@ export function buildAlfajor(options: Omit<ProductFactoryOptions, 'type'> = {}):
   return buildProduct({
     ...options,
     name: options.name || `Alfajores - ${type} (${count === 6 ? '6-pack' : '1 dozen'})`,
-    type: ProductType.ALFAJOR,
     price: options.price || (count === 6 ? 1000 : 1400), // $10 or $14
   });
 }
@@ -82,7 +78,7 @@ export function buildAlfajor(options: Omit<ProductFactoryOptions, 'type'> = {}):
 /**
  * Generate catering package product
  */
-export function buildCateringPackage(options: Omit<ProductFactoryOptions, 'type'> = {}): Prisma.ProductUncheckedCreateInput {
+export function buildCateringPackage(options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput {
   const sizes = ['Small (10-15 people)', 'Medium (20-30 people)', 'Large (40-50 people)'];
   const size = faker.helpers.arrayElement(sizes);
   const peopleCount = size.includes('10-15') ? 12 : size.includes('20-30') ? 25 : 45;
@@ -90,7 +86,6 @@ export function buildCateringPackage(options: Omit<ProductFactoryOptions, 'type'
   return buildProduct({
     ...options,
     name: options.name || `Catering Package - ${size}`,
-    type: ProductType.CATERING,
     price: options.price || peopleCount * 20 * 100, // $20 per person in cents
   });
 }
@@ -98,14 +93,13 @@ export function buildCateringPackage(options: Omit<ProductFactoryOptions, 'type'
 /**
  * Generate sauce product
  */
-export function buildSauce(options: Omit<ProductFactoryOptions, 'type'> = {}): Prisma.ProductUncheckedCreateInput {
+export function buildSauce(options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput {
   const sauces = ['Chimichurri', 'Spicy Mayo', 'Salsa Criolla', 'Aji Verde'];
   const sauce = faker.helpers.arrayElement(sauces);
 
   return buildProduct({
     ...options,
     name: options.name || `${sauce} Sauce`,
-    type: ProductType.SAUCE,
     price: options.price || 500, // $5
   });
 }
@@ -119,7 +113,6 @@ export function buildTestProduct(suffix: string = ''): Prisma.ProductUncheckedCr
     slug: `test-product${suffix.toLowerCase().replace(/\s/g, '-')}`,
     description: 'Test product description',
     price: 1000, // $10.00 in cents
-    type: ProductType.EMPANADA,
     categoryId: 'test-category-id',
     squareId: `test-square-id${suffix}`,
     active: true,
