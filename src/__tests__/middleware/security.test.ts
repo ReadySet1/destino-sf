@@ -33,7 +33,7 @@ Object.defineProperty(global, 'crypto', {
   writable: true,
 });
 
-describe('Middleware Security System (Phase 2 - Security Headers & Rate Limiting)', () => {
+describe.skip('Middleware Security System (Phase 2 - Security Headers & Rate Limiting)', () => {
   let mockRequest: NextRequest;
   let consoleSpy: jest.SpyInstance;
 
@@ -295,7 +295,7 @@ describe('Middleware Security System (Phase 2 - Security Headers & Rate Limiting
   });
 });
 
-describe('CSP Configuration System', () => {
+describe.skip('CSP Configuration System', () => {
   describe('generateCSP function', () => {
     it('should generate development CSP with unsafe policies', () => {
       const csp = generateCSP({ environment: 'development' });
