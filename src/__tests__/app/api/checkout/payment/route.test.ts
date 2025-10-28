@@ -61,6 +61,7 @@ const mockPayment = {
   createdAt: '2024-01-16T14:00:00Z',
 };
 
+// TODO: Update tests to mock applyStrictRateLimit middleware (added in DES-58)
 describe.skip('/api/checkout/payment - POST', () => {
   beforeEach(() => {
     jest.clearAllMocks();
