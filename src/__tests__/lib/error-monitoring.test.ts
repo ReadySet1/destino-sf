@@ -18,14 +18,15 @@ jest.mock('@/env', () => ({
   },
 }));
 
-const mockAlertService = {
-  sendSystemErrorAlert: jest.fn(),
-} as any;
-
-// Mock AlertService constructor
-(AlertService as jest.MockedClass<typeof AlertService>).mockImplementation(() => mockAlertService);
-
 describe.skip('Error Monitoring System (Phase 2 - Sentry Integration Support)', () => {
+  const mockAlertService = {
+    sendSystemErrorAlert: jest.fn(),
+  } as any;
+
+  // Mock AlertService constructor
+  beforeAll(() => {
+    (AlertService as jest.MockedClass<typeof AlertService>).mockImplementation(() => mockAlertService);
+  });
   let monitor: ErrorMonitor;
   let consoleSpy: jest.SpyInstance;
   let consoleErrorSpy: jest.SpyInstance;
