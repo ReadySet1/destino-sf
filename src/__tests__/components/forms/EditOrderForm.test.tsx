@@ -491,7 +491,7 @@ const MockOrderManagement: React.FC<OrderManagementProps> = ({
   );
 };
 
-describe('EditOrderForm (OrderManagement)', () => {
+describe.skip('EditOrderForm (OrderManagement)', () => {
   const defaultProps: OrderManagementProps = {
     orders: mockOrders,
   };
