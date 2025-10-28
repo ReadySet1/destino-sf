@@ -118,6 +118,7 @@ jest.mock('@/app/actions/labels', () => ({
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
+// TODO: Update tests to match current implementation (added in DES-58)
 describe.skip('/api/webhooks/square - POST', () => {
   beforeEach(() => {
     jest.clearAllMocks();
