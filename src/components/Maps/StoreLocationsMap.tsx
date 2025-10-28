@@ -53,11 +53,11 @@ export const STORE_LOCATIONS = [
   },
   {
     name: 'Evergreen Market',
-    address: '5060 Mission St, San Francisco, CA 94112',
+    address: '2539 Mission St, San Francisco, CA 94110, United States',
   },
   {
     name: 'El Chavo Market',
-    address: '4919 3rd St, San Francisco, CA 94124',
+    address: '3250 Mission St, San Francisco, CA 94110, United States',
   },
   {
     name: 'Skyline Market',

@@ -4,11 +4,11 @@ import StoreLocationsPage from './StoreLocationsPage';
 export const metadata: Metadata = {
   title: 'Store Locations | Destino',
   description:
-    'Find Destino products at 29 locations across Northern California, including San Francisco and the Greater Sacramento area. Browse our store locator map.',
+    'Find our handcrafted empanadas and alfajores at 29 retail partner locations throughout Northern California. Connecting people through food and community.',
   openGraph: {
     title: 'Store Locations | Destino',
     description:
-      'Find Destino products at 29 locations across Northern California, including San Francisco and the Greater Sacramento area.',
+      'Find our handcrafted empanadas and alfajores at 29 retail partner locations throughout Northern California. Connecting people through food and community.',
   },
 };
 
