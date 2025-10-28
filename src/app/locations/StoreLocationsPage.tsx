@@ -25,11 +25,11 @@ const StoreLocationsPage = () => {
       <div className="bg-gradient-to-r from-amber-600 to-amber-500 text-white py-16 px-4">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-quicksand font-bold mb-4">
-            Find Destino Near You
+            Proud to Partner with Our Local Retailers
           </h1>
           <p className="text-xl md:text-2xl font-quicksand mb-6 opacity-90">
-            Discover our handcrafted empanadas and alfajores at 29 locations across Northern
-            California
+            You can find our handcrafted empanadas and alfajores at select stores and markets
+            throughout Northern California — connecting people through food and community.
           </p>
           <div className="flex flex-wrap gap-4 text-sm md:text-base">
             <div className="flex items-center gap-2">
@@ -75,7 +75,7 @@ const StoreLocationsPage = () => {
                   clipRule="evenodd"
                 />
               </svg>
-              <span className="font-quicksand">Wine Country</span>
+              <span className="font-quicksand">Northern California</span>
             </div>
           </div>
         </div>
@@ -83,26 +83,11 @@ const StoreLocationsPage = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6 border border-amber-100">
-            <div className="text-3xl font-bold text-amber-600 mb-2 font-quicksand">
-              {STORE_LOCATIONS.length}
-            </div>
-            <div className="text-gray-700 font-quicksand">Store Locations</div>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6 border border-amber-100">
-            <div className="text-3xl font-bold text-amber-600 mb-2 font-quicksand">
-              {sanFranciscoLocations.length}
-            </div>
-            <div className="text-gray-700 font-quicksand">San Francisco Stores</div>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6 border border-amber-100">
-            <div className="text-3xl font-bold text-amber-600 mb-2 font-quicksand">
-              {nuggetLocations.length}
-            </div>
-            <div className="text-gray-700 font-quicksand">Nugget Market Locations</div>
-          </div>
+        {/* Location Count Message */}
+        <div className="text-center mb-8">
+          <p className="text-2xl font-quicksand text-amber-900 font-medium">
+            29 Locations Bringing Destino Specialties to Northern California
+          </p>
         </div>
 
         {/* Interactive Map Section */}
