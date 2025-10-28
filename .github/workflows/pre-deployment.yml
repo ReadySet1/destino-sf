@@ -105,6 +105,33 @@ jobs:
           echo "UPSTASH_REDIS_REST_TOKEN=test-redis-token" >> $GITHUB_ENV
           echo "UPSTASH_REDIS_REST_URL=https://test-redis.upstash.io" >> $GITHUB_ENV
 
+      - name: Verify PostgreSQL Connection
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          for i in {1..30}; do
+            if pg_isready -h localhost -U postgres > /dev/null 2>&1; then
+              echo "✅ PostgreSQL is ready"
+              break
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 1
+          done
+
+          echo "Testing database connection..."
+          PGPASSWORD=postgres psql -h localhost -U postgres -d destino_sf_test -c "SELECT version();"
+
+          echo "✅ Database connection verified successfully"
+
+      - name: Setup Database Schema
+        run: |
+          echo "Generating Prisma Client..."
+          pnpm prisma generate
+
+          echo "Pushing database schema..."
+          pnpm prisma db push --skip-generate --accept-data-loss
+
+          echo "✅ Database schema setup complete"
+
       # ✅ Checklist Item 1: Code Quality
       - name: ✅ Code Quality - Linting
         run: pnpm lint
@@ -118,22 +145,18 @@ jobs:
       # ✅ Checklist Item 2: Unit Tests
       - name: ✅ Unit Tests - Run All
         run: pnpm test:unit
-        continue-on-error: true
 
       # ✅ Checklist Item 3: Critical Path Tests
       - name: ✅ Critical Path Tests - Payment & Orders
         run: pnpm test:critical
-        continue-on-error: true
 
       # ✅ Checklist Item 4: API Tests
       - name: ✅ API Tests - All Routes
         run: pnpm test:api
-        continue-on-error: true
 
       # ✅ Checklist Item 5: Component Tests
       - name: ✅ Component Tests - UI Components
         run: pnpm test:components
-        continue-on-error: true
 
       # ✅ Checklist Item 6: Coverage Requirements
       - name: ✅ Coverage Requirements - Verify Thresholds
@@ -183,6 +206,34 @@ jobs:
           name: deployment-report
           path: deployment-report.md
           retention-days: 30
+
+      - name: Upload test failure logs and debugging artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: pre-deployment-failure-logs
+          path: |
+            **/*.log
+            .next/trace
+            test-results/
+            playwright-report/
+            screenshots/
+            videos/
+            coverage/
+          retention-days: 14
+
+      - name: Report Database Health on Failure
+        if: failure()
+        run: |
+          echo "=== Database Health Report ==="
+          echo "Checking PostgreSQL status..."
+          pg_isready -h localhost -U postgres || echo "⚠️ PostgreSQL not responding"
+
+          echo "Checking database connections..."
+          PGPASSWORD=postgres psql -h localhost -U postgres -d destino_sf_test -c "SELECT count(*) as active_connections FROM pg_stat_activity WHERE datname = 'destino_sf_test';" || echo "⚠️ Could not query database"
+
+          echo "Checking database statistics..."
+          PGPASSWORD=postgres psql -h localhost -U postgres -d destino_sf_test -c "SELECT * FROM pg_stat_database WHERE datname = 'destino_sf_test';" || echo "⚠️ Could not retrieve database stats"
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'

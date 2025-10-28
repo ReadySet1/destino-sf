@@ -179,7 +179,7 @@ const config: Config = {
   passWithNoTests: true,
   verbose: true,
   maxWorkers: 1, // Run tests serially to avoid DB conflicts
-  testTimeout: 30000, // 30 seconds timeout for all tests
+  testTimeout: process.env.CI ? 60000 : 30000, // 60s in CI, 30s locally
   bail: false, // Don't stop on first failure
 
   // Error handling

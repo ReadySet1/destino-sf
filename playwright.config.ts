@@ -34,11 +34,11 @@ export default defineConfig({
     /* Record video only on failures */
     video: 'retain-on-failure',
 
-    /* Global timeout for all actions - increased for reliability */
-    actionTimeout: 15 * 1000,
+    /* Global timeout for all actions - increased for CI reliability */
+    actionTimeout: process.env.CI ? 30 * 1000 : 15 * 1000,
 
-    /* Global timeout for navigation - increased for reliability */
-    navigationTimeout: 30 * 1000,
+    /* Global timeout for navigation - increased for CI reliability */
+    navigationTimeout: process.env.CI ? 60 * 1000 : 30 * 1000,
   },
 
   /* Configure projects for major browsers */
@@ -82,12 +82,12 @@ export default defineConfig({
         },
       ],
 
-  /* Global timeout for each test - increased for complex e2e flows */
-  timeout: 60 * 1000,
+  /* Global timeout for each test - increased for CI reliability */
+  timeout: process.env.CI ? 90 * 1000 : 60 * 1000,
 
-  /* Global timeout for expect assertions - increased for reliability */
+  /* Global timeout for expect assertions - increased for CI reliability */
   expect: {
-    timeout: 10 * 1000,
+    timeout: process.env.CI ? 15 * 1000 : 10 * 1000,
   },
 
   /* Run your local dev server before starting the tests */
