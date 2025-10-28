@@ -12,7 +12,7 @@ export interface CategoryFactoryOptions {
   description?: string;
   squareId?: string;
   active?: boolean;
-  displayOrder?: number;
+  order?: number;
 }
 
 /**
@@ -28,7 +28,7 @@ export function buildCategory(options: CategoryFactoryOptions = {}): Prisma.Cate
     description: options.description || faker.lorem.sentence(),
     squareId: options.squareId || `sq_cat_${faker.string.alphanumeric(16)}`,
     active: options.active ?? true,
-    displayOrder: options.displayOrder || faker.number.int({ min: 1, max: 10 }),
+    order: options.order || faker.number.int({ min: 1, max: 10 }),
   };
 }
 
@@ -85,7 +85,7 @@ export function buildTestCategory(suffix: string = ''): Prisma.CategoryUnchecked
     description: 'Test category description',
     squareId: `test-square-category-id${suffix}`,
     active: true,
-    displayOrder: 1,
+    order: 1,
   };
 }
 
@@ -94,14 +94,14 @@ export function buildTestCategory(suffix: string = ''): Prisma.CategoryUnchecked
  */
 export function buildDestinoCategories(): Prisma.CategoryUncheckedCreateInput[] {
   return [
-    buildEmpanadasCategory({ displayOrder: 1 }),
-    buildAlfajoresCategory({ displayOrder: 2 }),
-    buildCateringCategory({ displayOrder: 3 }),
+    buildEmpanadasCategory({ order: 1 }),
+    buildAlfajoresCategory({ order: 2 }),
+    buildCateringCategory({ order: 3 }),
     buildCategory({
       name: 'Sauces',
       slug: 'sauces',
       description: 'Authentic Argentine sauces and condiments',
-      displayOrder: 4,
+      order: 4,
     }),
   ];
 }
