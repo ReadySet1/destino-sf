@@ -25,8 +25,8 @@ export async function setupTestDatabase() {
     const existingProducts = await testPrisma.product.count();
 
     if (existingProducts > 0) {
-      console.log('✅ Test data already exists, skipping seed');
-      return testPrisma;
+      console.log('🔄 Test data exists, cleaning and reseeding...');
+      await cleanTestDatabase(testPrisma);
     }
 
     // Seed test data using the new seeder
