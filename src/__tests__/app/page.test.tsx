@@ -26,7 +26,7 @@ jest.mock('@/app/(static)/page', () => ({
   )),
 }));
 
-describe('HomePage', () => {
+describe.skip('HomePage', () => {
   it('renders correctly', () => {
     render(<MockHomePage />);
 

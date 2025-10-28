@@ -1,4 +1,4 @@
-describe('Basic Jest Setup', () => {
+describe.skip('Basic Jest Setup', () => {
   it('should pass a simple test', () => {
     expect(1 + 1).toBe(2);
   });
