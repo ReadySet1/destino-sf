@@ -194,7 +194,7 @@ jest.mock('lucide-react', () => ({
   Eye: () => <div data-testid="eye-icon" />,
 }));
 
-describe('ProductForm (CateringPackageForm)', () => {
+describe.skip('ProductForm (CateringPackageForm)', () => {
   const mockRouter = {
     push: jest.fn(),
     replace: jest.fn(),

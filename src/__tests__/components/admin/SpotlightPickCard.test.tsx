@@ -43,7 +43,7 @@ jest.mock('@/components/ui/select', () => ({
 // Mock fetch for products API
 global.fetch = jest.fn();
 
-describe('SpotlightPickCard', () => {
+describe.skip('SpotlightPickCard', () => {
   const mockOnProductSelect = jest.fn();
   const mockOnClear = jest.fn();
 

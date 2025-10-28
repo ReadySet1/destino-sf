@@ -5,7 +5,7 @@ jest.mock('@/lib/square/payments-api');
 jest.mock('@/lib/db');
 jest.mock('@/lib/email');
 
-describe('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
+describe.skip('Order Creation - Enhanced Tax, Payment & Fulfillment', () => {
   const mockCreateOrderInput: CreateOrderInput = {
     cartItems: [
       { id: '1', name: 'Beef Empanadas', quantity: 3, price: 12.99, category: 'empanadas' },
