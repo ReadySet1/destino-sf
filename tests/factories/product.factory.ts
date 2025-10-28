@@ -34,7 +34,7 @@ export function buildProduct(options: ProductFactoryOptions = {}): Prisma.Produc
     categoryId: options.categoryId || faker.string.uuid(),
     squareId: options.squareId || `sq_${faker.string.alphanumeric(16)}`,
     active: options.active ?? true,
-    images: options.images || [faker.image.url()],
+    images: options.images || ['/placeholder-product.jpg'],
     isAvailable: options.isAvailable ?? true,
   };
 }
