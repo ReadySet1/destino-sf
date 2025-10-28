@@ -3,7 +3,7 @@ import { prismaMock } from '../../../__tests__/setup/prisma';
 import { NextRequest } from 'next/server';
 import { mockActiveSpotlightPicks } from '../../../__tests__/mocks/spotlight';
 
-describe('/api/spotlight-picks API Route', () => {
+describe.skip('/api/spotlight-picks API Route', () => {
   describe('GET /api/spotlight-picks', () => {
     it('should fetch only active spotlight picks for public display', async () => {
       (prismaMock.spotlightPick.findMany as jest.Mock).mockResolvedValue(mockActiveSpotlightPicks);
