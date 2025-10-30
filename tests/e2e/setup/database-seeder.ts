@@ -4,6 +4,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { faker } from '@faker-js/faker';
 import {
   buildDestinoCategories,
   buildEmpanada,
@@ -97,27 +98,137 @@ export class DatabaseSeeder {
   private async seedUsers(): Promise<void> {
     console.log('  👤 Seeding users...');
 
-    // Create test customer
-    const testCustomer = buildTestUser();
-    await this.prisma.profile.upsert({
-      where: { email: testCustomer.email },
-      update: {},
-      create: testCustomer,
-    });
+    // Create Supabase client with service role key for testing (bypasses RLS and email confirmation)
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!, // Use service role key for admin privileges
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
 
-    // Create test admin
-    const testAdmin = buildAdminUser({
-      email: 'admin@destinosf.com',
-      firstName: 'Admin',
-      lastName: 'User',
-    });
-    await this.prisma.profile.upsert({
-      where: { email: testAdmin.email },
-      update: {},
-      create: testAdmin,
-    });
+    // Test password for all E2E test users
+    const testPassword = 'password123';
 
-    console.log('  ✅ Seeded 2 test users (customer + admin)');
+    // Clean up existing test users from previous runs
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const customerEmail = 'test.user@example.com';
+    const adminEmail = 'admin@destinosf.com';
+
+    const existingCustomer = existingUsers?.users?.find((u) => u.email === customerEmail);
+    const existingAdmin = existingUsers?.users?.find((u) => u.email === adminEmail);
+
+    if (existingCustomer) {
+      await supabase.auth.admin.deleteUser(existingCustomer.id);
+      console.log(`  🗑️  Deleted existing customer auth user`);
+    }
+    if (existingAdmin) {
+      await supabase.auth.admin.deleteUser(existingAdmin.id);
+      console.log(`  🗑️  Deleted existing admin auth user`);
+    }
+
+    // Create test customer with Supabase Auth
+    try {
+
+      // Use admin API to create user with email auto-confirmed (service role key required)
+      const { data: customerAuth, error: customerAuthError } = await supabase.auth.admin.createUser({
+        email: customerEmail,
+        password: testPassword,
+        email_confirm: true, // Auto-confirm email for testing
+      });
+
+      if (customerAuthError && !customerAuthError.message.includes('already registered')) {
+        console.warn(`⚠️ Customer auth creation warning: ${customerAuthError.message}`);
+      }
+
+      // Create or update profile using the auth user ID if available
+      const customerId = customerAuth?.user?.id;
+      if (!customerId) {
+        throw new Error('Failed to get customer auth user ID from Supabase');
+      }
+
+      console.log(`  🔑 Customer Auth ID: ${customerId}`);
+
+      const testCustomer = buildTestUser();
+      await this.prisma.profile.upsert({
+        where: { email: customerEmail },
+        update: { id: customerId }, // Update ID to match Auth user if profile already exists
+        create: {
+          ...testCustomer,
+          id: customerId,
+          email: customerEmail,
+        },
+      });
+
+      console.log(`  ✅ Created Profile for customer with ID: ${customerId}`);
+    } catch (error) {
+      console.warn(`⚠️ Error creating customer: ${error}. Using database-only profile.`);
+      // Fallback: create database profile only
+      const testCustomer = buildTestUser();
+      await this.prisma.profile.upsert({
+        where: { email: customerEmail },
+        update: {},
+        create: testCustomer,
+      });
+    }
+
+    // Create test admin with Supabase Auth
+    try {
+      // Use admin API to create user with email auto-confirmed (service role key required)
+      const { data: adminAuth, error: adminAuthError } = await supabase.auth.admin.createUser({
+        email: adminEmail,
+        password: testPassword,
+        email_confirm: true, // Auto-confirm email for testing
+      });
+
+      if (adminAuthError && !adminAuthError.message.includes('already registered')) {
+        console.warn(`⚠️ Admin auth creation warning: ${adminAuthError.message}`);
+      }
+
+      // Create or update profile using the auth user ID if available
+      const adminId = adminAuth?.user?.id;
+      if (!adminId) {
+        throw new Error('Failed to get admin auth user ID from Supabase');
+      }
+
+      console.log(`  🔑 Admin Auth ID: ${adminId}`);
+
+      const testAdmin = buildAdminUser({
+        email: adminEmail,
+        firstName: 'Admin',
+        lastName: 'User',
+      });
+      await this.prisma.profile.upsert({
+        where: { email: adminEmail },
+        update: { id: adminId }, // Update ID to match Auth user if profile already exists
+        create: {
+          ...testAdmin,
+          id: adminId,
+          email: adminEmail,
+        },
+      });
+
+      console.log(`  ✅ Created Profile for admin with ID: ${adminId}`);
+    } catch (error) {
+      console.warn(`⚠️ Error creating admin: ${error}. Using database-only profile.`);
+      // Fallback: create database profile only
+      const testAdmin = buildAdminUser({
+        email: adminEmail,
+        firstName: 'Admin',
+        lastName: 'User',
+      });
+      await this.prisma.profile.upsert({
+        where: { email: adminEmail },
+        update: {},
+        create: testAdmin,
+      });
+    }
+
+    console.log('  ✅ Seeded 2 test users (customer + admin) with Supabase Auth');
   }
 
   /**
@@ -337,7 +448,7 @@ export class DatabaseSeeder {
       return;
     }
 
-    const timestamp = Date.now();
+    const timestamp = `${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const orderConfigs = [
       // PENDING orders with different payment statuses
       {
