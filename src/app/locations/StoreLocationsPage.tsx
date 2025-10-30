@@ -123,7 +123,7 @@ const StoreLocationsPage = () => {
                   clipRule="evenodd"
                 />
               </svg>
-              San Francisco & Oakland
+              San Francisco and Bay Area
             </h3>
             <ul className="space-y-2">
               {[...sanFranciscoLocations, ...oaklandLocations].map((loc, idx) => (
@@ -151,7 +151,7 @@ const StoreLocationsPage = () => {
                   clipRule="evenodd"
                 />
               </svg>
-              Nugget Markets
+              Greater California
             </h3>
             <ul className="space-y-2">
               {nuggetLocations.map((loc, idx) => (
