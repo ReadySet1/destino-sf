@@ -65,7 +65,7 @@ test.describe('Admin Authentication & Access Control', () => {
 
     // Verify page title or heading
     await expect(
-      page.getByRole('heading', { name: /orders/i }).or(page.getByText(/order management/i))
+      page.getByRole('heading', { name: /order management/i })
     ).toBeVisible();
 
     console.log('✅ Admin successfully accessed orders page');

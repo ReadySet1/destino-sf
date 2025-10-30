@@ -36,7 +36,7 @@ export class AuthHelpers {
    * Login with email and password
    */
   static async loginWithPassword(page: Page, user: TestUser): Promise<void> {
-    await page.goto('/auth/sign-in');
+    await page.goto('/sign-in');
 
     // Wait for form to be visible
     await expect(
@@ -64,16 +64,12 @@ export class AuthHelpers {
 
     await loginButton.click();
 
-    // Wait for successful login - check for redirect or welcome message
-    await page.waitForURL('/', { timeout: 10000 }).catch(async () => {
-      // If not redirected to home, check for welcome message or user menu
-      await expect(
-        page
-          .getByText(/welcome/i)
-          .or(page.locator('[data-testid="user-menu"]'))
-          .first()
-      ).toBeVisible({ timeout: 5000 });
-    });
+    // Wait for successful login - admin users redirect to /admin, customers to /menu or /
+    // Wait for URL change (navigation away from sign-in page)
+    await page.waitForURL((url) => !url.pathname.includes('/sign-in'), { timeout: 10000 });
+
+    // Additional verification - wait for page to be fully loaded
+    await page.waitForLoadState('networkidle');
 
     console.log(`✅ Logged in as ${user.email} (${user.role})`);
   }
@@ -129,7 +125,7 @@ export class AuthHelpers {
     }
 
     // Verify logout by checking we're redirected to home or login page
-    await expect(page).toHaveURL(/\/$|.*auth.*sign-in/);
+    await expect(page).toHaveURL(/\/$|.*sign-in/);
     console.log('✅ Successfully logged out');
   }
 
