@@ -9,7 +9,7 @@ export interface TestUser {
 
 export const testUsers = {
   admin: {
-    email: 'test@destino-sf.com',
+    email: 'admin@destinosf.com',
     password: 'password123',
     role: 'admin' as const,
     name: 'Admin User',
