@@ -9,6 +9,13 @@ import { FeaturedProducts } from '@/components/Marketing/FeaturedProducts';
 import { mockActiveSpotlightPicks } from '@/__tests__/mocks/spotlight';
 import { SpotlightPick } from '@/types/spotlight';
 
+// Mock Next.js font
+jest.mock('next/font/google', () => ({
+  Dancing_Script: () => ({
+    className: 'dancing-script-mock',
+  }),
+}));
+
 // Mock fetch globally
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
@@ -30,7 +37,7 @@ describe.skip('FeaturedProducts Component', () => {
       ok: true,
       json: async () => ({
         success: true,
-        items: mockActiveSpotlightPicks,
+        data: mockActiveSpotlightPicks,
         count: mockActiveSpotlightPicks.length,
       }),
     } as Response);
@@ -53,7 +60,7 @@ describe.skip('FeaturedProducts Component', () => {
       ok: true,
       json: async () => ({
         success: true,
-        items: [],
+        data: [],
         count: 0,
       }),
     } as Response);
