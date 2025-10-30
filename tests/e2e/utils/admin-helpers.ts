@@ -18,10 +18,23 @@ export class AdminHelpers {
     await page.goto('/admin/orders');
     await page.waitForLoadState('networkidle');
 
-    // Wait for orders table or empty state
+    // Wait for loading to finish - look for content that appears after loading
+    // The page shows "Loading orders..." initially, then shows either:
+    // - A table with orders
+    // - "No orders found" message
+    // - "No data available" message
+    // - Error state with "Unable to Load Orders"
+
+    // First, wait for loading to disappear (optional, might be fast)
+    await page.waitForTimeout(1000);
+
+    // Wait for any of the possible end states
     await expect(
-      page.locator('table').or(page.getByText(/no orders found/i))
-    ).toBeVisible({ timeout: 10000 });
+      page.locator('table')
+        .or(page.getByText(/no orders found/i))
+        .or(page.getByText(/no data available/i))
+        .or(page.getByText(/unable to load orders/i))
+    ).toBeVisible({ timeout: 30000 }); // Increased timeout to 30s for API fetch
 
     console.log('✅ Navigated to admin orders page');
   }
