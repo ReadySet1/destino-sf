@@ -55,7 +55,9 @@ const config: Config = {
           },
         ],
       },
-      transformIgnorePatterns: ['node_modules/(?!(square|shippo|@supabase|@googlemaps)/)'],
+      transformIgnorePatterns: [
+        'node_modules/(?!(square|shippo|@supabase|@googlemaps|@faker-js)/)',
+      ],
       testEnvironmentOptions: {
         customExportConditions: ['node', 'node-addons'],
       },
@@ -110,7 +112,7 @@ const config: Config = {
         ],
       },
       transformIgnorePatterns: [
-        'node_modules/(?!(square|shippo|@supabase|@googlemaps|@testing-library)/)',
+        'node_modules/(?!(square|shippo|@supabase|@googlemaps|@testing-library|@faker-js)/)',
       ],
       testEnvironmentOptions: {
         url: 'http://localhost:3000',
