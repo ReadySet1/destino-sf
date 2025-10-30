@@ -98,6 +98,10 @@ jest.mock('@/env', () => ({
   },
 }));
 
+// Explicitly use manual mocks for Prisma (needed when prisma generate runs in CI)
+jest.mock('@prisma/client');
+jest.mock('@prisma/client/runtime/library');
+
 // Create comprehensive Prisma mock
 const createPrismaMock = () => {
   const baseMethods = {
