@@ -319,6 +319,198 @@ export class DatabaseSeeder {
   }
 
   /**
+   * Seed admin test orders in various states
+   * For comprehensive admin order management testing
+   */
+  async seedAdminTestOrders(): Promise<void> {
+    console.log('  📝 Seeding admin test orders...');
+
+    // Get test user and products
+    const testUser = await this.prisma.profile.findUnique({
+      where: { email: 'test.user@example.com' },
+    });
+
+    const products = await this.prisma.product.findMany({ take: 3 });
+
+    if (!testUser || products.length === 0) {
+      console.log('  ⏭️  Skipping admin test orders (users or products not found)');
+      return;
+    }
+
+    const timestamp = Date.now();
+    const orderConfigs = [
+      // PENDING orders with different payment statuses
+      {
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+        paymentMethod: 'SQUARE',
+        fulfillmentType: 'PICKUP',
+        customerName: 'Pending Customer',
+        customerEmail: 'pending@test.com',
+        notes: 'Test order in PENDING status',
+      },
+      {
+        status: 'PENDING',
+        paymentStatus: 'PAID',
+        paymentMethod: 'SQUARE',
+        fulfillmentType: 'PICKUP',
+        customerName: 'Paid Pending Customer',
+        customerEmail: 'paid-pending@test.com',
+        squareOrderId: `sq-order-paid-${timestamp}`,
+        squarePaymentId: `sq-payment-paid-${timestamp}`,
+        notes: 'Test order PENDING with PAID payment',
+      },
+      {
+        status: 'PENDING',
+        paymentStatus: 'FAILED',
+        paymentMethod: 'SQUARE',
+        fulfillmentType: 'PICKUP',
+        customerName: 'Failed Payment Customer',
+        customerEmail: 'failed@test.com',
+        notes: 'Test order with failed payment',
+      },
+
+      // PROCESSING orders
+      {
+        status: 'PROCESSING',
+        paymentStatus: 'PAID',
+        paymentMethod: 'SQUARE',
+        fulfillmentType: 'PICKUP',
+        customerName: 'Processing Customer',
+        customerEmail: 'processing@test.com',
+        squareOrderId: `sq-order-processing-${timestamp}`,
+        squarePaymentId: `sq-payment-processing-${timestamp}`,
+        notes: 'Test order in PROCESSING status',
+      },
+
+      // READY orders
+      {
+        status: 'READY',
+        paymentStatus: 'PAID',
+        paymentMethod: 'SQUARE',
+        fulfillmentType: 'PICKUP',
+        customerName: 'Ready Customer',
+        customerEmail: 'ready@test.com',
+        squareOrderId: `sq-order-ready-${timestamp}`,
+        squarePaymentId: `sq-payment-ready-${timestamp}`,
+        notes: 'Test order in READY status',
+      },
+
+      // COMPLETED orders
+      {
+        status: 'COMPLETED',
+        paymentStatus: 'PAID',
+        paymentMethod: 'SQUARE',
+        fulfillmentType: 'DELIVERY',
+        customerName: 'Completed Customer',
+        customerEmail: 'completed@test.com',
+        squareOrderId: `sq-order-completed-${timestamp}`,
+        squarePaymentId: `sq-payment-completed-${timestamp}`,
+        notes: 'Test order in COMPLETED status',
+      },
+
+      // CANCELLED orders
+      {
+        status: 'CANCELLED',
+        paymentStatus: 'PENDING',
+        paymentMethod: 'SQUARE',
+        fulfillmentType: 'PICKUP',
+        customerName: 'Cancelled Customer',
+        customerEmail: 'cancelled@test.com',
+        notes: 'Test order in CANCELLED status',
+      },
+
+      // CASH payment order
+      {
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+        paymentMethod: 'CASH',
+        fulfillmentType: 'PICKUP',
+        customerName: 'Cash Customer',
+        customerEmail: 'cash@test.com',
+        notes: 'Test CASH payment order',
+      },
+
+      // NATIONWIDE_SHIPPING order
+      {
+        status: 'PROCESSING',
+        paymentStatus: 'PAID',
+        paymentMethod: 'SQUARE',
+        fulfillmentType: 'NATIONWIDE_SHIPPING',
+        customerName: 'Shipping Customer',
+        customerEmail: 'shipping@test.com',
+        shippingCost: 1595, // $15.95
+        shippingStreet: '123 Main St',
+        shippingCity: 'New York',
+        shippingState: 'NY',
+        shippingZip: '10001',
+        squareOrderId: `sq-order-shipping-${timestamp}`,
+        squarePaymentId: `sq-payment-shipping-${timestamp}`,
+        notes: 'Test nationwide shipping order',
+      },
+
+      // ARCHIVED order
+      {
+        status: 'COMPLETED',
+        paymentStatus: 'PAID',
+        paymentMethod: 'SQUARE',
+        fulfillmentType: 'PICKUP',
+        customerName: 'Archived Customer',
+        customerEmail: 'archived@test.com',
+        squareOrderId: `sq-order-archived-${timestamp}`,
+        squarePaymentId: `sq-payment-archived-${timestamp}`,
+        isArchived: true,
+        archiveReason: 'Test archived order',
+        notes: 'Test order in archived state',
+      },
+    ];
+
+    let orderCount = 0;
+    for (const [index, config] of orderConfigs.entries()) {
+      const subtotal = 5000;
+      const shippingCost = config.shippingCost || 0;
+      const taxAmount = Math.round(subtotal * 0.0825); // 8.25% tax
+      const totalAmount = subtotal + taxAmount + shippingCost;
+
+      const order = await this.prisma.order.create({
+        data: {
+          userId: testUser.id,
+          squareOrderId: config.squareOrderId || `ADMIN-TEST-${timestamp}-${index}`,
+          status: config.status as any,
+          paymentStatus: config.paymentStatus as any,
+          fulfillmentType: config.fulfillmentType as any,
+          paymentMethod: config.paymentMethod as any,
+          customerName: config.customerName,
+          email: config.customerEmail,
+          phone: '(555) 123-4567',
+          total: totalAmount / 100, // Convert cents to dollars (Decimal)
+          taxAmount: taxAmount / 100, // Convert to Decimal
+          shippingCostCents: shippingCost,
+          notes: config.notes,
+          isArchived: config.isArchived || false,
+          archiveReason: config.archiveReason,
+        },
+      });
+
+      // Add 2 order items
+      for (const product of products.slice(0, 2)) {
+        await this.prisma.orderItem.create({
+          data: {
+            orderId: order.id,
+            productId: product.id,
+            quantity: 2,
+            price: product.price,
+          },
+        });
+      }
+
+      orderCount++;
+    }
+
+    console.log(`  ✅ Seeded ${orderCount} admin test orders in various states`);
+  }
+
+  /**
    * Seed shipping configurations
    */
   private async seedShippingConfigurations(): Promise<void> {
