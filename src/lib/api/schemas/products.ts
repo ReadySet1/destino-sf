@@ -141,7 +141,7 @@ export const GetProductsQuerySchema = z
       .optional()
       .transform(val => val === 'true')
       .describe('Return pagination metadata'),
-    page: z.coerce.number().int().positive().default(1).describe('Page number'),
+    page: z.string().optional().default('1').pipe(z.coerce.number().int().positive()).describe('Page number'),
     limit: z.coerce.number().int().positive().max(100).optional().describe('Items per page'),
     search: z.string().optional().describe('Search query for name/description'),
     orderBy: z
