@@ -25,7 +25,8 @@ export function registerSchema<T extends z.ZodType<any, any, any>>(
   name: string,
   schema: T
 ): T {
-  registry.registerComponent('schemas', name, schema);
+  // Type cast needed due to library type mismatch between Zod and OpenAPI types
+  registry.registerComponent('schemas', name, schema as any);
   return schema;
 }
 
