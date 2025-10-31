@@ -14,7 +14,7 @@ import type { ValidationContext } from '@/lib/openapi-validator';
  * @param value - Value to validate
  * @returns Boolean indicating if validation passed
  */
-export function matchesSchema<T>(schema: z.ZodType<T>, value: unknown): boolean {
+export function matchesSchema(schema: z.ZodType<any, any, any>, value: unknown): boolean {
   try {
     schema.parse(value);
     return true;
@@ -30,7 +30,7 @@ export function matchesSchema<T>(schema: z.ZodType<T>, value: unknown): boolean 
  * @param value - Value to validate
  * @returns Array of validation error messages
  */
-export function getValidationErrors<T>(schema: z.ZodType<T>, value: unknown): string[] {
+export function getValidationErrors(schema: z.ZodType<any, any, any>, value: unknown): string[] {
   try {
     schema.parse(value);
     return [];
