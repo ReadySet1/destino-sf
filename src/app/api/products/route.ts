@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/utils/logger';
 import { ProductVisibilityService } from '@/lib/services/product-visibility-service';
 import { isBuildTime } from '@/lib/build-time-utils';
+import { withValidation } from '@/middleware/api-validator';
+import {
+  GetProductsQuerySchema,
+  GetProductsResponseSchema,
+  GetProductsPaginatedResponseSchema,
+} from '@/lib/api/schemas/products';
 
 // Types are now handled by ProductVisibilityService
 
-export async function GET(request: NextRequest) {
+async function getProductsHandler(request: NextRequest) {
   try {
     // Handle build time fallback
     if (isBuildTime()) {
@@ -56,3 +62,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
   }
 }
+
+// Export the GET handler with validation middleware
+export const GET = withValidation(
+  getProductsHandler,
+  {
+    request: {
+      query: GetProductsQuerySchema,
+    },
+    response: {
+      200: GetProductsResponseSchema,
+    },
+  },
+  { mode: 'warn' } // Start with warn mode to avoid breaking existing functionality
+);

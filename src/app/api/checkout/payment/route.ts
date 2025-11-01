@@ -4,8 +4,14 @@ import { prisma, withRetry } from '@/lib/db-unified';
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
 import { getSquareService } from '@/lib/square/service';
 import { randomUUID } from 'crypto';
+import { withValidation } from '@/middleware/api-validator';
+import {
+  CreatePaymentRequestSchema,
+  CreatePaymentResponseSchema,
+} from '@/lib/api/schemas/checkout';
+import { ApiErrorSchema } from '@/lib/api/schemas/common';
 
-export async function POST(request: Request) {
+async function postPaymentHandler(request: Request) {
   // Apply strict rate limiting for payment endpoint (5 requests per minute per IP)
   const rateLimitResponse = await applyStrictRateLimit(request as any, 5);
   if (rateLimitResponse) {
@@ -108,6 +114,23 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// Export POST handler with validation middleware
+export const POST = withValidation(
+  postPaymentHandler,
+  {
+    request: {
+      body: CreatePaymentRequestSchema,
+    },
+    response: {
+      200: CreatePaymentResponseSchema,
+      400: ApiErrorSchema,
+      404: ApiErrorSchema,
+      500: ApiErrorSchema,
+    },
+  },
+  { mode: 'warn' } // Start with warn mode
+);
 
 /**
  * Fallback function to finalize Square order if autocomplete doesn't work

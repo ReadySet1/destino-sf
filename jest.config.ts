@@ -176,6 +176,19 @@ const config: Config = {
       lines: 60,
       statements: 60,
     },
+    // API schemas and validation (high standards for contract integrity)
+    './src/lib/api/**/*.ts': {
+      branches: 80,
+      functions: 85,
+      lines: 85,
+      statements: 85,
+    },
+    './src/middleware/api-validator.ts': {
+      branches: 75,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
   },
   collectCoverage: false, // Enable only when running coverage explicitly
   passWithNoTests: true,
