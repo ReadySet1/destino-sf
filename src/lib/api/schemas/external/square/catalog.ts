@@ -166,13 +166,13 @@ export type CatalogObject = {
   category_data?: CatalogCategory;
   modifier_list_data?: CatalogModifierList;
   modifier_data?: CatalogModifier;
-  custom_attribute_values?: Record<string, any>;
+  custom_attribute_values?: Record<string, unknown>;
 };
 
 /**
  * Catalog Item (product)
  */
-export const CatalogItemSchema: z.ZodType<any> = z.lazy(() =>
+export const CatalogItemSchema = z.lazy(() =>
   z.object({
     name: z.string().optional(),
     description: z.string().optional(),
@@ -243,12 +243,12 @@ export const CatalogModifierSchema = z.object({
   ordinal_position: z.number().int().optional(),
   available_for_booking: z.boolean().optional(),
   selection_type: z.enum(['SINGLE', 'MULTIPLE']).optional(),
-  modifier_data_location_overrides: z.array(z.any()).optional(),
+  modifier_data_location_overrides: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
 export type CatalogModifier = z.infer<typeof CatalogModifierSchema>;
 
-export const CatalogModifierListSchema: z.ZodType<any> = z.lazy(() =>
+export const CatalogModifierListSchema = z.lazy(() =>
   z.object({
     name: z.string().optional(),
     ordinal: z.number().int().optional(),
@@ -285,7 +285,7 @@ export const CatalogObjectSchema: z.ZodType<CatalogObject> = z.lazy(() =>
     category_data: CatalogCategorySchema.optional(),
     modifier_list_data: CatalogModifierListSchema.optional(),
     modifier_data: CatalogModifierSchema.optional(),
-    custom_attribute_values: z.record(z.any()).optional(),
+    custom_attribute_values: z.record(z.string(), z.unknown()).optional(),
   })
 );
 

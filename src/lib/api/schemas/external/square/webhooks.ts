@@ -120,7 +120,7 @@ export const WebhookValidationErrorSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('INVALID_PAYLOAD'),
-    zodError: z.any(),
+    zodError: z.unknown(),
   }),
   z.object({
     type: z.literal('DUPLICATE_EVENT'),

@@ -275,9 +275,9 @@ export const ShippoShipmentResponseSchema = z.object({
   parcels: z.array(ShippoParcelSchema),
   shipment_date: z.string().optional(),
   extra: ShippoShipmentExtraSchema.optional(),
-  customs_declaration: z.any().optional(),
+  customs_declaration: z.record(z.string(), z.unknown()).optional(),
   rates: z.array(ShippoRateSchema),
-  carrier_accounts: z.array(z.any()).optional(),
+  carrier_accounts: z.array(z.record(z.string(), z.unknown())).optional(),
   messages: z.array(ShippoValidationMessageSchema).optional(),
   metadata: z.string().optional(),
 });
@@ -441,7 +441,7 @@ export const ShippoApiResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =
   });
 
 export const ShippoRateResponseSchema = ShippoApiResponseSchema(ShippoRateSchema).extend({
-  shipment: z.any().optional(),
+  shipment: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type ShippoRateResponse = z.infer<typeof ShippoRateResponseSchema>;

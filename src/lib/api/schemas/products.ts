@@ -337,8 +337,8 @@ export const ProductValidationIssueSchema = z.object({
   field: z.string().describe('Field with issue'),
   message: z.string().describe('Issue description'),
   severity: z.enum(['error', 'warning', 'info']).describe('Issue severity'),
-  current: z.any().optional().describe('Current value'),
-  expected: z.any().optional().describe('Expected value'),
+  current: z.unknown().optional().describe('Current value'),
+  expected: z.unknown().optional().describe('Expected value'),
 });
 
 export type ProductValidationIssue = z.infer<typeof ProductValidationIssueSchema>;
