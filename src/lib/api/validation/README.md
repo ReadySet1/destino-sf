@@ -369,12 +369,160 @@ If validation impacts performance:
 3. **Reduce context** - Log less data for each validation
 4. **Cache validated schemas** - Reuse parsed schemas
 
+## Advanced Features
+
+### Sampling Configuration
+
+Control validation sampling rates per environment to reduce overhead in production:
+
+```typescript
+// Automatic based on NODE_ENV
+// - Test: 100% sampling
+// - Production: 10% sampling (configurable via VALIDATION_SAMPLE_RATE env var)
+// - Development: 100% sampling
+
+// Override via environment variable
+process.env.VALIDATION_SAMPLE_RATE = '0.25'; // 25% sampling
+```
+
+Configuration options in `validation-config.ts`:
+- `enabled`: Whether validation is enabled
+- `sampleRate`: Percentage of requests to validate (0.0 to 1.0)
+- `logToConsole`: Log failures to console (dev mode)
+- `sendToErrorMonitoring`: Send failures to monitoring service
+- `errorLogRateLimit`: Max errors logged per minute per API
+
+### Rate Limiting
+
+Validation error logging is rate-limited to prevent log spam:
+
+```typescript
+// Production: Max 10 errors/minute per API
+// Development: Max 50 errors/minute per API
+// Test: Max 1000 errors/minute per API
+```
+
+Rate limiting ensures that sudden API changes don't flood your monitoring system.
+
+### Schema Versioning
+
+Track schema versions to monitor API evolution:
+
+```typescript
+import { schemaVersionRegistry, SCHEMA_VERSIONS } from '@/lib/api/schemas/schema-version';
+
+// Get all schema versions
+const versions = schemaVersionRegistry.getAll();
+
+// Check if schema needs review (older than 90 days)
+const needsReview = schemaVersionRegistry.needsReview('SQUARE_CATALOG', 90);
+
+// Get specific version
+const catalogVersion = SCHEMA_VERSIONS.SQUARE_CATALOG;
+console.log(`Catalog schema v${catalogVersion.version}, updated ${catalogVersion.lastUpdated}`);
+```
+
+Schema versions use semantic versioning (MAJOR.MINOR.PATCH) and track:
+- `version`: Schema version number
+- `lastUpdated`: Date of last update
+- `changelog`: Description of changes
+
+### Validation Trends
+
+Track validation metrics over time to identify API drift:
+
+```typescript
+import { validationTrendsTracker } from '@/lib/api/validation/validation-trends';
+
+// Get trends for specific API
+const trends = validationTrendsTracker.getTrends('Square Payments API');
+console.log({
+  currentSuccessRate: trends.currentSuccessRate,
+  averageSuccessRate: trends.averageSuccessRate,
+  trendDirection: trends.trendDirection, // 'improving' | 'declining' | 'stable'
+  hourly: trends.hourly, // Hourly aggregated data
+  daily: trends.daily, // Daily aggregated data
+});
+
+// Check for alerts
+const alerts = validationTrendsTracker.checkAlerts();
+alerts.forEach(alert => {
+  console.warn(`[${alert.severity}] ${alert.apiName}: ${alert.message}`);
+});
+```
+
+Alerts are triggered when:
+- Success rate drops below 95% (high severity)
+- Success rate drops below 90% (critical severity)
+- Failures spike by 10x compared to previous period (high severity)
+
+## Configuration
+
+### Environment Variables
+
+- `VALIDATION_SAMPLE_RATE` - Override sampling rate (0.0 to 1.0)
+- `NODE_ENV` - Controls validation behavior (test/development/production)
+
+### Example Configuration
+
+**Production:**
+```bash
+NODE_ENV=production
+VALIDATION_SAMPLE_RATE=0.1  # Validate 10% of requests
+```
+
+**Staging:**
+```bash
+NODE_ENV=development
+VALIDATION_SAMPLE_RATE=1.0  # Validate 100% of requests
+```
+
+**Testing:**
+```bash
+NODE_ENV=test
+# Validation automatically runs at 100% with reduced logging
+```
+
+## Performance Impact
+
+Based on validation overhead analysis:
+
+- **Validation time**: ~2-5ms per request (depends on schema complexity)
+- **Memory**: ~10KB per cached schema
+- **Recommended production sampling**: 10-25%
+- **Network overhead**: None (validation is synchronous, post-response)
+
+Performance tips:
+1. Use sampling in production (10-25%)
+2. Validate critical endpoints at higher rates
+3. Monitor validation performance metrics
+4. Adjust sampling based on traffic patterns
+
+## Migration Checklist
+
+When adding validation to new endpoints:
+
+- [ ] Create Zod schema or import existing schema
+- [ ] Add contract tests (aim for >95% coverage)
+- [ ] Register schema in `register-schemas.ts`
+- [ ] Add wrapper in `integration-examples.ts` (if needed)
+- [ ] Configure error monitoring alerts
+- [ ] Document schema version in `schema-version.ts`
+- [ ] Add usage example to API changelog
+- [ ] Test with real API responses in staging
+- [ ] Deploy with 10% sampling initially
+- [ ] Monitor for 24-48 hours
+- [ ] Increase sampling if no issues
+
 ## Related Documentation
 
 - **Phase 4 Plan**: `docs/PHASE_4_EXTERNAL_API_CONTRACTS.md` (if exists)
 - **Contract Tests**: `/src/__tests__/contracts/external/README.md`
 - **Square API Docs**: https://developer.squareup.com/docs
 - **Shippo API Docs**: https://goshippo.com/docs/
+- **Validation Config**: `./validation-config.ts`
+- **Schema Versioning**: `@/lib/api/schemas/schema-version.ts`
+- **Trends Tracking**: `./validation-trends.ts`
 
 ## Support
 
@@ -382,4 +530,6 @@ For questions or issues:
 1. Review examples in `integration-examples.ts`
 2. Check contract tests for usage patterns
 3. Review error logs in monitoring system
-4. Update schemas if API has changed
+4. Check validation trends for API drift
+5. Verify schema versions are up to date
+6. Update schemas if API has changed

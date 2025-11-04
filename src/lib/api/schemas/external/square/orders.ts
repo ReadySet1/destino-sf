@@ -132,7 +132,7 @@ export type OrderLineItemAppliedServiceCharge = z.infer<
  * Order quantity unit
  */
 export const OrderQuantityUnitSchema = z.object({
-  measurement_unit: z.any().optional(),
+  measurement_unit: z.record(z.string(), z.unknown()).optional(),
   precision: z.number().int().optional(),
   catalog_object_id: z.string().optional(),
   catalog_version: z.union([z.number(), z.bigint()]).optional(),
@@ -382,9 +382,9 @@ export const TenderSchema = z.object({
   processing_fee_money: MoneySchema.optional(),
   customer_id: z.string().optional(),
   type: z.string(),
-  card_details: z.any().optional(),
-  cash_details: z.any().optional(),
-  additional_recipients: z.array(z.any()).optional(),
+  card_details: z.record(z.string(), z.unknown()).optional(),
+  cash_details: z.record(z.string(), z.unknown()).optional(),
+  additional_recipients: z.array(z.record(z.string(), z.unknown())).optional(),
   payment_id: z.string().optional(),
 });
 
@@ -403,7 +403,7 @@ export const RefundSchema = z.object({
   amount_money: MoneySchema,
   status: z.string(),
   processing_fee_money: MoneySchema.optional(),
-  additional_recipients: z.array(z.any()).optional(),
+  additional_recipients: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
 export type Refund = z.infer<typeof RefundSchema>;

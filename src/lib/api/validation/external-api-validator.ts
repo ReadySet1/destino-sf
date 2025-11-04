@@ -21,6 +21,12 @@
 import { z } from 'zod';
 import { errorMonitor, ErrorSeverity } from '@/lib/error-monitoring';
 import { logger } from '@/utils/logger';
+import {
+  getValidationConfig,
+  shouldValidate,
+  validationErrorRateLimiter,
+} from './validation-config';
+import { validationTrendsTracker } from './validation-trends';
 
 /**
  * Validation result metadata
@@ -61,6 +67,7 @@ interface ValidationStats {
   failureCount: number;
   lastFailure?: Date;
   failuresByApi: Record<string, number>;
+  skippedDueToSampling: number;
 }
 
 /**
@@ -71,6 +78,7 @@ const validationStats: ValidationStats = {
   successCount: 0,
   failureCount: 0,
   failuresByApi: {},
+  skippedDueToSampling: 0,
 };
 
 /**
@@ -89,6 +97,8 @@ export function resetValidationStats(): void {
   validationStats.failureCount = 0;
   validationStats.lastFailure = undefined;
   validationStats.failuresByApi = {};
+  validationStats.skippedDueToSampling = 0;
+  validationErrorRateLimiter.reset();
 }
 
 /**
@@ -107,7 +117,30 @@ export function validateExternalApiResponse<T>(
   schema: z.ZodType<T>,
   metadata: ValidationMetadata
 ): ValidationResult<T> {
+  const config = getValidationConfig();
   const timestamp = new Date();
+
+  // Check if validation is enabled
+  if (!config.enabled) {
+    return {
+      success: true,
+      data: data as T, // Return unvalidated data
+      metadata,
+      timestamp,
+    };
+  }
+
+  // Check sampling rate
+  if (!shouldValidate(config.sampleRate)) {
+    validationStats.skippedDueToSampling++;
+    return {
+      success: true,
+      data: data as T, // Return unvalidated data
+      metadata,
+      timestamp,
+    };
+  }
+
   validationStats.totalValidations++;
 
   try {
@@ -116,6 +149,9 @@ export function validateExternalApiResponse<T>(
 
     // Validation succeeded
     validationStats.successCount++;
+
+    // Record trend data
+    validationTrendsTracker.record(metadata.apiName, 1, 0);
 
     return {
       success: true,
@@ -132,11 +168,16 @@ export function validateExternalApiResponse<T>(
 
     const zodError = error instanceof z.ZodError ? error : undefined;
 
-    // Log the validation failure for monitoring
+    // Record trend data
+    validationTrendsTracker.record(metadata.apiName, 0, 1);
+
+    // Log the validation failure for monitoring (with rate limiting)
     logValidationFailure(data, zodError, metadata, timestamp);
 
+    // Return original data to prevent breaking the request
     return {
       success: false,
+      data: data as T, // Return unvalidated data
       errors: zodError,
       metadata,
       timestamp,
@@ -198,6 +239,20 @@ function logValidationFailure(
   metadata: ValidationMetadata,
   timestamp: Date
 ): void {
+  const config = getValidationConfig();
+
+  // Check rate limit for this API
+  const rateLimitKey = `validation-error:${metadata.apiName}`;
+  const allowedByRateLimit = validationErrorRateLimiter.check(
+    rateLimitKey,
+    config.errorLogRateLimit
+  );
+
+  if (!allowedByRateLimit) {
+    // Rate limit exceeded, skip logging
+    return;
+  }
+
   // Format Zod errors into a readable structure
   const errorDetails = zodError?.errors.map((err) => ({
     path: err.path.join('.'),
@@ -205,34 +260,40 @@ function logValidationFailure(
     code: err.code,
   }));
 
-  // Log to error monitoring service (fire and forget - non-blocking)
-  errorMonitor.captureError(
-    new Error('External API Schema Validation Failed'),
-    {
-      component: 'external-api-validator',
-      action: 'schema_validation',
-      additionalData: {
-        type: 'external_api_validation_failure',
-        apiName: metadata.apiName,
-        operation: metadata.operation,
-        requestId: metadata.requestId,
-        timestamp: timestamp,
-        validationErrors: errorDetails,
-        // Include sample of data for debugging (be careful with sensitive data)
-        dataSample: truncateData(data),
-        stats: {
-          totalValidations: validationStats.totalValidations,
-          failureCount: validationStats.failureCount,
-          successRate: (validationStats.successCount / validationStats.totalValidations) * 100,
+  // Log to error monitoring service if enabled
+  if (config.sendToErrorMonitoring) {
+    errorMonitor.captureError(
+      new Error('External API Schema Validation Failed'),
+      {
+        component: 'external-api-validator',
+        action: 'schema_validation',
+        additionalData: {
+          type: 'external_api_validation_failure',
+          apiName: metadata.apiName,
+          operation: metadata.operation,
+          requestId: metadata.requestId,
+          timestamp: timestamp,
+          validationErrors: errorDetails,
+          // Include sample of data for debugging (be careful with sensitive data)
+          dataSample: truncateData(data),
+          stats: {
+            totalValidations: validationStats.totalValidations,
+            failureCount: validationStats.failureCount,
+            successRate:
+              validationStats.totalValidations > 0
+                ? (validationStats.successCount / validationStats.totalValidations) * 100
+                : 0,
+            skippedDueToSampling: validationStats.skippedDueToSampling,
+          },
+          ...metadata.context,
         },
-        ...metadata.context,
       },
-    },
-    ErrorSeverity.MEDIUM
-  );
+      ErrorSeverity.MEDIUM
+    );
+  }
 
-  // Also log to console in development for easier debugging
-  if (process.env.NODE_ENV === 'development') {
+  // Log to console if enabled (e.g., in development)
+  if (config.logToConsole) {
     logger.warn('🔍 External API Validation Failed:', {
       apiName: metadata.apiName,
       operation: metadata.operation,
