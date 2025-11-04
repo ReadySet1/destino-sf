@@ -242,3 +242,198 @@ export const DeleteProductResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
+
+// ============================================================
+// Extended Products API Schemas (Phase 3)
+// ============================================================
+
+/**
+ * Product display order schema (for reordering)
+ */
+export const ProductDisplayOrderSchema = z.object({
+  id: z.string().uuid().describe('Product UUID'),
+  name: z.string().describe('Product name'),
+  ordinal: z.number().int().nonnegative().describe('Display order position'),
+  categoryId: z.string().uuid().nullable().describe('Category UUID'),
+  imageUrl: z.string().url().optional().describe('Primary image URL'),
+  price: MoneySchema.describe('Product price'),
+  active: z.boolean().describe('Whether product is active'),
+  isAvailable: z.boolean().optional().describe('Current availability status'),
+  isPreorder: z.boolean().optional().describe('Whether product is available for preorder'),
+  visibility: z.string().optional().describe('Product visibility setting'),
+  itemState: z.string().optional().describe('Product item state'),
+});
+
+export type ProductDisplayOrder = z.infer<typeof ProductDisplayOrderSchema>;
+
+/**
+ * GET /api/products/by-category/[categoryId] query parameters
+ */
+export const GetProductsByCategoryQuerySchema = z.object({
+  includeInactive: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true')
+    .describe('Include inactive products'),
+  includeAvailabilityEvaluation: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true')
+    .describe('Evaluate current availability'),
+  includePrivate: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true')
+    .describe('Include private products (admin only)'),
+  limit: z.coerce.number().int().positive().optional().describe('Items per page'),
+  page: z.coerce.number().int().positive().optional().default(1).describe('Page number'),
+  includePagination: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true')
+    .describe('Include pagination metadata'),
+});
+
+export type GetProductsByCategoryQuery = z.infer<typeof GetProductsByCategoryQuerySchema>;
+
+/**
+ * GET /api/products/by-category/[categoryId] path parameters
+ */
+export const GetProductsByCategoryParamsSchema = z.object({
+  categoryId: z.string().uuid().describe('Category UUID'),
+});
+
+export type GetProductsByCategoryParams = z.infer<typeof GetProductsByCategoryParamsSchema>;
+
+/**
+ * Pagination metadata schema
+ */
+export const PaginationSchema = z.object({
+  page: z.number().int().positive(),
+  limit: z.number().int().positive(),
+  total: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+});
+
+export type Pagination = z.infer<typeof PaginationSchema>;
+
+/**
+ * GET /api/products/by-category/[categoryId] response
+ */
+export const GetProductsByCategoryResponseSchema = z.object({
+  success: z.boolean(),
+  categoryId: z.string().uuid(),
+  products: z.array(ProductDisplayOrderSchema),
+  count: z.number().int().nonnegative(),
+  pagination: PaginationSchema.optional(),
+});
+
+export type GetProductsByCategoryResponse = z.infer<typeof GetProductsByCategoryResponseSchema>;
+
+/**
+ * Product validation issue schema
+ */
+export const ProductValidationIssueSchema = z.object({
+  field: z.string().describe('Field with issue'),
+  message: z.string().describe('Issue description'),
+  severity: z.enum(['error', 'warning', 'info']).describe('Issue severity'),
+  current: z.any().optional().describe('Current value'),
+  expected: z.any().optional().describe('Expected value'),
+});
+
+export type ProductValidationIssue = z.infer<typeof ProductValidationIssueSchema>;
+
+/**
+ * POST /api/products/validate request body
+ */
+export const ValidateProductRequestSchema = z.object({
+  productId: z.string().uuid().describe('Product UUID to validate'),
+});
+
+export type ValidateProductRequest = z.infer<typeof ValidateProductRequestSchema>;
+
+/**
+ * POST /api/products/validate response
+ */
+export const ValidateProductResponseSchema = z.object({
+  success: z.boolean(),
+  issues: z.array(ProductValidationIssueSchema),
+  isValid: z.boolean().describe('Whether product passes validation'),
+});
+
+export type ValidateProductResponse = z.infer<typeof ValidateProductResponseSchema>;
+
+/**
+ * Product reorder update schema
+ */
+export const ProductReorderUpdateSchema = z.object({
+  id: z.string().uuid().describe('Product UUID'),
+  ordinal: z.number().int().positive().describe('New display order position'),
+});
+
+export type ProductReorderUpdate = z.infer<typeof ProductReorderUpdateSchema>;
+
+/**
+ * POST /api/products/reorder request body
+ */
+export const ReorderProductsRequestSchema = z.object({
+  updates: z
+    .array(ProductReorderUpdateSchema)
+    .min(1, 'At least one product update is required')
+    .describe('Array of product reorder updates'),
+  categoryId: z.string().uuid().optional().describe('Optional category filter for validation'),
+});
+
+export type ReorderProductsRequest = z.infer<typeof ReorderProductsRequestSchema>;
+
+/**
+ * POST /api/products/reorder response
+ */
+export const ReorderProductsResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  updatedCount: z.number().int().nonnegative(),
+});
+
+export type ReorderProductsResponse = z.infer<typeof ReorderProductsResponseSchema>;
+
+/**
+ * Reorder strategy enum
+ */
+export const ReorderStrategySchema = z.enum([
+  'ALPHABETICAL',
+  'PRICE_ASC',
+  'PRICE_DESC',
+  'NEWEST_FIRST',
+]);
+
+export type ReorderStrategy = z.infer<typeof ReorderStrategySchema>;
+
+/**
+ * PUT /api/products/reorder request body (quick sort)
+ */
+export const QuickSortProductsRequestSchema = z.object({
+  categoryId: z.string().uuid().describe('Category UUID to sort'),
+  strategy: ReorderStrategySchema.describe('Sorting strategy to apply'),
+});
+
+export type QuickSortProductsRequest = z.infer<typeof QuickSortProductsRequestSchema>;
+
+/**
+ * PUT /api/products/reorder response (quick sort)
+ */
+export const QuickSortProductsResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  updatedCount: z.number().int().nonnegative(),
+  strategy: ReorderStrategySchema,
+});
+
+export type QuickSortProductsResponse = z.infer<typeof QuickSortProductsResponseSchema>;
+
+/**
+ * GET /api/categories response
+ */
+export const GetCategoriesResponseSchema = z.array(ProductCategorySchema);
+
+export type GetCategoriesResponse = z.infer<typeof GetCategoriesResponseSchema>;
