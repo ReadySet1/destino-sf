@@ -31,6 +31,21 @@ import {
   UpdateProductResponseSchema,
   DeleteProductParamsSchema,
   DeleteProductResponseSchema,
+  // Extended Products schemas (Phase 3)
+  ProductDisplayOrderSchema,
+  GetProductsByCategoryQuerySchema,
+  GetProductsByCategoryParamsSchema,
+  GetProductsByCategoryResponseSchema,
+  ProductValidationIssueSchema,
+  ValidateProductRequestSchema,
+  ValidateProductResponseSchema,
+  ProductReorderUpdateSchema,
+  ReorderProductsRequestSchema,
+  ReorderProductsResponseSchema,
+  ReorderStrategySchema,
+  QuickSortProductsRequestSchema,
+  QuickSortProductsResponseSchema,
+  GetCategoriesResponseSchema,
 } from './schemas/products';
 import {
   // Checkout schemas
@@ -51,6 +66,40 @@ import {
   UpdateOrderRequestSchema,
   UpdateOrderResponseSchema,
 } from './schemas/checkout';
+import {
+  // Orders schemas
+  OrderStatusSchema,
+  PaymentStatusSchema as OrderPaymentStatusSchema,
+  PaymentMethodSchema as OrderPaymentMethodSchema,
+  FulfillmentTypeSchema as OrderFulfillmentTypeSchema,
+  OrderItemSchema as OrdersOrderItemSchema,
+  OrderSchema as OrdersOrderSchema,
+  OrderSummarySchema,
+  GetOrdersQuerySchema as OrdersGetOrdersQuerySchema,
+  GetOrdersResponseSchema as OrdersGetOrdersResponseSchema,
+  GetOrderByIdParamsSchema,
+  GetOrderByIdResponseSchema,
+  UpdateOrderRequestSchema as OrdersUpdateOrderRequestSchema,
+  UpdateOrderResponseSchema as OrdersUpdateOrderResponseSchema,
+  RetryPaymentRequestSchema,
+  RetryPaymentResponseSchema,
+  UserOrderSchema,
+  GetUserOrdersResponseSchema,
+} from './schemas/orders';
+import {
+  // Catering schemas
+  CateringStatusSchema,
+  DeliveryZoneSchema,
+  CateringItemTypeSchema,
+  CateringCategorySchema,
+  CateringItemSchema,
+  CateringOrderItemSchema,
+  CateringOrderSchema,
+  BoxedLunchEntreeSchema,
+  BoxedLunchTierSchema,
+  LegacyBoxedLunchItemSchema,
+  GetCateringOrderByIdResponseSchema,
+} from './schemas/catering';
 
 /**
  * Register all component schemas with the OpenAPI registry
@@ -67,6 +116,12 @@ export function registerComponentSchemas() {
   registerSchema('ProductVariant', ProductVariantSchema);
   registerSchema('ProductSummary', ProductSummarySchema);
 
+  // Extended Products components (Phase 3)
+  registerSchema('ProductDisplayOrder', ProductDisplayOrderSchema);
+  registerSchema('ProductValidationIssue', ProductValidationIssueSchema);
+  registerSchema('ProductReorderUpdate', ProductReorderUpdateSchema);
+  registerSchema('ReorderStrategy', ReorderStrategySchema);
+
   // Checkout/Order components
   registerSchema('FulfillmentType', FulfillmentTypeSchema);
   registerSchema('PaymentMethod', PaymentMethodSchema);
@@ -74,6 +129,23 @@ export function registerComponentSchemas() {
   registerSchema('OrderItem', OrderItemSchema);
   registerSchema('CartItem', CartItemSchema);
   registerSchema('Order', OrderSchema);
+
+  // Orders API components
+  registerSchema('OrderStatus', OrderStatusSchema);
+  registerSchema('OrderSummary', OrderSummarySchema);
+  registerSchema('UserOrder', UserOrderSchema);
+
+  // Catering API components
+  registerSchema('CateringStatus', CateringStatusSchema);
+  registerSchema('DeliveryZone', DeliveryZoneSchema);
+  registerSchema('CateringItemType', CateringItemTypeSchema);
+  registerSchema('CateringCategory', CateringCategorySchema);
+  registerSchema('CateringItem', CateringItemSchema);
+  registerSchema('CateringOrderItem', CateringOrderItemSchema);
+  registerSchema('CateringOrder', CateringOrderSchema);
+  registerSchema('BoxedLunchEntree', BoxedLunchEntreeSchema);
+  registerSchema('BoxedLunchTier', BoxedLunchTierSchema);
+  registerSchema('LegacyBoxedLunchItem', LegacyBoxedLunchItemSchema);
 }
 
 /**
