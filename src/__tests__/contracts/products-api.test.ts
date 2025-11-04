@@ -11,6 +11,22 @@ import {
   ProductSchema,
   ProductCategorySchema,
   ProductVariantSchema,
+  // Extended Products schemas (Phase 3)
+  ProductDisplayOrderSchema,
+  GetProductsByCategoryQuerySchema,
+  GetProductsByCategoryParamsSchema,
+  GetProductsByCategoryResponseSchema,
+  ProductValidationIssueSchema,
+  ValidateProductRequestSchema,
+  ValidateProductResponseSchema,
+  ProductReorderUpdateSchema,
+  ReorderProductsRequestSchema,
+  ReorderProductsResponseSchema,
+  ReorderStrategySchema,
+  QuickSortProductsRequestSchema,
+  QuickSortProductsResponseSchema,
+  GetCategoriesResponseSchema,
+  PaginationSchema,
 } from '@/lib/api/schemas/products';
 import { matchesSchema, getValidationErrors, contractAssert, mockData } from './setup';
 
@@ -293,6 +309,408 @@ describe('Products API Contract Tests', () => {
       expect(() => {
         contractAssert.hasFields(product, ['id', 'name', 'price']);
       }).toThrow(/Missing required fields/);
+    });
+  });
+
+  // ============================================================
+  // Extended Products API Tests (Phase 3)
+  // ============================================================
+
+  describe('ProductDisplayOrderSchema', () => {
+    it('should validate a complete product display order object', () => {
+      const displayOrder = {
+        id: mockData.uuid(),
+        name: 'Empanadas',
+        ordinal: 5,
+        categoryId: mockData.uuid(),
+        imageUrl: 'https://example.com/empanadas.jpg',
+        price: 799,
+        active: true,
+        isAvailable: true,
+        isPreorder: false,
+        visibility: 'PUBLIC',
+        itemState: 'AVAILABLE',
+      };
+
+      expect(matchesSchema(ProductDisplayOrderSchema, displayOrder)).toBe(true);
+    });
+
+    it('should accept null categoryId', () => {
+      const displayOrder = {
+        id: mockData.uuid(),
+        name: 'Test Product',
+        ordinal: 0,
+        categoryId: null,
+        price: 999,
+        active: true,
+      };
+
+      expect(matchesSchema(ProductDisplayOrderSchema, displayOrder)).toBe(true);
+    });
+
+    it('should reject negative ordinal', () => {
+      const displayOrder = {
+        id: mockData.uuid(),
+        name: 'Test Product',
+        ordinal: -1, // Invalid
+        categoryId: null,
+        price: 999,
+        active: true,
+      };
+
+      expect(matchesSchema(ProductDisplayOrderSchema, displayOrder)).toBe(false);
+    });
+  });
+
+  describe('GET /api/products/by-category/[categoryId]', () => {
+    describe('GetProductsByCategoryQuerySchema', () => {
+      it('should validate valid query parameters', () => {
+        const query = {
+          includeInactive: 'true',
+          includeAvailabilityEvaluation: 'false',
+          limit: '20',
+          page: '1',
+        };
+
+        expect(matchesSchema(GetProductsByCategoryQuerySchema, query)).toBe(true);
+      });
+
+      it('should transform string booleans to booleans', () => {
+        const query = { includeInactive: 'true' };
+        const result = GetProductsByCategoryQuerySchema.parse(query);
+        expect(result.includeInactive).toBe(true);
+        expect(typeof result.includeInactive).toBe('boolean');
+      });
+
+      it('should default page to 1', () => {
+        const query = {};
+        const result = GetProductsByCategoryQuerySchema.parse(query);
+        expect(result.page).toBe(1);
+      });
+
+      it('should accept all optional query parameters', () => {
+        const query = {};
+        expect(matchesSchema(GetProductsByCategoryQuerySchema, query)).toBe(true);
+      });
+    });
+
+    describe('GetProductsByCategoryParamsSchema', () => {
+      it('should validate valid category UUID', () => {
+        const params = { categoryId: mockData.uuid() };
+        expect(matchesSchema(GetProductsByCategoryParamsSchema, params)).toBe(true);
+      });
+
+      it('should reject invalid UUID', () => {
+        const params = { categoryId: 'invalid-uuid' };
+        expect(matchesSchema(GetProductsByCategoryParamsSchema, params)).toBe(false);
+      });
+    });
+
+    describe('GetProductsByCategoryResponseSchema', () => {
+      it('should validate complete response with pagination', () => {
+        const response = {
+          success: true,
+          categoryId: mockData.uuid(),
+          products: [
+            {
+              id: mockData.uuid(),
+              name: 'Product 1',
+              ordinal: 1,
+              categoryId: mockData.uuid(),
+              price: 999,
+              active: true,
+            },
+          ],
+          count: 1,
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 1,
+            totalPages: 1,
+          },
+        };
+
+        expect(matchesSchema(GetProductsByCategoryResponseSchema, response)).toBe(true);
+      });
+
+      it('should validate response without pagination', () => {
+        const response = {
+          success: true,
+          categoryId: mockData.uuid(),
+          products: [],
+          count: 0,
+        };
+
+        expect(matchesSchema(GetProductsByCategoryResponseSchema, response)).toBe(true);
+      });
+    });
+  });
+
+  describe('POST /api/products/validate', () => {
+    describe('ProductValidationIssueSchema', () => {
+      it('should validate a validation issue', () => {
+        const issue = {
+          field: 'price',
+          message: 'Price must be positive',
+          severity: 'error' as const,
+          current: -100,
+          expected: 'positive number',
+        };
+
+        expect(matchesSchema(ProductValidationIssueSchema, issue)).toBe(true);
+      });
+
+      it('should accept all severity levels', () => {
+        const severities = ['error', 'warning', 'info'] as const;
+        severities.forEach(severity => {
+          const issue = {
+            field: 'test',
+            message: 'test message',
+            severity,
+          };
+          expect(matchesSchema(ProductValidationIssueSchema, issue)).toBe(true);
+        });
+      });
+    });
+
+    describe('ValidateProductRequestSchema', () => {
+      it('should validate valid request', () => {
+        const request = { productId: mockData.uuid() };
+        expect(matchesSchema(ValidateProductRequestSchema, request)).toBe(true);
+      });
+
+      it('should reject invalid UUID', () => {
+        const request = { productId: 'not-a-uuid' };
+        expect(matchesSchema(ValidateProductRequestSchema, request)).toBe(false);
+      });
+    });
+
+    describe('ValidateProductResponseSchema', () => {
+      it('should validate response with no issues', () => {
+        const response = {
+          success: true,
+          issues: [],
+          isValid: true,
+        };
+
+        expect(matchesSchema(ValidateProductResponseSchema, response)).toBe(true);
+      });
+
+      it('should validate response with issues', () => {
+        const response = {
+          success: true,
+          issues: [
+            {
+              field: 'description',
+              message: 'Description is missing',
+              severity: 'warning' as const,
+            },
+          ],
+          isValid: false,
+        };
+
+        expect(matchesSchema(ValidateProductResponseSchema, response)).toBe(true);
+      });
+    });
+  });
+
+  describe('POST /api/products/reorder', () => {
+    describe('ProductReorderUpdateSchema', () => {
+      it('should validate a reorder update', () => {
+        const update = {
+          id: mockData.uuid(),
+          ordinal: 5,
+        };
+
+        expect(matchesSchema(ProductReorderUpdateSchema, update)).toBe(true);
+      });
+
+      it('should reject zero ordinal', () => {
+        const update = {
+          id: mockData.uuid(),
+          ordinal: 0, // Must be positive (>0)
+        };
+
+        expect(matchesSchema(ProductReorderUpdateSchema, update)).toBe(false);
+      });
+
+      it('should reject negative ordinal', () => {
+        const update = {
+          id: mockData.uuid(),
+          ordinal: -1,
+        };
+
+        expect(matchesSchema(ProductReorderUpdateSchema, update)).toBe(false);
+      });
+    });
+
+    describe('ReorderProductsRequestSchema', () => {
+      it('should validate valid request with category', () => {
+        const request = {
+          updates: [
+            { id: mockData.uuid(), ordinal: 1 },
+            { id: mockData.uuid(), ordinal: 2 },
+          ],
+          categoryId: mockData.uuid(),
+        };
+
+        expect(matchesSchema(ReorderProductsRequestSchema, request)).toBe(true);
+      });
+
+      it('should validate request without category', () => {
+        const request = {
+          updates: [{ id: mockData.uuid(), ordinal: 1 }],
+        };
+
+        expect(matchesSchema(ReorderProductsRequestSchema, request)).toBe(true);
+      });
+
+      it('should reject empty updates array', () => {
+        const request = {
+          updates: [],
+        };
+
+        expect(matchesSchema(ReorderProductsRequestSchema, request)).toBe(false);
+      });
+    });
+
+    describe('ReorderProductsResponseSchema', () => {
+      it('should validate successful response', () => {
+        const response = {
+          success: true,
+          message: 'Successfully updated display order for 5 products',
+          updatedCount: 5,
+        };
+
+        expect(matchesSchema(ReorderProductsResponseSchema, response)).toBe(true);
+      });
+
+      it('should validate zero updates', () => {
+        const response = {
+          success: true,
+          message: 'No products to update',
+          updatedCount: 0,
+        };
+
+        expect(matchesSchema(ReorderProductsResponseSchema, response)).toBe(true);
+      });
+    });
+  });
+
+  describe('PUT /api/products/reorder (Quick Sort)', () => {
+    describe('ReorderStrategySchema', () => {
+      it('should validate all strategy types', () => {
+        const strategies = ['ALPHABETICAL', 'PRICE_ASC', 'PRICE_DESC', 'NEWEST_FIRST'];
+        strategies.forEach(strategy => {
+          expect(matchesSchema(ReorderStrategySchema, strategy)).toBe(true);
+        });
+      });
+
+      it('should reject invalid strategy', () => {
+        expect(matchesSchema(ReorderStrategySchema, 'INVALID_STRATEGY')).toBe(false);
+      });
+    });
+
+    describe('QuickSortProductsRequestSchema', () => {
+      it('should validate valid request', () => {
+        const request = {
+          categoryId: mockData.uuid(),
+          strategy: 'ALPHABETICAL' as const,
+        };
+
+        expect(matchesSchema(QuickSortProductsRequestSchema, request)).toBe(true);
+      });
+
+      it('should require both fields', () => {
+        const request = { categoryId: mockData.uuid() };
+        expect(matchesSchema(QuickSortProductsRequestSchema, request)).toBe(false);
+      });
+    });
+
+    describe('QuickSortProductsResponseSchema', () => {
+      it('should validate successful response', () => {
+        const response = {
+          success: true,
+          message: 'Successfully applied ALPHABETICAL sorting to 10 products',
+          updatedCount: 10,
+          strategy: 'ALPHABETICAL' as const,
+        };
+
+        expect(matchesSchema(QuickSortProductsResponseSchema, response)).toBe(true);
+      });
+    });
+  });
+
+  describe('GET /api/categories', () => {
+    describe('GetCategoriesResponseSchema', () => {
+      it('should validate empty categories array', () => {
+        const response: any[] = [];
+        expect(matchesSchema(GetCategoriesResponseSchema, response)).toBe(true);
+      });
+
+      it('should validate categories array', () => {
+        const response = [
+          {
+            id: mockData.uuid(),
+            name: 'Empanadas',
+            slug: 'empanadas',
+          },
+          {
+            id: mockData.uuid(),
+            name: 'Alfajores',
+            slug: 'alfajores',
+          },
+        ];
+
+        expect(matchesSchema(GetCategoriesResponseSchema, response)).toBe(true);
+      });
+
+      it('should reject invalid category format', () => {
+        const response = [
+          {
+            id: 'not-a-uuid', // Invalid
+            name: 'Test',
+            slug: 'test',
+          },
+        ];
+
+        expect(matchesSchema(GetCategoriesResponseSchema, response)).toBe(false);
+      });
+    });
+  });
+
+  describe('PaginationSchema', () => {
+    it('should validate valid pagination', () => {
+      const pagination = {
+        page: 1,
+        limit: 20,
+        total: 100,
+        totalPages: 5,
+      };
+
+      expect(matchesSchema(PaginationSchema, pagination)).toBe(true);
+    });
+
+    it('should reject negative values', () => {
+      const pagination = {
+        page: -1,
+        limit: 20,
+        total: 100,
+        totalPages: 5,
+      };
+
+      expect(matchesSchema(PaginationSchema, pagination)).toBe(false);
+    });
+
+    it('should reject zero page/limit', () => {
+      const pagination = {
+        page: 0, // Must be positive (>0)
+        limit: 20,
+        total: 100,
+        totalPages: 5,
+      };
+
+      expect(matchesSchema(PaginationSchema, pagination)).toBe(false);
     });
   });
 });
