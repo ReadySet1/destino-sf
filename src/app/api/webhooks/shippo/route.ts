@@ -3,6 +3,11 @@ import type { NextRequest } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { OrderStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
+import {
+  validateShippoWebhookSignature,
+  validateShippoWebhookSecurity,
+  debugShippoWebhookSignature,
+} from '@/lib/shippo/webhook-validator';
 
 interface ShippoWebhookPayload {
   event:
@@ -15,9 +20,6 @@ interface ShippoWebhookPayload {
   test: boolean;
   data: any; // Type this more strictly based on expected event data if needed
 }
-
-// TODO: Implement Shippo webhook signature verification for security
-// See: https://docs.goshippo.com/docs/tracking/webhooks/#webhook-security
 
 async function handleTransactionCreated(data: any): Promise<void> {
   console.log('Processing Shippo transaction_created event');
@@ -174,8 +176,45 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
 
   try {
-    // Read and parse the request body
-    const payload: ShippoWebhookPayload = await request.json();
+    // 1. Read the raw body for signature validation
+    const body = await request.text();
+
+    // 2. Validate webhook security (content length, headers, etc.)
+    const securityCheck = await validateShippoWebhookSecurity(request);
+    if (!securityCheck.valid) {
+      console.error('❌ Shippo webhook security validation failed:', securityCheck.error);
+      return NextResponse.json(
+        {
+          error: 'Webhook security validation failed',
+          details: securityCheck.error,
+        },
+        { status: 401 }
+      );
+    }
+
+    // 3. Validate webhook signature
+    const validationResult = await validateShippoWebhookSignature(request, body);
+
+    // Debug webhook signature in development
+    if (process.env.NODE_ENV === 'development') {
+      debugShippoWebhookSignature(request, body, validationResult);
+    }
+
+    if (!validationResult.valid) {
+      console.error('❌ Shippo webhook signature validation failed:', validationResult.error);
+      return NextResponse.json(
+        {
+          error: 'Invalid webhook signature',
+          details: validationResult.error?.type,
+        },
+        { status: 401 }
+      );
+    }
+
+    console.log('✅ Shippo webhook signature validated successfully');
+
+    // 4. Parse the validated payload
+    const payload: ShippoWebhookPayload = JSON.parse(body);
     console.log('Shippo Webhook Payload:', JSON.stringify(payload, null, 2));
 
     // Basic security: Check if this is a test webhook
