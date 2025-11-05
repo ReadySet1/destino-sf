@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json.schemastore.org/performance-budgets.json",
+  "budgets": [
+    {
+      "name": "Homepage",
+      "path": "/",
+      "metrics": {
+        "LCP": {
+          "budget": 2500,
+          "unit": "ms",
+          "description": "Largest Contentful Paint should be under 2.5s"
+        },
+        "FID": {
+          "budget": 100,
+          "unit": "ms",
+          "description": "First Input Delay should be under 100ms"
+        },
+        "CLS": {
+          "budget": 0.1,
+          "unit": "score",
+          "description": "Cumulative Layout Shift should be under 0.1"
+        },
+        "TTFB": {
+          "budget": 800,
+          "unit": "ms",
+          "description": "Time to First Byte should be under 800ms"
+        },
+        "FCP": {
+          "budget": 1800,
+          "unit": "ms",
+          "description": "First Contentful Paint should be under 1.8s"
+        },
+        "INP": {
+          "budget": 200,
+          "unit": "ms",
+          "description": "Interaction to Next Paint should be under 200ms"
+        }
+      },
+      "lighthouse": {
+        "performance": 90,
+        "accessibility": 95,
+        "best-practices": 90,
+        "seo": 95
+      }
+    },
+    {
+      "name": "Product Catalog",
+      "path": "/menu",
+      "metrics": {
+        "LCP": {
+          "budget": 3000,
+          "unit": "ms",
+          "description": "Largest Contentful Paint should be under 3s"
+        },
+        "FID": {
+          "budget": 100,
+          "unit": "ms",
+          "description": "First Input Delay should be under 100ms"
+        },
+        "CLS": {
+          "budget": 0.1,
+          "unit": "score",
+          "description": "Cumulative Layout Shift should be under 0.1"
+        }
+      },
+      "api": {
+        "GET /api/products": {
+          "p95": 200,
+          "p99": 500,
+          "unit": "ms"
+        }
+      },
+      "lighthouse": {
+        "performance": 85,
+        "accessibility": 95
+      }
+    },
+    {
+      "name": "Product Detail",
+      "path": "/menu/:slug",
+      "metrics": {
+        "LCP": {
+          "budget": 3000,
+          "unit": "ms",
+          "description": "Product images should load quickly"
+        },
+        "CLS": {
+          "budget": 0.1,
+          "unit": "score",
+          "description": "Image layout should be stable"
+        }
+      },
+      "lighthouse": {
+        "performance": 85
+      }
+    },
+    {
+      "name": "Checkout Flow",
+      "path": "/checkout",
+      "metrics": {
+        "LCP": {
+          "budget": 2500,
+          "unit": "ms",
+          "description": "Checkout should load quickly"
+        },
+        "FID": {
+          "budget": 100,
+          "unit": "ms",
+          "description": "Form inputs should be responsive"
+        },
+        "CLS": {
+          "budget": 0.05,
+          "unit": "score",
+          "description": "Checkout form should be stable"
+        }
+      },
+      "api": {
+        "POST /api/checkout/payment": {
+          "p95": 500,
+          "p99": 1000,
+          "unit": "ms"
+        },
+        "POST /api/orders": {
+          "p95": 300,
+          "p99": 800,
+          "unit": "ms"
+        }
+      },
+      "lighthouse": {
+        "performance": 85,
+        "accessibility": 100
+      }
+    },
+    {
+      "name": "Catering Pages",
+      "path": "/catering",
+      "metrics": {
+        "LCP": {
+          "budget": 3000,
+          "unit": "ms"
+        },
+        "FID": {
+          "budget": 100,
+          "unit": "ms"
+        }
+      },
+      "api": {
+        "GET /api/catering/appetizers": {
+          "p95": 200,
+          "p99": 500,
+          "unit": "ms"
+        },
+        "POST /api/catering/order": {
+          "p95": 500,
+          "p99": 1000,
+          "unit": "ms"
+        }
+      },
+      "lighthouse": {
+        "performance": 85
+      }
+    },
+    {
+      "name": "Admin Dashboard",
+      "path": "/admin",
+      "metrics": {
+        "LCP": {
+          "budget": 3500,
+          "unit": "ms",
+          "description": "Admin pages can be slightly slower"
+        },
+        "FID": {
+          "budget": 150,
+          "unit": "ms"
+        }
+      },
+      "api": {
+        "GET /api/admin/orders": {
+          "p95": 500,
+          "p99": 1500,
+          "unit": "ms"
+        }
+      },
+      "lighthouse": {
+        "performance": 80,
+        "accessibility": 95
+      }
+    }
+  ],
+  "bundleSizes": {
+    "main": {
+      "budget": 200,
+      "unit": "KB",
+      "description": "Main bundle (gzipped)"
+    },
+    "vendor": {
+      "budget": 300,
+      "unit": "KB",
+      "description": "Vendor bundle (gzipped)"
+    },
+    "total": {
+      "budget": 500,
+      "unit": "KB",
+      "description": "Total JavaScript (gzipped)"
+    }
+  },
+  "monitoring": {
+    "alertThresholds": {
+      "budgetViolation": {
+        "severity": "high",
+        "action": "Fail build if budget exceeded by 20%"
+      },
+      "performanceRegression": {
+        "severity": "medium",
+        "threshold": "10% degradation from baseline",
+        "action": "Send alert notification"
+      }
+    },
+    "reportingInterval": "daily",
+    "trendAnalysis": {
+      "enabled": true,
+      "windowDays": 30,
+      "alertOnTrend": "deteriorating"
+    }
+  }
+}
