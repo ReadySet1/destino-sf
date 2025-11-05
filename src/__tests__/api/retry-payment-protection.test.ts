@@ -27,7 +27,26 @@ jest.mock('@/lib/db', () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    cateringOrder: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
   },
+}));
+
+// Mock db-unified
+jest.mock('@/lib/db-unified', () => ({
+  prisma: {
+    order: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    cateringOrder: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+  },
+  withRetry: jest.fn((fn: any) => fn()),
 }));
 
 jest.mock('@/middleware/rate-limit', () => ({
@@ -38,8 +57,34 @@ jest.mock('crypto', () => ({
   randomUUID: jest.fn(() => 'mock-uuid'),
 }));
 
-describe.skip('API Route: Retry Payment Protection', () => {
-  const mockPrisma = require('@/lib/db').prisma;
+// Mock Square checkout link creation
+jest.mock('@/lib/square/checkout-links', () => ({
+  createCheckoutLink: jest.fn(() =>
+    Promise.resolve({
+      checkoutUrl: 'https://square-checkout-url.com',
+      orderId: 'square-order-id',
+    })
+  ),
+}));
+
+// Mock logger
+jest.mock('@/utils/logger', () => ({
+  logger: {
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+  },
+}));
+
+// Mock environment configuration
+jest.mock('@/env', () => ({
+  env: {
+    NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+  },
+}));
+
+describe('API Route: Retry Payment Protection', () => {
+  const mockPrisma = require('@/lib/db-unified').prisma;
   const TEST_ORDER_ID = '550e8400-e29b-41d4-a716-446655440000';
 
   beforeEach(() => {
@@ -93,20 +138,6 @@ describe.skip('API Route: Retry Payment Protection', () => {
 
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
     mockPrisma.order.update.mockResolvedValue({ ...mockOrder, retryCount: 2 });
-
-    // Mock successful Square checkout session creation
-    (global as any).fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            payment_link: {
-              url: 'https://square-checkout-url.com',
-              order_id: 'square-order-id',
-            },
-          }),
-      })
-    );
 
     const request = new NextRequest(
       `http://localhost:3000/api/orders/${TEST_ORDER_ID}/retry-payment`,
@@ -208,10 +239,22 @@ describe.skip('API Route: Retry Payment Protection', () => {
     const data = await response.json();
 
     expect(response.status).toBe(401);
-    expect(data.error).toBe('Unauthorized');
+    expect(data.error).toBe('Authentication required. Please provide your email address to retry payment.');
   });
 
   it('should return existing valid checkout URL if available', async () => {
+    // Reset the Supabase mock to return a user for this test
+    const createClient = require('@/utils/supabase/server').createClient;
+    createClient.mockReturnValue({
+      auth: {
+        getUser: jest.fn(() =>
+          Promise.resolve({
+            data: { user: { id: TEST_USER_ID } },
+          })
+        ),
+      },
+    });
+
     // Mock an order with a valid existing checkout URL
     const futureDate = new Date();
     futureDate.setHours(futureDate.getHours() + 2); // 2 hours in the future
@@ -225,6 +268,7 @@ describe.skip('API Route: Retry Payment Protection', () => {
       retryCount: 1,
       paymentUrl: 'https://existing-checkout-url.com',
       paymentUrlExpiresAt: futureDate,
+      email: 'john@example.com',
       items: [],
     };
 
