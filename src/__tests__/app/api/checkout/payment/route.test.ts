@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/db';
 import { createPayment } from '@/lib/square/orders';
 import { POST } from '@/app/api/checkout/payment/route';
 
@@ -13,9 +12,46 @@ jest.mock('@/lib/db', () => ({
   },
 }));
 
+// Mock db-unified
+jest.mock('@/lib/db-unified', () => ({
+  prisma: {
+    order: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+  },
+  withRetry: jest.fn((fn: any) => fn()),
+}));
+
 jest.mock('@/lib/square/orders');
 
-// Type-safe mock setup
+// Mock rate limiting middleware
+jest.mock('@/middleware/rate-limit', () => ({
+  applyStrictRateLimit: jest.fn(() => Promise.resolve(null)),
+}));
+
+// Mock validation middleware - pass through handler
+jest.mock('@/middleware/api-validator', () => ({
+  withValidation: jest.fn((handler: any) => handler),
+}));
+
+// Mock logger
+jest.mock('@/utils/logger', () => ({
+  logger: {
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+  },
+}));
+
+// Mock Square service
+jest.mock('@/lib/square/service', () => ({
+  getSquareService: jest.fn(() => ({
+    updateOrder: jest.fn().mockResolvedValue({ order: { id: 'square-order-456', state: 'OPEN' } }),
+  })),
+}));
+
+// Type-safe mock setup for both mocked prisma instances
 const mockPrisma = {
   order: {
     findUnique: jest.fn(),
@@ -23,8 +59,9 @@ const mockPrisma = {
   },
 } as any;
 
-// Replace the actual prisma instance with our mock
-(prisma as any).order = mockPrisma.order;
+// Import mocked prisma from db-unified
+const dbUnified = require('@/lib/db-unified');
+dbUnified.prisma.order = mockPrisma.order;
 
 const mockCreatePayment = createPayment as jest.MockedFunction<typeof createPayment>;
 
@@ -61,8 +98,7 @@ const mockPayment = {
   createdAt: '2024-01-16T14:00:00Z',
 };
 
-// TODO: Update tests to mock applyStrictRateLimit middleware (added in DES-58)
-describe.skip('/api/checkout/payment - POST', () => {
+describe('/api/checkout/payment - POST', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Mock console methods to suppress error logs during tests
