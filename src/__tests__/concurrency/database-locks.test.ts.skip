@@ -1,0 +1,582 @@
+/**
+ * DES-60 Phase 4: Database Locks Tests
+ *
+ * Tests low-level database locking mechanisms to ensure:
+ * 1. Optimistic locking with version field works correctly
+ * 2. Pessimistic locking with FOR UPDATE works correctly
+ * 3. Lock acquisition errors are handled properly
+ * 4. Deadlocks are prevented or handled gracefully
+ * 5. Transaction isolation levels work as expected
+ *
+ * @project DES-60 Phase 4: Concurrent Operations & Race Conditions
+ */
+
+import { prisma } from '@/lib/db-unified';
+import {
+  updateWithOptimisticLock,
+  retryWithOptimisticLock,
+  OptimisticLockError,
+} from '@/lib/concurrency/optimistic-lock';
+import {
+  withRowLock,
+  withRowLocks,
+  LockAcquisitionError,
+  isLockAcquisitionError,
+} from '@/lib/concurrency/pessimistic-lock';
+import { Order, Prisma } from '@prisma/client';
+
+describe('Database Locks', () => {
+  let testOrder: Order;
+
+  beforeEach(async () => {
+    // Create a test order with version field
+    testOrder = await prisma.order.create({
+      data: {
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+        total: 100.0,
+        customerName: 'Test Customer',
+        email: 'lock-test@example.com',
+        phone: '+1234567890',
+        pickupTime: new Date(Date.now() + 86400000),
+        version: 1, // Initial version
+      },
+    });
+  });
+
+  afterEach(async () => {
+    // Clean up test orders
+    await prisma.order.deleteMany({
+      where: {
+        email: 'lock-test@example.com',
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  describe('Optimistic Locking', () => {
+    it('should successfully update with correct version', async () => {
+      const updated = await updateWithOptimisticLock(
+        prisma.order,
+        testOrder.id,
+        1, // Current version
+        { status: 'PROCESSING' },
+        { modelName: 'Order' }
+      );
+
+      expect(updated.status).toBe('PROCESSING');
+      expect(updated.version).toBe(2); // Version incremented
+    });
+
+    it('should throw OptimisticLockError on version mismatch', async () => {
+      // Update to version 2
+      await prisma.order.update({
+        where: { id: testOrder.id },
+        data: { version: { increment: 1 } },
+      });
+
+      // Try to update with old version (1)
+      await expect(
+        updateWithOptimisticLock(
+          prisma.order,
+          testOrder.id,
+          1, // Wrong version (should be 2)
+          { status: 'PROCESSING' },
+          { modelName: 'Order' }
+        )
+      ).rejects.toThrow(OptimisticLockError);
+    });
+
+    it('should handle concurrent updates with optimistic locking', async () => {
+      // Simulate two concurrent updates
+      const update1 = updateWithOptimisticLock(
+        prisma.order,
+        testOrder.id,
+        1,
+        { status: 'PROCESSING' },
+        { modelName: 'Order' }
+      );
+
+      const update2 = updateWithOptimisticLock(
+        prisma.order,
+        testOrder.id,
+        1,
+        { paymentStatus: 'PAID' },
+        { modelName: 'Order' }
+      );
+
+      const results = await Promise.allSettled([update1, update2]);
+
+      // One should succeed, one should fail
+      const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      expect(succeeded).toBe(1);
+      expect(failed).toBe(1);
+
+      // The failed one should have OptimisticLockError
+      const failedResult = results.find(r => r.status === 'rejected') as PromiseRejectedResult;
+      expect(failedResult.reason).toBeInstanceOf(OptimisticLockError);
+    });
+
+    it('should auto-retry on optimistic lock conflict when configured', async () => {
+      let attemptCount = 0;
+
+      const result = await retryWithOptimisticLock(
+        async (attempt) => {
+          attemptCount = attempt;
+
+          // Get current order state
+          const order = await prisma.order.findUnique({
+            where: { id: testOrder.id },
+          });
+
+          if (!order) throw new Error('Order not found');
+
+          // Try to update with current version
+          return updateWithOptimisticLock(
+            prisma.order,
+            testOrder.id,
+            order.version,
+            { status: 'PROCESSING' },
+            { modelName: 'Order' }
+          );
+        },
+        {
+          maxRetries: 3,
+          retryDelay: 100,
+          autoRetry: true,
+        }
+      );
+
+      expect(result.status).toBe('PROCESSING');
+      expect(attemptCount).toBeGreaterThan(0);
+    });
+
+    it('should increment version on each successful update', async () => {
+      // Perform 5 sequential updates
+      let currentVersion = 1;
+
+      for (let i = 0; i < 5; i++) {
+        const updated = await updateWithOptimisticLock(
+          prisma.order,
+          testOrder.id,
+          currentVersion,
+          { status: i % 2 === 0 ? 'PROCESSING' : 'PENDING' },
+          { modelName: 'Order' }
+        );
+
+        currentVersion = updated.version;
+        expect(currentVersion).toBe(i + 2); // Version should increment
+      }
+
+      // Final version should be 6 (started at 1, 5 increments)
+      expect(currentVersion).toBe(6);
+    });
+  });
+
+  describe('Pessimistic Locking', () => {
+    it('should successfully acquire row lock and execute function', async () => {
+      const result = await withRowLock<Order, { originalStatus: string; newStatus: string }>(
+        'orders',
+        testOrder.id,
+        async (lockedOrder) => {
+          expect(lockedOrder.id).toBe(testOrder.id);
+          expect(lockedOrder.status).toBe('PENDING');
+
+          // Update the order
+          await prisma.order.update({
+            where: { id: testOrder.id },
+            data: { status: 'PROCESSING' },
+          });
+
+          return {
+            originalStatus: lockedOrder.status,
+            newStatus: 'PROCESSING',
+          };
+        },
+        { timeout: 5000, noWait: true }
+      );
+
+      expect(result.originalStatus).toBe('PENDING');
+      expect(result.newStatus).toBe('PROCESSING');
+
+      // Verify update was committed
+      const updated = await prisma.order.findUnique({
+        where: { id: testOrder.id },
+      });
+      expect(updated?.status).toBe('PROCESSING');
+    });
+
+    it('should prevent concurrent row locks with NOWAIT', async () => {
+      // First lock - will hold for 1 second
+      const lock1Promise = withRowLock<Order, string>(
+        'orders',
+        testOrder.id,
+        async (order) => {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return 'lock1-completed';
+        },
+        { timeout: 5000, noWait: true }
+      );
+
+      // Wait a bit to ensure first lock is acquired
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Second lock - should fail immediately with NOWAIT
+      const lock2Promise = withRowLock<Order, string>(
+        'orders',
+        testOrder.id,
+        async (order) => {
+          return 'lock2-completed';
+        },
+        { timeout: 5000, noWait: true }
+      );
+
+      const results = await Promise.allSettled([lock1Promise, lock2Promise]);
+
+      // First should succeed
+      expect(results[0].status).toBe('fulfilled');
+      if (results[0].status === 'fulfilled') {
+        expect(results[0].value).toBe('lock1-completed');
+      }
+
+      // Second should fail with lock error
+      expect(results[1].status).toBe('rejected');
+      if (results[1].status === 'rejected') {
+        expect(isLockAcquisitionError(results[1].reason)).toBe(true);
+        expect((results[1].reason as LockAcquisitionError).reason).toBe('timeout');
+      }
+    });
+
+    it('should throw LockAcquisitionError for non-existent record', async () => {
+      await expect(
+        withRowLock<Order, void>(
+          'orders',
+          'non-existent-id',
+          async (order) => {
+            // This should never execute
+          },
+          { noWait: true }
+        )
+      ).rejects.toThrow(LockAcquisitionError);
+
+      try {
+        await withRowLock<Order, void>(
+          'orders',
+          'non-existent-id',
+          async (order) => {},
+          { noWait: true }
+        );
+      } catch (error) {
+        expect(isLockAcquisitionError(error)).toBe(true);
+        if (isLockAcquisitionError(error)) {
+          expect(error.reason).toBe('not_found');
+        }
+      }
+    });
+
+    it('should rollback transaction on error', async () => {
+      const originalStatus = testOrder.status;
+
+      await expect(
+        withRowLock<Order, void>(
+          'orders',
+          testOrder.id,
+          async (order) => {
+            // Update the order
+            await prisma.order.update({
+              where: { id: testOrder.id },
+              data: { status: 'PROCESSING' },
+            });
+
+            // Throw error to trigger rollback
+            throw new Error('Intentional error to test rollback');
+          },
+          { timeout: 5000 }
+        )
+      ).rejects.toThrow('Intentional error');
+
+      // Verify order was NOT updated (transaction rolled back)
+      const order = await prisma.order.findUnique({
+        where: { id: testOrder.id },
+      });
+
+      expect(order?.status).toBe(originalStatus);
+    });
+
+    it('should support different isolation levels', async () => {
+      // Test with Serializable isolation level
+      const result = await withRowLock<Order, string>(
+        'orders',
+        testOrder.id,
+        async (order) => {
+          return `Locked order ${order.id}`;
+        },
+        {
+          timeout: 5000,
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          noWait: true,
+        }
+      );
+
+      expect(result).toContain(testOrder.id);
+    });
+  });
+
+  describe('Multiple Row Locks', () => {
+    let order1: Order;
+    let order2: Order;
+    let order3: Order;
+
+    beforeEach(async () => {
+      // Create multiple test orders
+      [order1, order2, order3] = await Promise.all([
+        prisma.order.create({
+          data: {
+            status: 'PENDING',
+            paymentStatus: 'PENDING',
+            total: 50.0,
+            customerName: 'Customer 1',
+            email: 'lock-test@example.com',
+            phone: '+1111111111',
+            pickupTime: new Date(Date.now() + 86400000),
+            version: 1,
+          },
+        }),
+        prisma.order.create({
+          data: {
+            status: 'PENDING',
+            paymentStatus: 'PENDING',
+            total: 75.0,
+            customerName: 'Customer 2',
+            email: 'lock-test@example.com',
+            phone: '+2222222222',
+            pickupTime: new Date(Date.now() + 86400000),
+            version: 1,
+          },
+        }),
+        prisma.order.create({
+          data: {
+            status: 'PENDING',
+            paymentStatus: 'PENDING',
+            total: 100.0,
+            customerName: 'Customer 3',
+            email: 'lock-test@example.com',
+            phone: '+3333333333',
+            pickupTime: new Date(Date.now() + 86400000),
+            version: 1,
+          },
+        }),
+      ]);
+    });
+
+    it('should lock multiple rows atomically', async () => {
+      const orderIds = [order1.id, order2.id, order3.id];
+
+      const result = await withRowLocks<Order, number>(
+        'orders',
+        orderIds,
+        async (orders) => {
+          expect(orders.length).toBe(3);
+
+          // Update all orders
+          await Promise.all(
+            orders.map(order =>
+              prisma.order.update({
+                where: { id: order.id },
+                data: { status: 'PROCESSING' },
+              })
+            )
+          );
+
+          return orders.length;
+        },
+        { timeout: 5000, noWait: true }
+      );
+
+      expect(result).toBe(3);
+
+      // Verify all orders were updated
+      const updatedOrders = await prisma.order.findMany({
+        where: { id: { in: orderIds } },
+      });
+
+      updatedOrders.forEach(order => {
+        expect(order.status).toBe('PROCESSING');
+      });
+    });
+
+    it('should prevent concurrent access to any locked row', async () => {
+      const orderIds = [order1.id, order2.id, order3.id];
+
+      // Lock all three orders for 1 second
+      const lockAllPromise = withRowLocks<Order, string>(
+        'orders',
+        orderIds,
+        async (orders) => {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return 'all-locked';
+        },
+        { timeout: 5000, noWait: true }
+      );
+
+      // Wait to ensure locks are acquired
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Try to lock just one of the orders (should fail)
+      const lockOnePromise = withRowLock<Order, string>(
+        'orders',
+        order2.id,
+        async (order) => 'one-locked',
+        { timeout: 5000, noWait: true }
+      );
+
+      const results = await Promise.allSettled([lockAllPromise, lockOnePromise]);
+
+      expect(results[0].status).toBe('fulfilled');
+      expect(results[1].status).toBe('rejected');
+    });
+  });
+
+  describe('Lock Error Handling', () => {
+    it('should categorize lock errors correctly', async () => {
+      // Test timeout error
+      const lock1Promise = withRowLock<Order, void>(
+        'orders',
+        testOrder.id,
+        async () => {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        },
+        { noWait: true }
+      );
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      try {
+        await withRowLock<Order, void>(
+          'orders',
+          testOrder.id,
+          async () => {},
+          { noWait: true }
+        );
+      } catch (error) {
+        expect(isLockAcquisitionError(error)).toBe(true);
+        if (isLockAcquisitionError(error)) {
+          expect(error.reason).toBe('timeout');
+          expect(error.table).toBe('orders');
+          expect(error.id).toBe(testOrder.id);
+        }
+      }
+
+      await lock1Promise;
+    });
+
+    it('should provide helpful error messages', async () => {
+      try {
+        await withRowLock<Order, void>(
+          'orders',
+          'fake-id',
+          async () => {},
+          { noWait: true }
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(LockAcquisitionError);
+        if (error instanceof LockAcquisitionError) {
+          expect(error.message).toContain('Failed to acquire lock');
+          expect(error.message).toContain('orders');
+          expect(error.message).toContain('fake-id');
+          expect(error.message).toContain('not_found');
+        }
+      }
+    });
+  });
+
+  describe('Performance and Timing', () => {
+    it('should acquire and release locks quickly', async () => {
+      const startTime = Date.now();
+
+      await withRowLock<Order, void>(
+        'orders',
+        testOrder.id,
+        async (order) => {
+          // Simple operation
+          expect(order.id).toBe(testOrder.id);
+        },
+        { timeout: 5000, noWait: true }
+      );
+
+      const duration = Date.now() - startTime;
+
+      // Should complete very quickly (< 100ms for simple operation)
+      expect(duration).toBeLessThan(100);
+    });
+
+    it('should respect transaction timeout', async () => {
+      const startTime = Date.now();
+
+      await expect(
+        withRowLock<Order, void>(
+          'orders',
+          testOrder.id,
+          async (order) => {
+            // Hold the lock for longer than timeout
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          },
+          { timeout: 500, noWait: true } // 500ms timeout
+        )
+      ).rejects.toThrow();
+
+      const duration = Date.now() - startTime;
+
+      // Should timeout around 500ms (give or take 200ms for overhead)
+      expect(duration).toBeGreaterThan(400);
+      expect(duration).toBeLessThan(800);
+    });
+  });
+
+  describe('Complex Concurrent Scenarios', () => {
+    it('should handle mixed optimistic and pessimistic locking', async () => {
+      // Pessimistic lock
+      const pessimisticUpdate = withRowLock<Order, Order>(
+        'orders',
+        testOrder.id,
+        async (order) => {
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          return prisma.order.update({
+            where: { id: testOrder.id },
+            data: {
+              status: 'PROCESSING',
+              version: { increment: 1 },
+            },
+          });
+        },
+        { timeout: 5000, noWait: true }
+      );
+
+      // Wait a bit
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Try optimistic update (should fail due to pessimistic lock)
+      const optimisticUpdate = updateWithOptimisticLock(
+        prisma.order,
+        testOrder.id,
+        1,
+        { paymentStatus: 'PAID' },
+        { modelName: 'Order' }
+      );
+
+      const results = await Promise.allSettled([pessimisticUpdate, optimisticUpdate]);
+
+      // Pessimistic should succeed
+      expect(results[0].status).toBe('fulfilled');
+
+      // Optimistic should fail (can't update while row is locked)
+      expect(results[1].status).toBe('rejected');
+    });
+  });
+});

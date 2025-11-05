@@ -6,6 +6,9 @@ import { prisma, withRetry } from '@/lib/db-unified';
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 import { syncCustomerToProfile } from '@/lib/profile-sync';
+// DES-60 Phase 4: Duplicate order prevention and request deduplication
+import { checkForDuplicateOrder } from '@/lib/duplicate-order-prevention';
+import { globalDeduplicator, userKey } from '@/lib/concurrency/request-deduplicator';
 
 // Helper function moved outside the POST handler
 async function getSupabaseClient() {
@@ -70,68 +73,108 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
-    // Get product information from Sanity or database
-    // This is simplified for this example
-    const orderItems = items.map(item => ({
-      productId: item.id,
-      variantId: item.variantId,
-      quantity: item.quantity,
-      price: 0, // You'd calculate this based on your actual product data
-    }));
+    // DES-60 Phase 4: Deduplicate concurrent checkout requests
+    const deduplicationKey = userKey(
+      user?.id || customerInfo.email,
+      'checkout',
+      JSON.stringify(items)
+    );
 
-    // Calculate total
-    const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return await globalDeduplicator.deduplicate(deduplicationKey, async () => {
+      // DES-60 Phase 4: Check for duplicate orders BEFORE creating
+      const duplicateCheck = await checkForDuplicateOrder(
+        user?.id || null,
+        items.map(item => ({
+          id: item.id,
+          variantId: item.variantId,
+          quantity: item.quantity,
+          name: '', // Not needed for duplicate check
+          price: 0,
+        })),
+        customerInfo.email
+      );
 
-    // Create order in database with connection management
-    const order = await withRetry(() =>
-      prisma.order.create({
-        data: {
-          status: 'PENDING',
-          total,
+      if (duplicateCheck.hasPendingOrder && duplicateCheck.existingOrder) {
+        console.warn('[Checkout] Duplicate order detected, returning existing order', {
           userId: user?.id,
-          customerName: customerInfo.name,
           email: customerInfo.email,
-          phone: customerInfo.phone,
-          pickupTime: new Date(customerInfo.pickupTime),
-          items: {
-            create: orderItems,
+          existingOrderId: duplicateCheck.existingOrderId,
+        });
+
+        return NextResponse.json(
+          {
+            error: 'Duplicate order detected',
+            message:
+              'You already have a pending order with these items. Please complete the payment for your existing order or cancel it before creating a new one.',
+            existingOrder: duplicateCheck.existingOrder,
           },
-        },
-      })
-    );
+          { status: 409 } // 409 Conflict
+        );
+      }
 
-    // Sync customer information to profile (async, non-blocking)
-    syncCustomerToProfile(user?.id, {
-      email: customerInfo.email,
-      name: customerInfo.name,
-      phone: customerInfo.phone,
-    }).catch(error => {
-      console.error('Failed to sync customer data to profile:', error);
-      // Don't fail the order if profile sync fails
-    });
+      // Get product information from Sanity or database
+      // This is simplified for this example
+      const orderItems = items.map(item => ({
+        productId: item.id,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        price: 0, // You'd calculate this based on your actual product data
+      }));
 
-    // Create order in Square
-    // This is simplified - you'd map your products to Square catalog items
-    const squareOrder = await createOrder({
-      locationId: process.env.SQUARE_LOCATION_ID!,
-      lineItems: items.map(item => ({
-        quantity: String(item.quantity),
-        catalogObjectId: item.id, // This should be the Square catalog ID
-      })),
-    });
+      // Calculate total
+      const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    // Update our order with Square order ID with connection management
-    await withRetry(
-      () =>
-        prisma.order.update({
-          where: { id: order.id },
-          data: { squareOrderId: squareOrder.id },
-        }),
-      3,
-      'update'
-    );
+      // Create order in database with connection management
+      const order = await withRetry(() =>
+        prisma.order.create({
+          data: {
+            status: 'PENDING',
+            total,
+            userId: user?.id,
+            customerName: customerInfo.name,
+            email: customerInfo.email,
+            phone: customerInfo.phone,
+            pickupTime: new Date(customerInfo.pickupTime),
+            items: {
+              create: orderItems,
+            },
+          },
+        })
+      );
 
-    return NextResponse.json({ orderId: order.id });
+      // Sync customer information to profile (async, non-blocking)
+      syncCustomerToProfile(user?.id, {
+        email: customerInfo.email,
+        name: customerInfo.name,
+        phone: customerInfo.phone,
+      }).catch(error => {
+        console.error('Failed to sync customer data to profile:', error);
+        // Don't fail the order if profile sync fails
+      });
+
+      // Create order in Square
+      // This is simplified - you'd map your products to Square catalog items
+      const squareOrder = await createOrder({
+        locationId: process.env.SQUARE_LOCATION_ID!,
+        lineItems: items.map(item => ({
+          quantity: String(item.quantity),
+          catalogObjectId: item.id, // This should be the Square catalog ID
+        })),
+      });
+
+      // Update our order with Square order ID with connection management
+      await withRetry(
+        () =>
+          prisma.order.update({
+            where: { id: order.id },
+            data: { squareOrderId: squareOrder.id },
+          }),
+        3,
+        'update'
+      );
+
+      return NextResponse.json({ orderId: order.id });
+    }); // End of deduplicator callback
   } catch (error) {
     console.error('Error creating order:', error);
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });

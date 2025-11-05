@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db-unified';
 import { CartItem } from '@/types/cart';
 
 export interface PendingOrderCheck {
@@ -27,11 +27,6 @@ export async function checkForDuplicateOrder(
   email?: string
 ): Promise<PendingOrderCheck> {
   try {
-    console.log('[Duplicate Check] Checking for duplicate orders:', {
-      identifier: userId || email,
-      cartItemsCount: cartItems.length,
-    });
-
     // Build the where clause based on available identifiers
     const whereClause: any = {
       status: { in: ['PENDING'] },
@@ -68,11 +63,6 @@ export async function checkForDuplicateOrder(
       take: 5, // Limit to recent orders
     });
 
-    console.log('[Duplicate Check] Found pending orders:', {
-      count: pendingOrders.length,
-      orderIds: pendingOrders.map(o => o.id),
-    });
-
     if (pendingOrders.length === 0) {
       return { hasPendingOrder: false };
     }
@@ -80,10 +70,6 @@ export async function checkForDuplicateOrder(
     // Check if any pending order has similar items
     for (const order of pendingOrders) {
       if (hasSimilarItems(order.items, cartItems)) {
-        console.log('[Duplicate Check] Duplicate order detected:', {
-          orderId: order.id,
-          total: order.total,
-        });
         return {
           hasPendingOrder: true,
           existingOrderId: order.id,

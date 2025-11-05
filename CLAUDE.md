@@ -92,6 +92,13 @@ Business logic and data access patterns:
 - **Shipping** (`shippingUtils.ts`, `deliveryUtils.ts`): Weight-based calculations via Shippo
 - **Catering** (`catering-api-utils.ts`): Catering order handling
 - **Security** (`src/lib/security/`): Rate limiting, CSP, webhook verification
+- **Concurrency** (`src/lib/concurrency/`): Race condition prevention, database locking
+  - `optimistic-lock.ts`: Version-based concurrency control
+  - `pessimistic-lock.ts`: Row-level database locking (FOR UPDATE)
+  - `request-deduplicator.ts`: Prevent duplicate concurrent requests
+  - `duplicate-order-prevention.ts`: Detect and prevent duplicate orders
+- **Monitoring** (`src/lib/monitoring/`): Metrics and observability
+  - `concurrency-metrics.ts`: Track lock acquisitions, conflicts, and performance
 
 #### 2. API Layer (`src/app/api/`)
 RESTful API routes following Next.js 15 App Router conventions:
@@ -280,6 +287,104 @@ See `.env.example` and `docs/ENV_TEMPLATE_SQUARE.md` for complete setup.
 - ❌ NEVER: "Squash and merge" - causes branch divergence
 - Why: Squashing creates new commit hashes that make development branch diverge from main, accumulating "X commits ahead" problem
 - When creating PRs via gh CLI or GitHub UI, explicitly select "Rebase and merge"
+
+### 12. Concurrency Control & Race Condition Prevention
+**Use appropriate concurrency patterns to prevent data corruption and duplicate operations.**
+
+#### When to Use Each Pattern:
+
+**Pessimistic Locking** (`src/lib/concurrency/pessimistic-lock.ts`):
+- ✅ Payment processing (prevents double charges)
+- ✅ Inventory updates (prevents overselling)
+- ✅ Financial transactions (ensures atomicity)
+```typescript
+import { withRowLock } from '@/lib/concurrency/pessimistic-lock';
+
+await withRowLock('orders', orderId, async (lockedOrder) => {
+  // Process payment - order is locked, preventing concurrent access
+  const payment = await createPayment(lockedOrder);
+  await updateOrderStatus(orderId, 'PAID');
+  return payment;
+}, { timeout: 30000, noWait: true });
+```
+
+**Optimistic Locking** (`src/lib/concurrency/optimistic-lock.ts`):
+- ✅ Order status updates (can retry on conflict)
+- ✅ Non-financial data modifications
+- ✅ Operations with low contention
+```typescript
+import { updateWithOptimisticLock } from '@/lib/concurrency/optimistic-lock';
+
+await updateWithOptimisticLock(
+  prisma.order,
+  orderId,
+  currentVersion,
+  { status: 'PROCESSING' },
+  { modelName: 'Order' }
+);
+```
+
+**Request Deduplication** (`src/lib/concurrency/request-deduplicator.ts`):
+- ✅ Checkout button double-click prevention
+- ✅ Network retry scenarios
+- ✅ Any user-triggered action that shouldn't duplicate
+```typescript
+import { globalDeduplicator, userKey } from '@/lib/concurrency/request-deduplicator';
+
+return await globalDeduplicator.deduplicate(
+  userKey(userId, 'checkout', JSON.stringify(items)),
+  async () => {
+    return await createOrder(items, customerInfo);
+  }
+);
+```
+
+**Duplicate Order Prevention** (`src/lib/duplicate-order-prevention.ts`):
+- ✅ Before creating new orders
+- ✅ Detecting similar pending orders
+- ✅ TOCTOU vulnerability prevention
+```typescript
+import { checkForDuplicateOrder } from '@/lib/duplicate-order-prevention';
+
+const duplicateCheck = await checkForDuplicateOrder(userId, cartItems, email);
+if (duplicateCheck.hasPendingOrder) {
+  return { error: 'Duplicate order detected', existingOrder: duplicateCheck.existingOrder };
+}
+```
+
+#### Database Schema Requirements:
+- **Version Field:** All tables requiring optimistic locking must have `version Int @default(1)`
+- **Unique Constraints:** Prevent duplicates at database level (e.g., `@@unique([orderId, productId, variantId])`)
+
+#### Integration Examples:
+
+**Checkout Route** (`src/app/api/checkout/route.ts`):
+1. Request deduplication (prevent double-submit)
+2. Duplicate order check (prevent duplicate orders)
+3. Order creation with database constraints
+
+**Payment Route** (`src/app/api/checkout/payment/route.ts`):
+1. Pessimistic lock acquisition (prevent concurrent payment)
+2. Status validation under lock
+3. Atomic payment + status update
+
+#### Testing:
+- **Unit tests:** `src/__tests__/concurrency/`
+- **Integration:** `src/__tests__/integration/checkout-flow-concurrency.test.ts`
+- **E2E:** `tests/e2e/13-concurrent-users.spec.ts`
+
+#### Monitoring:
+```typescript
+import { concurrencyMetrics, getConcurrencyHealth } from '@/lib/monitoring/concurrency-metrics';
+
+// Check system health
+const health = getConcurrencyHealth();
+if (!health.healthy) {
+  console.error('Concurrency issues:', health.issues);
+}
+```
+
+**See:** `docs/CONCURRENCY_PATTERNS.md` for complete documentation.
 
 ## Common Workflows
 
