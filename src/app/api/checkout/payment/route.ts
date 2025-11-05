@@ -10,6 +10,9 @@ import {
   CreatePaymentResponseSchema,
 } from '@/lib/api/schemas/checkout';
 import { ApiErrorSchema } from '@/lib/api/schemas/common';
+// DES-60 Phase 4: Pessimistic locking for payment processing
+import { withRowLock, LockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
+import { Order } from '@prisma/client';
 
 async function postPaymentHandler(request: Request) {
   // Apply strict rate limiting for payment endpoint (5 requests per minute per IP)
@@ -56,54 +59,113 @@ async function postPaymentHandler(request: Request) {
       );
     }
 
-    // Get order from database
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-    });
+    // DES-60 Phase 4: Lock the order row to prevent concurrent payment processing
+    const result = await withRowLock<Order, { success: boolean; paymentId: string }>(
+      'orders',
+      orderId,
+      async (lockedOrder) => {
+        // Validate order exists and has Square order ID
+        if (!lockedOrder.squareOrderId) {
+          throw new Error('Order not linked to Square');
+        }
 
-    if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
+        // DES-60 Phase 4: Prevent double payment - check if order already processed
+        if (lockedOrder.status !== 'PENDING') {
+          throw new Error(
+            `Order cannot be processed: current status is ${lockedOrder.status}. ` +
+              'Payment may have already been processed.'
+          );
+        }
 
-    if (!order.squareOrderId) {
-      return NextResponse.json({ error: 'Order not linked to Square' }, { status: 400 });
-    }
+        if (lockedOrder.paymentStatus === 'PAID' || lockedOrder.paymentStatus === 'COMPLETED') {
+          throw new Error('Payment has already been completed for this order');
+        }
 
-    // Validate payment amount against order total (prevent overpayment)
-    const orderTotal = Number(order.total);
-    if (amount > orderTotal * 1.1) {
-      // Allow 10% buffer for tips/fees
-      return NextResponse.json(
-        {
-          error: 'Payment amount exceeds order total',
-        },
-        { status: 400 }
-      );
-    }
+        // Validate payment amount against order total (prevent overpayment)
+        const orderTotal = Number(lockedOrder.total);
+        if (amount > orderTotal * 1.1) {
+          // Allow 10% buffer for tips/fees
+          throw new Error('Payment amount exceeds order total');
+        }
 
-    // Process payment with Square
-    const payment = await createPayment(sourceId, order.squareOrderId, amount);
+        // Process payment with Square (this is idempotent via Square's idempotency key)
+        const payment = await createPayment(sourceId, lockedOrder.squareOrderId, amount);
 
-    // NEW: Ensure order is finalized in Square (fallback if autocomplete doesn't work)
-    if (payment.status === 'COMPLETED' || payment.status === 'APPROVED') {
-      // Update order state in Square to OPEN (makes it visible)
-      await finalizeSquareOrder(order.squareOrderId);
-    }
+        // Ensure order is finalized in Square (fallback if autocomplete doesn't work)
+        if (payment.status === 'COMPLETED' || payment.status === 'APPROVED') {
+          await finalizeSquareOrder(lockedOrder.squareOrderId);
+        }
 
-    // Update order status
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: 'PROCESSING',
+        // Update order status within the transaction
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            status: 'PROCESSING',
+            paymentStatus: 'PAID',
+          },
+        });
+
+        return {
+          success: true,
+          paymentId: payment.id,
+        };
       },
-    });
+      {
+        timeout: 30000, // 30 second timeout for payment processing
+        noWait: true, // Fail immediately if another payment is in progress
+      }
+    );
 
-    return NextResponse.json({
-      success: true,
-      paymentId: payment.id,
-    });
+    return NextResponse.json(result);
   } catch (error: Error | unknown) {
     console.error('Payment processing error:', error);
+
+    // DES-60 Phase 4: Handle lock acquisition errors
+    if (error instanceof LockAcquisitionError) {
+      if (error.reason === 'timeout') {
+        return NextResponse.json(
+          {
+            error: 'Payment is already being processed',
+            message:
+              'Another payment request is currently being processed for this order. Please wait a moment and try again.',
+          },
+          { status: 409 } // 409 Conflict
+        );
+      }
+
+      if (error.reason === 'not_found') {
+        return NextResponse.json(
+          {
+            error: 'Order not found',
+            message: 'The order could not be found.',
+          },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Handle specific error messages from business logic
+    if (error instanceof Error) {
+      if (error.message.includes('already been completed')) {
+        return NextResponse.json(
+          {
+            error: 'Payment already completed',
+            message: 'This order has already been paid.',
+          },
+          { status: 409 }
+        );
+      }
+
+      if (error.message.includes('Order cannot be processed')) {
+        return NextResponse.json(
+          {
+            error: 'Invalid order status',
+            message: error.message,
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     return NextResponse.json(
       {
@@ -151,7 +213,6 @@ async function finalizeSquareOrder(squareOrderId: string): Promise<void> {
     };
 
     await squareService.updateOrder(squareOrderId, updateRequest);
-    console.log(`✅ Square order ${squareOrderId} finalized and visible`);
   } catch (error) {
     console.error(`Failed to finalize Square order ${squareOrderId}:`, error);
     // Don't throw - payment succeeded, this is a secondary operation

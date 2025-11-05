@@ -1,6 +1,14 @@
 import { logger } from '@/utils/logger';
 import https from 'https';
 import type { GiftCardError } from '@/types/square';
+import { withTimeout, TimeoutError } from '@/lib/utils/http-timeout';
+
+/**
+ * Timeout configuration for Square API requests
+ * Payment operations can take longer due to processing, so we use generous timeouts
+ */
+const SQUARE_API_TIMEOUT = 30000; // 30 seconds for payment processing
+const SQUARE_SOCKET_TIMEOUT = 35000; // 35 seconds for socket (slightly longer than API timeout)
 
 /**
  * Sanitizes a Square API token by removing whitespace and invalid characters
@@ -64,7 +72,13 @@ function getSquareConfig() {
 }
 
 /**
- * Makes an HTTPS request to the Square API
+ * Makes an HTTPS request to the Square API with timeout protection
+ *
+ * DES-60 Phase 3: Added comprehensive timeout handling with:
+ * - Request-level timeout (30s)
+ * - Socket-level timeout (35s)
+ * - Automatic cleanup on timeout
+ * - Enhanced error messages
  */
 async function httpsRequest(options: any, requestBody?: any): Promise<any> {
   const squareConfig = getSquareConfig();
@@ -77,7 +91,8 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
     options.headers['Authorization'] = `Bearer ${squareConfig.accessToken}`;
   }
 
-  return new Promise((resolve, reject) => {
+  // Wrap the request with timeout protection
+  const requestPromise = new Promise((resolve, reject) => {
     const req = https.request(options, res => {
       let data = '';
 
@@ -131,6 +146,12 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
       });
     });
 
+    // Set socket timeout to prevent hanging connections
+    req.setTimeout(SQUARE_SOCKET_TIMEOUT, () => {
+      req.destroy();
+      reject(new Error(`Socket timeout after ${SQUARE_SOCKET_TIMEOUT}ms`));
+    });
+
     req.on('error', error => {
       reject(error);
     });
@@ -148,6 +169,14 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
 
     req.end();
   });
+
+  // Wrap with timeout to ensure the entire operation completes in time
+  return withTimeout(
+    requestPromise,
+    SQUARE_API_TIMEOUT,
+    `Square API request to ${options.path} timed out after ${SQUARE_API_TIMEOUT}ms`,
+    'squareApiRequest'
+  );
 }
 
 /**
@@ -223,6 +252,15 @@ export async function createPayment(requestBody: {
       payment: response.payment,
     };
   } catch (error) {
+    // DES-60 Phase 3: Enhanced error handling for timeout errors
+    if (error instanceof TimeoutError) {
+      logger.error('Payment request timed out:', {
+        operation: error.operationName,
+        timeout: error.timeoutMs,
+      });
+      throw new Error(`Payment processing timed out after ${error.timeoutMs}ms. Please try again.`);
+    }
+
     logger.error('Error creating payment:', error);
 
     // Parse error response for enhanced gift card error handling

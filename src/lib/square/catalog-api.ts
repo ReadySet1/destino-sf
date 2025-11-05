@@ -1,5 +1,13 @@
 import { logger } from '@/utils/logger';
 import https from 'https';
+import { withTimeout, TimeoutError } from '@/lib/utils/http-timeout';
+
+/**
+ * Timeout configuration for Square Catalog API requests
+ * Catalog operations can be slow due to large data sets, so we use generous timeouts
+ */
+const SQUARE_CATALOG_API_TIMEOUT = 45000; // 45 seconds for catalog operations
+const SQUARE_CATALOG_SOCKET_TIMEOUT = 50000; // 50 seconds for socket
 
 // Configuration interface for consistency
 interface SquareConfig {
@@ -106,7 +114,13 @@ function ensureConfig(): SquareConfig {
 }
 
 /**
- * Makes an HTTPS request to the Square API
+ * Makes an HTTPS request to the Square API with timeout protection
+ *
+ * DES-60 Phase 3: Added comprehensive timeout handling with:
+ * - Request-level timeout (45s for catalog operations)
+ * - Socket-level timeout (50s)
+ * - Automatic cleanup on timeout
+ * - Enhanced error messages
  */
 async function httpsRequest(options: any, requestBody?: any): Promise<any> {
   // Ensure config is loaded and get fresh config
@@ -140,7 +154,8 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
     }
   }
 
-  return new Promise((resolve, reject) => {
+  // Wrap the request with timeout protection
+  const requestPromise = new Promise((resolve, reject) => {
     const req = https.request(options, res => {
       let data = '';
 
@@ -168,6 +183,12 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
       });
     });
 
+    // Set socket timeout to prevent hanging connections
+    req.setTimeout(SQUARE_CATALOG_SOCKET_TIMEOUT, () => {
+      req.destroy();
+      reject(new Error(`Socket timeout after ${SQUARE_CATALOG_SOCKET_TIMEOUT}ms`));
+    });
+
     req.on('error', error => {
       reject(error);
     });
@@ -178,6 +199,14 @@ async function httpsRequest(options: any, requestBody?: any): Promise<any> {
 
     req.end();
   });
+
+  // Wrap with timeout to ensure the entire operation completes in time
+  return withTimeout(
+    requestPromise,
+    SQUARE_CATALOG_API_TIMEOUT,
+    `Square Catalog API request to ${options.path} timed out after ${SQUARE_CATALOG_API_TIMEOUT}ms`,
+    'squareCatalogApiRequest'
+  );
 }
 
 /**
@@ -217,6 +246,18 @@ export async function retrieveCatalogObject(objectId: string) {
       },
     };
   } catch (error) {
+    // DES-60 Phase 3: Enhanced error handling for timeout errors
+    if (error instanceof TimeoutError) {
+      logger.error('Catalog object retrieval timed out:', {
+        objectId,
+        operation: error.operationName,
+        timeout: error.timeoutMs,
+      });
+      throw new Error(
+        `Failed to retrieve catalog object ${objectId}: Request timed out after ${error.timeoutMs}ms. Please try again.`
+      );
+    }
+
     logger.error(`Error retrieving catalog object ${objectId}:`, error);
     throw error;
   }
@@ -261,6 +302,17 @@ export async function searchCatalogObjects(requestBody: any) {
       },
     };
   } catch (error) {
+    // DES-60 Phase 3: Enhanced error handling for timeout errors
+    if (error instanceof TimeoutError) {
+      logger.error('Catalog search timed out:', {
+        operation: error.operationName,
+        timeout: error.timeoutMs,
+      });
+      throw new Error(
+        `Catalog search timed out after ${error.timeoutMs}ms. Please try again with a more specific search.`
+      );
+    }
+
     logger.error('Error searching catalog objects:', error);
     throw error;
   }
@@ -320,6 +372,18 @@ export async function listCatalog(cursor?: string, objectTypes?: string) {
       },
     };
   } catch (error) {
+    // DES-60 Phase 3: Enhanced error handling for timeout errors
+    if (error instanceof TimeoutError) {
+      logger.error('Catalog listing timed out:', {
+        operation: error.operationName,
+        timeout: error.timeoutMs,
+        objectTypes,
+      });
+      throw new Error(
+        `Catalog listing timed out after ${error.timeoutMs}ms. Please try again or use pagination with cursor.`
+      );
+    }
+
     logger.error('Error listing catalog objects:', error);
     throw error;
   }
@@ -355,6 +419,20 @@ export async function testApiConnection() {
       apiHost: config.apiHost,
     };
   } catch (error) {
+    // DES-60 Phase 3: Enhanced error handling for timeout errors
+    if (error instanceof TimeoutError) {
+      logger.error(`Connection test timed out:`, {
+        operation: error.operationName,
+        timeout: error.timeoutMs,
+      });
+      return {
+        success: false,
+        environment: config.useSandbox ? 'sandbox' : 'production',
+        apiHost: config.apiHost,
+        error: `Connection test timed out after ${error.timeoutMs}ms`,
+      };
+    }
+
     logger.error(`Connection test failed:`, error);
     return {
       success: false,
