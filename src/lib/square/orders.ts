@@ -3,6 +3,14 @@
 import { randomUUID } from 'crypto';
 import { getSquareService } from './service';
 import { logger } from '../../utils/logger';
+import { withTimeout, TimeoutError } from '@/lib/utils/http-timeout';
+
+/**
+ * Timeout configuration for Square Orders API
+ * DES-60 Phase 3: Network & Timeout Resilience
+ */
+const SQUARE_ORDER_TIMEOUT = 30000; // 30 seconds for order creation
+const SQUARE_PAYMENT_TIMEOUT = 30000; // 30 seconds for payment processing
 
 export interface CreateOrderRequest {
   locationId: string;
@@ -43,7 +51,13 @@ export async function createOrder(orderData: CreateOrderRequest) {
       idempotencyKey: randomUUID(),
     };
 
-    const result = await squareService.createOrder(orderRequest);
+    // DES-60 Phase 3: Wrap Square SDK call with timeout protection
+    const result = await withTimeout(
+      squareService.createOrder(orderRequest),
+      SQUARE_ORDER_TIMEOUT,
+      `Square order creation timed out after ${SQUARE_ORDER_TIMEOUT}ms`,
+      'squareCreateOrder'
+    );
 
     if (!result.order) {
       throw new Error('Failed to create order or order data is missing in the response.');
@@ -52,6 +66,17 @@ export async function createOrder(orderData: CreateOrderRequest) {
     logger.info('Successfully created Square order', { orderId: result.order.id });
     return result.order;
   } catch (error) {
+    // DES-60 Phase 3: Enhanced error handling for timeout errors
+    if (error instanceof TimeoutError) {
+      logger.error('Square order creation timed out:', {
+        operation: error.operationName,
+        timeout: error.timeoutMs,
+        locationId: orderData.locationId,
+        itemCount: orderData.lineItems.length,
+      });
+      throw new Error(`Order creation timed out after ${error.timeoutMs}ms. Please try again.`);
+    }
+
     logger.error('Error creating Square order:', error);
     if (error instanceof Error && 'body' in error) {
       logger.error('Square API Error Body:', (error as { body: unknown }).body);
@@ -88,7 +113,13 @@ export async function createPayment(sourceId: string, orderId: string, amountCen
       autocomplete: true, // This automatically transitions order from DRAFT to OPEN/COMPLETED
     };
 
-    const result = await squareService.createPayment(paymentRequest);
+    // DES-60 Phase 3: Wrap Square SDK call with timeout protection
+    const result = await withTimeout(
+      squareService.createPayment(paymentRequest),
+      SQUARE_PAYMENT_TIMEOUT,
+      `Square payment processing timed out after ${SQUARE_PAYMENT_TIMEOUT}ms`,
+      'squareCreatePayment'
+    );
 
     if (!result.payment) {
       throw new Error('Failed to create payment or payment data is missing in the response.');
@@ -101,6 +132,17 @@ export async function createPayment(sourceId: string, orderId: string, amountCen
 
     return result.payment;
   } catch (error) {
+    // DES-60 Phase 3: Enhanced error handling for timeout errors
+    if (error instanceof TimeoutError) {
+      logger.error('Square payment processing timed out:', {
+        operation: error.operationName,
+        timeout: error.timeoutMs,
+        orderId,
+        amountCents,
+      });
+      throw new Error(`Payment processing timed out after ${error.timeoutMs}ms. Please try again.`);
+    }
+
     logger.error('Error processing payment:', error);
     if (error instanceof Error && 'body' in error) {
       logger.error('Square API Error Body:', (error as { body: unknown }).body);

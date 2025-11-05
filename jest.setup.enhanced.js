@@ -160,6 +160,26 @@ jest.mock('@/lib/db', () => {
   };
 });
 
+// Mock db-unified module (used by concurrency tests)
+jest.mock('@/lib/db-unified', () => {
+  const prismaMock = createPrismaMock();
+  return {
+    prisma: prismaMock,
+    checkConnection: jest.fn(async () => true),
+    ensureConnection: jest.fn(async () => {}),
+    withRetry: jest.fn(async operation => operation()),
+    withTransaction: jest.fn(async operation => operation(prismaMock)),
+    withWebhookRetry: jest.fn(async operation => operation()),
+    getHealthStatus: jest.fn(async () => ({
+      connected: true,
+      latency: 150,
+      version: 'test',
+    })),
+    shutdown: jest.fn(async () => {}),
+    forceResetConnection: jest.fn(async () => {}),
+  };
+});
+
 // Enhanced Supabase mocking
 jest.mock('@/utils/supabase/server', () => ({
   createClient: jest.fn(() => ({

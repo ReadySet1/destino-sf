@@ -1,0 +1,444 @@
+/**
+ * Square Catalog API Timeout Test Suite
+ *
+ * Tests timeout handling for Square Catalog API operations.
+ * Part of DES-60 Phase 3: Network & Timeout Resilience
+ */
+
+import { directCatalogApi } from '@/lib/square/catalog-api';
+import { resilientCatalogApi } from '@/lib/square/catalog-circuit-breaker';
+import { TimeoutError } from '@/lib/utils/http-timeout';
+import { CircuitState } from '@/lib/utils/circuit-breaker';
+
+// Mock the https module to simulate timeouts
+jest.mock('https', () => {
+  const actualHttps = jest.requireActual('https');
+  return {
+    ...actualHttps,
+    request: jest.fn(),
+  };
+});
+
+describe('Square Catalog API - Timeout Handling', () => {
+  let mockRequest: jest.Mock;
+  let mockResponse: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const https = require('https');
+    mockRequest = https.request as jest.Mock;
+
+    // Default mock response
+    mockResponse = {
+      statusCode: 200,
+      on: jest.fn((event, handler) => {
+        if (event === 'data') {
+          handler(JSON.stringify({ object: { id: 'test-123' } }));
+        }
+        if (event === 'end') {
+          handler();
+        }
+      }),
+    };
+  });
+
+  describe('retrieveCatalogObject', () => {
+    test('should successfully retrieve object within timeout', async () => {
+      mockRequest.mockImplementation((options, callback) => {
+        callback(mockResponse);
+        return {
+          on: jest.fn(),
+          end: jest.fn(),
+          write: jest.fn(),
+          setTimeout: jest.fn(),
+        };
+      });
+
+      const result = await directCatalogApi.retrieveCatalogObject('item-123');
+
+      expect(result.result.object.id).toBe('test-123');
+    });
+
+    test('should timeout if request exceeds 45 seconds', async () => {
+      jest.useFakeTimers();
+
+      let timeoutHandler: (() => void) | null = null;
+
+      mockRequest.mockImplementation((options, callback) => {
+        // Never call the callback to simulate hanging request
+        return {
+          on: jest.fn(),
+          end: jest.fn(),
+          write: jest.fn(),
+          setTimeout: jest.fn((timeout, handler) => {
+            timeoutHandler = handler;
+          }),
+        };
+      });
+
+      const promise = directCatalogApi.retrieveCatalogObject('item-123');
+
+      // Advance timers to trigger timeout
+      jest.advanceTimersByTime(46000);
+
+      await expect(promise).rejects.toThrow();
+
+      jest.useRealTimers();
+    });
+
+    test('should include object ID in timeout error message', async () => {
+      jest.useFakeTimers();
+
+      mockRequest.mockImplementation(() => ({
+        on: jest.fn(),
+        end: jest.fn(),
+        write: jest.fn(),
+        setTimeout: jest.fn(),
+      }));
+
+      const promise = directCatalogApi.retrieveCatalogObject('item-456');
+
+      jest.advanceTimersByTime(46000);
+
+      try {
+        await promise;
+        fail('Should have thrown timeout error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toContain('item-456');
+      }
+
+      jest.useRealTimers();
+    });
+  });
+
+  describe('searchCatalogObjects', () => {
+    test('should successfully search within timeout', async () => {
+      mockResponse = {
+        statusCode: 200,
+        on: jest.fn((event, handler) => {
+          if (event === 'data') {
+            handler(JSON.stringify({ objects: [{ id: 'obj-1' }, { id: 'obj-2' }] }));
+          }
+          if (event === 'end') {
+            handler();
+          }
+        }),
+      };
+
+      mockRequest.mockImplementation((options, callback) => {
+        callback(mockResponse);
+        return {
+          on: jest.fn(),
+          end: jest.fn(),
+          write: jest.fn(),
+          setTimeout: jest.fn(),
+        };
+      });
+
+      const result = await directCatalogApi.searchCatalogObjects({
+        objectTypes: ['ITEM'],
+      });
+
+      expect(result.result.objects).toHaveLength(2);
+    });
+
+    test('should provide helpful message when search times out', async () => {
+      jest.useFakeTimers();
+
+      mockRequest.mockImplementation(() => ({
+        on: jest.fn(),
+        end: jest.fn(),
+        write: jest.fn(),
+        setTimeout: jest.fn(),
+      }));
+
+      const promise = directCatalogApi.searchCatalogObjects({
+        objectTypes: ['ITEM'],
+      });
+
+      jest.advanceTimersByTime(46000);
+
+      try {
+        await promise;
+        fail('Should have thrown timeout error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toContain('timed out');
+      }
+
+      jest.useRealTimers();
+    });
+  });
+
+  describe('listCatalog', () => {
+    test('should successfully list catalog within timeout', async () => {
+      mockResponse = {
+        statusCode: 200,
+        on: jest.fn((event, handler) => {
+          if (event === 'data') {
+            handler(JSON.stringify({ objects: [{ id: 'cat-1' }], cursor: 'next-page' }));
+          }
+          if (event === 'end') {
+            handler();
+          }
+        }),
+      };
+
+      mockRequest.mockImplementation((options, callback) => {
+        callback(mockResponse);
+        return {
+          on: jest.fn(),
+          end: jest.fn(),
+          write: jest.fn(),
+          setTimeout: jest.fn(),
+        };
+      });
+
+      const result = await directCatalogApi.listCatalog();
+
+      expect(result.result.objects).toHaveLength(1);
+      expect(result.result.cursor).toBe('next-page');
+    });
+
+    test('should suggest pagination when list times out', async () => {
+      jest.useFakeTimers();
+
+      mockRequest.mockImplementation(() => ({
+        on: jest.fn(),
+        end: jest.fn(),
+        write: jest.fn(),
+        setTimeout: jest.fn(),
+      }));
+
+      const promise = directCatalogApi.listCatalog(undefined, 'ITEM');
+
+      jest.advanceTimersByTime(46000);
+
+      try {
+        await promise;
+        fail('Should have thrown timeout error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toContain('cursor');
+      }
+
+      jest.useRealTimers();
+    });
+  });
+
+  describe('testConnection', () => {
+    test('should successfully test connection within timeout', async () => {
+      mockResponse = {
+        statusCode: 200,
+        on: jest.fn((event, handler) => {
+          if (event === 'data') {
+            handler(JSON.stringify({ objects: [] }));
+          }
+          if (event === 'end') {
+            handler();
+          }
+        }),
+      };
+
+      mockRequest.mockImplementation((options, callback) => {
+        callback(mockResponse);
+        return {
+          on: jest.fn(),
+          end: jest.fn(),
+          write: jest.fn(),
+          setTimeout: jest.fn(),
+        };
+      });
+
+      const result = await directCatalogApi.testConnection();
+
+      expect(result.success).toBe(true);
+    });
+
+    test('should return timeout error details when connection test times out', async () => {
+      jest.useFakeTimers();
+
+      mockRequest.mockImplementation(() => ({
+        on: jest.fn(),
+        end: jest.fn(),
+        write: jest.fn(),
+        setTimeout: jest.fn(),
+      }));
+
+      const promise = directCatalogApi.testConnection();
+
+      jest.advanceTimersByTime(46000);
+
+      const result = await promise;
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('timed out');
+
+      jest.useRealTimers();
+    });
+  });
+
+  describe('Socket Timeout Protection', () => {
+    test('should set socket timeout on all requests', async () => {
+      const setTimeoutMock = jest.fn();
+
+      mockRequest.mockImplementation((options, callback) => {
+        callback(mockResponse);
+        return {
+          on: jest.fn(),
+          end: jest.fn(),
+          write: jest.fn(),
+          setTimeout: setTimeoutMock,
+        };
+      });
+
+      await directCatalogApi.retrieveCatalogObject('item-123');
+
+      expect(setTimeoutMock).toHaveBeenCalled();
+      expect(setTimeoutMock).toHaveBeenCalledWith(50000, expect.any(Function));
+    });
+
+    test('should destroy request on socket timeout', async () => {
+      jest.useFakeTimers();
+
+      const destroyMock = jest.fn();
+      let socketTimeoutHandler: (() => void) | null = null;
+
+      mockRequest.mockImplementation(() => {
+        const req = {
+          on: jest.fn((event, handler) => {
+            // Capture error handler
+            return req;
+          }),
+          end: jest.fn(),
+          write: jest.fn(),
+          destroy: destroyMock,
+          setTimeout: jest.fn((timeout, handler) => {
+            socketTimeoutHandler = handler;
+          }),
+        };
+        return req;
+      });
+
+      const promise = directCatalogApi.retrieveCatalogObject('item-123');
+
+      // Trigger socket timeout - this will cause the request to be destroyed
+      if (socketTimeoutHandler) {
+        socketTimeoutHandler();
+      }
+
+      // Wait for promise to reject
+      await expect(promise).rejects.toThrow();
+
+      expect(destroyMock).toHaveBeenCalled();
+
+      jest.useRealTimers();
+    });
+  });
+});
+
+describe('Square Catalog API - Circuit Breaker Integration', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Reset circuit breaker
+    resilientCatalogApi.resetCircuit();
+  });
+
+  test('should track successful catalog operations', async () => {
+    const https = require('https');
+    const mockRequest = https.request as jest.Mock;
+
+    const mockResponse = {
+      statusCode: 200,
+      on: jest.fn((event, handler) => {
+        if (event === 'data') {
+          handler(JSON.stringify({ object: { id: 'test-123' } }));
+        }
+        if (event === 'end') {
+          handler();
+        }
+      }),
+    };
+
+    mockRequest.mockImplementation((options, callback) => {
+      callback(mockResponse);
+      return {
+        on: jest.fn(),
+        end: jest.fn(),
+        write: jest.fn(),
+        setTimeout: jest.fn(),
+      };
+    });
+
+    await resilientCatalogApi.retrieveCatalogObject('item-123');
+
+    const stats = resilientCatalogApi.getCircuitStats();
+    expect(stats.successes).toBeGreaterThanOrEqual(1);
+    expect(stats.state).toBe(CircuitState.CLOSED);
+  });
+
+  test('should open circuit after multiple timeout failures', async () => {
+    const https = require('https');
+    const mockRequest = https.request as jest.Mock;
+
+    jest.useFakeTimers();
+
+    // Simulate 5 timeout failures
+    for (let i = 0; i < 5; i++) {
+      mockRequest.mockImplementation(() => ({
+        on: jest.fn(),
+        end: jest.fn(),
+        write: jest.fn(),
+        setTimeout: jest.fn(),
+      }));
+
+      try {
+        const promise = resilientCatalogApi.retrieveCatalogObject('item-123');
+        jest.advanceTimersByTime(46000);
+        await promise;
+      } catch (error) {
+        // Expected
+      }
+    }
+
+    const stats = resilientCatalogApi.getCircuitStats();
+    expect(stats.state).toBe(CircuitState.OPEN);
+    expect(stats.failures).toBeGreaterThanOrEqual(5);
+
+    jest.useRealTimers();
+  });
+
+  test('should provide user-friendly error when circuit is open', async () => {
+    const https = require('https');
+    const mockRequest = https.request as jest.Mock;
+
+    jest.useFakeTimers();
+
+    // Open the circuit
+    for (let i = 0; i < 5; i++) {
+      mockRequest.mockImplementation(() => ({
+        on: jest.fn(),
+        end: jest.fn(),
+        write: jest.fn(),
+        setTimeout: jest.fn(),
+      }));
+
+      try {
+        const promise = resilientCatalogApi.searchCatalogObjects({ objectTypes: ['ITEM'] });
+        jest.advanceTimersByTime(46000);
+        await promise;
+      } catch {}
+    }
+
+    // Try to use API when circuit is open
+    try {
+      await resilientCatalogApi.retrieveCatalogObject('item-456');
+      fail('Should have thrown circuit breaker error');
+    } catch (error) {
+      expect((error as Error).message).toContain('temporarily unavailable');
+    }
+
+    jest.useRealTimers();
+  });
+});
