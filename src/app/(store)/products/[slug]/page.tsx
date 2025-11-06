@@ -293,18 +293,23 @@ export default async function ProductPage({ params }: PageProps) {
     } else {
       breadcrumbItems.push({ name: 'Products', href: '/products' });
     }
-    if (validProduct.category.slug) {
-      breadcrumbItems.push({
-        name: validProduct.category.name,
-        href: `/products/category/${validProduct.category.slug}`,
-      });
-    }
+
+    // Always add category to breadcrumbs
+    // Use slug if available, otherwise use category ID as fallback
+    const categoryHref = validProduct.category.slug
+      ? `/products/category/${validProduct.category.slug}`
+      : `/products/category/${validProduct.category.id}`;
+
+    breadcrumbItems.push({
+      name: validProduct.category.name,
+      href: categoryHref,
+    });
   }
 
   return (
     <div className="min-h-screen bg-destino-orange">
       <CategoryHeader title="Details" type="default" className="bg-destino-charcoal" />
-      <div className="py-8 mb-0">
+      <div className="pt-4 pb-8 mb-0">
         <div className="max-w-4xl mx-auto px-4">
           {/* Breadcrumb Navigation */}
           <Breadcrumbs items={breadcrumbItems} currentPage={validProduct.name} />

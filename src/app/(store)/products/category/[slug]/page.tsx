@@ -1,7 +1,7 @@
 // src/app/(store)/products/category/[slug]/page.tsx
 
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { CategoryHeader } from '@/components/products/CategoryHeader';
@@ -15,6 +15,16 @@ import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
 import { safeBuildTimeStaticParams, isBuildTime } from '@/lib/build-time-utils';
 import { Breadcrumbs } from '@/components/seo/Breadcrumbs';
+
+// Helper function to convert category name to URL-friendly slug
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .trim();
+}
 
 // Utility function to normalize image data from database
 function normalizeImages(images: any): string[] {
@@ -71,6 +81,11 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const { slug } = await params;
 
   try {
+    // Check if the slug is a UUID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      slug
+    );
+
     // Fetch the category from the database with build-time detection
     let category = null;
 
@@ -78,8 +93,11 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       try {
         category = await withRetry(
           async () => {
-            return await prisma.category.findUnique({
-              where: { slug: slug },
+            return await prisma.category.findFirst({
+              where: {
+                OR: [{ slug: slug }, ...(isUUID ? [{ id: slug }] : [])],
+                active: true,
+              },
             });
           },
           3,
@@ -175,20 +193,33 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   // Await searchParams if provided
   if (searchParams) await searchParams;
 
-  // Fetch the category from the database using the slug
+  // Check if the slug is a UUID
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    slug
+  );
+
+  // Fetch the category from the database using the slug or ID
   const category = await withDatabaseConnection(async () => {
-    return await prisma.category.findUnique({
+    return await prisma.category.findFirst({
       where: {
-        // Assuming the category table has a unique 'slug' field
-        slug: slug,
+        OR: [{ slug: slug }, ...(isUUID ? [{ id: slug }] : [])],
+        active: true,
       },
     });
   });
 
   // If the category doesn't exist in the database, return 404
   if (!category) {
-    console.log(`Category not found for slug: "${slug}"`);
+    console.log(`Category not found for slug or ID: "${slug}"`);
     notFound();
+  }
+
+  // Redirect to SEO-friendly slug if accessed by ID
+  if (isUUID && slug === category.id) {
+    const seoFriendlySlug = category.slug || slugify(category.name);
+    if (seoFriendlySlug !== slug) {
+      redirect(`/products/category/${seoFriendlySlug}`);
+    }
   }
 
   // Fetch products associated with this category using ProductVisibilityService
