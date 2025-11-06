@@ -20,6 +20,8 @@ import { ContactForm, ContactInfo, ContactInfoCatering } from '@/components/Cont
 import { FormMessage } from '../../components/form-message';
 import { generatePageSEO } from '@/lib/seo';
 import { CateringStructuredData } from '@/components/seo/StructuredData';
+import { FaqSchema } from '@/components/seo/FaqSchema';
+import { cateringFaqData } from '@/data/faq-data';
 
 export const metadata = generatePageSEO('catering');
 export const dynamic = 'force-dynamic';
@@ -58,6 +60,7 @@ const CateringPage = async () => {
   return (
     <>
       <CateringStructuredData />
+      <FaqSchema items={cateringFaqData} />
       <div className="bg-white">
         {/* Add the CateringCartButton component */}
         <CateringCartButton />
