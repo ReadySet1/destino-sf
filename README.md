@@ -41,15 +41,22 @@ pnpm test:seed
 pnpm test:reset
 
 # Run specific test suites
-pnpm test:unit      # Unit tests
-pnpm test:api       # API tests
+pnpm test:unit       # Unit tests
+pnpm test:api        # API tests
 pnpm test:components # Component tests
+pnpm test:contracts  # API contract validation (NEW)
+pnpm test:e2e        # End-to-end tests (Playwright)
+pnpm test:e2e:critical # Critical E2E flows (NEW)
 
 # Phase 5: Monitoring & Reporting
 pnpm test:report    # Generate HTML test report
 pnpm test:monitor   # Live test monitoring dashboard
 pnpm test:fix       # Run diagnostic script
 pnpm test:quick     # Fast test execution
+
+# API Documentation
+pnpm generate-api-docs    # Generate OpenAPI documentation (NEW)
+pnpm validate-api-schema  # Validate API schemas (NEW)
 ```
 
 ### Test Infrastructure
@@ -60,6 +67,9 @@ pnpm test:quick     # Fast test execution
 - **Coverage Reporting**: Automated badges and dashboard generation
 - **CI/CD Integration**: GitHub Actions with PostgreSQL service
 - **Monitoring & Reporting**: HTML test reports, live monitoring, pre-commit hooks
+- **API Contract Testing**: Zod-based schema validation with OpenAPI documentation (NEW)
+- **E2E Testing**: Playwright test suites for critical user flows (NEW)
+- **Concurrency Testing**: Race condition prevention and lock testing (NEW)
 
 **San Francisco's premier destination for authentic Argentine empanadas, alfajores, and professional catering services.**
 
@@ -98,8 +108,10 @@ pnpm test:quick     # Fast test execution
 
 - **Responsive Design**: Optimized for mobile, tablet, and desktop
 - **Performance**: 90%+ Lighthouse scores, optimized image delivery
-- **Accessibility**: WCAG-compliant design patterns
+- **Accessibility**: WCAG-compliant design patterns with image alt text guidelines (NEW)
 - **Progressive Enhancement**: Works offline with service worker
+- **SEO Optimization**: Breadcrumb navigation, FAQ schema, sitemap index (NEW)
+- **Structured Data**: Schema.org markup for rich search results (NEW)
 - **Error Boundaries**: Graceful error handling and recovery
 
 ## 🏗️ Technology Stack
