@@ -60,14 +60,18 @@ async function checkSyncLogs() {
       if (log.errors && Array.isArray(log.errors) && log.errors.length > 0) {
         console.log(`\n❌ Errors (${log.errors.length}):`);
         log.errors.forEach((error: any, i: number) => {
-          console.log(`  ${i + 1}. ${typeof error === 'string' ? error : JSON.stringify(error).substring(0, 100)}`);
+          console.log(
+            `  ${i + 1}. ${typeof error === 'string' ? error : JSON.stringify(error).substring(0, 100)}`
+          );
         });
       }
 
       if (log.warnings && Array.isArray(log.warnings) && log.warnings.length > 0) {
         console.log(`\n⚠️  Warnings (${log.warnings.length}):`);
         log.warnings.forEach((warning: any, i: number) => {
-          console.log(`  ${i + 1}. ${typeof warning === 'string' ? warning : JSON.stringify(warning).substring(0, 100)}`);
+          console.log(
+            `  ${i + 1}. ${typeof warning === 'string' ? warning : JSON.stringify(warning).substring(0, 100)}`
+          );
         });
       }
 
@@ -117,7 +121,6 @@ async function checkSyncLogs() {
       console.log(`   This suggests the sync is working but EMPANADAS category`);
       console.log(`   is not being queried correctly from Square.`);
     }
-
   } catch (error) {
     console.error('❌ Error checking sync logs:', error);
   } finally {

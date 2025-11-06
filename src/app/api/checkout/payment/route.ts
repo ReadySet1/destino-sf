@@ -63,7 +63,7 @@ async function postPaymentHandler(request: Request) {
     const result = await withRowLock<Order, { success: boolean; paymentId: string }>(
       'orders',
       orderId,
-      async (lockedOrder) => {
+      async lockedOrder => {
         // Validate order exists and has Square order ID
         if (!lockedOrder.squareOrderId) {
           throw new Error('Order not linked to Square');

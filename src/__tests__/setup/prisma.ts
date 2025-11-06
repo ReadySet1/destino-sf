@@ -25,9 +25,9 @@ jest.mock('@/lib/db', () => ({
 jest.mock('@/lib/db-unified', () => ({
   __esModule: true,
   prisma: prismaMock,
-  withRetry: jest.fn((fn) => fn()), // Execute callback directly in tests
-  withTransaction: jest.fn((fn) => fn(prismaMock)),
-  withWebhookRetry: jest.fn((fn) => fn()),
+  withRetry: jest.fn(fn => fn()), // Execute callback directly in tests
+  withTransaction: jest.fn(fn => fn(prismaMock)),
+  withWebhookRetry: jest.fn(fn => fn()),
   checkConnection: jest.fn().mockResolvedValue(true),
   ensureConnection: jest.fn().mockResolvedValue(undefined),
   getHealthStatus: jest.fn().mockResolvedValue({ connected: true, latency: 10 }),

@@ -27,7 +27,7 @@ describe('Shippo Transactions API Contract Tests', () => {
   describe('ShippoTransactionStateSchema', () => {
     it('should validate all transaction states', () => {
       const states = ['VALID', 'INVALID', 'QUEUED', 'SUCCESS', 'ERROR'];
-      states.forEach((state) => {
+      states.forEach(state => {
         expect(matchesSchema(ShippoTransactionStateSchema, state)).toBe(true);
       });
     });
@@ -40,7 +40,7 @@ describe('Shippo Transactions API Contract Tests', () => {
   describe('ShippoTransactionStatusSchema', () => {
     it('should validate all transaction statuses', () => {
       const statuses = ['QUEUED', 'SUCCESS', 'ERROR', 'UNKNOWN'];
-      statuses.forEach((status) => {
+      statuses.forEach(status => {
         expect(matchesSchema(ShippoTransactionStatusSchema, status)).toBe(true);
       });
     });
@@ -53,7 +53,7 @@ describe('Shippo Transactions API Contract Tests', () => {
   describe('ShippoLabelFileTypeSchema', () => {
     it('should validate all label file types', () => {
       const types = ['PNG', 'PDF', 'PDF_4x6', 'PDF_A4', 'PDF_A6', 'ZPLII'];
-      types.forEach((type) => {
+      types.forEach(type => {
         expect(matchesSchema(ShippoLabelFileTypeSchema, type)).toBe(true);
       });
     });
@@ -66,7 +66,7 @@ describe('Shippo Transactions API Contract Tests', () => {
   describe('ShippoSubmissionTypeSchema', () => {
     it('should validate submission types', () => {
       const types = ['PICKUP', 'DROPOFF'];
-      types.forEach((type) => {
+      types.forEach(type => {
         expect(matchesSchema(ShippoSubmissionTypeSchema, type)).toBe(true);
       });
     });
@@ -162,7 +162,8 @@ describe('Shippo Transactions API Contract Tests', () => {
         },
         tracking_number: '9400111899562537866471',
         tracking_status: 'UNKNOWN',
-        tracking_url_provider: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=9400111899562537866471',
+        tracking_url_provider:
+          'https://tools.usps.com/go/TrackConfirmAction?tLabels=9400111899562537866471',
         eta: '2025-01-17T17:00:00Z',
         label_url: 'https://shippo-delivery.s3.amazonaws.com/example-label.pdf',
         commercial_invoice_url: 'https://shippo-delivery.s3.amazonaws.com/example-invoice.pdf',

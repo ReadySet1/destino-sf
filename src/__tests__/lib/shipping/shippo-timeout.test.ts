@@ -95,7 +95,7 @@ describe('Shippo API - Timeout Handling', () => {
       const mockClient = getMockShippoClient();
       // Simulate a request that takes too long
       mockClient.shipments.create.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ rates: [] }), 100))
+        () => new Promise(resolve => setTimeout(() => resolve({ rates: [] }), 100))
       );
 
       // Mock withTimeout to use a very short timeout for testing
@@ -106,7 +106,14 @@ describe('Shippo API - Timeout Handling', () => {
           promise,
           new Promise((_, reject) =>
             setTimeout(
-              () => reject(new TimeoutError(message || `Request timed out after ${timeout}ms`, timeout, operation)),
+              () =>
+                reject(
+                  new TimeoutError(
+                    message || `Request timed out after ${timeout}ms`,
+                    timeout,
+                    operation
+                  )
+                ),
               10
             )
           ),
@@ -126,7 +133,7 @@ describe('Shippo API - Timeout Handling', () => {
     test('should include helpful context in timeout error message', async () => {
       const mockClient = getMockShippoClient();
       mockClient.shipments.create.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ rates: [] }), 100))
+        () => new Promise(resolve => setTimeout(() => resolve({ rates: [] }), 100))
       );
 
       // Mock withTimeout to use a very short timeout for testing
@@ -139,7 +146,13 @@ describe('Shippo API - Timeout Handling', () => {
           new Promise((_, reject) =>
             setTimeout(
               () =>
-                reject(new TimeoutError(message || `Request timed out after ${timeout}ms`, timeout, operation)),
+                reject(
+                  new TimeoutError(
+                    message || `Request timed out after ${timeout}ms`,
+                    timeout,
+                    operation
+                  )
+                ),
               timeoutMs
             )
           ),
@@ -186,9 +199,7 @@ describe('Shippo API - Timeout Handling', () => {
 
     test('should handle network errors gracefully', async () => {
       const mockClient = getMockShippoClient();
-      mockClient.shipments.create.mockRejectedValue(
-        new Error('Network error: Connection refused')
-      );
+      mockClient.shipments.create.mockRejectedValue(new Error('Network error: Connection refused'));
 
       const result = await calculateShippingRates(validParams);
 
@@ -282,7 +293,14 @@ describe('Shippo API - Circuit Breaker Integration', () => {
         promise,
         new Promise((_, reject) =>
           setTimeout(
-            () => reject(new TimeoutError(message || `Request timed out after ${timeout}ms`, timeout, operation)),
+            () =>
+              reject(
+                new TimeoutError(
+                  message || `Request timed out after ${timeout}ms`,
+                  timeout,
+                  operation
+                )
+              ),
             10
           )
         ),
@@ -290,7 +308,7 @@ describe('Shippo API - Circuit Breaker Integration', () => {
     });
 
     mockClient.shipments.create.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ rates: [] }), 100))
+      () => new Promise(resolve => setTimeout(() => resolve({ rates: [] }), 100))
     );
 
     const result = await resilientShippingApi.calculateShippingRates(validParams);

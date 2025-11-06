@@ -24,11 +24,11 @@ export interface PerformanceMetric {
  */
 export const WEB_VITALS_THRESHOLDS = {
   LCP: { good: 2500, needsImprovement: 4000 }, // Largest Contentful Paint
-  FID: { good: 100, needsImprovement: 300 },   // First Input Delay (deprecated, kept for backward compatibility)
-  CLS: { good: 0.1, needsImprovement: 0.25 },  // Cumulative Layout Shift
+  FID: { good: 100, needsImprovement: 300 }, // First Input Delay (deprecated, kept for backward compatibility)
+  CLS: { good: 0.1, needsImprovement: 0.25 }, // Cumulative Layout Shift
   TTFB: { good: 800, needsImprovement: 1800 }, // Time to First Byte
   FCP: { good: 1800, needsImprovement: 3000 }, // First Contentful Paint
-  INP: { good: 200, needsImprovement: 500 },   // Interaction to Next Paint (replaces FID)
+  INP: { good: 200, needsImprovement: 500 }, // Interaction to Next Paint (replaces FID)
 } as const;
 
 /**
@@ -105,12 +105,7 @@ class PerformanceMonitor {
   /**
    * Record API response time
    */
-  recordApiCall(
-    endpoint: string,
-    method: string,
-    duration: number,
-    statusCode: number
-  ): void {
+  recordApiCall(endpoint: string, method: string, duration: number, statusCode: number): void {
     this.record({
       name: 'api_response_time',
       value: duration,
@@ -164,15 +159,18 @@ class PerformanceMonitor {
   /**
    * Get performance summary
    */
-  getSummary(): Record<string, {
-    count: number;
-    avg: number;
-    p50: number;
-    p95: number;
-    p99: number;
-    min: number;
-    max: number;
-  }> {
+  getSummary(): Record<
+    string,
+    {
+      count: number;
+      avg: number;
+      p50: number;
+      p95: number;
+      p99: number;
+      min: number;
+      max: number;
+    }
+  > {
     const summary: Record<string, any> = {};
     const uniqueNames = new Set(this.metrics.map(m => m.name));
 
@@ -206,11 +204,15 @@ class PerformanceMonitor {
    * Export metrics as JSON
    */
   export(): string {
-    return JSON.stringify({
-      metrics: this.metrics,
-      summary: this.getSummary(),
-      timestamp: new Date().toISOString(),
-    }, null, 2);
+    return JSON.stringify(
+      {
+        metrics: this.metrics,
+        summary: this.getSummary(),
+        timestamp: new Date().toISOString(),
+      },
+      null,
+      2
+    );
   }
 }
 
@@ -222,10 +224,7 @@ export const performanceMonitor = new PerformanceMonitor();
 /**
  * Measure async function execution time
  */
-export async function measureAsync<T>(
-  name: string,
-  fn: () => Promise<T>
-): Promise<T> {
+export async function measureAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
   performanceMonitor.mark(name);
   try {
     const result = await fn();
@@ -267,23 +266,13 @@ export function withPerformanceMonitoring<T extends (...args: any[]) => Promise<
       const response = await handler(...args);
       const duration = performance.now() - startTime;
 
-      performanceMonitor.recordApiCall(
-        routeName,
-        method,
-        duration,
-        response.status
-      );
+      performanceMonitor.recordApiCall(routeName, method, duration, response.status);
 
       return response;
     } catch (error) {
       const duration = performance.now() - startTime;
 
-      performanceMonitor.recordApiCall(
-        routeName,
-        method,
-        duration,
-        500
-      );
+      performanceMonitor.recordApiCall(routeName, method, duration, 500);
 
       throw error;
     }
@@ -293,13 +282,10 @@ export function withPerformanceMonitoring<T extends (...args: any[]) => Promise<
 /**
  * Get performance metrics for a specific time range
  */
-export function getMetricsInRange(
-  startTime: number,
-  endTime: number
-): PerformanceMetric[] {
-  return performanceMonitor.getMetrics().filter(
-    m => m.timestamp >= startTime && m.timestamp <= endTime
-  );
+export function getMetricsInRange(startTime: number, endTime: number): PerformanceMetric[] {
+  return performanceMonitor
+    .getMetrics()
+    .filter(m => m.timestamp >= startTime && m.timestamp <= endTime);
 }
 
 /**

@@ -119,8 +119,8 @@ export class DatabaseSeeder {
     const customerEmail = 'test.user@example.com';
     const adminEmail = 'admin@destinosf.com';
 
-    const existingCustomer = existingUsers?.users?.find((u) => u.email === customerEmail);
-    const existingAdmin = existingUsers?.users?.find((u) => u.email === adminEmail);
+    const existingCustomer = existingUsers?.users?.find(u => u.email === customerEmail);
+    const existingAdmin = existingUsers?.users?.find(u => u.email === adminEmail);
 
     if (existingCustomer) {
       await supabase.auth.admin.deleteUser(existingCustomer.id);
@@ -133,13 +133,14 @@ export class DatabaseSeeder {
 
     // Create test customer with Supabase Auth
     try {
-
       // Use admin API to create user with email auto-confirmed (service role key required)
-      const { data: customerAuth, error: customerAuthError } = await supabase.auth.admin.createUser({
-        email: customerEmail,
-        password: testPassword,
-        email_confirm: true, // Auto-confirm email for testing
-      });
+      const { data: customerAuth, error: customerAuthError } = await supabase.auth.admin.createUser(
+        {
+          email: customerEmail,
+          password: testPassword,
+          email_confirm: true, // Auto-confirm email for testing
+        }
+      );
 
       if (customerAuthError && !customerAuthError.message.includes('already registered')) {
         console.warn(`⚠️ Customer auth creation warning: ${customerAuthError.message}`);
@@ -695,7 +696,10 @@ export class DatabaseSeeder {
 /**
  * Helper function to create and run seeder
  */
-export async function seedTestDatabase(prisma: PrismaClient, options: SeedOptions = {}): Promise<void> {
+export async function seedTestDatabase(
+  prisma: PrismaClient,
+  options: SeedOptions = {}
+): Promise<void> {
   const seeder = new DatabaseSeeder(prisma);
   await seeder.seed(options);
 }

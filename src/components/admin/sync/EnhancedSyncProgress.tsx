@@ -246,7 +246,8 @@ export function EnhancedSyncProgress({ syncId, onSyncComplete }: SyncProgressPro
           addActivity({
             type: 'product',
             message: `Processing: ${data.currentProduct}`,
-            details: data.processed && data.total ? `${data.processed} of ${data.total}` : undefined,
+            details:
+              data.processed && data.total ? `${data.processed} of ${data.total}` : undefined,
           });
           lastProductRef.current = data.currentProduct;
         }
@@ -467,9 +468,7 @@ export function EnhancedSyncProgress({ syncId, onSyncComplete }: SyncProgressPro
           <div className="w-6 h-6 flex-shrink-0">{getStatusIcon()}</div>
           <div>
             <div className="font-semibold text-sm">Started by {status.startedBy}</div>
-            <div className="text-xs text-gray-500">
-              {formatDuration(status.duration)} elapsed
-            </div>
+            <div className="text-xs text-gray-500">{formatDuration(status.duration)} elapsed</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -528,9 +527,7 @@ export function EnhancedSyncProgress({ syncId, onSyncComplete }: SyncProgressPro
         <div className="border border-gray-200 rounded-lg overflow-hidden">
           <div className="max-h-64 overflow-y-auto bg-gray-50">
             {activityFeed.length === 0 ? (
-              <div className="text-center text-gray-500 text-sm py-8">
-                Waiting for activity...
-              </div>
+              <div className="text-center text-gray-500 text-sm py-8">Waiting for activity...</div>
             ) : (
               <div className="divide-y divide-gray-200">
                 {activityFeed.map(item => (
@@ -563,9 +560,7 @@ export function EnhancedSyncProgress({ syncId, onSyncComplete }: SyncProgressPro
             <div className="text-xs text-gray-500">Synced</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-600">
-              {status.results.skippedProducts}
-            </div>
+            <div className="text-2xl font-bold text-gray-600">{status.results.skippedProducts}</div>
             <div className="text-xs text-gray-500">Skipped</div>
           </div>
           <div className="text-center">

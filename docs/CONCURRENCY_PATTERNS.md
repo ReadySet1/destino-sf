@@ -55,17 +55,20 @@ This document describes the concurrency control mechanisms implemented to preven
 **Location:** `src/lib/concurrency/optimistic-lock.ts`
 
 **How it works:**
+
 - Each record has a `version` field
 - On update, check version hasn't changed
 - Increment version on successful update
 - Throw `OptimisticLockError` on conflict
 
 **When to use:**
+
 - Order status updates
 - Non-financial data modifications
 - Operations that can be safely retried
 
 **Example:**
+
 ```typescript
 import { updateWithOptimisticLock } from '@/lib/concurrency/optimistic-lock';
 
@@ -80,6 +83,7 @@ const updatedOrder = await updateWithOptimisticLock(
 ```
 
 **Schema Changes:**
+
 ```prisma
 model Order {
   // ... other fields
@@ -96,17 +100,20 @@ model Order {
 **Location:** `src/lib/concurrency/pessimistic-lock.ts`
 
 **How it works:**
+
 - Uses PostgreSQL `SELECT ... FOR UPDATE NOWAIT`
 - Acquires exclusive row lock within transaction
 - Blocks concurrent access to locked rows
 - Auto-releases on transaction commit/rollback
 
 **When to use:**
+
 - Payment processing (prevent double charges)
 - Inventory updates (prevent overselling)
 - Financial transactions
 
 **Example:**
+
 ```typescript
 import { withRowLock } from '@/lib/concurrency/pessimistic-lock';
 
@@ -114,7 +121,7 @@ import { withRowLock } from '@/lib/concurrency/pessimistic-lock';
 const result = await withRowLock<Order>(
   'orders',
   orderId,
-  async (lockedOrder) => {
+  async lockedOrder => {
     // Validate and process payment
     if (lockedOrder.paymentStatus !== 'PENDING') {
       throw new Error('Order already paid');
@@ -124,19 +131,20 @@ const result = await withRowLock<Order>(
 
     await prisma.order.update({
       where: { id: orderId },
-      data: { paymentStatus: 'PAID' }
+      data: { paymentStatus: 'PAID' },
     });
 
     return payment;
   },
   {
-    timeout: 30000,  // 30 second timeout
-    noWait: true     // Fail immediately if locked
+    timeout: 30000, // 30 second timeout
+    noWait: true, // Fail immediately if locked
   }
 );
 ```
 
 **Integration Points:**
+
 - **Payment Route:** `src/app/api/checkout/payment/route.ts:63-129`
   - Prevents concurrent payment processing
   - Validates order status under lock
@@ -151,17 +159,20 @@ const result = await withRowLock<Order>(
 **Location:** `src/lib/concurrency/request-deduplicator.ts`
 
 **How it works:**
+
 - Caches in-flight requests by key
 - Returns same Promise for duplicate keys
 - Auto-expires after TTL (5 seconds default)
 - Clears cache on error (allows retry)
 
 **When to use:**
+
 - Checkout button double-click prevention
 - Network retry scenarios
 - Any user-triggered action that shouldn't duplicate
 
 **Example:**
+
 ```typescript
 import { globalDeduplicator, userKey } from '@/lib/concurrency/request-deduplicator';
 
@@ -176,6 +187,7 @@ return await globalDeduplicator.deduplicate(
 ```
 
 **Integration Points:**
+
 - **Checkout Route:** `src/app/api/checkout/route.ts:76-177`
   - Deduplicates concurrent checkout requests
   - Prevents double-submit race conditions
@@ -189,36 +201,39 @@ return await globalDeduplicator.deduplicate(
 **Location:** `src/lib/duplicate-order-prevention.ts`
 
 **How it works:**
+
 - Checks for pending orders with same items
 - Compares product IDs, variants, and quantities
 - Returns existing order if duplicate found
 - Only checks orders from last 24 hours
 
 **When to use:**
+
 - Before creating new order
 - When user refreshes checkout page
 - Network retry scenarios
 
 **Example:**
+
 ```typescript
 import { checkForDuplicateOrder } from '@/lib/duplicate-order-prevention';
 
 // Check before creating order
-const duplicateCheck = await checkForDuplicateOrder(
-  userId,
-  cartItems,
-  customerEmail
-);
+const duplicateCheck = await checkForDuplicateOrder(userId, cartItems, customerEmail);
 
 if (duplicateCheck.hasPendingOrder) {
-  return NextResponse.json({
-    error: 'Duplicate order detected',
-    existingOrder: duplicateCheck.existingOrder
-  }, { status: 409 });
+  return NextResponse.json(
+    {
+      error: 'Duplicate order detected',
+      existingOrder: duplicateCheck.existingOrder,
+    },
+    { status: 409 }
+  );
 }
 ```
 
 **Integration Points:**
+
 - **Checkout Route:** `src/app/api/checkout/route.ts:84-113`
   - Checks BEFORE order creation
   - Prevents TOCTOU vulnerability
@@ -230,6 +245,7 @@ if (duplicateCheck.hasPendingOrder) {
 **Purpose:** Enforce uniqueness at database level
 
 **Schema Changes:**
+
 ```prisma
 model OrderItem {
   // ... fields ...
@@ -242,6 +258,7 @@ model OrderItem {
 ```
 
 **Why it matters:**
+
 - Last line of defense against duplicates
 - Prevents corruption from application bugs
 - Enforces business rules at data layer
@@ -255,7 +272,6 @@ model OrderItem {
 ```typescript
 // 1. Request Deduplication (prevent double-click)
 return await globalDeduplicator.deduplicate(deduplicationKey, async () => {
-
   // 2. Duplicate Order Check (prevent duplicate orders)
   const duplicateCheck = await checkForDuplicateOrder(userId, items, email);
   if (duplicateCheck.hasPendingOrder) {
@@ -263,7 +279,9 @@ return await globalDeduplicator.deduplicate(deduplicationKey, async () => {
   }
 
   // 3. Create order (with database constraints)
-  const order = await prisma.order.create({ /* ... */ });
+  const order = await prisma.order.create({
+    /* ... */
+  });
 
   return { orderId: order.id };
 });
@@ -273,24 +291,28 @@ return await globalDeduplicator.deduplicate(deduplicationKey, async () => {
 
 ```typescript
 // 1. Pessimistic Lock (prevent concurrent payment)
-const result = await withRowLock('orders', orderId, async (lockedOrder) => {
+const result = await withRowLock(
+  'orders',
+  orderId,
+  async lockedOrder => {
+    // 2. Validate state under lock
+    if (lockedOrder.paymentStatus !== 'PENDING') {
+      throw new Error('Already paid');
+    }
 
-  // 2. Validate state under lock
-  if (lockedOrder.paymentStatus !== 'PENDING') {
-    throw new Error('Already paid');
-  }
+    // 3. Process payment (idempotent via Square)
+    const payment = await createPayment(sourceId, squareOrderId, amount);
 
-  // 3. Process payment (idempotent via Square)
-  const payment = await createPayment(sourceId, squareOrderId, amount);
+    // 4. Update status atomically
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { paymentStatus: 'PAID', status: 'PROCESSING' },
+    });
 
-  // 4. Update status atomically
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { paymentStatus: 'PAID', status: 'PROCESSING' }
-  });
-
-  return { success: true, paymentId: payment.id };
-}, { timeout: 30000, noWait: true });
+    return { success: true, paymentId: payment.id };
+  },
+  { timeout: 30000, noWait: true }
+);
 ```
 
 ### Pattern 3: Cart State Consistency
@@ -307,7 +329,7 @@ set(state => {
   // Return new state atomically
   return {
     items: updatedItems,
-    total: calculateTotal(updatedItems)
+    total: calculateTotal(updatedItems),
   };
 });
 ```
@@ -342,6 +364,7 @@ set(state => {
 ### Integration Tests
 
 **Checkout Flow** (`src/__tests__/integration/checkout-flow-concurrency.test.ts`)
+
 - Complete flow: cart → checkout → payment
 - 10 concurrent users
 - Double-submit prevention
@@ -350,6 +373,7 @@ set(state => {
 ### E2E Tests
 
 **Concurrent Users** (`tests/e2e/13-concurrent-users.spec.ts`)
+
 - Real browser simulation
 - 3+ concurrent users
 - Multi-tab scenarios
@@ -405,7 +429,7 @@ pnpm test:concurrency  # (if configured)
 import {
   concurrencyMetrics,
   getConcurrencyHealth,
-  exportMetricsForMonitoring
+  exportMetricsForMonitoring,
 } from '@/lib/monitoring/concurrency-metrics';
 
 // Get summary
@@ -447,13 +471,13 @@ const metrics = exportMetricsForMonitoring();
 
 ### 1. Choose the Right Pattern
 
-| Scenario | Recommended Pattern | Why |
-|----------|-------------------|-----|
-| Payment processing | Pessimistic locking | Prevent double charges (critical) |
-| Order status updates | Optimistic locking | Allow concurrent reads, retry on conflict |
-| Checkout button | Request deduplication | Fast, user-friendly double-click prevention |
-| Order creation | Duplicate check + deduplication | Multi-layered protection |
-| Cart updates | Zustand atomic updates | Built-in consistency |
+| Scenario             | Recommended Pattern             | Why                                         |
+| -------------------- | ------------------------------- | ------------------------------------------- |
+| Payment processing   | Pessimistic locking             | Prevent double charges (critical)           |
+| Order status updates | Optimistic locking              | Allow concurrent reads, retry on conflict   |
+| Checkout button      | Request deduplication           | Fast, user-friendly double-click prevention |
+| Order creation       | Duplicate check + deduplication | Multi-layered protection                    |
+| Cart updates         | Zustand atomic updates          | Built-in consistency                        |
 
 ### 2. Lock Ordering
 
@@ -477,27 +501,42 @@ await withRowLock('customers', customerId, async () => {
 
 ```typescript
 // ✅ Good: Short transaction
-await withRowLock('orders', orderId, async (order) => {
-  const payment = await processPayment(order);  // Fast
-  await updateOrderStatus(order.id, 'PAID');    // Fast
-  return payment;
-}, { timeout: 5000 });
+await withRowLock(
+  'orders',
+  orderId,
+  async order => {
+    const payment = await processPayment(order); // Fast
+    await updateOrderStatus(order.id, 'PAID'); // Fast
+    return payment;
+  },
+  { timeout: 5000 }
+);
 
 // ❌ Bad: Long-running transaction
-await withRowLock('orders', orderId, async (order) => {
-  await sendEmailNotification(order);  // Slow!
-  await updateInventory(order);        // Slow!
-  await generateInvoice(order);        // Slow!
-}, { timeout: 30000 });  // Holds lock too long
+await withRowLock(
+  'orders',
+  orderId,
+  async order => {
+    await sendEmailNotification(order); // Slow!
+    await updateInventory(order); // Slow!
+    await generateInvoice(order); // Slow!
+  },
+  { timeout: 30000 }
+); // Holds lock too long
 ```
 
 ### 4. Handle Lock Failures Gracefully
 
 ```typescript
 try {
-  await withRowLock('orders', orderId, async (order) => {
-    // Process payment
-  }, { noWait: true });
+  await withRowLock(
+    'orders',
+    orderId,
+    async order => {
+      // Process payment
+    },
+    { noWait: true }
+  );
 } catch (error) {
   if (isLockAcquisitionError(error)) {
     if (error.reason === 'timeout') {
@@ -511,6 +550,7 @@ try {
 ### 5. Test Concurrent Scenarios
 
 Always write tests for:
+
 - Concurrent identical requests
 - Rapid sequential requests
 - Multi-user scenarios
@@ -524,16 +564,19 @@ Always write tests for:
 ### Issue: High Lock Timeout Rate
 
 **Symptoms:**
+
 - Users see "Payment already in progress" errors
 - Lock timeout metrics > 10/hour
 
 **Diagnosis:**
+
 ```typescript
 const health = getConcurrencyHealth();
 console.log(health.stats.lockTimeouts);
 ```
 
 **Solutions:**
+
 1. Check for slow operations within locks
 2. Reduce transaction timeout
 3. Use `noWait: false` for retry behavior
@@ -544,16 +587,19 @@ console.log(health.stats.lockTimeouts);
 ### Issue: Optimistic Lock Conflicts
 
 **Symptoms:**
+
 - Frequent `OptimisticLockError` exceptions
 - Order updates failing
 
 **Diagnosis:**
+
 ```typescript
 const summary = concurrencyMetrics.getSummary();
 console.log(summary[ConcurrencyMetricType.OPTIMISTIC_LOCK_CONFLICT]);
 ```
 
 **Solutions:**
+
 1. Switch to pessimistic locking for high-contention operations
 2. Implement retry logic with exponential backoff
 3. Reduce concurrent update operations
@@ -563,15 +609,18 @@ console.log(summary[ConcurrencyMetricType.OPTIMISTIC_LOCK_CONFLICT]);
 ### Issue: Duplicate Orders Despite Prevention
 
 **Symptoms:**
+
 - Users still creating duplicate orders
 - Duplicate check not triggering
 
 **Diagnosis:**
+
 1. Check if items match exactly (product ID + variant + quantity)
 2. Verify duplicate check runs BEFORE order creation
 3. Check for TOCTOU gaps
 
 **Solutions:**
+
 1. Ensure duplicate check inside deduplicator callback
 2. Verify database constraints are in place
 3. Check for cart item normalization issues
@@ -581,18 +630,19 @@ console.log(summary[ConcurrencyMetricType.OPTIMISTIC_LOCK_CONFLICT]);
 ### Issue: Request Deduplication Not Working
 
 **Symptoms:**
+
 - Duplicate operations despite deduplication
 - Cache hit rate very low
 
 **Diagnosis:**
+
 ```typescript
-const metrics = concurrencyMetrics.getMetrics(
-  ConcurrencyMetricType.REQUEST_CACHE_HIT
-);
+const metrics = concurrencyMetrics.getMetrics(ConcurrencyMetricType.REQUEST_CACHE_HIT);
 console.log(`Hit rate: ${metrics.length} hits`);
 ```
 
 **Solutions:**
+
 1. Verify consistent key generation
 2. Check TTL isn't too short
 3. Ensure same deduplicator instance is used
@@ -605,11 +655,13 @@ console.log(`Hit rate: ${metrics.length} hits`);
 ### From No Concurrency Control
 
 1. **Add version field:**
+
    ```bash
    pnpm prisma migrate dev --name add_order_version
    ```
 
 2. **Add unique constraints:**
+
    ```bash
    pnpm prisma migrate dev --name add_orderitem_unique
    ```
@@ -658,6 +710,7 @@ pnpm test:e2e tests/e2e/13-concurrent-users.spec.ts
 ## Support
 
 For questions or issues:
+
 1. Check this documentation
 2. Review test cases for examples
 3. Check monitoring metrics

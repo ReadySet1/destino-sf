@@ -18,7 +18,9 @@ export interface CategoryFactoryOptions {
 /**
  * Generate category data (does not create in database)
  */
-export function buildCategory(options: CategoryFactoryOptions = {}): Prisma.CategoryUncheckedCreateInput {
+export function buildCategory(
+  options: CategoryFactoryOptions = {}
+): Prisma.CategoryUncheckedCreateInput {
   const name = options.name || faker.commerce.department();
   const slug = options.slug || faker.helpers.slugify(name).toLowerCase();
 
@@ -35,14 +37,19 @@ export function buildCategory(options: CategoryFactoryOptions = {}): Prisma.Cate
 /**
  * Generate multiple categories
  */
-export function buildCategories(count: number, options: CategoryFactoryOptions = {}): Prisma.CategoryUncheckedCreateInput[] {
+export function buildCategories(
+  count: number,
+  options: CategoryFactoryOptions = {}
+): Prisma.CategoryUncheckedCreateInput[] {
   return Array.from({ length: count }, () => buildCategory(options));
 }
 
 /**
  * Generate empanadas category
  */
-export function buildEmpanadasCategory(options: Omit<CategoryFactoryOptions, 'name' | 'slug'> = {}): Prisma.CategoryUncheckedCreateInput {
+export function buildEmpanadasCategory(
+  options: Omit<CategoryFactoryOptions, 'name' | 'slug'> = {}
+): Prisma.CategoryUncheckedCreateInput {
   return buildCategory({
     ...options,
     name: 'Empanadas',
@@ -54,7 +61,9 @@ export function buildEmpanadasCategory(options: Omit<CategoryFactoryOptions, 'na
 /**
  * Generate alfajores category
  */
-export function buildAlfajoresCategory(options: Omit<CategoryFactoryOptions, 'name' | 'slug'> = {}): Prisma.CategoryUncheckedCreateInput {
+export function buildAlfajoresCategory(
+  options: Omit<CategoryFactoryOptions, 'name' | 'slug'> = {}
+): Prisma.CategoryUncheckedCreateInput {
   return buildCategory({
     ...options,
     name: 'Alfajores',
@@ -66,7 +75,9 @@ export function buildAlfajoresCategory(options: Omit<CategoryFactoryOptions, 'na
 /**
  * Generate catering category
  */
-export function buildCateringCategory(options: Omit<CategoryFactoryOptions, 'name' | 'slug'> = {}): Prisma.CategoryUncheckedCreateInput {
+export function buildCateringCategory(
+  options: Omit<CategoryFactoryOptions, 'name' | 'slug'> = {}
+): Prisma.CategoryUncheckedCreateInput {
   return buildCategory({
     ...options,
     name: 'Catering',

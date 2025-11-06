@@ -11,19 +11,21 @@ Phase 5 establishes comprehensive E2E testing and performance monitoring infrast
 **Location**: `src/lib/testing/performance-monitor.ts`
 
 A comprehensive performance metrics collection and analysis utility that tracks:
+
 - Custom performance marks and measures
 - API response times with percentile calculations
 - Memory and resource usage
 - Performance budgets validation
 
 **Key Features**:
+
 ```typescript
 // Record custom metrics
 performanceMonitor.record({
   name: 'api_response_time',
   value: 150,
   unit: 'ms',
-  metadata: { endpoint: '/api/orders', statusCode: 200 }
+  metadata: { endpoint: '/api/orders', statusCode: 200 },
 });
 
 // Mark and measure execution time
@@ -41,6 +43,7 @@ const summary = performanceMonitor.getSummary();
 ```
 
 **Use Cases**:
+
 - Track API endpoint performance
 - Monitor database query execution times
 - Measure page load times
@@ -54,6 +57,7 @@ const summary = performanceMonitor.getSummary();
 Integration with the `web-vitals` library to track Core Web Vitals metrics that directly impact user experience and SEO rankings.
 
 **Tracked Metrics**:
+
 - **LCP** (Largest Contentful Paint): Main content load time
 - **FID** (First Input Delay): Time until page is interactive
 - **CLS** (Cumulative Layout Shift): Visual stability
@@ -62,6 +66,7 @@ Integration with the `web-vitals` library to track Core Web Vitals metrics that 
 - **INP** (Interaction to Next Paint): Overall responsiveness
 
 **Implementation**:
+
 ```typescript
 // Initialize in your app (e.g., _app.tsx or layout.tsx)
 import { initWebVitals } from '@/lib/testing/web-vitals';
@@ -78,6 +83,7 @@ console.log('Metric status:', health.metrics);
 ```
 
 **Automatic Reporting**:
+
 - Logs metrics in development console with visual indicators (✅ ⚠️ ❌)
 - Sends metrics to Google Analytics (if configured)
 - Records in performance monitor for analysis
@@ -86,12 +92,12 @@ console.log('Metric status:', health.metrics);
 **Thresholds** (based on Google's Web Vitals):
 | Metric | Good | Needs Improvement | Poor |
 |--------|------|-------------------|------|
-| LCP    | ≤2.5s | ≤4.0s | >4.0s |
-| FID    | ≤100ms | ≤300ms | >300ms |
-| CLS    | ≤0.1 | ≤0.25 | >0.25 |
-| TTFB   | ≤800ms | ≤1.8s | >1.8s |
-| FCP    | ≤1.8s | ≤3.0s | >3.0s |
-| INP    | ≤200ms | ≤500ms | >500ms |
+| LCP | ≤2.5s | ≤4.0s | >4.0s |
+| FID | ≤100ms | ≤300ms | >300ms |
+| CLS | ≤0.1 | ≤0.25 | >0.25 |
+| TTFB | ≤800ms | ≤1.8s | >1.8s |
+| FCP | ≤1.8s | ≤3.0s | >3.0s |
+| INP | ≤200ms | ≤500ms | >500ms |
 
 ### 3. Performance Budgets
 
@@ -102,6 +108,7 @@ Defines strict performance standards for all critical pages and user flows. Thes
 **Budget Categories**:
 
 #### Page-Level Budgets
+
 ```json
 {
   "Homepage": {
@@ -129,6 +136,7 @@ Defines strict performance standards for all critical pages and user flows. Thes
 ```
 
 #### Bundle Size Budgets
+
 ```json
 {
   "main": "200KB (gzipped)",
@@ -138,6 +146,7 @@ Defines strict performance standards for all critical pages and user flows. Thes
 ```
 
 **Enforcement**:
+
 - CI/CD fails build if budgets exceeded by 20%
 - Alerts sent for 10% degradation from baseline
 - Daily performance reports
@@ -150,6 +159,7 @@ Defines strict performance standards for all critical pages and user flows. Thes
 Automated tool that analyzes the Playwright test suite and generates comprehensive coverage reports showing which critical user paths are covered.
 
 **Critical Paths Tracked** (9 total):
+
 1. **Guest Checkout** (3+ tests required)
    - Flow: Browse → Add to Cart → Guest Checkout → Payment → Order Confirmation
 2. **Authenticated Purchase** (3+ tests required)
@@ -170,6 +180,7 @@ Automated tool that analyzes the Playwright test suite and generates comprehensi
    - Features: View orders, update status, manage orders
 
 **Usage**:
+
 ```bash
 # Generate coverage report
 pnpm tsx scripts/generate-e2e-coverage.ts
@@ -180,6 +191,7 @@ pnpm tsx scripts/generate-e2e-coverage.ts
 ```
 
 **Report Output**:
+
 - Coverage percentage for each critical path
 - List of tests mapped to each path
 - Gaps identification (paths with insufficient coverage)
@@ -187,8 +199,10 @@ pnpm tsx scripts/generate-e2e-coverage.ts
 - Overall coverage score (must be ≥75%)
 
 **Example Report Section**:
+
 ```markdown
 ### ✅ Guest Checkout (100%)
+
 **Flow**: Browse → Add to Cart → Guest Checkout → Payment → Order Confirmation
 **Test Coverage**: 4 tests
 
@@ -209,28 +223,30 @@ pnpm tsx scripts/generate-e2e-coverage.ts
 
 12 comprehensive Playwright test files covering all critical user flows:
 
-| Test File | Purpose | Status |
-|-----------|---------|--------|
-| `01-complete-purchase.spec.ts` | Full purchase flow | ✅ Passing |
-| `02-cart-management.spec.ts` | Cart operations | ✅ Passing |
-| `03-authentication.spec.ts` | Auth flows | ⚠️ 6 passing, 5 skipped |
-| `04-catering-inquiry.spec.ts` | Catering inquiries | ✅ Passing |
-| `05-browser-mcp-integration.spec.ts` | Browser MCP | ✅ Passing |
-| `06-catering-inquiry-enhanced.spec.ts` | Advanced catering | ✅ Passing |
-| `07-guest-checkout.spec.ts` | Guest checkout flow | ✅ Passing |
-| `08-payment-methods.spec.ts` | Payment processing | ✅ Passing |
-| `09-shipping-validation.spec.ts` | Shipping calculations | ✅ Passing |
-| `10-order-lifecycle.spec.ts` | Order management | ✅ Passing |
-| `11-catering-complete-flow.spec.ts` | Complete catering | ✅ Passing |
-| `12-admin-order-management.spec.ts` | Admin features | ✅ Passing |
+| Test File                              | Purpose               | Status                  |
+| -------------------------------------- | --------------------- | ----------------------- |
+| `01-complete-purchase.spec.ts`         | Full purchase flow    | ✅ Passing              |
+| `02-cart-management.spec.ts`           | Cart operations       | ✅ Passing              |
+| `03-authentication.spec.ts`            | Auth flows            | ⚠️ 6 passing, 5 skipped |
+| `04-catering-inquiry.spec.ts`          | Catering inquiries    | ✅ Passing              |
+| `05-browser-mcp-integration.spec.ts`   | Browser MCP           | ✅ Passing              |
+| `06-catering-inquiry-enhanced.spec.ts` | Advanced catering     | ✅ Passing              |
+| `07-guest-checkout.spec.ts`            | Guest checkout flow   | ✅ Passing              |
+| `08-payment-methods.spec.ts`           | Payment processing    | ✅ Passing              |
+| `09-shipping-validation.spec.ts`       | Shipping calculations | ✅ Passing              |
+| `10-order-lifecycle.spec.ts`           | Order management      | ✅ Passing              |
+| `11-catering-complete-flow.spec.ts`    | Complete catering     | ✅ Passing              |
+| `12-admin-order-management.spec.ts`    | Admin features        | ✅ Passing              |
 
 ### 6. Performance Testing Scripts
 
 **Existing**:
+
 - `pnpm test:performance` - Run Lighthouse performance tests
 - `pnpm test:performance:lighthouse` - Detailed Lighthouse analysis
 
 **Enhanced with**:
+
 - Performance monitoring integration
 - Web Vitals tracking
 - Budget validation
@@ -238,6 +254,7 @@ pnpm tsx scripts/generate-e2e-coverage.ts
 ## 📊 Current Test Coverage Status
 
 ### E2E Coverage
+
 - **Total Tests**: 12 test files
 - **Critical Paths**: 9 defined paths
 - **Coverage**: Run coverage report to get current metrics
@@ -245,6 +262,7 @@ pnpm tsx scripts/generate-e2e-coverage.ts
 - **Viewports**: Desktop (1920x1080), Mobile (375x667)
 
 ### Unit Test Coverage
+
 - **API Routes**: Comprehensive contract testing with Zod
 - **Business Logic**: Full coverage of lib/ utilities
 - **Components**: React component tests with Testing Library
@@ -277,6 +295,7 @@ pnpm test:coverage             # With coverage report
 ### Integrating Performance Monitoring
 
 #### 1. In API Routes
+
 ```typescript
 import { withPerformanceMonitoring } from '@/lib/testing/performance-monitor';
 
@@ -288,6 +307,7 @@ export const POST = withPerformanceMonitoring(handler, '/api/checkout/payment');
 ```
 
 #### 2. In Client Components
+
 ```typescript
 import { performanceMonitor } from '@/lib/testing/performance-monitor';
 
@@ -305,6 +325,7 @@ function MyComponent() {
 ```
 
 #### 3. Measuring Async Operations
+
 ```typescript
 import { measureAsync } from '@/lib/testing/performance-monitor';
 
@@ -320,9 +341,7 @@ import { checkPerformanceBudget } from '@/lib/testing/performance-monitor';
 
 const result = checkPerformanceBudget('api_response_time', 500);
 if (!result.passing) {
-  console.warn(
-    `Performance budget exceeded: ${result.actual}ms > ${result.budget}ms`
-  );
+  console.warn(`Performance budget exceeded: ${result.actual}ms > ${result.budget}ms`);
 }
 ```
 
@@ -348,18 +367,21 @@ if (!health.healthy) {
 ## 📈 Success Metrics
 
 ### Test Coverage Targets
+
 - ✅ **E2E Coverage**: >90% of critical user paths
 - ✅ **Browser Coverage**: Chrome, Firefox, Safari, Mobile
 - ✅ **Scenario Coverage**: Guest, authenticated, admin flows
 - ✅ **Unit Test Coverage**: >80% code coverage
 
 ### Performance Targets
+
 - ✅ **Lighthouse Score**: >90 on all pages
 - ✅ **Web Vitals**: All metrics in "Good" range
 - ✅ **API Response**: P95 < 500ms, P99 < 1000ms
 - ✅ **Load Capacity**: Handle 100 concurrent users (future)
 
 ### Automation Targets
+
 - ✅ **CI/CD Integration**: All tests automated
 - ✅ **Test Execution Time**: <15 minutes for full suite
 - ✅ **Flaky Test Rate**: <5%
@@ -370,6 +392,7 @@ if (!health.healthy) {
 ### GitHub Actions Workflows
 
 **On Pull Requests**:
+
 ```yaml
 - Run type checking
 - Run linting
@@ -382,6 +405,7 @@ if (!health.healthy) {
 ```
 
 **On Push to Main**:
+
 ```yaml
 - All PR checks
 - Full E2E test suite
@@ -391,6 +415,7 @@ if (!health.healthy) {
 ```
 
 **On Deployment**:
+
 ```yaml
 - Smoke tests on preview deployment
 - Lighthouse performance tests
@@ -401,24 +426,28 @@ if (!health.healthy) {
 ## 🎯 Key Benefits
 
 ### 1. Comprehensive Coverage
+
 - All critical user paths validated
 - Multiple browsers and viewports tested
 - Real user scenarios simulated
 - Edge cases covered
 
 ### 2. Performance Assurance
+
 - Proactive regression detection
 - Budget enforcement prevents slowdowns
 - Real user metrics tracked (Web Vitals)
 - API performance monitored
 
 ### 3. Developer Experience
+
 - Fast feedback loop (<15 min full suite)
 - Clear error reporting
 - Easy to run locally
 - Well-documented test patterns
 
 ### 4. Production Confidence
+
 - Critical flows always working
 - Performance meets standards
 - Breaking changes caught early

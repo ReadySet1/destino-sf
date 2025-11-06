@@ -5,6 +5,7 @@ This document tracks which components need `data-testid` attributes for reliable
 ## Priority 1: Critical Path Components (Checkout & Cart)
 
 ### Cart Page Components
+
 - [x] `cart-item` - Individual cart item container (CartItemRow.tsx:47)
 - [x] `cart-item-name` - Product name in cart (CartItemRow.tsx:65)
 - [x] `cart-item-price` - Price display (CartItemRow.tsx:69)
@@ -24,6 +25,7 @@ This document tracks which components need `data-testid` attributes for reliable
 - [ ] `cart-notification` - Add to cart notification toast
 
 ### Checkout Page Components
+
 - [x] `customer-email` - Email input field (CheckoutForm.tsx:1478)
 - [x] `customer-phone` - Phone number input field (CheckoutForm.tsx:1490)
 - [x] `customer-name` - Full name input (CheckoutForm.tsx:1471)
@@ -42,6 +44,7 @@ This document tracks which components need `data-testid` attributes for reliable
 - [ ] `cardholder-name` - Payment card name field
 
 ### Product Components
+
 - [ ] `add-to-cart` - Add to cart button on product pages
 - [ ] `product-price` - Product price display
 - [ ] `product-name` - Product name/title
@@ -52,6 +55,7 @@ This document tracks which components need `data-testid` attributes for reliable
 ## Priority 2: Authentication Components
 
 ### Sign In Page
+
 - [x] `email` - Email input (sign in) (SignInForm.tsx:45)
 - [x] `password` - Password input (sign in) (SignInForm.tsx:75)
 - [x] `login-button` - Sign in submit button (SignInForm.tsx:84)
@@ -59,6 +63,7 @@ This document tracks which components need `data-testid` attributes for reliable
 - [ ] `forgot-password-link` - Forgot password link
 
 ### Sign Up Page
+
 - [x] `email` - Email input (sign up) (sign-up/page.tsx:82)
 - [x] `password` - Password input (sign up) (sign-up/page.tsx:120)
 - [ ] `confirm-password` - Confirm password input (NOT IMPLEMENTED - form doesn't have this field)
@@ -66,6 +71,7 @@ This document tracks which components need `data-testid` attributes for reliable
 - [ ] `terms-checkbox` - Terms and conditions checkbox
 
 ### Password Reset
+
 - [x] `reset-password-button` - Submit password reset button (forgot-password/page.tsx:45)
 - [x] `email` - Email input for reset (forgot-password/page.tsx:36)
 - [ ] `new-password` - New password input
@@ -74,6 +80,7 @@ This document tracks which components need `data-testid` attributes for reliable
 ## Priority 3: Navigation & Layout
 
 ### Navigation
+
 - [ ] `nav-menu-toggle` - Mobile menu toggle button
 - [ ] `nav-cart-link` - Cart link in navigation
 - [ ] `nav-account-link` - Account/profile link
@@ -81,6 +88,7 @@ This document tracks which components need `data-testid` attributes for reliable
 - [ ] `logout-button` - Logout button
 
 ### Admin Navigation
+
 - [ ] `admin-nav` - Admin navigation container
 - [ ] `admin-products-link` - Admin products link
 - [ ] `admin-orders-link` - Admin orders link
@@ -122,12 +130,14 @@ This document tracks which components need `data-testid` attributes for reliable
 ### When to Use data-testid
 
 ✅ **Use data-testid for:**
+
 - Interactive elements (buttons, links, inputs)
 - Dynamic content that changes (cart items, order totals)
 - Elements matched by unstable selectors (text content, CSS classes)
 - Critical user flows (checkout, authentication)
 
 ❌ **Don't use data-testid for:**
+
 - Static headings (use `getByRole('heading', { name: '...' })`)
 - Semantic HTML with stable ARIA labels
 - Simple navigation links with stable text
@@ -152,6 +162,7 @@ This document tracks which components need `data-testid` attributes for reliable
 ## Implementation Summary (DES-55)
 
 ### Completed Files:
+
 1. **CartItemRow.tsx** - 5 data-testid attributes
    - cart-item, cart-item-name, cart-item-price, cart-item-image, remove-item
 
@@ -171,7 +182,9 @@ This document tracks which components need `data-testid` attributes for reliable
    - delivery-pickup, delivery-delivery, delivery-shipping
 
 ### Completed in DES-55 (Phase 1):
+
 **Priority 1 - Cart & Checkout** (28/33 completed):
+
 1. CartItemRow.tsx - 5 data-testid attributes
 2. QuantityStepper.tsx - 4 data-testid attributes
 3. CartSummary.tsx - 4 data-testid attributes
@@ -179,12 +192,10 @@ This document tracks which components need `data-testid` attributes for reliable
 5. AddressForm.tsx - 6 data-testid attributes
 6. FulfillmentSelector.tsx - 3 data-testid attributes
 
-**Priority 2 - Authentication** (7/15 completed):
-7. SignInForm.tsx - 3 data-testid attributes (email, password, login-button)
-8. sign-up/page.tsx - 3 data-testid attributes (email, password, register-button)
-9. forgot-password/page.tsx - 2 data-testid attributes (email, reset-password-button)
+**Priority 2 - Authentication** (7/15 completed): 7. SignInForm.tsx - 3 data-testid attributes (email, password, login-button) 8. sign-up/page.tsx - 3 data-testid attributes (email, password, register-button) 9. forgot-password/page.tsx - 2 data-testid attributes (email, reset-password-button)
 
 ### Remaining Priority 1 Tasks:
+
 - [ ] clear-cart button
 - [ ] cart-count badge
 - [ ] checkout-button (link from cart to checkout)
@@ -192,6 +203,7 @@ This document tracks which components need `data-testid` attributes for reliable
 - [ ] cardholder-name (Square payment form)
 
 ### Remaining Priority 2 Tasks:
+
 - [ ] confirm-password field (sign-up - NOT IMPLEMENTED in form)
 - [ ] forgot-password-link
 - [ ] terms-checkbox

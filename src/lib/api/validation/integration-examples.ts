@@ -376,14 +376,10 @@ export function createSquareApiWrapper(squareClient: any) {
       },
       get: async (paymentId: string) => {
         const response = await squareClient.paymentsApi.getPayment(paymentId);
-        const validation = validateExternalApiResponse(
-          response.result,
-          GetPaymentResponseSchema,
-          {
-            apiName: 'Square Payments API',
-            operation: 'getPayment',
-          }
-        );
+        const validation = validateExternalApiResponse(response.result, GetPaymentResponseSchema, {
+          apiName: 'Square Payments API',
+          operation: 'getPayment',
+        });
         return validation.data || response.result;
       },
     },

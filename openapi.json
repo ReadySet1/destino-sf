@@ -193,11 +193,7 @@
       },
       "FulfillmentType": {
         "_def": {
-          "values": [
-            "PICKUP",
-            "DELIVERY",
-            "SHIPPING"
-          ],
+          "values": ["PICKUP", "DELIVERY", "SHIPPING"],
           "typeName": "ZodEnum",
           "description": "Order fulfillment method"
         },
@@ -208,13 +204,7 @@
       },
       "PaymentMethod": {
         "_def": {
-          "values": [
-            "CREDIT_CARD",
-            "GIFT_CARD",
-            "CASH",
-            "VENMO",
-            "ZELLE"
-          ],
+          "values": ["CREDIT_CARD", "GIFT_CARD", "CASH", "VENMO", "ZELLE"],
           "typeName": "ZodEnum",
           "description": "Payment method used for the order"
         },
@@ -225,14 +215,7 @@
       },
       "PaymentStatus": {
         "_def": {
-          "values": [
-            "PENDING",
-            "APPROVED",
-            "COMPLETED",
-            "FAILED",
-            "CANCELLED",
-            "REFUNDED"
-          ],
+          "values": ["PENDING", "APPROVED", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"],
           "typeName": "ZodEnum",
           "description": "Payment processing status"
         },

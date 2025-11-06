@@ -48,9 +48,7 @@ export function FormSection({
   const borderClass = variant === 'amber' ? 'border-amber-200' : 'border-gray-200';
 
   return (
-    <div
-      className={`bg-white rounded-lg border ${borderClass} overflow-hidden ${className}`}
-    >
+    <div className={`bg-white rounded-lg border ${borderClass} overflow-hidden ${className}`}>
       <div className={`px-6 py-6 border-b ${borderClass} ${headerClass}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center">

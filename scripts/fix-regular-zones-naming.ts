@@ -73,7 +73,13 @@ async function fixRegularZones() {
     const zones = await prisma.regularDeliveryZone.findMany({
       where: { active: true },
       orderBy: { displayOrder: 'asc' },
-      select: { zone: true, name: true, deliveryFee: true, minimumOrderForFree: true, displayOrder: true },
+      select: {
+        zone: true,
+        name: true,
+        deliveryFee: true,
+        minimumOrderForFree: true,
+        displayOrder: true,
+      },
     });
 
     console.log('📋 Active Regular Delivery Zones:');
@@ -98,7 +104,7 @@ fixRegularZones()
     console.log('\n🎉 All done!');
     process.exit(0);
   })
-  .catch((error) => {
+  .catch(error => {
     console.error('\n💥 Failed:', error);
     process.exit(1);
   });

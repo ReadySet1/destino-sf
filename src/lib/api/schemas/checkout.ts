@@ -80,10 +80,7 @@ export type CartItem = z.infer<typeof CartItemSchema>;
  * POST /api/checkout/payment request body
  */
 export const CreatePaymentRequestSchema = z.object({
-  sourceId: z
-    .string()
-    .min(1)
-    .describe('Square payment source ID (card nonce or gift card nonce)'),
+  sourceId: z.string().min(1).describe('Square payment source ID (card nonce or gift card nonce)'),
   orderId: z.string().uuid().describe('Order UUID to process payment for'),
   amount: z.number().int().positive().describe('Payment amount in cents (must be positive)'),
 });
@@ -103,66 +100,61 @@ export type CreatePaymentResponse = z.infer<typeof CreatePaymentResponseSchema>;
 /**
  * POST /api/checkout/order request body
  */
-export const CreateOrderRequestSchema = z
-  .object({
-    customerName: z.string().min(1).max(255).describe('Customer full name'),
-    email: EmailSchema.describe('Customer email address'),
-    phone: PhoneSchema.describe('Customer phone number'),
-    fulfillmentType: FulfillmentTypeSchema.describe('Order fulfillment method'),
-    paymentMethod: PaymentMethodSchema.describe('Payment method'),
-    items: z
-      .array(CartItemSchema)
-      .min(1)
-      .describe('Cart items to include in the order'),
-    notes: z.string().max(1000).optional().describe('Special instructions or notes'),
-    pickupDate: z
-      .string()
-      .datetime()
-      .optional()
-      .describe('Requested pickup date (for PICKUP orders)'),
-    deliveryAddress: AddressSchema.optional().describe('Delivery address (for DELIVERY orders)'),
-    shippingAddress: AddressSchema.optional().describe('Shipping address (for SHIPPING orders)'),
-    shippingMethod: z
-      .string()
-      .optional()
-      .describe('Shipping method (for SHIPPING orders, e.g., "USPS Priority")'),
-    shippingCost: MoneySchema.optional().describe('Shipping cost in cents (for SHIPPING orders)'),
-    subtotal: MoneySchema.describe('Order subtotal in cents (before fees)'),
-    tax: MoneySchema.optional().describe('Tax amount in cents'),
-    total: MoneySchema.describe('Order total in cents (including all fees)'),
-  });
+export const CreateOrderRequestSchema = z.object({
+  customerName: z.string().min(1).max(255).describe('Customer full name'),
+  email: EmailSchema.describe('Customer email address'),
+  phone: PhoneSchema.describe('Customer phone number'),
+  fulfillmentType: FulfillmentTypeSchema.describe('Order fulfillment method'),
+  paymentMethod: PaymentMethodSchema.describe('Payment method'),
+  items: z.array(CartItemSchema).min(1).describe('Cart items to include in the order'),
+  notes: z.string().max(1000).optional().describe('Special instructions or notes'),
+  pickupDate: z
+    .string()
+    .datetime()
+    .optional()
+    .describe('Requested pickup date (for PICKUP orders)'),
+  deliveryAddress: AddressSchema.optional().describe('Delivery address (for DELIVERY orders)'),
+  shippingAddress: AddressSchema.optional().describe('Shipping address (for SHIPPING orders)'),
+  shippingMethod: z
+    .string()
+    .optional()
+    .describe('Shipping method (for SHIPPING orders, e.g., "USPS Priority")'),
+  shippingCost: MoneySchema.optional().describe('Shipping cost in cents (for SHIPPING orders)'),
+  subtotal: MoneySchema.describe('Order subtotal in cents (before fees)'),
+  tax: MoneySchema.optional().describe('Tax amount in cents'),
+  total: MoneySchema.describe('Order total in cents (including all fees)'),
+});
 
 export type CreateOrderRequest = z.infer<typeof CreateOrderRequestSchema>;
 
 /**
  * Order schema (full details)
  */
-export const OrderSchema = z
-  .object({
-    id: z.string().uuid().describe('Order UUID'),
-    orderNumber: z.string().describe('Human-readable order number'),
-    status: StatusSchema.describe('Order status'),
-    paymentStatus: PaymentStatusSchema.describe('Payment status'),
-    customerName: z.string().describe('Customer name'),
-    email: EmailSchema.describe('Customer email'),
-    phone: PhoneSchema.describe('Customer phone'),
-    fulfillmentType: FulfillmentTypeSchema.describe('Fulfillment method'),
-    paymentMethod: PaymentMethodSchema.describe('Payment method'),
-    items: z.array(OrderItemSchema).describe('Order items'),
-    notes: z.string().nullable().optional().describe('Order notes'),
-    pickupDate: TimestampSchema.nullable().optional().describe('Pickup date'),
-    deliveryAddress: AddressSchema.nullable().optional().describe('Delivery address'),
-    shippingAddress: AddressSchema.nullable().optional().describe('Shipping address'),
-    shippingMethod: z.string().nullable().optional().describe('Shipping method'),
-    shippingCost: MoneySchema.nullable().optional().describe('Shipping cost'),
-    subtotal: MoneySchema.describe('Subtotal'),
-    tax: MoneySchema.nullable().optional().describe('Tax amount'),
-    total: MoneySchema.describe('Total amount'),
-    squareOrderId: z.string().nullable().optional().describe('Square order ID'),
-    squarePaymentId: z.string().nullable().optional().describe('Square payment ID'),
-    createdAt: TimestampSchema.describe('Order creation timestamp'),
-    updatedAt: TimestampSchema.describe('Order last update timestamp'),
-  });
+export const OrderSchema = z.object({
+  id: z.string().uuid().describe('Order UUID'),
+  orderNumber: z.string().describe('Human-readable order number'),
+  status: StatusSchema.describe('Order status'),
+  paymentStatus: PaymentStatusSchema.describe('Payment status'),
+  customerName: z.string().describe('Customer name'),
+  email: EmailSchema.describe('Customer email'),
+  phone: PhoneSchema.describe('Customer phone'),
+  fulfillmentType: FulfillmentTypeSchema.describe('Fulfillment method'),
+  paymentMethod: PaymentMethodSchema.describe('Payment method'),
+  items: z.array(OrderItemSchema).describe('Order items'),
+  notes: z.string().nullable().optional().describe('Order notes'),
+  pickupDate: TimestampSchema.nullable().optional().describe('Pickup date'),
+  deliveryAddress: AddressSchema.nullable().optional().describe('Delivery address'),
+  shippingAddress: AddressSchema.nullable().optional().describe('Shipping address'),
+  shippingMethod: z.string().nullable().optional().describe('Shipping method'),
+  shippingCost: MoneySchema.nullable().optional().describe('Shipping cost'),
+  subtotal: MoneySchema.describe('Subtotal'),
+  tax: MoneySchema.nullable().optional().describe('Tax amount'),
+  total: MoneySchema.describe('Total amount'),
+  squareOrderId: z.string().nullable().optional().describe('Square order ID'),
+  squarePaymentId: z.string().nullable().optional().describe('Square payment ID'),
+  createdAt: TimestampSchema.describe('Order creation timestamp'),
+  updatedAt: TimestampSchema.describe('Order last update timestamp'),
+});
 
 export type Order = z.infer<typeof OrderSchema>;
 

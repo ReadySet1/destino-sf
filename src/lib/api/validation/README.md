@@ -5,6 +5,7 @@ This directory contains the runtime validation infrastructure for external API r
 ## Overview
 
 The validation infrastructure provides:
+
 - **Runtime schema validation** using Zod schemas
 - **Non-blocking validation** - failures are logged but don't break requests
 - **Monitoring and metrics** - track validation success/failure rates
@@ -22,15 +23,11 @@ import { CreatePaymentResponseSchema } from '@/lib/api/schemas/external/square/p
 const response = await squareClient.paymentsApi.createPayment(request);
 
 // Validate response
-const validation = validateExternalApiResponse(
-  response.result,
-  CreatePaymentResponseSchema,
-  {
-    apiName: 'Square Payments API',
-    operation: 'createPayment',
-    requestId: response.headers?.['square-request-id'],
-  }
-);
+const validation = validateExternalApiResponse(response.result, CreatePaymentResponseSchema, {
+  apiName: 'Square Payments API',
+  operation: 'createPayment',
+  requestId: response.headers?.['square-request-id'],
+});
 
 // Use validated data (or original data if validation failed)
 const payment = validation.data || response.result;
@@ -67,12 +64,14 @@ if (validation.success) {
 ### Non-Blocking Design
 
 Validation failures **never block requests**. When validation fails:
+
 1. The error is logged to the monitoring system
 2. Statistics are updated
 3. The original (unvalidated) data is returned
 4. Execution continues normally
 
 This ensures:
+
 - **Production stability** - Breaking API changes don't cause outages
 - **Gradual migration** - Add validation incrementally without risk
 - **Observability** - Get alerts about API changes without service disruption
@@ -142,12 +141,14 @@ This ensures:
 Zod schemas are organized by API:
 
 **Square APIs:**
+
 - `@/lib/api/schemas/external/square/catalog` - Catalog objects, items, variations
 - `@/lib/api/schemas/external/square/payments` - Payments, refunds, cards
 - `@/lib/api/schemas/external/square/orders` - Orders, fulfillments, line items
 - `@/lib/api/schemas/external/square/webhooks` - Webhook payloads and validation
 
 **Shippo APIs:**
+
 - `@/lib/api/schemas/external/shippo` - All Shippo schemas (addresses, shipments, transactions, tracking, customs)
 
 ## Integration Patterns
@@ -160,14 +161,10 @@ Validate responses at the call site:
 async function syncSquareCatalog() {
   const response = await squareClient.catalogApi.listCatalog();
 
-  const validation = validateExternalApiResponse(
-    response.result,
-    SquareCatalogApiResponseSchema,
-    {
-      apiName: 'Square Catalog API',
-      operation: 'listCatalog',
-    }
-  );
+  const validation = validateExternalApiResponse(response.result, SquareCatalogApiResponseSchema, {
+    apiName: 'Square Catalog API',
+    operation: 'listCatalog',
+  });
 
   // Use validated data if available, fall back to original
   const catalogData = validation.data || response.result;
@@ -201,15 +198,11 @@ import { CreatePaymentResponseSchema } from '@/lib/api/schemas/external/square/p
 export async function createSquarePayment(request: CreatePaymentRequest) {
   const response = await squareClient.paymentsApi.createPayment(request);
 
-  const validation = validateExternalApiResponse(
-    response.result,
-    CreatePaymentResponseSchema,
-    {
-      apiName: 'Square Payments API',
-      operation: 'createPayment',
-      context: { amount: request.amountMoney?.amount },
-    }
-  );
+  const validation = validateExternalApiResponse(response.result, CreatePaymentResponseSchema, {
+    apiName: 'Square Payments API',
+    operation: 'createPayment',
+    context: { amount: request.amountMoney?.amount },
+  });
 
   return validation.data || response.result;
 }
@@ -233,6 +226,7 @@ console.log({
 ### Error Logging
 
 Validation failures are automatically logged to the error monitoring system with:
+
 - API name and operation
 - Validation error details
 - Sample of the data (truncated for safety)
@@ -242,6 +236,7 @@ Validation failures are automatically logged to the error monitoring system with
 ### Alerts
 
 Set up alerts based on validation failure rates:
+
 - Alert if validation failure rate > 5% for any API
 - Alert if Square/Shippo API schema changes detected
 - Alert if validation failures spike suddenly
@@ -300,11 +295,10 @@ it('should validate valid payment response', () => {
     },
   };
 
-  const result = validateExternalApiResponse(
-    mockResponse,
-    CreatePaymentResponseSchema,
-    { apiName: 'Test', operation: 'test' }
-  );
+  const result = validateExternalApiResponse(mockResponse, CreatePaymentResponseSchema, {
+    apiName: 'Test',
+    operation: 'test',
+  });
 
   expect(result.success).toBe(true);
   expect(result.data).toEqual(mockResponse);
@@ -314,6 +308,7 @@ it('should validate valid payment response', () => {
 ### Contract Tests
 
 See `/src/__tests__/contracts/external/` for comprehensive contract tests:
+
 - `square/catalog-api.test.ts` - 25 tests
 - `square/payments-api.test.ts` - 30 tests
 - `square/orders-api.test.ts` - 27 tests
@@ -386,6 +381,7 @@ process.env.VALIDATION_SAMPLE_RATE = '0.25'; // 25% sampling
 ```
 
 Configuration options in `validation-config.ts`:
+
 - `enabled`: Whether validation is enabled
 - `sampleRate`: Percentage of requests to validate (0.0 to 1.0)
 - `logToConsole`: Log failures to console (dev mode)
@@ -423,6 +419,7 @@ console.log(`Catalog schema v${catalogVersion.version}, updated ${catalogVersion
 ```
 
 Schema versions use semantic versioning (MAJOR.MINOR.PATCH) and track:
+
 - `version`: Schema version number
 - `lastUpdated`: Date of last update
 - `changelog`: Description of changes
@@ -452,6 +449,7 @@ alerts.forEach(alert => {
 ```
 
 Alerts are triggered when:
+
 - Success rate drops below 95% (high severity)
 - Success rate drops below 90% (critical severity)
 - Failures spike by 10x compared to previous period (high severity)
@@ -466,18 +464,21 @@ Alerts are triggered when:
 ### Example Configuration
 
 **Production:**
+
 ```bash
 NODE_ENV=production
 VALIDATION_SAMPLE_RATE=0.1  # Validate 10% of requests
 ```
 
 **Staging:**
+
 ```bash
 NODE_ENV=development
 VALIDATION_SAMPLE_RATE=1.0  # Validate 100% of requests
 ```
 
 **Testing:**
+
 ```bash
 NODE_ENV=test
 # Validation automatically runs at 100% with reduced logging
@@ -493,6 +494,7 @@ Based on validation overhead analysis:
 - **Network overhead**: None (validation is synchronous, post-response)
 
 Performance tips:
+
 1. Use sampling in production (10-25%)
 2. Validate critical endpoints at higher rates
 3. Monitor validation performance metrics
@@ -527,6 +529,7 @@ When adding validation to new endpoints:
 ## Support
 
 For questions or issues:
+
 1. Review examples in `integration-examples.ts`
 2. Check contract tests for usage patterns
 3. Review error logs in monitoring system

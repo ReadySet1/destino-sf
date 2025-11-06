@@ -97,7 +97,6 @@ export class AlertService {
         });
 
         await this.markAlertAsSent(alertRecord.id, 'queued');
-        console.log(`✅ New order alert queued for order ${order.id} to ${recipientEmail}`);
 
         return { success: true, messageId: 'queued' };
       } catch (error: any) {
@@ -154,7 +153,6 @@ export class AlertService {
         console.error('❌ Failed to send customer status change alert:', customerError);
       } else {
         await this.markAlertAsSent(customerAlertRecord.id, customerData?.id);
-        console.log(`✅ Customer status change alert sent for order ${order.id}`);
       }
 
       // Send to admin for important status changes
@@ -182,9 +180,6 @@ export class AlertService {
           console.error('❌ Failed to send admin status change alert:', adminError);
         } else {
           await this.markAlertAsSent(adminAlertRecord.id, adminData?.id);
-          console.log(
-            `✅ Admin status change alert sent for order ${order.id} to ${adminRecipientEmail}`
-          );
         }
       }
 
@@ -240,7 +235,6 @@ export class AlertService {
       }
 
       await this.markAlertAsSent(alertRecord.id, data?.id);
-      console.log(`✅ Payment failed alert sent for order ${order.id} to ${recipientEmail}`);
 
       return { success: true, messageId: data?.id };
     } catch (error) {
@@ -295,7 +289,6 @@ export class AlertService {
       }
 
       await this.markAlertAsSent(alertRecord.id, emailData?.id);
-      console.log(`✅ System error alert sent: ${error.message} to ${recipientEmail}`);
 
       return { success: true, messageId: emailData?.id };
     } catch (alertError) {
@@ -344,7 +337,6 @@ export class AlertService {
       }
 
       await this.markAlertAsSent(alertRecord.id, data?.id);
-      console.log(`✅ Daily summary alert sent for ${date.toDateString()} to ${recipientEmail}`);
 
       return { success: true, messageId: data?.id };
     } catch (error) {
@@ -534,7 +526,6 @@ export class AlertService {
         metadata: { orderId: data.order.id, fulfillmentType: data.order.fulfillmentType },
       });
 
-      console.log(`✅ Customer order confirmation sent for order ${data.order.id}`);
       return { success: true, messageId: emailData?.id };
     } catch (error) {
       console.error('Error sending customer order confirmation:', error);
@@ -608,7 +599,6 @@ export class AlertService {
         },
       });
 
-      console.log(`✅ Customer order status update sent for order ${data.order.id}`);
       return { success: true, messageId: emailData?.id };
     } catch (error) {
       console.error('Error sending customer order status update:', error);
@@ -674,7 +664,6 @@ export class AlertService {
         metadata: { orderId: data.order.id },
       });
 
-      console.log(`✅ Customer pickup ready notification sent for order ${data.order.id}`);
       return { success: true, messageId: emailData?.id };
     } catch (error) {
       console.error('Error sending customer pickup ready notification:', error);
@@ -734,7 +723,6 @@ export class AlertService {
         metadata: { orderId: data.order.id, delayHours },
       });
 
-      console.log(`✅ Customer feedback request sent for order ${data.order.id}`);
       return { success: true, messageId: emailData?.id };
     } catch (error) {
       console.error('Error sending customer feedback request:', error);
@@ -832,9 +820,6 @@ export class AlertService {
         },
       });
 
-      console.log(
-        `✅ Contact form processed for ${data.name} (${data.email}) - admin notification sent to ${adminRecipientEmail}`
-      );
       return { success: !customerError && !adminError };
     } catch (error) {
       console.error('Error processing contact form:', error);

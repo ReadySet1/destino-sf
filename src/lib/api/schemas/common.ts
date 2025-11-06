@@ -75,11 +75,7 @@ export const SlugParamSchema = z.object({
  * Date range filter schema
  */
 export const DateRangeSchema = z.object({
-  startDate: z
-    .string()
-    .datetime()
-    .optional()
-    .describe('Start date in ISO 8601 format (inclusive)'),
+  startDate: z.string().datetime().optional().describe('Start date in ISO 8601 format (inclusive)'),
   endDate: z.string().datetime().optional().describe('End date in ISO 8601 format (inclusive)'),
 });
 
@@ -142,13 +138,7 @@ export const TimestampSchema = z.string().datetime().describe('Timestamp in ISO 
 /**
  * Status enum for various resources
  */
-export const StatusSchema = z.enum([
-  'PENDING',
-  'PROCESSING',
-  'COMPLETED',
-  'CANCELLED',
-  'FAILED',
-]);
+export const StatusSchema = z.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED', 'FAILED']);
 
 export type Status = z.infer<typeof StatusSchema>;
 

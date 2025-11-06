@@ -52,7 +52,7 @@ class ValidationTrendsTracker {
   private readonly maxDataPoints = 1000; // Keep last 1000 data points per API
   private readonly alertThresholds = {
     successRateLow: 0.95, // Alert if success rate drops below 95%
-    successRateCritical: 0.90, // Critical alert if below 90%
+    successRateCritical: 0.9, // Critical alert if below 90%
     failureSpike: 10, // Alert if failures spike by 10x
   };
 
@@ -94,8 +94,7 @@ class ValidationTrendsTracker {
     const daily = this.aggregateByDay(points);
 
     const currentRate = points[points.length - 1].successRate;
-    const avgRate =
-      points.reduce((sum, p) => sum + p.successRate, 0) / points.length;
+    const avgRate = points.reduce((sum, p) => sum + p.successRate, 0) / points.length;
 
     const trend = this.calculateTrend(points);
 
@@ -161,7 +160,10 @@ class ValidationTrendsTracker {
       }
 
       // Check for failure spike
-      if (previousPoint && latestPoint.failureCount > previousPoint.failureCount * this.alertThresholds.failureSpike) {
+      if (
+        previousPoint &&
+        latestPoint.failureCount > previousPoint.failureCount * this.alertThresholds.failureSpike
+      ) {
         alerts.push({
           apiName,
           severity: 'high',
@@ -186,7 +188,7 @@ class ValidationTrendsTracker {
     const hourlyMap = new Map<string, ValidationDataPoint[]>();
 
     // Group by hour
-    points.forEach((point) => {
+    points.forEach(point => {
       const hourKey = new Date(point.timestamp).toISOString().slice(0, 13); // YYYY-MM-DDTHH
       const existing = hourlyMap.get(hourKey) || [];
       existing.push(point);
@@ -220,7 +222,7 @@ class ValidationTrendsTracker {
     const dailyMap = new Map<string, ValidationDataPoint[]>();
 
     // Group by day
-    points.forEach((point) => {
+    points.forEach(point => {
       const dayKey = new Date(point.timestamp).toISOString().slice(0, 10); // YYYY-MM-DD
       const existing = dailyMap.get(dayKey) || [];
       existing.push(point);
@@ -258,10 +260,8 @@ class ValidationTrendsTracker {
     const recentPoints = points.slice(mid);
     const olderPoints = points.slice(0, mid);
 
-    const recentAvg =
-      recentPoints.reduce((sum, p) => sum + p.successRate, 0) / recentPoints.length;
-    const olderAvg =
-      olderPoints.reduce((sum, p) => sum + p.successRate, 0) / olderPoints.length;
+    const recentAvg = recentPoints.reduce((sum, p) => sum + p.successRate, 0) / recentPoints.length;
+    const olderAvg = olderPoints.reduce((sum, p) => sum + p.successRate, 0) / olderPoints.length;
 
     const diff = recentAvg - olderAvg;
     const threshold = 0.01; // 1% change threshold

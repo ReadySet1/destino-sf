@@ -29,15 +29,21 @@ export function buildOrder(options: OrderFactoryOptions = {}): Prisma.OrderUnche
   const subtotal = options.subtotal || faker.number.int({ min: 2000, max: 10000 }); // $20-$100
   const taxRate = 0.0825; // 8.25% tax
   const taxAmount = options.taxAmount || Math.round(subtotal * taxRate);
-  const shippingCost = options.shippingCost || (options.fulfillmentType === 'NATIONWIDE_SHIPPING' ? faker.number.int({ min: 1000, max: 3000 }) : 0);
-  const totalAmount = options.totalAmount || (subtotal + taxAmount + shippingCost);
+  const shippingCost =
+    options.shippingCost ||
+    (options.fulfillmentType === 'NATIONWIDE_SHIPPING'
+      ? faker.number.int({ min: 1000, max: 3000 })
+      : 0);
+  const totalAmount = options.totalAmount || subtotal + taxAmount + shippingCost;
 
   return {
     profileId: options.profileId || faker.string.uuid(),
     orderNumber: options.orderNumber || `ORD-${faker.string.alphanumeric(8).toUpperCase()}`,
     status: options.status || OrderStatus.PENDING,
     paymentStatus: options.paymentStatus || PaymentStatus.PENDING,
-    fulfillmentType: options.fulfillmentType || faker.helpers.arrayElement(['PICKUP', 'LOCAL_DELIVERY', 'NATIONWIDE_SHIPPING']),
+    fulfillmentType:
+      options.fulfillmentType ||
+      faker.helpers.arrayElement(['PICKUP', 'LOCAL_DELIVERY', 'NATIONWIDE_SHIPPING']),
     paymentMethod: options.paymentMethod || faker.helpers.enumValue(PaymentMethod),
     customerName: options.customerName || faker.person.fullName(),
     customerEmail: options.customerEmail || faker.internet.email().toLowerCase(),
@@ -52,14 +58,19 @@ export function buildOrder(options: OrderFactoryOptions = {}): Prisma.OrderUnche
 /**
  * Generate multiple orders
  */
-export function buildOrders(count: number, options: OrderFactoryOptions = {}): Prisma.OrderUncheckedCreateInput[] {
+export function buildOrders(
+  count: number,
+  options: OrderFactoryOptions = {}
+): Prisma.OrderUncheckedCreateInput[] {
   return Array.from({ length: count }, () => buildOrder(options));
 }
 
 /**
  * Generate pending order
  */
-export function buildPendingOrder(options: Omit<OrderFactoryOptions, 'status' | 'paymentStatus'> = {}): Prisma.OrderUncheckedCreateInput {
+export function buildPendingOrder(
+  options: Omit<OrderFactoryOptions, 'status' | 'paymentStatus'> = {}
+): Prisma.OrderUncheckedCreateInput {
   return buildOrder({
     ...options,
     status: OrderStatus.PENDING,
@@ -70,7 +81,9 @@ export function buildPendingOrder(options: Omit<OrderFactoryOptions, 'status' | 
 /**
  * Generate completed order
  */
-export function buildCompletedOrder(options: Omit<OrderFactoryOptions, 'status' | 'paymentStatus'> = {}): Prisma.OrderUncheckedCreateInput {
+export function buildCompletedOrder(
+  options: Omit<OrderFactoryOptions, 'status' | 'paymentStatus'> = {}
+): Prisma.OrderUncheckedCreateInput {
   return buildOrder({
     ...options,
     status: OrderStatus.COMPLETED,
@@ -81,7 +94,9 @@ export function buildCompletedOrder(options: Omit<OrderFactoryOptions, 'status' 
 /**
  * Generate cancelled order
  */
-export function buildCancelledOrder(options: Omit<OrderFactoryOptions, 'status' | 'paymentStatus'> = {}): Prisma.OrderUncheckedCreateInput {
+export function buildCancelledOrder(
+  options: Omit<OrderFactoryOptions, 'status' | 'paymentStatus'> = {}
+): Prisma.OrderUncheckedCreateInput {
   return buildOrder({
     ...options,
     status: OrderStatus.CANCELLED,
@@ -99,7 +114,8 @@ export function buildOrderWithFulfillment(
   return buildOrder({
     ...options,
     fulfillmentType,
-    shippingCost: fulfillmentType === 'NATIONWIDE_SHIPPING' ? faker.number.int({ min: 1000, max: 3000 }) : 0,
+    shippingCost:
+      fulfillmentType === 'NATIONWIDE_SHIPPING' ? faker.number.int({ min: 1000, max: 3000 }) : 0,
   });
 }
 
@@ -137,10 +153,12 @@ export interface OrderItemFactoryOptions {
 /**
  * Generate order item data
  */
-export function buildOrderItem(options: OrderItemFactoryOptions = {}): Prisma.OrderItemUncheckedCreateInput {
+export function buildOrderItem(
+  options: OrderItemFactoryOptions = {}
+): Prisma.OrderItemUncheckedCreateInput {
   const quantity = options.quantity || faker.number.int({ min: 1, max: 5 });
   const unitPrice = options.unitPrice || faker.number.int({ min: 1000, max: 3000 }); // $10-$30
-  const totalPrice = options.totalPrice || (unitPrice * quantity);
+  const totalPrice = options.totalPrice || unitPrice * quantity;
 
   return {
     orderId: options.orderId || faker.string.uuid(),
@@ -149,14 +167,20 @@ export function buildOrderItem(options: OrderItemFactoryOptions = {}): Prisma.Or
     unitPrice,
     totalPrice,
     productName: options.productName || faker.commerce.productName(),
-    variantName: options.variantName === undefined ? faker.helpers.maybe(() => `${faker.number.int({ min: 4, max: 12 })}-pack`) : options.variantName,
+    variantName:
+      options.variantName === undefined
+        ? faker.helpers.maybe(() => `${faker.number.int({ min: 4, max: 12 })}-pack`)
+        : options.variantName,
   };
 }
 
 /**
  * Generate multiple order items
  */
-export function buildOrderItems(count: number, options: OrderItemFactoryOptions = {}): Prisma.OrderItemUncheckedCreateInput[] {
+export function buildOrderItems(
+  count: number,
+  options: OrderItemFactoryOptions = {}
+): Prisma.OrderItemUncheckedCreateInput[] {
   return Array.from({ length: count }, () => buildOrderItem(options));
 }
 
@@ -179,7 +203,10 @@ export function buildOrderWithItems(options: OrderWithItemsOptions = {}): {
 
   const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
   const taxAmount = Math.round(subtotal * 0.0825);
-  const shippingCost = options.fulfillmentType === 'NATIONWIDE_SHIPPING' ? faker.number.int({ min: 1000, max: 3000 }) : 0;
+  const shippingCost =
+    options.fulfillmentType === 'NATIONWIDE_SHIPPING'
+      ? faker.number.int({ min: 1000, max: 3000 })
+      : 0;
   const totalAmount = subtotal + taxAmount + shippingCost;
 
   const order = buildOrder({

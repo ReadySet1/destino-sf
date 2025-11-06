@@ -25,7 +25,9 @@ describe.skip('Error Monitoring System (Phase 2 - Sentry Integration Support)', 
 
   // Mock AlertService constructor
   beforeAll(() => {
-    (AlertService as jest.MockedClass<typeof AlertService>).mockImplementation(() => mockAlertService);
+    (AlertService as jest.MockedClass<typeof AlertService>).mockImplementation(
+      () => mockAlertService
+    );
   });
   let monitor: ErrorMonitor;
   let consoleSpy: jest.SpyInstance;

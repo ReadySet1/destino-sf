@@ -200,9 +200,7 @@ describe('Order Creation Race Conditions', () => {
         }),
       ];
 
-      const responses = await Promise.all(
-        requests.map(req => checkoutHandler(req))
-      );
+      const responses = await Promise.all(requests.map(req => checkoutHandler(req)));
 
       // Both should succeed (different items = different orders)
       const successCount = responses.filter(r => r.status === 200).length;
@@ -377,9 +375,7 @@ describe('Order Creation Race Conditions', () => {
 
       // Make 5 concurrent calls with same key
       const results = await Promise.all(
-        Array.from({ length: 5 }, () =>
-          deduplicator.deduplicate('test-order-key', operation)
-        )
+        Array.from({ length: 5 }, () => deduplicator.deduplicate('test-order-key', operation))
       );
 
       // All should return the same result
@@ -427,9 +423,9 @@ describe('Order Creation Race Conditions', () => {
       };
 
       // First call fails
-      await expect(
-        deduplicator.deduplicate('error-test-key', operation)
-      ).rejects.toThrow('First attempt failed');
+      await expect(deduplicator.deduplicate('error-test-key', operation)).rejects.toThrow(
+        'First attempt failed'
+      );
 
       // Second call should succeed (cache was cleared on error)
       const result = await deduplicator.deduplicate('error-test-key', operation);

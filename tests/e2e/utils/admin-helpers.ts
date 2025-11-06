@@ -30,7 +30,8 @@ export class AdminHelpers {
 
     // Wait for any of the possible end states
     await expect(
-      page.locator('table')
+      page
+        .locator('table')
         .or(page.getByText(/no orders found/i))
         .or(page.getByText(/no data available/i))
         .or(page.getByText(/unable to load orders/i))
@@ -47,9 +48,9 @@ export class AdminHelpers {
     await page.waitForLoadState('networkidle');
 
     // Wait for order details to load
-    await expect(
-      page.getByText(/order details/i).or(page.getByText(/order #/i))
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/order details/i).or(page.getByText(/order #/i))).toBeVisible({
+      timeout: 10000,
+    });
 
     console.log(`✅ Navigated to order detail page: ${orderId}`);
   }
@@ -62,9 +63,7 @@ export class AdminHelpers {
     await page.waitForLoadState('networkidle');
 
     // Wait for page to load
-    await expect(
-      page.getByText(/archived orders/i)
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/archived orders/i)).toBeVisible({ timeout: 10000 });
 
     console.log('✅ Navigated to archived orders page');
   }
@@ -73,7 +72,8 @@ export class AdminHelpers {
    * Search for orders using the search input
    */
   static async searchOrders(page: Page, query: string): Promise<void> {
-    const searchInput = page.locator('input[type="search"]')
+    const searchInput = page
+      .locator('input[type="search"]')
       .or(page.locator('input[placeholder*="Search"]'))
       .first();
 
@@ -90,7 +90,8 @@ export class AdminHelpers {
    */
   static async filterOrdersByStatus(page: Page, status: string): Promise<void> {
     // Look for status filter dropdown/select
-    const statusFilter = page.locator('select[name="status"]')
+    const statusFilter = page
+      .locator('select[name="status"]')
       .or(page.locator('[data-testid="status-filter"]'))
       .or(page.getByLabel(/status/i))
       .first();
@@ -107,7 +108,8 @@ export class AdminHelpers {
    * Filter orders by payment status
    */
   static async filterOrdersByPaymentStatus(page: Page, paymentStatus: string): Promise<void> {
-    const paymentFilter = page.locator('select[name="payment"]')
+    const paymentFilter = page
+      .locator('select[name="payment"]')
       .or(page.locator('[data-testid="payment-filter"]'))
       .or(page.getByLabel(/payment/i))
       .first();
@@ -124,7 +126,8 @@ export class AdminHelpers {
    * Filter orders by type (regular/catering)
    */
   static async filterOrdersByType(page: Page, type: string): Promise<void> {
-    const typeFilter = page.locator('select[name="type"]')
+    const typeFilter = page
+      .locator('select[name="type"]')
       .or(page.locator('[data-testid="type-filter"]'))
       .or(page.getByLabel(/type/i))
       .first();
@@ -142,7 +145,8 @@ export class AdminHelpers {
    */
   static async sortOrdersBy(page: Page, column: string): Promise<void> {
     // Look for sortable column header
-    const columnHeader = page.getByRole('button', { name: new RegExp(column, 'i') })
+    const columnHeader = page
+      .getByRole('button', { name: new RegExp(column, 'i') })
       .or(page.locator(`th:has-text("${column}")`))
       .first();
 
@@ -176,12 +180,14 @@ export class AdminHelpers {
     if (orderNumber) {
       // Find actions button in specific order row
       const orderRow = page.locator(`tr:has-text("${orderNumber}")`).first();
-      actionsButton = orderRow.locator('button:has-text("Actions")')
+      actionsButton = orderRow
+        .locator('button:has-text("Actions")')
         .or(orderRow.locator('[data-testid="order-actions"]'))
         .first();
     } else {
       // Find first actions button
-      actionsButton = page.locator('button:has-text("Actions")')
+      actionsButton = page
+        .locator('button:has-text("Actions")')
         .or(page.locator('[data-testid="order-actions"]'))
         .first();
     }
@@ -208,12 +214,13 @@ export class AdminHelpers {
     }
 
     // Look for status dropdown or button
-    const statusButton = page.locator('[data-testid="update-status"]')
+    const statusButton = page
+      .locator('[data-testid="update-status"]')
       .or(page.getByRole('button', { name: /update status/i }))
       .or(page.locator('select[name="status"]'))
       .first();
 
-    if (await statusButton.locator('select').count() > 0) {
+    if ((await statusButton.locator('select').count()) > 0) {
       // It's a select dropdown
       await statusButton.locator('select').selectOption(newStatus);
     } else {
@@ -248,7 +255,8 @@ export class AdminHelpers {
     }
 
     // Look for payment status button
-    const paymentButton = page.locator('[data-testid="update-payment-status"]')
+    const paymentButton = page
+      .locator('[data-testid="update-payment-status"]')
       .or(page.getByRole('button', { name: /manual payment/i }))
       .or(page.getByRole('button', { name: /update payment/i }))
       .first();
@@ -256,7 +264,8 @@ export class AdminHelpers {
     await paymentButton.click();
 
     // Select new payment status in modal/dropdown
-    const statusSelect = page.locator('select[name="paymentStatus"]')
+    const statusSelect = page
+      .locator('select[name="paymentStatus"]')
       .or(page.locator('[data-testid="payment-status-select"]'))
       .first();
 
@@ -280,7 +289,8 @@ export class AdminHelpers {
     await this.openOrderActions(page, orderNumber);
 
     // Click archive option
-    const archiveOption = page.getByRole('menuitem', { name: /archive/i })
+    const archiveOption = page
+      .getByRole('menuitem', { name: /archive/i })
       .or(page.locator('button:has-text("Archive")'))
       .first();
 
@@ -290,7 +300,8 @@ export class AdminHelpers {
     await page.waitForTimeout(500);
 
     // Fill in archive reason
-    const reasonInput = page.locator('textarea[name="reason"]')
+    const reasonInput = page
+      .locator('textarea[name="reason"]')
       .or(page.locator('textarea[placeholder*="reason"]'))
       .or(page.locator('input[name="reason"]'))
       .first();
@@ -324,12 +335,17 @@ export class AdminHelpers {
   /**
    * Bulk archive multiple orders
    */
-  static async bulkArchiveOrders(page: Page, orderNumbers: string[], reason: string): Promise<void> {
+  static async bulkArchiveOrders(
+    page: Page,
+    orderNumbers: string[],
+    reason: string
+  ): Promise<void> {
     // Select all specified orders
     await this.selectOrders(page, orderNumbers);
 
     // Find and click bulk archive button
-    const bulkArchiveButton = page.getByRole('button', { name: /archive selected/i })
+    const bulkArchiveButton = page
+      .getByRole('button', { name: /archive selected/i })
       .or(page.locator('[data-testid="bulk-archive"]'))
       .first();
 
@@ -339,7 +355,8 @@ export class AdminHelpers {
     await page.waitForTimeout(500);
 
     // Fill in archive reason
-    const reasonInput = page.locator('textarea[name="reason"]')
+    const reasonInput = page
+      .locator('textarea[name="reason"]')
       .or(page.locator('textarea[placeholder*="reason"]'))
       .first();
 
@@ -366,7 +383,8 @@ export class AdminHelpers {
 
     // Find order and click unarchive
     const orderRow = page.locator(`tr:has-text("${orderNumber}")`).first();
-    const unarchiveButton = orderRow.getByRole('button', { name: /unarchive/i })
+    const unarchiveButton = orderRow
+      .getByRole('button', { name: /unarchive/i })
       .or(orderRow.locator('[data-testid="unarchive"]'))
       .first();
 
@@ -388,7 +406,8 @@ export class AdminHelpers {
    * Navigate to next page of results
    */
   static async goToNextPage(page: Page): Promise<void> {
-    const nextButton = page.getByRole('button', { name: /next/i })
+    const nextButton = page
+      .getByRole('button', { name: /next/i })
       .or(page.locator('[data-testid="pagination-next"]'))
       .first();
 
@@ -402,7 +421,8 @@ export class AdminHelpers {
    * Navigate to previous page of results
    */
   static async goToPreviousPage(page: Page): Promise<void> {
-    const prevButton = page.getByRole('button', { name: /previous/i })
+    const prevButton = page
+      .getByRole('button', { name: /previous/i })
       .or(page.locator('[data-testid="pagination-previous"]'))
       .first();
 
@@ -439,7 +459,8 @@ export class AdminHelpers {
    */
   static async getOrderStatusBadge(page: Page, orderNumber: string): Promise<string> {
     const orderRow = page.locator(`tr:has-text("${orderNumber}")`).first();
-    const statusBadge = orderRow.locator('[data-testid="order-status"]')
+    const statusBadge = orderRow
+      .locator('[data-testid="order-status"]')
       .or(orderRow.locator('.badge'))
       .first();
 
@@ -466,9 +487,9 @@ export class AdminHelpers {
     await expect(page).toHaveURL(/\/admin/);
 
     // Check for admin-specific elements
-    await expect(
-      page.getByText(/admin/i).or(page.getByText(/dashboard/i))
-    ).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/admin/i).or(page.getByText(/dashboard/i))).toBeVisible({
+      timeout: 5000,
+    });
 
     console.log('✅ Verified admin dashboard access');
   }

@@ -270,9 +270,7 @@ export const OrderFulfillmentShipmentDetailsSchema = z.object({
   failure_reason: z.string().optional(),
 });
 
-export type OrderFulfillmentShipmentDetails = z.infer<
-  typeof OrderFulfillmentShipmentDetailsSchema
->;
+export type OrderFulfillmentShipmentDetails = z.infer<typeof OrderFulfillmentShipmentDetailsSchema>;
 
 /**
  * Delivery details
@@ -303,9 +301,7 @@ export const OrderFulfillmentDeliveryDetailsSchema = z.object({
   managed_delivery: z.boolean().optional(),
 });
 
-export type OrderFulfillmentDeliveryDetails = z.infer<
-  typeof OrderFulfillmentDeliveryDetailsSchema
->;
+export type OrderFulfillmentDeliveryDetails = z.infer<typeof OrderFulfillmentDeliveryDetailsSchema>;
 
 /**
  * Order fulfillment

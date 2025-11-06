@@ -45,8 +45,20 @@ export function buildAddresses(count: number, options: AddressFactoryOptions = {
 /**
  * Generate San Francisco address
  */
-export function buildSanFranciscoAddress(options: Omit<AddressFactoryOptions, 'city' | 'state' | 'zipCode'> = {}): Address {
-  const zipCodes = ['94102', '94103', '94104', '94105', '94107', '94108', '94109', '94110', '94111'];
+export function buildSanFranciscoAddress(
+  options: Omit<AddressFactoryOptions, 'city' | 'state' | 'zipCode'> = {}
+): Address {
+  const zipCodes = [
+    '94102',
+    '94103',
+    '94104',
+    '94105',
+    '94107',
+    '94108',
+    '94109',
+    '94110',
+    '94111',
+  ];
 
   return buildAddress({
     ...options,
@@ -59,7 +71,9 @@ export function buildSanFranciscoAddress(options: Omit<AddressFactoryOptions, 'c
 /**
  * Generate California address
  */
-export function buildCaliforniaAddress(options: Omit<AddressFactoryOptions, 'state'> = {}): Address {
+export function buildCaliforniaAddress(
+  options: Omit<AddressFactoryOptions, 'state'> = {}
+): Address {
   const cities = ['San Francisco', 'Los Angeles', 'San Diego', 'San Jose', 'Oakland', 'Sacramento'];
 
   return buildAddress({
@@ -72,7 +86,9 @@ export function buildCaliforniaAddress(options: Omit<AddressFactoryOptions, 'sta
 /**
  * Generate address for specific delivery zone
  */
-export function buildAddressForZone(zone: 'sf' | 'south_bay' | 'peninsula' | 'nationwide'): Address {
+export function buildAddressForZone(
+  zone: 'sf' | 'south_bay' | 'peninsula' | 'nationwide'
+): Address {
   switch (zone) {
     case 'sf':
       return buildSanFranciscoAddress();

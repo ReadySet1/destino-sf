@@ -27,7 +27,9 @@ test.describe('Authentication Flow', () => {
     await page.click('[data-testid="register-button"]');
 
     // Should show success message and redirect to sign-in
-    await expect(page.getByText(/account created successfully|check your email/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/account created successfully|check your email/i)).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test.skip('should login existing user', async ({ page }) => {
@@ -111,7 +113,9 @@ test.describe('Authentication Flow', () => {
     await page.click('[data-testid="reset-password-button"]');
 
     // Should show password reset confirmation
-    await expect(page.getByText(/password reset|check your email/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/password reset|check your email/i)).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test.skip('should persist authentication across page reloads', async ({ page }) => {

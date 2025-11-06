@@ -105,7 +105,7 @@ function parseTestFile(filePath: string): TestCase[] {
   let currentDescribe = '';
   const lines = content.split('\n');
 
-  lines.forEach((line) => {
+  lines.forEach(line => {
     const describeMatch = line.match(describeRegex);
     if (describeMatch) {
       const match = describeMatch[0].match(/['"`]([^'"`]+)['"`]/);
@@ -142,7 +142,7 @@ function findTestFiles(testDir: string): string[] {
 /**
  * Calculate coverage for a critical path
  */
-function calculateCoverage(path: typeof CRITICAL_PATHS[0], allTests: TestCase[]): CoverageArea {
+function calculateCoverage(path: (typeof CRITICAL_PATHS)[0], allTests: TestCase[]): CoverageArea {
   const matchingTests = allTests.filter(test => {
     const searchText = `${test.describe} ${test.test} ${test.file}`.toLowerCase();
     return path.keywords.some(keyword => searchText.includes(keyword));
@@ -176,9 +176,7 @@ function generateCoverageReport(testDir: string): CoverageReport {
   console.log(`\n✅ Total: ${allTests.length} tests\n`);
 
   // Calculate coverage for each critical path
-  const coverageAreas = CRITICAL_PATHS.map(path =>
-    calculateCoverage(path, allTests)
-  );
+  const coverageAreas = CRITICAL_PATHS.map(path => calculateCoverage(path, allTests));
 
   // Calculate overall coverage
   const totalCoverage = coverageAreas.reduce((sum, area) => sum + area.coverage, 0);

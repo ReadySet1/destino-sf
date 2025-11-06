@@ -131,12 +131,7 @@ export async function updateWithOptimisticLock<T extends { id: string; version: 
           throw new Error(`${modelName} with id ${id} not found`);
         }
 
-        throw new OptimisticLockError(
-          modelName,
-          id,
-          currentVersion + attempt,
-          current.version
-        );
+        throw new OptimisticLockError(modelName, id, currentVersion + attempt, current.version);
       }
 
       // Log successful update
@@ -165,7 +160,7 @@ export async function updateWithOptimisticLock<T extends { id: string; version: 
           });
 
           // Wait before retrying
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
           continue;
         }
 
@@ -177,12 +172,7 @@ export async function updateWithOptimisticLock<T extends { id: string; version: 
         // Fetch current version for error message
         const current = await model.findUnique({ where: { id } }).catch(() => null);
 
-        throw new OptimisticLockError(
-          modelName,
-          id,
-          currentVersion + attempt,
-          current?.version
-        );
+        throw new OptimisticLockError(modelName, id, currentVersion + attempt, current?.version);
       }
 
       // Other error, rethrow
@@ -242,7 +232,7 @@ export async function retryWithOptimisticLock<T>(
           });
 
           // Wait before retrying
-          await new Promise((resolve) => setTimeout(resolve, retryDelay * (attempt + 1)));
+          await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
           continue;
         }
       } else {

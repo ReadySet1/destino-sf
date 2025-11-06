@@ -35,7 +35,7 @@ describe('Shippo Tracking & Customs API Contract Tests', () => {
   describe('ShippoTrackingStatusSchema', () => {
     it('should validate all tracking statuses', () => {
       const statuses = ['UNKNOWN', 'DELIVERED', 'TRANSIT', 'FAILURE', 'RETURNED'];
-      statuses.forEach((status) => {
+      statuses.forEach(status => {
         expect(matchesSchema(ShippoTrackingStatusSchema, status)).toBe(true);
       });
     });
@@ -311,7 +311,7 @@ describe('Shippo Tracking & Customs API Contract Tests', () => {
         'RETURN_MERCHANDISE',
         'OTHER',
       ];
-      types.forEach((type) => {
+      types.forEach(type => {
         expect(matchesSchema(ShippoContentsTypeSchema, type)).toBe(true);
       });
     });
@@ -324,7 +324,7 @@ describe('Shippo Tracking & Customs API Contract Tests', () => {
   describe('ShippoNonDeliveryOptionSchema', () => {
     it('should validate non-delivery options', () => {
       const options = ['ABANDON', 'RETURN'];
-      options.forEach((option) => {
+      options.forEach(option => {
         expect(matchesSchema(ShippoNonDeliveryOptionSchema, option)).toBe(true);
       });
     });

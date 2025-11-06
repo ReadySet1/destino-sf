@@ -38,7 +38,7 @@ async function checkProducts() {
       },
     });
 
-    categories.forEach((cat) => {
+    categories.forEach(cat => {
       if (cat._count.products > 0) {
         console.log(`  ${cat.name}: ${cat._count.products} products`);
       }
@@ -103,7 +103,8 @@ async function checkProducts() {
       console.log('  No sync logs found');
     } else {
       recentSyncs.forEach((log, idx) => {
-        const statusIcon = log.status === 'completed' ? '✅' : log.status === 'failed' ? '❌' : '⏳';
+        const statusIcon =
+          log.status === 'completed' ? '✅' : log.status === 'failed' ? '❌' : '⏳';
         console.log(`  ${idx + 1}. ${statusIcon} ${log.startedAt.toLocaleString()}`);
         console.log(`     Items synced: ${log.itemsSynced || 0}`);
         if (log.errorMessage) {
@@ -111,7 +112,6 @@ async function checkProducts() {
         }
       });
     }
-
   } catch (error) {
     console.error('❌ Error checking products:', error);
   } finally {

@@ -38,7 +38,7 @@ async function checkSpotlightPicks() {
       console.log('   3. Or run: pnpm tsx scripts/seed-spotlight-picks.ts');
     } else {
       console.log('\n📋 Spotlight Picks:\n');
-      allPicks.forEach((pick) => {
+      allPicks.forEach(pick => {
         const status = pick.isActive ? '✅ Active' : '❌ Inactive';
         console.log(`Position ${pick.position}: ${status}`);
         console.log(`  Product: ${pick.product.name}`);
@@ -60,7 +60,6 @@ async function checkSpotlightPicks() {
       console.log('\n⚠️  WARNING: No products found in database!');
       console.log('   Run product sync first: pnpm square-sync');
     }
-
   } catch (error) {
     console.error('❌ Error checking spotlight picks:', error);
   } finally {

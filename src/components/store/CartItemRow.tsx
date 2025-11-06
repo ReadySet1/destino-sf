@@ -44,14 +44,23 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
   const itemImage = getItemImage();
 
   return (
-    <div className="p-4 sm:p-6 hover:bg-destino-cream/20 transition-colors duration-200" data-testid="cart-item">
+    <div
+      className="p-4 sm:p-6 hover:bg-destino-cream/20 transition-colors duration-200"
+      data-testid="cart-item"
+    >
       {/* Mobile Layout: Image and Content Side by Side */}
       <div className="flex gap-3 sm:gap-4 mb-4 sm:mb-0">
         {/* Product Image */}
         <div className="flex-shrink-0">
           <div className="relative h-20 w-20 sm:h-16 sm:w-16 overflow-hidden rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 shadow-sm">
             {itemImage ? (
-              <Image src={itemImage} alt={item.name} fill className="object-cover" data-testid="cart-item-image" />
+              <Image
+                src={itemImage}
+                alt={item.name}
+                fill
+                className="object-cover"
+                data-testid="cart-item-image"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <span className="text-xs text-gray-500">No image</span>
@@ -62,11 +71,16 @@ export function CartItemRow({ item, onRemove, onUpdateQuantity }: CartItemRowPro
 
         {/* Product Info */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-destino-charcoal leading-tight mb-1 sm:truncate" data-testid="cart-item-name">
+          <h3
+            className="font-semibold text-destino-charcoal leading-tight mb-1 sm:truncate"
+            data-testid="cart-item-name"
+          >
             <span className="block sm:hidden">{item.name}</span>
             <span className="hidden sm:block truncate">{item.name}</span>
           </h3>
-          <p className="text-sm text-gray-600 mb-2" data-testid="cart-item-price">${item.price.toFixed(2)} / each</p>
+          <p className="text-sm text-gray-600 mb-2" data-testid="cart-item-price">
+            ${item.price.toFixed(2)} / each
+          </p>
 
           {/* Mobile: Show total price prominently */}
           <div className="block sm:hidden">

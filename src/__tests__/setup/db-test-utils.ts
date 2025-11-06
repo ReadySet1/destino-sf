@@ -47,32 +47,34 @@ export async function startTransaction(): Promise<Prisma.TransactionClient> {
   let rollbackPromise: Promise<void>;
   let doRollback: () => void;
 
-  rollbackPromise = new Promise<void>((resolve) => {
+  rollbackPromise = new Promise<void>(resolve => {
     doRollback = resolve;
   });
 
   // Start an interactive transaction that will wait until we explicitly rollback
-  const transactionPromise = db.$transaction(
-    async (tx) => {
-      transactionClient = tx;
+  const transactionPromise = db
+    .$transaction(
+      async tx => {
+        transactionClient = tx;
 
-      // Wait for rollback signal
-      await rollbackPromise;
+        // Wait for rollback signal
+        await rollbackPromise;
 
-      // Throw error to force rollback
-      throw new Error('ROLLBACK');
-    },
-    {
-      maxWait: 10000, // 10 seconds max wait
-      timeout: 60000, // 60 seconds transaction timeout
-    }
-  ).catch((error) => {
-    // Expected rollback error
-    if (error.message !== 'ROLLBACK') {
-      console.error('Transaction error:', error);
-      throw error;
-    }
-  });
+        // Throw error to force rollback
+        throw new Error('ROLLBACK');
+      },
+      {
+        maxWait: 10000, // 10 seconds max wait
+        timeout: 60000, // 60 seconds transaction timeout
+      }
+    )
+    .catch(error => {
+      // Expected rollback error
+      if (error.message !== 'ROLLBACK') {
+        console.error('Transaction error:', error);
+        throw error;
+      }
+    });
 
   // Store the rollback function
   rollbackFn = doRollback!;

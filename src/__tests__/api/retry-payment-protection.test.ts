@@ -239,7 +239,9 @@ describe('API Route: Retry Payment Protection', () => {
     const data = await response.json();
 
     expect(response.status).toBe(401);
-    expect(data.error).toBe('Authentication required. Please provide your email address to retry payment.');
+    expect(data.error).toBe(
+      'Authentication required. Please provide your email address to retry payment.'
+    );
   });
 
   it('should return existing valid checkout URL if available', async () => {

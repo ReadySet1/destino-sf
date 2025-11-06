@@ -35,14 +35,14 @@ describe('HTTP Timeout Utilities', () => {
     });
 
     test('should reject with TimeoutError when promise exceeds timeout', async () => {
-      const slowPromise = new Promise((resolve) => setTimeout(() => resolve('too slow'), 2000));
+      const slowPromise = new Promise(resolve => setTimeout(() => resolve('too slow'), 2000));
 
       await expect(withTimeout(slowPromise, 100)).rejects.toThrow(TimeoutError);
       await expect(withTimeout(slowPromise, 100)).rejects.toThrow(/timed out after 100ms/);
     });
 
     test('should include operation name in timeout error', async () => {
-      const slowPromise = new Promise((resolve) => setTimeout(() => resolve('too slow'), 2000));
+      const slowPromise = new Promise(resolve => setTimeout(() => resolve('too slow'), 2000));
 
       try {
         await withTimeout(slowPromise, 100, undefined, 'fetchUserData');
@@ -55,7 +55,7 @@ describe('HTTP Timeout Utilities', () => {
     });
 
     test('should use custom error message when provided', async () => {
-      const slowPromise = new Promise((resolve) => setTimeout(() => resolve('too slow'), 2000));
+      const slowPromise = new Promise(resolve => setTimeout(() => resolve('too slow'), 2000));
 
       await expect(withTimeout(slowPromise, 100, 'Custom timeout message')).rejects.toThrow(
         'Custom timeout message'
@@ -96,7 +96,7 @@ describe('HTTP Timeout Utilities', () => {
     });
 
     test('should timeout correctly with very short timeout', async () => {
-      const slowPromise = new Promise((resolve) => setTimeout(() => resolve('too slow'), 100));
+      const slowPromise = new Promise(resolve => setTimeout(() => resolve('too slow'), 100));
 
       await expect(withTimeout(slowPromise, 10)).rejects.toThrow(TimeoutError);
     });
@@ -124,7 +124,7 @@ describe('HTTP Timeout Utilities', () => {
       const promiseFactory = () => {
         attempts++;
         if (attempts < 3) {
-          return new Promise((resolve) => setTimeout(() => resolve('too slow'), 2000));
+          return new Promise(resolve => setTimeout(() => resolve('too slow'), 2000));
         }
         return Promise.resolve('success');
       };
@@ -146,7 +146,7 @@ describe('HTTP Timeout Utilities', () => {
       const promiseFactory = () => {
         attempts++;
         if (attempts < 4) {
-          return new Promise((resolve) => setTimeout(() => resolve('too slow'), 2000));
+          return new Promise(resolve => setTimeout(() => resolve('too slow'), 2000));
         }
         return Promise.resolve('success');
       };
@@ -210,7 +210,7 @@ describe('HTTP Timeout Utilities', () => {
       const promiseFactory = () => {
         attempts++;
         if (attempts < 5) {
-          return new Promise((resolve) => setTimeout(() => resolve('too slow'), 2000));
+          return new Promise(resolve => setTimeout(() => resolve('too slow'), 2000));
         }
         return Promise.resolve('success');
       };

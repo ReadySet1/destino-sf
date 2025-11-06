@@ -486,9 +486,11 @@ describe('CircuitBreaker', () => {
       });
 
       const requests = Array.from({ length: 5 }, () =>
-        breaker.execute(async () => {
-          throw new Error('Failure');
-        }).catch(e => e)
+        breaker
+          .execute(async () => {
+            throw new Error('Failure');
+          })
+          .catch(e => e)
       );
 
       await Promise.all(requests);

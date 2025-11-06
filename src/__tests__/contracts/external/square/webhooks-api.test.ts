@@ -305,9 +305,9 @@ describe('Square Webhooks API Contract Tests', () => {
         successRate: 0.95,
         averageProcessingTime: 125.5,
         failuresByType: {
-          'INVALID_SIGNATURE': 10,
-          'RATE_LIMIT_EXCEEDED': 5,
-          'DATABASE_ERROR': 35,
+          INVALID_SIGNATURE: 10,
+          RATE_LIMIT_EXCEEDED: 5,
+          DATABASE_ERROR: 35,
         },
         environmentBreakdown: {
           sandbox: { total: 200, successful: 190 },
@@ -329,7 +329,7 @@ describe('Square Webhooks API Contract Tests', () => {
         severity: 'critical' as const,
         title: 'High Failure Rate',
         message: 'Webhook failure rate exceeded 10%',
-        details: { currentRate: 0.15, threshold: 0.10 },
+        details: { currentRate: 0.15, threshold: 0.1 },
         createdAt: new Date(),
         environment: 'production' as const,
       };
@@ -528,9 +528,7 @@ describe('Square Webhooks API Contract Tests', () => {
           success: true,
           eventId: mockData.uuid(),
           processingTimeMs: 100,
-          actions: [
-            { type: 'PAYMENT_UPDATE' as const, success: true },
-          ],
+          actions: [{ type: 'PAYMENT_UPDATE' as const, success: true }],
           shouldRetry: false,
         },
       };

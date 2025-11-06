@@ -102,7 +102,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
     globalDeduplicator.clearAll();
 
     // Reset mocks to success
-    mockCreateOrder.mockImplementation(async (config) => ({
+    mockCreateOrder.mockImplementation(async config => ({
       id: `square-order-${Date.now()}-${Math.random()}`,
       state: 'OPEN',
       lineItems: config.lineItems,
@@ -200,20 +200,20 @@ describe('Checkout Flow Concurrency Integration Test', () => {
 
     it('should prevent double-submit during checkout', async () => {
       // Create 5 identical concurrent checkout requests
-      const requests = Array.from({ length: 5 }, () =>
-        new NextRequest('http://localhost:3000/api/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: testCartItems,
-            customerInfo: testCustomerInfo,
-          }),
-        })
+      const requests = Array.from(
+        { length: 5 },
+        () =>
+          new NextRequest('http://localhost:3000/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: testCartItems,
+              customerInfo: testCustomerInfo,
+            }),
+          })
       );
 
-      const responses = await Promise.all(
-        requests.map(req => checkoutHandler(req))
-      );
+      const responses = await Promise.all(requests.map(req => checkoutHandler(req)));
 
       // Should have 1 success and 4 duplicate detections
       const successCount = responses.filter(r => r.status === 200).length;
@@ -246,20 +246,20 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       const order = await prisma.order.findUnique({ where: { id: orderId } });
 
       // Create 5 concurrent payment requests
-      const paymentRequests = Array.from({ length: 5 }, () =>
-        new NextRequest('http://localhost:3000/api/checkout/payment', {
-          method: 'POST',
-          body: JSON.stringify({
-            sourceId: 'card-token-test',
-            orderId: orderId,
-            amount: Math.round(Number(order?.total) * 100),
-          }),
-        })
+      const paymentRequests = Array.from(
+        { length: 5 },
+        () =>
+          new NextRequest('http://localhost:3000/api/checkout/payment', {
+            method: 'POST',
+            body: JSON.stringify({
+              sourceId: 'card-token-test',
+              orderId: orderId,
+              amount: Math.round(Number(order?.total) * 100),
+            }),
+          })
       );
 
-      const paymentResponses = await Promise.all(
-        paymentRequests.map(req => paymentHandler(req))
-      );
+      const paymentResponses = await Promise.all(paymentRequests.map(req => paymentHandler(req)));
 
       // Should have 1 success and 4 conflicts
       const successCount = paymentResponses.filter(r => r.status === 200).length;
@@ -305,9 +305,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       );
 
       const startTime = Date.now();
-      const responses = await Promise.all(
-        checkoutRequests.map(req => checkoutHandler(req))
-      );
+      const responses = await Promise.all(checkoutRequests.map(req => checkoutHandler(req)));
       const duration = Date.now() - startTime;
 
       // All should succeed
@@ -390,9 +388,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       );
 
       const startTime = Date.now();
-      const responses = await Promise.all(
-        paymentRequests.map(req => paymentHandler(req))
-      );
+      const responses = await Promise.all(paymentRequests.map(req => paymentHandler(req)));
       const duration = Date.now() - startTime;
 
       // All should succeed
@@ -511,20 +507,20 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       // Now try concurrent payments
       const order = await prisma.order.findUnique({ where: { id: orderId } });
 
-      const paymentRequests = Array.from({ length: 3 }, () =>
-        new NextRequest('http://localhost:3000/api/checkout/payment', {
-          method: 'POST',
-          body: JSON.stringify({
-            sourceId: 'card-token',
-            orderId: orderId,
-            amount: Math.round(Number(order?.total) * 100),
-          }),
-        })
+      const paymentRequests = Array.from(
+        { length: 3 },
+        () =>
+          new NextRequest('http://localhost:3000/api/checkout/payment', {
+            method: 'POST',
+            body: JSON.stringify({
+              sourceId: 'card-token',
+              orderId: orderId,
+              amount: Math.round(Number(order?.total) * 100),
+            }),
+          })
       );
 
-      const paymentResponses = await Promise.all(
-        paymentRequests.map(req => paymentHandler(req))
-      );
+      const paymentResponses = await Promise.all(paymentRequests.map(req => paymentHandler(req)));
 
       // Only 1 should succeed
       const successCount = paymentResponses.filter(r => r.status === 200).length;
@@ -558,9 +554,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       );
 
       const startTime = Date.now();
-      const responses = await Promise.all(
-        requests.map(req => checkoutHandler(req))
-      );
+      const responses = await Promise.all(requests.map(req => checkoutHandler(req)));
       const duration = Date.now() - startTime;
 
       // Count successes

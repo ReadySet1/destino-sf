@@ -108,9 +108,7 @@ describe('Payment Race Conditions', () => {
       });
 
       // Execute all payment requests concurrently
-      const responses = await Promise.all(
-        requests.map(req => paymentHandler(req))
-      );
+      const responses = await Promise.all(requests.map(req => paymentHandler(req)));
 
       // Count successful vs conflict responses
       const successResponses = responses.filter(r => r.status === 200);
@@ -315,7 +313,7 @@ describe('Payment Race Conditions', () => {
       const lock1Promise = withRowLock<Order, any>(
         'orders',
         testOrder.id,
-        async (order) => {
+        async order => {
           await new Promise(resolve => setTimeout(resolve, 1000)); // Hold lock for 1 second
           return operation(order);
         },
@@ -328,7 +326,7 @@ describe('Payment Race Conditions', () => {
       const lock2Promise = withRowLock<Order, any>(
         'orders',
         testOrder.id,
-        async (order) => operation(order),
+        async order => operation(order),
         { timeout: 100, noWait: true }
       );
 
@@ -351,12 +349,7 @@ describe('Payment Race Conditions', () => {
 
       // Try to lock non-existent order
       await expect(
-        withRowLock<Order, any>(
-          'orders',
-          'non-existent-id',
-          operation,
-          { noWait: true }
-        )
+        withRowLock<Order, any>('orders', 'non-existent-id', operation, { noWait: true })
       ).rejects.toThrow(LockAcquisitionError);
 
       // Operation should not be called
@@ -380,11 +373,7 @@ describe('Payment Race Conditions', () => {
       await paymentHandler(request);
 
       // Verify Square payment was called with correct parameters
-      expect(mockCreatePayment).toHaveBeenCalledWith(
-        'card-token-123',
-        'square-order-123',
-        5000
-      );
+      expect(mockCreatePayment).toHaveBeenCalledWith('card-token-123', 'square-order-123', 5000);
 
       // Square's createPayment should handle idempotency internally
       // via idempotency keys
@@ -537,9 +526,7 @@ describe('Payment Race Conditions', () => {
         });
       });
 
-      const responses = await Promise.all(
-        requests.map(req => paymentHandler(req))
-      );
+      const responses = await Promise.all(requests.map(req => paymentHandler(req)));
 
       // All should succeed (different orders, no conflicts)
       const successCount = responses.filter(r => r.status === 200).length;

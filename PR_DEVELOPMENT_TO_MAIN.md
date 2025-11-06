@@ -48,6 +48,7 @@ This PR merges critical bug fixes, new features, and improvements from the devel
 **Problem:**
 
 When customers retry a failed payment, the checkout session was missing shipping costs and convenience fees. This resulted in:
+
 - Customers being charged incorrect (lower) amounts
 - Revenue loss on retry transactions
 - Inconsistent pricing between original and retry attempts
@@ -55,12 +56,14 @@ When customers retry a failed payment, the checkout session was missing shipping
 **Root Cause:**
 
 The retry payment route (`/api/orders/[orderId]/retry-payment`) was only adding order items to the Square checkout, not recalculating and including:
+
 1. Shipping costs (for delivery/nationwide orders)
 2. Convenience fees (3.5% service charge)
 
 **Solution:**
 
 Updated `src/app/api/orders/[orderId]/retry-payment/route.ts` to:
+
 1. **Recalculate shipping costs** for delivery/nationwide orders using existing shipping logic
 2. **Calculate convenience fee** (3.5% of subtotal) and add as service charge
 3. **Include all fees** in Square checkout session
@@ -80,18 +83,25 @@ if (fulfillmentType === 'delivery' || fulfillmentType === 'nationwide') {
 
 // Calculate 3.5% convenience fee
 const serviceFeeAmount = Math.round(subtotal * 0.035 * 100);
-const serviceCharges = serviceFeeAmount > 0 ? [{
-  name: 'Convenience Fee',
-  amount_money: { amount: serviceFeeAmount, currency: 'USD' },
-  calculation_phase: 'TOTAL_PHASE',
-  taxable: false,
-}] : undefined;
+const serviceCharges =
+  serviceFeeAmount > 0
+    ? [
+        {
+          name: 'Convenience Fee',
+          amount_money: { amount: serviceFeeAmount, currency: 'USD' },
+          calculation_phase: 'TOTAL_PHASE',
+          taxable: false,
+        },
+      ]
+    : undefined;
 ```
 
 **Files Modified:**
+
 - `src/app/api/orders/[orderId]/retry-payment/route.ts`
 
 **Testing:**
+
 - ✅ Retry payment includes shipping for delivery orders
 - ✅ Convenience fee calculated correctly (3.5% of subtotal)
 - ✅ Total matches original order amount
@@ -134,6 +144,7 @@ New interactive store locator page helping customers find Destino products at 29
    - Encourages conversion for non-local customers
 
 **Files Added:**
+
 - `src/app/locations/page.tsx` - Page metadata and wrapper
 - `src/app/locations/StoreLocationsPage.tsx` - Main component
 - `src/components/Maps/StoreLocationsMap.tsx` - Interactive map component
@@ -147,6 +158,7 @@ New interactive store locator page helping customers find Destino products at 29
 - Error handling for Maps API failures
 
 **Testing:**
+
 - ✅ Map loads correctly with all 29 locations
 - ✅ Clicking location in list highlights on map
 - ✅ Responsive design works on mobile/tablet/desktop
@@ -154,6 +166,7 @@ New interactive store locator page helping customers find Destino products at 29
 - ✅ Graceful fallback if Maps API unavailable
 
 **User Benefits:**
+
 - Easy discovery of nearby retail locations
 - Visual map for planning store visits
 - Encourages in-store product discovery
@@ -497,6 +510,7 @@ This PR delivers critical bug fixes, revenue-protecting payment improvements, an
 - ✅ Maintained 100% backward compatibility
 
 **Business Impact:**
+
 - **Revenue**: Prevents revenue loss on retry payments (shipping + fees)
 - **Discovery**: 29 retail locations now discoverable via interactive map
 - **Conversion**: Store locator encourages both in-store visits and online orders

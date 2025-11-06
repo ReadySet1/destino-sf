@@ -21,10 +21,7 @@ export const registry = new OpenAPIRegistry();
  * @param schema - Zod schema to register
  * @returns The registered schema
  */
-export function registerSchema<T extends z.ZodType<any, any, any>>(
-  name: string,
-  schema: T
-): T {
+export function registerSchema<T extends z.ZodType<any, any, any>>(name: string, schema: T): T {
   // Type cast needed due to library type mismatch between Zod and OpenAPI types
   registry.registerComponent('schemas', name, schema as any);
   return schema;

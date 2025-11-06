@@ -73,7 +73,10 @@ async function performCheckoutFlow(
       // Extract order ID from URL
       const orderId = currentUrl.split('/order/')[1];
       return { orderId, success: true };
-    } else if (currentUrl.includes('/checkout') && (await page.locator('[data-testid="error-message"]').count()) > 0) {
+    } else if (
+      currentUrl.includes('/checkout') &&
+      (await page.locator('[data-testid="error-message"]').count()) > 0
+    ) {
       // Checkout failed with error
       return { orderId: null, success: false };
     }
@@ -118,9 +121,7 @@ test.describe('Concurrent Users E2E Tests', () => {
       const pages = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
       // All users checkout concurrently
-      const results = await Promise.all(
-        pages.map((page, i) => performCheckoutFlow(page, i))
-      );
+      const results = await Promise.all(pages.map((page, i) => performCheckoutFlow(page, i)));
 
       // Clean up contexts
       await Promise.all(contexts.map(ctx => ctx.close()));
@@ -144,9 +145,7 @@ test.describe('Concurrent Users E2E Tests', () => {
       const page = await context.newPage();
 
       // Same user with same cart
-      const cartItems = [
-        { id: 'product-1', name: 'Alfajor', price: 4.5, quantity: 5 },
-      ];
+      const cartItems = [{ id: 'product-1', name: 'Alfajor', price: 4.5, quantity: 5 }];
 
       // Go to checkout page
       await page.goto(`${BASE_URL}/checkout`);
@@ -163,11 +162,7 @@ test.describe('Concurrent Users E2E Tests', () => {
       // Click submit button multiple times rapidly (simulate double-click)
       const submitButton = page.locator('[data-testid="submit-checkout"]');
 
-      await Promise.all([
-        submitButton.click(),
-        submitButton.click(),
-        submitButton.click(),
-      ]);
+      await Promise.all([submitButton.click(), submitButton.click(), submitButton.click()]);
 
       // Wait for processing
       await page.waitForTimeout(3000);
@@ -196,11 +191,7 @@ test.describe('Concurrent Users E2E Tests', () => {
       // Click checkout button multiple times rapidly
       const checkoutButton = page.locator('[data-testid="checkout-button"]');
 
-      await Promise.all([
-        checkoutButton.click(),
-        checkoutButton.click(),
-        checkoutButton.click(),
-      ]);
+      await Promise.all([checkoutButton.click(), checkoutButton.click(), checkoutButton.click()]);
 
       await page.waitForTimeout(2000);
 
@@ -234,11 +225,8 @@ test.describe('Concurrent Users E2E Tests', () => {
       // Click pay button multiple times
       const payButton = page.locator('[data-testid="pay-button"]');
 
-      if (await payButton.count() > 0) {
-        await Promise.all([
-          payButton.click(),
-          payButton.click(),
-        ]);
+      if ((await payButton.count()) > 0) {
+        await Promise.all([payButton.click(), payButton.click()]);
 
         await page.waitForTimeout(2000);
 
@@ -286,10 +274,7 @@ test.describe('Concurrent Users E2E Tests', () => {
       const page2 = await context.newPage();
 
       // Both tabs add items concurrently
-      await Promise.all([
-        page1.goto(`${BASE_URL}/products`),
-        page2.goto(`${BASE_URL}/products`),
-      ]);
+      await Promise.all([page1.goto(`${BASE_URL}/products`), page2.goto(`${BASE_URL}/products`)]);
 
       const addButton1 = page1.locator('[data-testid="add-to-cart"]').first();
       const addButton2 = page2.locator('[data-testid="add-to-cart"]').first();
@@ -299,10 +284,7 @@ test.describe('Concurrent Users E2E Tests', () => {
       await page1.waitForTimeout(500);
 
       // Check cart in both tabs
-      await Promise.all([
-        page1.goto(`${BASE_URL}/cart`),
-        page2.goto(`${BASE_URL}/cart`),
-      ]);
+      await Promise.all([page1.goto(`${BASE_URL}/cart`), page2.goto(`${BASE_URL}/cart`)]);
 
       // Both should show the same cart state (eventually consistent)
       const quantity1 = await page1.locator('[data-testid="cart-total-items"]').textContent();
@@ -317,9 +299,7 @@ test.describe('Concurrent Users E2E Tests', () => {
 
   test.describe('Performance Under Load', () => {
     test('should maintain responsiveness with 5 concurrent users', async ({ browser }) => {
-      const contexts = await Promise.all(
-        Array.from({ length: 5 }, () => browser.newContext())
-      );
+      const contexts = await Promise.all(Array.from({ length: 5 }, () => browser.newContext()));
 
       const pages = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
@@ -363,9 +343,7 @@ test.describe('Concurrent Users E2E Tests', () => {
         )
       );
 
-      const contexts = await Promise.all(
-        Array.from({ length: 3 }, () => browser.newContext())
-      );
+      const contexts = await Promise.all(Array.from({ length: 3 }, () => browser.newContext()));
 
       const pages = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
@@ -373,9 +351,7 @@ test.describe('Concurrent Users E2E Tests', () => {
 
       // All users process payment concurrently
       await Promise.all(
-        pages.map((page, i) =>
-          page.goto(`${BASE_URL}/checkout/payment?orderId=${orders[i].id}`)
-        )
+        pages.map((page, i) => page.goto(`${BASE_URL}/checkout/payment?orderId=${orders[i].id}`))
       );
 
       const duration = Date.now() - startTime;
