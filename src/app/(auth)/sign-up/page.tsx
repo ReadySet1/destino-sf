@@ -127,7 +127,7 @@ export default function Signup() {
           </div>
 
           <SubmitButton
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
+            className="w-full py-4 text-base font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl"
             loading={isLoading}
             pendingText="Creating account..."
             data-testid="register-button"
@@ -138,10 +138,10 @@ export default function Signup() {
       </div>
 
       <div className="flex flex-col space-y-4 pt-6">
-        <div className="text-center text-sm">
+        <div className="text-center text-sm text-gray-600">
           Already have an account?{' '}
           <Link
-            className="text-primary hover:text-primary/90 underline underline-offset-4 font-medium"
+            className="text-destino-charcoal hover:text-destino-yellow underline underline-offset-4 font-semibold transition-colors duration-200"
             href="/sign-in"
           >
             Sign in
