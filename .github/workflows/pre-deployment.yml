@@ -149,7 +149,6 @@ jobs:
       # ✅ Checklist Item 3: Critical Path Tests
       - name: ✅ Critical Path Tests - Payment & Orders
         run: pnpm test:critical
-        continue-on-error: true  # TODO: Remove once test failures are fixed (see Plane tickets)
 
       # ✅ Checklist Item 4: API Tests
       - name: ✅ API Tests - All Routes
