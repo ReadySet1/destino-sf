@@ -5,13 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import MapModal from '../Maps/MapModal';
 import { Dancing_Script } from 'next/font/google';
+import { menuFaqData, FaqItem } from '@/data/faq-data';
 
 const dancingScript = Dancing_Script({ subsets: ['latin'] });
-
-interface FaqItem {
-  question: string;
-  answer: React.ReactNode;
-}
 
 const MenuFaqSection: React.FC = () => {
   // State to track which FAQ items are open
@@ -32,46 +28,31 @@ const MenuFaqSection: React.FC = () => {
     setIsMapOpen(true);
   };
 
-  const faqItems: FaqItem[] = [
-    {
-      question: 'Do you sell your empanadas and alfajores in stores?',
-      answer: (
-        <>
-          Yes! Our empanadas and alfajores are currently sold in 14 retail stores across San
-          Francisco and Oakland, including Faletti&apos;s Market, Luke&apos;s Local, Epicurean
-          Trader, Bryan&apos;s Market, Evergreen Market, El Chavo Market, and Skyline Market.{' '}
-          <a
-            href="#"
-            onClick={openMap}
-            className="text-amber-600 hover:text-amber-800 underline font-medium"
-          >
-            Check our store locator map
-          </a>{' '}
-          for a full list of locations. Coming soon: Marin County and the Peninsula!
-        </>
-      ),
-    },
-    {
-      question: 'How do I cook the empanadas?',
-      answer:
-        'Our empanadas are frozen and ready to cook — no prep required. Air Fryer: Preheat to 375°F. Remove empanadas from packaging and discard parchment liners. Place on a wire rack or baking tray. Cook for 15–20 minutes, or until golden brown. Conventional Oven: Preheat to 400°F. Remove empanadas from packaging and discard parchment liners. Place on a wire rack or baking tray. Bake for 20–25 minutes, or until golden brown. Let cool slightly before serving. Cooking times may vary depending on your appliance.',
-    },
-    {
-      question: 'How many empanadas should I plan for per person?',
-      answer:
-        'Each empanada is considered one serving — the perfect size for a light meal or satisfying snack. That said... they are really hard to stop at just one. Most of our customers enjoy two when serving them for lunch or dinner — especially when paired with a salad or sides.',
-    },
-    {
-      question: 'How should I store alfajores?',
-      answer:
-        'It depends a little on the type! Our chocolate, lemon, and 6-pack combo alfajores should be stored in a cool, dry place — they will stay fresh for up to two weeks. Our classic and gluten-free alfajores can be stored at room temperature, or refrigerated after opening to extend their freshness. Want to keep them even longer? Alfajores freeze beautifully — just wrap them tightly and thaw at room temperature before enjoying.',
-    },
-    {
-      question: 'Do your alfajores contain any allergens?',
-      answer:
-        'Some of our alfajores do contain common allergens, including wheat, eggs, and dairy. Select flavors may also contain or be produced in a facility that handles nuts. If you have specific allergies or dietary concerns, please check the ingredient label or reach out to us directly — we are happy to help you choose the best option!',
-    },
-  ];
+  // Enrich FAQ data with JSX for the first item (store locator with map link)
+  const faqItems: FaqItem[] = menuFaqData.map((faq, index) => {
+    if (index === 0) {
+      // First item gets interactive map link
+      return {
+        ...faq,
+        answerHtml: (
+          <>
+            Yes! Our empanadas and alfajores are currently sold in 14 retail stores across San
+            Francisco and Oakland, including Faletti&apos;s Market, Luke&apos;s Local, Epicurean
+            Trader, Bryan&apos;s Market, Evergreen Market, El Chavo Market, and Skyline Market.{' '}
+            <a
+              href="#"
+              onClick={openMap}
+              className="text-amber-600 hover:text-amber-800 underline font-medium"
+            >
+              Check our store locator map
+            </a>{' '}
+            for a full list of locations. Coming soon: Marin County and the Peninsula!
+          </>
+        ),
+      };
+    }
+    return faq;
+  });
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -254,7 +235,7 @@ const MenuFaqSection: React.FC = () => {
                       }}
                       className="text-amber-900/80 leading-relaxed text-base"
                     >
-                      {faq.answer}
+                      {faq.answerHtml || faq.answer}
                     </motion.p>
                   </div>
                 </motion.div>
