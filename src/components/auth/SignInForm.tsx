@@ -53,7 +53,7 @@ function PasswordForm({ redirectUrl }: { redirectUrl?: string }) {
               Password
             </Label>
             <Link
-              className="text-xs text-primary hover:text-primary/90 underline underline-offset-4"
+              className="text-xs text-destino-charcoal hover:text-destino-yellow underline underline-offset-4 font-medium transition-colors duration-200"
               href="/forgot-password"
             >
               Forgot Password?
@@ -79,7 +79,7 @@ function PasswordForm({ redirectUrl }: { redirectUrl?: string }) {
       </div>
 
       <SubmitButton
-        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
+        className="w-full py-4 text-base font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl"
         pendingText="Signing in..."
         data-testid="login-button"
       >
@@ -123,7 +123,7 @@ function MagicLinkForm({ redirectUrl }: { redirectUrl?: string }) {
       </div>
 
       <SubmitButton
-        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium h-11"
+        className="w-full py-4 text-base font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl"
         pendingText="Sending..."
       >
         <Wand2 className="w-4 h-4 mr-2" />
@@ -169,13 +169,13 @@ export function SignInForm({ redirectUrl }: SignInFormProps) {
   return (
     <div className="space-y-6">
       {/* Sign-in method tabs */}
-      <div className="flex bg-gray-100 rounded-lg p-1" role="tablist">
+      <div className="flex bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-1 shadow-sm" role="tablist">
         <button
           type="button"
-          className={`flex-1 py-2 px-4 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all ${
+          className={`flex-1 py-3 px-4 text-sm font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-destino-yellow focus:ring-offset-2 transition-all duration-200 ${
             method === 'password'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-gradient-to-r from-destino-yellow to-yellow-400 text-destino-charcoal shadow-md transform scale-[1.02]'
+              : 'text-gray-600 hover:text-destino-charcoal hover:bg-gray-50'
           }`}
           role="tab"
           aria-selected={method === 'password'}
@@ -186,10 +186,10 @@ export function SignInForm({ redirectUrl }: SignInFormProps) {
         </button>
         <button
           type="button"
-          className={`flex-1 py-2 px-4 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all ${
+          className={`flex-1 py-3 px-4 text-sm font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-destino-yellow focus:ring-offset-2 transition-all duration-200 ${
             method === 'magic-link'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-gradient-to-r from-destino-yellow to-yellow-400 text-destino-charcoal shadow-md transform scale-[1.02]'
+              : 'text-gray-600 hover:text-destino-charcoal hover:bg-gray-50'
           }`}
           role="tab"
           aria-selected={method === 'magic-link'}
