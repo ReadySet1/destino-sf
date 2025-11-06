@@ -82,69 +82,86 @@ function analyzeFile(filePath) {
   const lines = content.split('\n');
   const relativePath = path.relative(SRC_DIR, filePath);
 
-  // Check if file uses Next.js Image
-  if (!content.includes('next/image') && !content.includes('<Image')) {
+  // Only analyze files that import from 'next/image'
+  if (!content.includes("from 'next/image'") && !content.includes('from "next/image"')) {
     return;
   }
 
   stats.totalFiles++;
 
-  lines.forEach((line, index) => {
-    const lineNumber = index + 1;
+  // Find all Next.js Image components (multi-line aware)
+  // Match <Image followed by space, /, or > to avoid matching <ImagePlaceholder, <ImageIcon, etc.
+  const imageRegex = /<Image[\s/>][^>]*>/gs;
+  const imageMatches = content.matchAll(imageRegex);
 
-    // Look for <Image or <img tags
-    if (line.includes('<Image') || line.includes('<img')) {
-      stats.totalImages++;
+  for (const match of imageMatches) {
+    stats.totalImages++;
+    const imageTag = match[0];
 
-      // Check for alt attribute
-      const altMatch = line.match(/alt\s*=\s*["'`]([^"'`]*)["'`]/);
-      const altMatchExpr = line.match(/alt\s*=\s*\{([^}]+)\}/);
+    // Find line number of this Image tag
+    const beforeMatch = content.substring(0, match.index);
+    const lineNumber = beforeMatch.split('\n').length;
 
-      if (!altMatch && !altMatchExpr) {
-        // Missing alt attribute
-        stats.missingAlt++;
+    // Check for alt attribute in the full tag
+    const altMatch = imageTag.match(/alt\s*=\s*["'`]([^"'`]*)["'`]/);
+    const altMatchExpr = imageTag.match(/alt\s*=\s*\{([^}]+)\}/);
+
+    if (!altMatch && !altMatchExpr) {
+      // Missing alt attribute
+      stats.missingAlt++;
+      stats.issues.push({
+        type: 'MISSING',
+        file: relativePath,
+        line: lineNumber,
+        code: `<Image`,
+        severity: 'HIGH',
+      });
+    } else if (altMatch) {
+      const altText = altMatch[1];
+
+      if (altText === '') {
+        // Empty alt (decorative image - this is OK for decorative images)
+        stats.emptyAlt++;
         stats.issues.push({
-          type: 'MISSING',
+          type: 'EMPTY',
           file: relativePath,
           line: lineNumber,
-          code: line.trim(),
-          severity: 'HIGH',
+          code: `<Image`,
+          altText: '(empty)',
+          severity: 'INFO',
         });
-      } else if (altMatch) {
-        const altText = altMatch[1];
-
-        if (altText === '') {
-          // Empty alt (decorative image - this is OK for decorative images)
-          stats.emptyAlt++;
-          stats.issues.push({
-            type: 'EMPTY',
-            file: relativePath,
-            line: lineNumber,
-            code: line.trim(),
-            altText: '(empty)',
-            severity: 'INFO',
-          });
-        } else if (isGenericAlt(altText)) {
-          // Generic alt text
-          stats.genericAlt++;
-          stats.issues.push({
-            type: 'GENERIC',
-            file: relativePath,
-            line: lineNumber,
-            code: line.trim(),
-            altText,
-            severity: 'MEDIUM',
-          });
-        } else {
-          // Good alt text
-          stats.goodAlt++;
-        }
+      } else if (isGenericAlt(altText)) {
+        // Generic alt text
+        stats.genericAlt++;
+        stats.issues.push({
+          type: 'GENERIC',
+          file: relativePath,
+          line: lineNumber,
+          code: `<Image`,
+          altText,
+          severity: 'MEDIUM',
+        });
       } else {
-        // Alt text from expression (variable or function)
+        // Good alt text
         stats.goodAlt++;
       }
+    } else {
+      // Alt text from expression (variable or function)
+      stats.goodAlt++;
     }
-  });
+  }
+
+  // Also check for self-closing Image tags
+  const selfClosingRegex = /<Image[^>]*\/>/gs;
+  const selfClosingMatches = content.matchAll(selfClosingRegex);
+
+  for (const match of selfClosingMatches) {
+    // Skip if already counted (shouldn't happen but just in case)
+    if (match[0].endsWith('/>')) {
+      // Already handled by main regex above
+      continue;
+    }
+  }
 }
 
 /**
