@@ -105,9 +105,7 @@ export function validateEndpointDocumentation(
  * @param schema - OpenAPI schema object
  * @returns Validation result
  */
-export function validateResponseSchemas(
-  schema: OpenAPIV3_1.Document
-): SchemaValidationResult {
+export function validateResponseSchemas(schema: OpenAPIV3_1.Document): SchemaValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -160,9 +158,7 @@ export function validateResponseSchemas(
  * @param schema - OpenAPI schema object
  * @returns Validation result
  */
-export function validateRequestSchemas(
-  schema: OpenAPIV3_1.Document
-): SchemaValidationResult {
+export function validateRequestSchemas(schema: OpenAPIV3_1.Document): SchemaValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -183,9 +179,7 @@ export function validateRequestSchemas(
       if (operation.requestBody && 'content' in operation.requestBody) {
         const jsonContent = operation.requestBody.content?.['application/json'];
         if (jsonContent && !jsonContent.schema) {
-          errors.push(
-            `${method.toUpperCase()} ${path}: Missing schema for request body`
-          );
+          errors.push(`${method.toUpperCase()} ${path}: Missing schema for request body`);
         }
       }
 
@@ -230,7 +224,8 @@ export function validateRequest<T>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors = error.errors.map(
-        err => `${context.method.toUpperCase()} ${context.path}: ${err.path.join('.')} - ${err.message}`
+        err =>
+          `${context.method.toUpperCase()} ${context.path}: ${err.path.join('.')} - ${err.message}`
       );
       return { valid: false, errors, warnings: [] };
     }

@@ -28,13 +28,7 @@ export const CateringStatusSchema = z.enum([
 /**
  * Delivery zone enum (SF Bay Area zones)
  */
-export const DeliveryZoneSchema = z.enum([
-  'SF',
-  'SOUTH_BAY',
-  'PENINSULA',
-  'EAST_BAY',
-  'NORTH_BAY',
-]);
+export const DeliveryZoneSchema = z.enum(['SF', 'SOUTH_BAY', 'PENINSULA', 'EAST_BAY', 'NORTH_BAY']);
 
 /**
  * Catering item type enum

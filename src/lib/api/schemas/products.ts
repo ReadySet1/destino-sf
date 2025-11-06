@@ -36,11 +36,7 @@ export const ProductVariantSchema = z.object({
   id: z.string().uuid().describe('Variant UUID'),
   name: z.string().min(1).max(255).describe('Variant name (e.g., "Large", "Dozen")'),
   price: MoneySchema.describe('Variant price in cents'),
-  squareVariantId: z
-    .string()
-    .nullable()
-    .optional()
-    .describe('Square catalog item variation ID'),
+  squareVariantId: z.string().nullable().optional().describe('Square catalog item variation ID'),
   available: z.boolean().optional().default(true).describe('Whether variant is available'),
 });
 
@@ -49,42 +45,38 @@ export type ProductVariant = z.infer<typeof ProductVariantSchema>;
 /**
  * Product schema (full details)
  */
-export const ProductSchema = z
-  .object({
-    id: z.string().uuid().describe('Product UUID'),
-    name: z.string().min(1).max(255).describe('Product name'),
-    description: z.string().nullable().describe('Product description'),
-    slug: z.string().min(1).max(100).describe('URL-friendly slug'),
-    price: MoneySchema.describe('Base price in cents'),
-    images: z
-      .array(z.string().url())
-      .min(1)
-      .describe('Array of image URLs (first is primary)'),
-    categoryId: z.string().uuid().nullable().describe('Category UUID'),
-    category: ProductCategorySchema.nullable().optional().describe('Category details'),
-    squareId: z.string().nullable().optional().describe('Square catalog object ID'),
-    featured: z.boolean().default(false).describe('Whether product is featured'),
-    active: z.boolean().default(true).describe('Whether product is active/published'),
-    variants: z
-      .array(ProductVariantSchema)
-      .optional()
-      .default([])
-      .describe('Product variants (sizes, quantities, etc.)'),
-    isCatering: z.boolean().optional().default(false).describe('Whether product is catering-only'),
-    isAvailable: z.boolean().optional().describe('Current availability status'),
-    isPreorder: z.boolean().optional().describe('Whether product is available for preorder'),
-    availabilityStartDate: z
-      .string()
-      .datetime()
-      .nullable()
-      .optional()
-      .describe('Availability start date'),
-    availabilityEndDate: z
-      .string()
-      .datetime()
-      .nullable()
-      .optional()
-      .describe('Availability end date'),
+export const ProductSchema = z.object({
+  id: z.string().uuid().describe('Product UUID'),
+  name: z.string().min(1).max(255).describe('Product name'),
+  description: z.string().nullable().describe('Product description'),
+  slug: z.string().min(1).max(100).describe('URL-friendly slug'),
+  price: MoneySchema.describe('Base price in cents'),
+  images: z.array(z.string().url()).min(1).describe('Array of image URLs (first is primary)'),
+  categoryId: z.string().uuid().nullable().describe('Category UUID'),
+  category: ProductCategorySchema.nullable().optional().describe('Category details'),
+  squareId: z.string().nullable().optional().describe('Square catalog object ID'),
+  featured: z.boolean().default(false).describe('Whether product is featured'),
+  active: z.boolean().default(true).describe('Whether product is active/published'),
+  variants: z
+    .array(ProductVariantSchema)
+    .optional()
+    .default([])
+    .describe('Product variants (sizes, quantities, etc.)'),
+  isCatering: z.boolean().optional().default(false).describe('Whether product is catering-only'),
+  isAvailable: z.boolean().optional().describe('Current availability status'),
+  isPreorder: z.boolean().optional().describe('Whether product is available for preorder'),
+  availabilityStartDate: z
+    .string()
+    .datetime()
+    .nullable()
+    .optional()
+    .describe('Availability start date'),
+  availabilityEndDate: z
+    .string()
+    .datetime()
+    .nullable()
+    .optional()
+    .describe('Availability end date'),
 });
 
 export type Product = z.infer<typeof ProductSchema>;
@@ -104,58 +96,62 @@ export type ProductSummary = z.infer<typeof ProductSummarySchema>;
 /**
  * GET /api/products query parameters
  */
-export const GetProductsQuerySchema = z
-  .object({
-    includeVariants: z
-      .enum(['true', 'false'])
-      .optional()
-      .transform(val => val === 'true')
-      .describe('Include product variants in response'),
-    onlyActive: z
-      .enum(['true', 'false'])
-      .optional()
-      .transform(val => val !== 'false')
-      .default('true')
-      .describe('Filter to only active products (default: true)'),
-    categoryId: z.string().uuid().optional().describe('Filter by category UUID'),
-    categorySlug: z.string().optional().describe('Filter by category slug'),
-    featured: z
-      .enum(['true', 'false'])
-      .optional()
-      .transform(val => val === 'true')
-      .describe('Filter to only featured products'),
-    exclude: z.string().uuid().optional().describe('Exclude specific product by UUID'),
-    excludeCatering: z
-      .enum(['true', 'false'])
-      .optional()
-      .transform(val => val !== 'false')
-      .default('true')
-      .describe('Exclude catering products (default: true)'),
-    includeAvailabilityEvaluation: z
-      .enum(['true', 'false'])
-      .optional()
-      .transform(val => val === 'true')
-      .describe('Evaluate and include current availability status'),
-    includePagination: z
-      .enum(['true', 'false'])
-      .optional()
-      .transform(val => val === 'true')
-      .describe('Return pagination metadata'),
-    page: z.string().optional().default('1').pipe(z.coerce.number().int().positive()).describe('Page number'),
-    limit: z.coerce.number().int().positive().max(100).optional().describe('Items per page'),
-    search: z.string().optional().describe('Search query for name/description'),
-    orderBy: z
-      .enum(['name', 'price', 'createdAt', 'updatedAt'])
-      .optional()
-      .default('name')
-      .describe('Sort field'),
-    orderDirection: SortOrderSchema.optional().default('asc').describe('Sort direction'),
-    // Admin-specific options
-    includePrivate: z
-      .enum(['true', 'false'])
-      .optional()
-      .transform(val => val === 'true')
-      .describe('Include private/unpublished products (admin only)'),
+export const GetProductsQuerySchema = z.object({
+  includeVariants: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true')
+    .describe('Include product variants in response'),
+  onlyActive: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val !== 'false')
+    .default('true')
+    .describe('Filter to only active products (default: true)'),
+  categoryId: z.string().uuid().optional().describe('Filter by category UUID'),
+  categorySlug: z.string().optional().describe('Filter by category slug'),
+  featured: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true')
+    .describe('Filter to only featured products'),
+  exclude: z.string().uuid().optional().describe('Exclude specific product by UUID'),
+  excludeCatering: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val !== 'false')
+    .default('true')
+    .describe('Exclude catering products (default: true)'),
+  includeAvailabilityEvaluation: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true')
+    .describe('Evaluate and include current availability status'),
+  includePagination: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true')
+    .describe('Return pagination metadata'),
+  page: z
+    .string()
+    .optional()
+    .default('1')
+    .pipe(z.coerce.number().int().positive())
+    .describe('Page number'),
+  limit: z.coerce.number().int().positive().max(100).optional().describe('Items per page'),
+  search: z.string().optional().describe('Search query for name/description'),
+  orderBy: z
+    .enum(['name', 'price', 'createdAt', 'updatedAt'])
+    .optional()
+    .default('name')
+    .describe('Sort field'),
+  orderDirection: SortOrderSchema.optional().default('asc').describe('Sort direction'),
+  // Admin-specific options
+  includePrivate: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true')
+    .describe('Include private/unpublished products (admin only)'),
 });
 
 export type GetProductsQuery = z.infer<typeof GetProductsQuerySchema>;
@@ -197,15 +193,14 @@ export const CreateProductRequestSchema = ProductSchema.omit({
   id: true,
   category: true,
   variants: true,
-})
-  .partial({
-    slug: true,
-    images: true,
-    squareId: true,
-    featured: true,
-    active: true,
-    isCatering: true,
-  });
+}).partial({
+  slug: true,
+  images: true,
+  squareId: true,
+  featured: true,
+  active: true,
+  isCatering: true,
+});
 
 export type CreateProductRequest = z.infer<typeof CreateProductRequestSchema>;
 

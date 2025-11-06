@@ -23,7 +23,7 @@ import {
   LockAcquisitionError,
   isLockAcquisitionError,
 } from '@/lib/concurrency/pessimistic-lock';
-import { Order, Prisma } from '@prisma/client';
+import { Order, Prisma, OrderStatus, PaymentStatus } from '@prisma/client';
 
 describe('Database Locks', () => {
   let testOrder: Order;
@@ -32,8 +32,8 @@ describe('Database Locks', () => {
     // Create a test order with version field
     testOrder = await prisma.order.create({
       data: {
-        status: 'PENDING',
-        paymentStatus: 'PENDING',
+        status: OrderStatus.PENDING,
+        paymentStatus: PaymentStatus.PENDING,
         total: 100.0,
         customerName: 'Test Customer',
         email: 'lock-test@example.com',
@@ -63,11 +63,11 @@ describe('Database Locks', () => {
         prisma.order,
         testOrder.id,
         1, // Current version
-        { status: 'PROCESSING' },
+        { status: OrderStatus.PROCESSING },
         { modelName: 'Order' }
       );
 
-      expect(updated.status).toBe('PROCESSING');
+      expect(updated.status).toBe(OrderStatus.PROCESSING);
       expect(updated.version).toBe(2); // Version incremented
     });
 
@@ -84,7 +84,7 @@ describe('Database Locks', () => {
           prisma.order,
           testOrder.id,
           1, // Wrong version (should be 2)
-          { status: 'PROCESSING' },
+          { status: OrderStatus.PROCESSING },
           { modelName: 'Order' }
         )
       ).rejects.toThrow(OptimisticLockError);
@@ -96,7 +96,7 @@ describe('Database Locks', () => {
         prisma.order,
         testOrder.id,
         1,
-        { status: 'PROCESSING' },
+        { status: OrderStatus.PROCESSING },
         { modelName: 'Order' }
       );
 
@@ -141,7 +141,7 @@ describe('Database Locks', () => {
             prisma.order,
             testOrder.id,
             order.version,
-            { status: 'PROCESSING' },
+            { status: OrderStatus.PROCESSING },
             { modelName: 'Order' }
           );
         },
@@ -152,7 +152,7 @@ describe('Database Locks', () => {
         }
       );
 
-      expect(result.status).toBe('PROCESSING');
+      expect(result.status).toBe(OrderStatus.PROCESSING);
       expect(attemptCount).toBeGreaterThan(0);
     });
 
@@ -185,12 +185,12 @@ describe('Database Locks', () => {
         testOrder.id,
         async (lockedOrder) => {
           expect(lockedOrder.id).toBe(testOrder.id);
-          expect(lockedOrder.status).toBe('PENDING');
+          expect(lockedOrder.status).toBe(OrderStatus.PENDING);
 
           // Update the order
           await prisma.order.update({
             where: { id: testOrder.id },
-            data: { status: 'PROCESSING' },
+            data: { status: OrderStatus.PROCESSING },
           });
 
           return {
@@ -201,14 +201,14 @@ describe('Database Locks', () => {
         { timeout: 5000, noWait: true }
       );
 
-      expect(result.originalStatus).toBe('PENDING');
-      expect(result.newStatus).toBe('PROCESSING');
+      expect(result.originalStatus).toBe(OrderStatus.PENDING);
+      expect(result.newStatus).toBe(OrderStatus.PROCESSING);
 
       // Verify update was committed
       const updated = await prisma.order.findUnique({
         where: { id: testOrder.id },
       });
-      expect(updated?.status).toBe('PROCESSING');
+      expect(updated?.status).toBe(OrderStatus.PROCESSING);
     });
 
     it('should prevent concurrent row locks with NOWAIT', async () => {
@@ -290,7 +290,7 @@ describe('Database Locks', () => {
             // Update the order
             await prisma.order.update({
               where: { id: testOrder.id },
-              data: { status: 'PROCESSING' },
+              data: { status: OrderStatus.PROCESSING },
             });
 
             // Throw error to trigger rollback
@@ -337,7 +337,7 @@ describe('Database Locks', () => {
       [order1, order2, order3] = await Promise.all([
         prisma.order.create({
           data: {
-            status: 'PENDING',
+            status: OrderStatus.PENDING,
             paymentStatus: 'PENDING',
             total: 50.0,
             customerName: 'Customer 1',
@@ -349,7 +349,7 @@ describe('Database Locks', () => {
         }),
         prisma.order.create({
           data: {
-            status: 'PENDING',
+            status: OrderStatus.PENDING,
             paymentStatus: 'PENDING',
             total: 75.0,
             customerName: 'Customer 2',
@@ -361,7 +361,7 @@ describe('Database Locks', () => {
         }),
         prisma.order.create({
           data: {
-            status: 'PENDING',
+            status: OrderStatus.PENDING,
             paymentStatus: 'PENDING',
             total: 100.0,
             customerName: 'Customer 3',
@@ -388,7 +388,7 @@ describe('Database Locks', () => {
             orders.map(order =>
               prisma.order.update({
                 where: { id: order.id },
-                data: { status: 'PROCESSING' },
+                data: { status: OrderStatus.PROCESSING },
               })
             )
           );
@@ -406,7 +406,7 @@ describe('Database Locks', () => {
       });
 
       updatedOrders.forEach(order => {
-        expect(order.status).toBe('PROCESSING');
+        expect(order.status).toBe(OrderStatus.PROCESSING);
       });
     });
 
@@ -550,7 +550,7 @@ describe('Database Locks', () => {
           return prisma.order.update({
             where: { id: testOrder.id },
             data: {
-              status: 'PROCESSING',
+              status: OrderStatus.PROCESSING,
               version: { increment: 1 },
             },
           });

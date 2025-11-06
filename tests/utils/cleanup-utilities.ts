@@ -290,7 +290,9 @@ export class CleanupUtilities {
       const expected = expectedCounts[model];
 
       if (count !== expected) {
-        console.error(`❌ Cleanup verification failed for ${model}: expected ${expected}, got ${count}`);
+        console.error(
+          `❌ Cleanup verification failed for ${model}: expected ${expected}, got ${count}`
+        );
         return false;
       }
     }
@@ -303,7 +305,10 @@ export class CleanupUtilities {
 /**
  * Helper function to create and run cleanup
  */
-export async function cleanupTestData(prisma: PrismaClient, options: CleanupOptions = {}): Promise<void> {
+export async function cleanupTestData(
+  prisma: PrismaClient,
+  options: CleanupOptions = {}
+): Promise<void> {
   const cleaner = new CleanupUtilities(prisma);
   await cleaner.cleanAll(options);
 }

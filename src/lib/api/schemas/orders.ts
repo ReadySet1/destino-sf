@@ -39,21 +39,12 @@ export const PaymentStatusSchema = z.enum([
 /**
  * Payment method enum
  */
-export const PaymentMethodSchema = z.enum([
-  'SQUARE',
-  'VENMO',
-  'CASH',
-  'ZELLE',
-]);
+export const PaymentMethodSchema = z.enum(['SQUARE', 'VENMO', 'CASH', 'ZELLE']);
 
 /**
  * Fulfillment type enum
  */
-export const FulfillmentTypeSchema = z.enum([
-  'pickup',
-  'delivery',
-  'nationwide-shipping',
-]);
+export const FulfillmentTypeSchema = z.enum(['pickup', 'delivery', 'nationwide-shipping']);
 
 // ============================================================
 // Order Item Schemas

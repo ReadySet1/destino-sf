@@ -254,7 +254,7 @@ function logValidationFailure(
   }
 
   // Format Zod errors into a readable structure
-  const errorDetails = zodError?.errors.map((err) => ({
+  const errorDetails = zodError?.errors.map(err => ({
     path: err.path.join('.'),
     message: err.message,
     code: err.code,
@@ -406,7 +406,7 @@ export function validateBatch<T>(
           apiName: metadata.apiName,
           totalItems: items.length,
           failedItems: errors.length,
-          errorDetails: errors.map((e) => ({
+          errorDetails: errors.map(e => ({
             index: e.index,
             errors: e.error.errors,
           })),

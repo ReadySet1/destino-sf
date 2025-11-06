@@ -143,7 +143,10 @@ export const AddressForm: React.FC<AddressFormProps> = ({
               }
             }}
           >
-            <SelectTrigger className={getError('state') ? 'border-red-500' : ''} data-testid="state">
+            <SelectTrigger
+              className={getError('state') ? 'border-red-500' : ''}
+              data-testid="state"
+            >
               <SelectValue placeholder="Select state" />
             </SelectTrigger>
             <SelectContent>

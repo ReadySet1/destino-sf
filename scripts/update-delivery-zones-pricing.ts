@@ -82,13 +82,32 @@ async function updateDeliveryZones() {
           minimumAmount: 400,
           estimatedDeliveryTime: '2-3 hours',
           postalCodes: [
-            '94601', '94602', '94603', '94605', '94606', '94607', '94608', '94609',
-            '94610', '94611', '94612', '94618', '94619', '94621', '94702', '94703',
-            '94704', '94705', '94706', '94707', '94708', '94709', '94710', '94720',
+            '94601',
+            '94602',
+            '94603',
+            '94605',
+            '94606',
+            '94607',
+            '94608',
+            '94609',
+            '94610',
+            '94611',
+            '94612',
+            '94618',
+            '94619',
+            '94621',
+            '94702',
+            '94703',
+            '94704',
+            '94705',
+            '94706',
+            '94707',
+            '94708',
+            '94709',
+            '94710',
+            '94720',
           ],
-          cities: [
-            'Oakland', 'Berkeley', 'Alameda', 'Emeryville', 'Piedmont',
-          ],
+          cities: ['Oakland', 'Berkeley', 'Alameda', 'Emeryville', 'Piedmont'],
           displayOrder: 4,
           active: true,
         },
@@ -121,12 +140,32 @@ async function updateDeliveryZones() {
           minimumAmount: 400,
           estimatedDeliveryTime: '2-3 hours',
           postalCodes: [
-            '94901', '94903', '94904', '94913', '94914', '94915', '94920', '94924',
-            '94925', '94930', '94933', '94939', '94940', '94941', '94945', '94949',
+            '94901',
+            '94903',
+            '94904',
+            '94913',
+            '94914',
+            '94915',
+            '94920',
+            '94924',
+            '94925',
+            '94930',
+            '94933',
+            '94939',
+            '94940',
+            '94941',
+            '94945',
+            '94949',
           ],
           cities: [
-            'San Rafael', 'Novato', 'Mill Valley', 'Tiburon', 'Sausalito',
-            'Corte Madera', 'Larkspur', 'San Anselmo',
+            'San Rafael',
+            'Novato',
+            'Mill Valley',
+            'Tiburon',
+            'Sausalito',
+            'Corte Madera',
+            'Larkspur',
+            'San Anselmo',
           ],
           displayOrder: 5,
           active: true,
@@ -211,10 +250,8 @@ async function updateDeliveryZones() {
     });
 
     console.log('\n📦 Active Catering Zones:');
-    cateringZones.forEach((zone) => {
-      console.log(
-        `  ${zone.name}: $${zone.deliveryFee} delivery / $${zone.minimumAmount} min`
-      );
+    cateringZones.forEach(zone => {
+      console.log(`  ${zone.name}: $${zone.deliveryFee} delivery / $${zone.minimumAmount} min`);
     });
 
     const regularZones = await prisma.regularDeliveryZone.findMany({
@@ -224,7 +261,7 @@ async function updateDeliveryZones() {
     });
 
     console.log('\n🛒 Active Regular Zones:');
-    regularZones.forEach((zone) => {
+    regularZones.forEach(zone => {
       console.log(
         `  ${zone.name}: $${zone.deliveryFee} delivery / $${zone.minimumOrderForFree} min`
       );
@@ -245,7 +282,7 @@ updateDeliveryZones()
     console.log('\n🎉 All done!');
     process.exit(0);
   })
-  .catch((error) => {
+  .catch(error => {
     console.error('\n💥 Failed:', error);
     process.exit(1);
   });

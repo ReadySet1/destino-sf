@@ -164,9 +164,7 @@ export default function RegularDeliveryZoneModal({
       onOpenChange(false);
     } catch (error) {
       console.error('Error saving regular delivery zone:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to save regular delivery zone'
-      );
+      toast.error(error instanceof Error ? error.message : 'Failed to save regular delivery zone');
     }
   };
 
@@ -206,11 +204,7 @@ export default function RegularDeliveryZoneModal({
                 <Label htmlFor="name">
                   Zone Name <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="name"
-                  {...register('name')}
-                  placeholder="e.g., San Francisco Nearby"
-                />
+                <Input id="name" {...register('name')} placeholder="e.g., San Francisco Nearby" />
                 {errors.name && <p className="text-sm text-red-600">{errors.name.message}</p>}
               </div>
             </div>

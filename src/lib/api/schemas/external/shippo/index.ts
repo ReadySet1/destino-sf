@@ -21,13 +21,32 @@ extendZodWithOpenApi(z);
 
 export const ShippoObjectStateSchema = z.enum(['VALID', 'INVALID', 'INCOMPLETE']);
 export const ShippoObjectPurposeSchema = z.enum(['QUOTE', 'PURCHASE']);
-export const ShippoTransactionStateSchema = z.enum(['VALID', 'INVALID', 'QUEUED', 'SUCCESS', 'ERROR']);
+export const ShippoTransactionStateSchema = z.enum([
+  'VALID',
+  'INVALID',
+  'QUEUED',
+  'SUCCESS',
+  'ERROR',
+]);
 export const ShippoTransactionStatusSchema = z.enum(['QUEUED', 'SUCCESS', 'ERROR', 'UNKNOWN']);
 export const ShippoDistanceUnitSchema = z.enum(['cm', 'in', 'ft', 'mm', 'm', 'yd']);
 export const ShippoMassUnitSchema = z.enum(['g', 'oz', 'lb', 'kg']);
-export const ShippoTrackingStatusSchema = z.enum(['UNKNOWN', 'DELIVERED', 'TRANSIT', 'FAILURE', 'RETURNED']);
+export const ShippoTrackingStatusSchema = z.enum([
+  'UNKNOWN',
+  'DELIVERED',
+  'TRANSIT',
+  'FAILURE',
+  'RETURNED',
+]);
 export const ShippoValidationMessageTypeSchema = z.enum(['ERROR', 'WARNING', 'INFO']);
-export const ShippoLabelFileTypeSchema = z.enum(['PNG', 'PDF', 'PDF_4x6', 'PDF_A4', 'PDF_A6', 'ZPLII']);
+export const ShippoLabelFileTypeSchema = z.enum([
+  'PNG',
+  'PDF',
+  'PDF_4x6',
+  'PDF_A4',
+  'PDF_A6',
+  'ZPLII',
+]);
 export const ShippoDeliveryTimeTypeSchema = z.enum(['GUARANTEED', 'ESTIMATED']);
 export const ShippoContentsTypeSchema = z.enum([
   'DOCUMENTS',

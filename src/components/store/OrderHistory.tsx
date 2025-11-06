@@ -120,7 +120,6 @@ export function OrderHistory({ userId, limit }: OrderHistoryProps) {
     };
 
     // Fetch orders when the component mounts or userId changes
-    console.log('OrderHistory: Fetching orders for user:', userId);
     void fetchOrders();
 
     // No need to return a cleanup function unless you have subscriptions

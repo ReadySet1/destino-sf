@@ -195,13 +195,11 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
 
   const loadDeliveryZones = useCallback(async () => {
     try {
-      console.log('🔄 Loading delivery zones...');
       const response = await fetch('/api/admin/delivery-zones');
       if (!response.ok) {
         throw new Error(`Failed to load delivery zones: ${response.status}`);
       }
       const data = await response.json();
-      console.log('✅ Delivery zones loaded:', data.deliveryZones);
       setZones(data.deliveryZones || []);
     } catch (error) {
       console.error('❌ Error loading delivery zones:', error);
@@ -233,7 +231,6 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
   const updateZoneStatus = async (zoneId: string, isActive: boolean) => {
     // Prevent multiple rapid clicks
     if (togglingZones.has(zoneId)) {
-      console.log('⚠️ Zone toggle already in progress for:', zoneId);
       return;
     }
 
@@ -252,11 +249,9 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       setTogglingZones(prev => new Set(prev).add(zoneId));
 
       // Optimistic update - immediately update UI
-      console.log(`🔄 Optimistically updating zone ${zoneId} to ${isActive}`);
       setZones(prevZones => prevZones.map(z => (z.id === zoneId ? { ...z, isActive } : z)));
 
       // Make API call
-      console.log(`📡 Making API call to update zone ${zoneId}`);
       const response = await fetch('/api/admin/delivery-zones', {
         method: 'POST',
         headers: {
@@ -273,16 +268,12 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
         throw new Error(`API Error: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
 
-      const result = await response.json();
-      console.log('✅ Zone status updated successfully:', result);
-
       // Success - no need to reload since we already updated optimistically
       toast.success(`Zone ${isActive ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
       console.error('❌ Error updating zone status:', error);
 
       // Rollback optimistic update on error
-      console.log('🔄 Rolling back optimistic update for zone:', zoneId);
       setZones(originalZones);
 
       // Show error message
@@ -302,7 +293,6 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
   const deleteZone = async (zoneId: string) => {
     // Prevent multiple rapid clicks
     if (deletingZones.has(zoneId)) {
-      console.log('⚠️ Zone delete already in progress for:', zoneId);
       return;
     }
 
@@ -326,8 +316,6 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
       // Add to loading set
       setDeletingZones(prev => new Set(prev).add(zoneId));
 
-      console.log(`🗑️ Deleting zone: ${zone.name} (${zoneId})`);
-
       // Make API call
       const response = await fetch(`/api/admin/delivery-zones?id=${zoneId}`, {
         method: 'DELETE',
@@ -340,9 +328,6 @@ export default function DeliveryZoneManager({ className }: DeliveryZoneManagerPr
         const errorData = await response.json().catch(() => ({}));
         throw new Error(`API Error: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
-
-      const result = await response.json();
-      console.log('✅ Zone deleted successfully:', result);
 
       // Remove zone from UI
       setZones(prevZones => prevZones.filter(z => z.id !== zoneId));

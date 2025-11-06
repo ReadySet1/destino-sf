@@ -210,13 +210,11 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           if (initialUserData?.id) {
             // If saved data has a userId and it doesn't match, clear it
             if (parsed.userId && parsed.userId !== initialUserData.id) {
-              console.log('Clearing stale checkout data from different user session');
               localStorage.removeItem('regularCheckoutData');
               return null;
             }
             // If saved data doesn't have userId, it's old format - clear it for logged-in users
             if (!parsed.userId) {
-              console.log('Clearing legacy checkout data without userId for logged-in user');
               localStorage.removeItem('regularCheckoutData');
               return null;
             }
@@ -370,7 +368,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         if (result.success) {
           setContactSaved(true);
-          console.log('✅ Contact info saved successfully:', result.message);
         } else {
           console.error('❌ Failed to save contact info:', result.message);
         }
@@ -528,11 +525,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             if (timeSinceMount > COOKIE_PROPAGATION_DELAY) {
               setSessionError('Your session has expired. Please log in to continue.');
             } else {
-              console.log('⏱️ [SESSION-CHECK] Suppressing error during cookie propagation period');
             }
             return;
           } else {
-            console.log('✅ [SESSION-CHECK] Session refreshed successfully after initial check');
             // Session is now valid, clear any errors
             setSessionError(null);
             return;
@@ -542,13 +537,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         if (session && session.expires_at) {
           // Proactive session refresh: refresh if less than 5 minutes until expiration
           const expiresIn = session.expires_at - Date.now() / 1000;
-          console.log(
-            `🕐 [SESSION-CHECK] Session expires in ${Math.floor(expiresIn / 60)} minutes`
-          );
 
           if (expiresIn < 300) {
             // Less than 5 minutes
-            console.log('🔄 [SESSION-CHECK] Proactively refreshing session...');
             const { error: refreshError } = await supabase.auth.refreshSession();
 
             if (refreshError) {
@@ -558,7 +549,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
                 setSessionError('Your session has expired. Please log in to continue.');
               }
             } else {
-              console.log('✅ [SESSION-CHECK] Session refreshed successfully');
               setSessionError(null);
             }
           } else {
@@ -583,14 +573,11 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(`🔔 [SESSION-CHECK] Auth state change: ${event}`);
-
       if (event === 'SIGNED_OUT') {
         if (initialUserData) {
           setSessionError('Your session has expired. Please log in to continue.');
         }
       } else if (event === 'TOKEN_REFRESHED') {
-        console.log('✅ [SESSION-CHECK] Token refreshed via auth state listener');
         setSessionError(null);
       } else if (event === 'SIGNED_IN') {
         setSessionError(null);
@@ -663,8 +650,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     setValue('rateId', '', { shouldValidate: true });
 
     try {
-      console.log('Fetching shipping rates for address:', address);
-
       // Convert cart items to the enhanced format expected by shipping calculation
       const cartItems = items.map(item => ({
         id: item.id,
@@ -674,7 +659,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         price: item.price, // Include price for insurance and customs calculations
       }));
 
-      console.log(`Using dynamic weight calculation for ${cartItems.length} cart items`);
       const enhancedAddress = {
         recipientName: address.recipientName,
         street: address.street,
@@ -696,7 +680,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       });
 
       if (result.success && result.rates) {
-        console.log('Received rates:', result.rates);
         if (result.rates.length === 0) {
           setShippingError('No shipping rates found for this address.');
           setShippingRates([]);
@@ -704,10 +687,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           // Filter rates to ensure they have valid IDs for React keys
           const validRates = (result.rates as ShippingRate[]).filter(
             rate => rate.id && rate.id.trim() !== ''
-          );
-          console.log(
-            'Valid rates with IDs:',
-            validRates.map(r => ({ id: r.id, name: r.name }))
           );
           if (validRates.length === 0) {
             setShippingError('No valid shipping rates found.');
@@ -769,11 +748,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
   // Function to check for duplicate orders with timeout and retry logic
   const checkForDuplicates = async (email: string, isRetry: boolean = false): Promise<boolean> => {
-    console.log(
-      '🔍 [DUPLICATE-CHECK] Starting duplicate check for:',
-      email,
-      isRetry ? '(retry)' : ''
-    );
     setPendingOrderCheck(prev => ({ ...prev, isChecking: true }));
 
     // Set up 10-second timeout protection
@@ -789,10 +763,8 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     try {
       const duplicateCheck = await checkForDuplicateOrders(items, email);
       clearTimeout(timeoutId); // Clear timeout on success
-      console.log('📊 [DUPLICATE-CHECK] Result:', duplicateCheck);
 
       if (duplicateCheck.success && duplicateCheck.hasDuplicate && duplicateCheck.existingOrder) {
-        console.log('⚠️ [DUPLICATE-CHECK] Found existing order:', duplicateCheck.existingOrder.id);
         setPendingOrderCheck({
           isChecking: false,
           hasPendingOrder: true,
@@ -802,7 +774,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         return true; // Has duplicate
       }
 
-      console.log('✅ [DUPLICATE-CHECK] No duplicates found');
       setPendingOrderCheck({
         isChecking: false,
         hasPendingOrder: false,
@@ -814,11 +785,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
       // If there's a session error and this isn't a retry, attempt session refresh
       if (sessionError && !isRetry) {
-        console.log('🔄 [DUPLICATE-CHECK] Attempting session refresh...');
         try {
           const { error: refreshError } = await supabase.auth.refreshSession();
           if (!refreshError) {
-            console.log('✅ [DUPLICATE-CHECK] Session refreshed successfully, retrying check...');
             // Clear session error state
             setSessionError(null);
             // Retry the duplicate check once with fresh session
@@ -871,7 +840,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       await submitOrderWithoutDuplicateCheck(formData);
     } else {
       // If form is invalid, the validation errors will be shown automatically
-      console.log('Form validation failed');
     }
   };
 
@@ -884,7 +852,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       // DES-73 FIX: Ensure session is fresh before submission
       // This prevents server-side session validation failures
       if (initialUserData) {
-        console.log('🔄 [SESSION] Refreshing session before submission (no duplicate check)...');
         const {
           data: { session },
           error: sessionError,
@@ -900,7 +867,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         // Proactively refresh if session expires soon (< 5 minutes)
         if (session.expires_at && session.expires_at - Date.now() / 1000 < 300) {
-          console.log('🔄 [SESSION] Session expiring soon, refreshing...');
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
 
           if (refreshError || !refreshData.session) {
@@ -910,12 +876,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             toast.error('Your session has expired. Please log in to continue.');
             return;
           }
-
-          console.log('✅ [SESSION] Session refreshed successfully');
-        } else {
-          console.log(
-            `✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`
-          );
         }
 
         // Clear any session errors since session is valid
@@ -945,7 +905,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       let fulfillmentData: any = null;
       let customerInfo: { name: string; email: string; phone: string };
 
-      console.log('Form data submitted:', formData);
       if (formData.fulfillmentMethod === 'pickup') {
         if (!formData.pickupDate || !formData.pickupTime)
           throw new Error('Missing pickup date or time.');
@@ -1049,17 +1008,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         } else if (result.checkoutUrl) {
           toast.success('Redirecting to payment...');
 
-          console.log(
-            '✅ [DUPLICATE-CHECK] About to redirect to Square Checkout:',
-            result.checkoutUrl
-          );
-
           // CRITICAL FIX: Use window.location.replace for immediate redirect
           // Don't clear cart/localStorage before redirect to prevent navigation interference
           try {
-            console.log('🔄 [DUPLICATE-CHECK] Executing window.location.replace...');
             window.location.replace(result.checkoutUrl);
-            console.log('✅ [DUPLICATE-CHECK] Redirect initiated successfully');
           } catch (redirectError) {
             console.error(
               '❌ [DUPLICATE-CHECK] Redirect error, falling back to href:',
@@ -1087,17 +1039,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
     setShowDuplicateAlert(false);
   };
 
-  // Add effect to log form validation status for debugging (DES-52)
+  // Form validation tracking (DES-52)
   useEffect(() => {
-    if (isMounted) {
-      console.log('📋 [CHECKOUT-DEBUG] Form Validation Status:', {
-        isValid,
-        fulfillmentMethod: currentMethod,
-        hasShippingRate: currentMethod === 'nationwide_shipping' ? !!currentRateId : 'N/A',
-        rateId: currentRateId,
-        errors: Object.keys(errors).length > 0 ? errors : 'No errors',
-      });
-    }
+    // Form validation status is tracked via React Hook Form
   }, [isValid, currentMethod, currentRateId, errors, isMounted]);
 
   // --- Keep onSubmit function ---
@@ -1108,7 +1052,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       event.stopPropagation();
     }
 
-    console.log('🚀 [CHECKOUT] Starting form submission...');
     setIsSubmitting(true);
     setError('');
 
@@ -1116,7 +1059,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       // DES-73 FIX: Ensure session is fresh before submission
       // This prevents server-side session validation failures
       if (initialUserData) {
-        console.log('🔄 [SESSION] Refreshing session before submission...');
         const {
           data: { session },
           error: sessionError,
@@ -1132,7 +1074,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
         // Proactively refresh if session expires soon (< 5 minutes)
         if (session.expires_at && session.expires_at - Date.now() / 1000 < 300) {
-          console.log('🔄 [SESSION] Session expiring soon, refreshing...');
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
 
           if (refreshError || !refreshData.session) {
@@ -1142,12 +1083,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
             toast.error('Your session has expired. Please log in to continue.');
             return;
           }
-
-          console.log('✅ [SESSION] Session refreshed successfully');
-        } else {
-          console.log(
-            `✅ [SESSION] Session valid (expires in ${Math.floor((session.expires_at! - Date.now() / 1000) / 60)} minutes)`
-          );
         }
 
         // Clear any session errors since session is valid
@@ -1181,7 +1116,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
       let fulfillmentData: any = null;
       let customerInfo: { name: string; email: string; phone: string };
 
-      console.log('Form data submitted:', formData);
       if (formData.fulfillmentMethod === 'pickup') {
         if (!formData.pickupDate || !formData.pickupTime)
           throw new Error('Missing pickup date or time.');
@@ -1236,14 +1170,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
 
       customerInfo = { name: formData.name, email: formData.email, phone: formData.phone };
 
-      console.log('Constructed fulfillment data:', fulfillmentData);
-      console.log('Constructed customer info:', customerInfo);
-
       // Handle different payment methods
       if (formData.paymentMethod === PaymentMethod.SQUARE) {
         // Use existing Square checkout flow
-        console.log('Using Square checkout');
-        console.log('Calling createOrderAndGenerateCheckoutUrl server action...');
 
         const actionPayload = {
           items: items.map(item => ({
@@ -1257,10 +1186,8 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           fulfillment: fulfillmentData,
           paymentMethod: formData.paymentMethod,
         };
-        console.log('Server Action Payload:', JSON.stringify(actionPayload, null, 2));
 
         const result = await createOrderAndGenerateCheckoutUrl(actionPayload as any);
-        console.log('Server action result:', result);
 
         if (!result.success || !result.checkoutUrl) {
           const errorMessage = result.error || 'Failed to create checkout session.';
@@ -1270,14 +1197,10 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           return;
         }
 
-        console.log('✅ [CHECKOUT] About to redirect to Square Checkout:', result.checkoutUrl);
-
         // CRITICAL FIX: Use window.location.replace for immediate redirect
         // This prevents the "Load failed" error by avoiding intermediate navigation
         try {
-          console.log('🔄 [CHECKOUT] Executing window.location.replace...');
           window.location.replace(result.checkoutUrl);
-          console.log('✅ [CHECKOUT] Redirect initiated successfully');
         } catch (redirectError) {
           console.error('❌ [CHECKOUT] Redirect error, falling back to href:', redirectError);
           window.location.href = result.checkoutUrl;
@@ -1287,7 +1210,6 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
         return;
       } else {
         // Handle manual payment methods (Cash only)
-        console.log(`Using manual checkout: ${formData.paymentMethod}`);
 
         // First, create order in database
         const actionPayload = {
@@ -1468,14 +1390,25 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           </div>
           <div>
             <Label htmlFor="name">Full Name</Label>
-            <Input id="name" {...register('name')} placeholder="John Doe" data-testid="customer-name" />
+            <Input
+              id="name"
+              {...register('name')}
+              placeholder="John Doe"
+              data-testid="customer-name"
+            />
             {getErrorMessage('name') && (
               <p className="text-sm text-red-600 mt-1">{getErrorMessage('name')}</p>
             )}
           </div>
           <div>
             <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" {...register('email')} placeholder="you@example.com" data-testid="customer-email" />
+            <Input
+              id="email"
+              type="email"
+              {...register('email')}
+              placeholder="you@example.com"
+              data-testid="customer-email"
+            />
             {getErrorMessage('email') && (
               <p className="text-sm text-red-600 mt-1">{getErrorMessage('email')}</p>
             )}

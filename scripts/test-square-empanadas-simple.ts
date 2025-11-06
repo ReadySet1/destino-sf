@@ -102,7 +102,7 @@ async function main() {
     console.log('\n💡 Recommendation: Check Square Dashboard → Catalog → Categories');
   } else {
     console.log(`✅ Found empanadas in ${successfulCategories.length} category ID(s):\n`);
-    successfulCategories.forEach((cat) => {
+    successfulCategories.forEach(cat => {
       console.log(`  Category: ${cat.categoryId}`);
       console.log(`  Items: ${cat.itemCount}`);
       console.log('');

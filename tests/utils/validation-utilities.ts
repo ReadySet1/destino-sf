@@ -60,12 +60,7 @@ export class ValidationUtilities {
     // Check for profiles without names
     const profilesWithoutNames = await this.prisma.profile.count({
       where: {
-        OR: [
-          { firstName: null },
-          { lastName: null },
-          { firstName: '' },
-          { lastName: '' },
-        ],
+        OR: [{ firstName: null }, { lastName: null }, { firstName: '' }, { lastName: '' }],
       },
     });
 
@@ -87,7 +82,9 @@ export class ValidationUtilities {
     `;
 
     if (duplicateSlugs.length > 0) {
-      result.errors.push(`Duplicate product slugs found: ${duplicateSlugs.map(d => d.slug).join(', ')}`);
+      result.errors.push(
+        `Duplicate product slugs found: ${duplicateSlugs.map(d => d.slug).join(', ')}`
+      );
     }
 
     // Check for products with zero or negative prices
@@ -123,7 +120,9 @@ export class ValidationUtilities {
     `;
 
     if (productsWithInvalidCategories[0]?.count > 0) {
-      result.errors.push(`${productsWithInvalidCategories[0].count} product(s) with invalid category references`);
+      result.errors.push(
+        `${productsWithInvalidCategories[0].count} product(s) with invalid category references`
+      );
     }
   }
 
@@ -132,7 +131,9 @@ export class ValidationUtilities {
    */
   private async validateOrders(result: ValidationResult): Promise<void> {
     // Check for duplicate order numbers
-    const duplicateOrderNumbers = await this.prisma.$queryRaw<Array<{ orderNumber: string; count: number }>>`
+    const duplicateOrderNumbers = await this.prisma.$queryRaw<
+      Array<{ orderNumber: string; count: number }>
+    >`
       SELECT "orderNumber", COUNT(*) as count
       FROM "Order"
       GROUP BY "orderNumber"
@@ -140,16 +141,15 @@ export class ValidationUtilities {
     `;
 
     if (duplicateOrderNumbers.length > 0) {
-      result.errors.push(`Duplicate order numbers found: ${duplicateOrderNumbers.map(d => d.orderNumber).join(', ')}`);
+      result.errors.push(
+        `Duplicate order numbers found: ${duplicateOrderNumbers.map(d => d.orderNumber).join(', ')}`
+      );
     }
 
     // Check for orders with invalid totals
     const ordersWithInvalidTotals = await this.prisma.order.count({
       where: {
-        OR: [
-          { totalAmount: { lte: 0 } },
-          { subtotal: { lte: 0 } },
-        ],
+        OR: [{ totalAmount: { lte: 0 } }, { subtotal: { lte: 0 } }],
       },
     });
 
@@ -158,14 +158,18 @@ export class ValidationUtilities {
     }
 
     // Check for orders where totalAmount doesn't match subtotal + tax + shipping
-    const ordersWithMismatchedTotals = await this.prisma.$queryRaw<Array<{ id: string; orderNumber: string }>>`
+    const ordersWithMismatchedTotals = await this.prisma.$queryRaw<
+      Array<{ id: string; orderNumber: string }>
+    >`
       SELECT id, "orderNumber"
       FROM "Order"
       WHERE "totalAmount" != ("subtotal" + "taxAmount" + "shippingCost")
     `;
 
     if (ordersWithMismatchedTotals.length > 0) {
-      result.errors.push(`${ordersWithMismatchedTotals.length} order(s) with mismatched totals: ${ordersWithMismatchedTotals.map(o => o.orderNumber).join(', ')}`);
+      result.errors.push(
+        `${ordersWithMismatchedTotals.length} order(s) with mismatched totals: ${ordersWithMismatchedTotals.map(o => o.orderNumber).join(', ')}`
+      );
     }
   }
 
@@ -194,7 +198,9 @@ export class ValidationUtilities {
     `;
 
     if (itemsWithMismatchedPrices.length > 0) {
-      result.errors.push(`${itemsWithMismatchedPrices.length} order item(s) with mismatched prices`);
+      result.errors.push(
+        `${itemsWithMismatchedPrices.length} order item(s) with mismatched prices`
+      );
     }
 
     // Check for order items with invalid order references
@@ -206,7 +212,9 @@ export class ValidationUtilities {
     `;
 
     if (itemsWithInvalidOrders[0]?.count > 0) {
-      result.errors.push(`${itemsWithInvalidOrders[0].count} order item(s) with invalid order references`);
+      result.errors.push(
+        `${itemsWithInvalidOrders[0].count} order item(s) with invalid order references`
+      );
     }
   }
 
@@ -236,7 +244,9 @@ export class ValidationUtilities {
     `;
 
     if (paymentsWithInvalidOrders[0]?.count > 0) {
-      result.errors.push(`${paymentsWithInvalidOrders[0].count} payment(s) with invalid order references`);
+      result.errors.push(
+        `${paymentsWithInvalidOrders[0].count} payment(s) with invalid order references`
+      );
     }
 
     // Check for orders with PAID status but no payment record
@@ -248,7 +258,9 @@ export class ValidationUtilities {
     `;
 
     if (paidOrdersWithoutPayments.length > 0) {
-      result.warnings.push(`${paidOrdersWithoutPayments.length} PAID order(s) without payment records: ${paidOrdersWithoutPayments.map(o => o.orderNumber).join(', ')}`);
+      result.warnings.push(
+        `${paidOrdersWithoutPayments.length} PAID order(s) without payment records: ${paidOrdersWithoutPayments.map(o => o.orderNumber).join(', ')}`
+      );
     }
   }
 
@@ -265,7 +277,9 @@ export class ValidationUtilities {
     `;
 
     if (duplicateSlugs.length > 0) {
-      result.errors.push(`Duplicate category slugs found: ${duplicateSlugs.map(d => d.slug).join(', ')}`);
+      result.errors.push(
+        `Duplicate category slugs found: ${duplicateSlugs.map(d => d.slug).join(', ')}`
+      );
     }
   }
 

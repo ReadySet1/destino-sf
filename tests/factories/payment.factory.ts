@@ -17,7 +17,9 @@ export interface PaymentFactoryOptions {
 /**
  * Generate payment data (does not create in database)
  */
-export function buildPayment(options: PaymentFactoryOptions = {}): Prisma.PaymentUncheckedCreateInput {
+export function buildPayment(
+  options: PaymentFactoryOptions = {}
+): Prisma.PaymentUncheckedCreateInput {
   return {
     orderId: options.orderId || faker.string.uuid(),
     squarePaymentId: options.squarePaymentId || `sqpmt_${faker.string.alphanumeric(22)}`,
@@ -30,14 +32,19 @@ export function buildPayment(options: PaymentFactoryOptions = {}): Prisma.Paymen
 /**
  * Generate multiple payments
  */
-export function buildPayments(count: number, options: PaymentFactoryOptions = {}): Prisma.PaymentUncheckedCreateInput[] {
+export function buildPayments(
+  count: number,
+  options: PaymentFactoryOptions = {}
+): Prisma.PaymentUncheckedCreateInput[] {
   return Array.from({ length: count }, () => buildPayment(options));
 }
 
 /**
  * Generate successful payment
  */
-export function buildSuccessfulPayment(options: Omit<PaymentFactoryOptions, 'status'> = {}): Prisma.PaymentUncheckedCreateInput {
+export function buildSuccessfulPayment(
+  options: Omit<PaymentFactoryOptions, 'status'> = {}
+): Prisma.PaymentUncheckedCreateInput {
   return buildPayment({
     ...options,
     status: PaymentStatus.PAID,
@@ -47,7 +54,9 @@ export function buildSuccessfulPayment(options: Omit<PaymentFactoryOptions, 'sta
 /**
  * Generate pending payment
  */
-export function buildPendingPayment(options: Omit<PaymentFactoryOptions, 'status'> = {}): Prisma.PaymentUncheckedCreateInput {
+export function buildPendingPayment(
+  options: Omit<PaymentFactoryOptions, 'status'> = {}
+): Prisma.PaymentUncheckedCreateInput {
   return buildPayment({
     ...options,
     status: PaymentStatus.PENDING,
@@ -57,7 +66,9 @@ export function buildPendingPayment(options: Omit<PaymentFactoryOptions, 'status
 /**
  * Generate failed payment
  */
-export function buildFailedPayment(options: Omit<PaymentFactoryOptions, 'status'> = {}): Prisma.PaymentUncheckedCreateInput {
+export function buildFailedPayment(
+  options: Omit<PaymentFactoryOptions, 'status'> = {}
+): Prisma.PaymentUncheckedCreateInput {
   return buildPayment({
     ...options,
     status: PaymentStatus.FAILED,
@@ -95,7 +106,9 @@ export function buildPaymentInfo(options: PaymentInfoFactoryOptions = {}): {
 } {
   return {
     number: options.cardNumber || '4111 1111 1111 1111', // Square sandbox test card
-    expiry: options.expiry || `${faker.number.int({ min: 1, max: 12 }).toString().padStart(2, '0')}/${faker.number.int({ min: 25, max: 30 })}`,
+    expiry:
+      options.expiry ||
+      `${faker.number.int({ min: 1, max: 12 }).toString().padStart(2, '0')}/${faker.number.int({ min: 25, max: 30 })}`,
     cvv: options.cvv || faker.finance.creditCardCVV(),
     name: options.cardholderName || faker.person.fullName(),
   };

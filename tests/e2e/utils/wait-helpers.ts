@@ -51,14 +51,16 @@ export class WaitHelpers {
   static async waitForCartUpdate(page: Page): Promise<void> {
     // Wait for any pending cart API requests to complete
     await Promise.race([
-      page.waitForResponse(response =>
-        response.url().includes('/api/cart') && response.status() === 200,
-        { timeout: 5000 }
-      ).catch(() => {
-        // If no cart API call, just wait for network idle
-        return page.waitForLoadState('networkidle', { timeout: 5000 });
-      }),
-      page.waitForLoadState('networkidle', { timeout: 5000 })
+      page
+        .waitForResponse(
+          response => response.url().includes('/api/cart') && response.status() === 200,
+          { timeout: 5000 }
+        )
+        .catch(() => {
+          // If no cart API call, just wait for network idle
+          return page.waitForLoadState('networkidle', { timeout: 5000 });
+        }),
+      page.waitForLoadState('networkidle', { timeout: 5000 }),
     ]);
   }
 
@@ -68,11 +70,13 @@ export class WaitHelpers {
   static async waitForAuthStateChange(page: Page): Promise<void> {
     // Wait for auth cookie or localStorage change
     await Promise.race([
-      page.waitForResponse(response =>
-        response.url().includes('/api/auth') && response.status() === 200,
-        { timeout: 10000 }
-      ).catch(() => {}),
-      page.waitForLoadState('networkidle', { timeout: 10000 })
+      page
+        .waitForResponse(
+          response => response.url().includes('/api/auth') && response.status() === 200,
+          { timeout: 10000 }
+        )
+        .catch(() => {}),
+      page.waitForLoadState('networkidle', { timeout: 10000 }),
     ]);
   }
 
@@ -118,7 +122,9 @@ export class WaitHelpers {
       await page.waitForTimeout(100); // Small poll interval
     }
 
-    throw new Error(`None of the selectors were visible within ${timeout}ms: ${selectors.join(', ')}`);
+    throw new Error(
+      `None of the selectors were visible within ${timeout}ms: ${selectors.join(', ')}`
+    );
   }
 
   /**
@@ -171,7 +177,11 @@ export class WaitHelpers {
       errorMessage?: string;
     } = {}
   ): Promise<T> {
-    const { maxRetries = 3, retryDelay = 1000, errorMessage = 'Action failed after retries' } = options;
+    const {
+      maxRetries = 3,
+      retryDelay = 1000,
+      errorMessage = 'Action failed after retries',
+    } = options;
 
     let lastError: Error | undefined;
 

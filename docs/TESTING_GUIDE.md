@@ -18,6 +18,7 @@ Comprehensive guide to testing infrastructure, patterns, and best practices for 
 ## Overview
 
 The Destino SF project uses a comprehensive testing infrastructure that ensures:
+
 - **Predictable test data** using Faker.js factories
 - **Test isolation** through transaction-based rollbacks
 - **Clean state** through automated cleanup utilities
@@ -232,10 +233,10 @@ const prisma = new PrismaClient();
 
 // Seed with all options
 await seedTestDatabase(prisma, {
-  includeUsers: true,      // Create test users
-  includeProducts: true,   // Create products
-  includeOrders: false,    // Skip orders
-  minimal: false,          // Full product catalog
+  includeUsers: true, // Create test users
+  includeProducts: true, // Create products
+  includeOrders: false, // Skip orders
+  minimal: false, // Full product catalog
 });
 
 // Minimal seeding (just what's needed for tests)
@@ -247,22 +248,26 @@ await seedTestDatabase(prisma, {
 ### What Gets Seeded
 
 **Categories:**
+
 - Empanadas
 - Alfajores
 - Catering
 - Sauces
 
 **Users:**
+
 - Test Customer (`test.user@example.com`)
 - Test Admin (`admin@destinosf.com`)
 
 **Products (Full Catalog):**
+
 - Empanadas: Beef, Vegetarian, Huacatay Chicken
 - Alfajores: Classic, Chocolate, 6-pack combo
 - Catering: Small and Medium packages
 - Sauces: Chimichurri
 
 **Shipping Configurations:**
+
 - Alfajores: 0.5lb base + 0.4lb per unit
 - Empanadas: 1.0lb base + 0.8lb per unit
 - Sauces: 0.2lb base + 0.1lb per unit
@@ -294,7 +299,11 @@ await seeder.clean();
 Integration tests use transaction-based rollback for isolation:
 
 ```typescript
-import { startTransaction, rollbackTransaction, getTestDb } from 'src/__tests__/setup/db-test-utils';
+import {
+  startTransaction,
+  rollbackTransaction,
+  getTestDb,
+} from 'src/__tests__/setup/db-test-utils';
 
 describe('User Service', () => {
   beforeEach(async () => {
@@ -426,33 +435,40 @@ validator.printReport(result);
 ### What Gets Validated
 
 **Profiles:**
+
 - No duplicate emails
 - Complete names
 
 **Products:**
+
 - No duplicate slugs
 - Positive prices
 - Valid category references
 
 **Orders:**
+
 - No duplicate order numbers
 - Positive totals
 - Correct total calculations (subtotal + tax + shipping)
 
 **Order Items:**
+
 - Positive quantities
 - Correct price calculations (unitPrice × quantity)
 - Valid order references
 
 **Payments:**
+
 - Positive amounts
 - Valid order references
 - PAID orders have payment records
 
 **Categories:**
+
 - No duplicate slugs
 
 **Orphaned Records:**
+
 - Products without categories
 - Order items without orders
 
@@ -514,6 +530,7 @@ pnpm playwright test --debug
 ### Test Environment
 
 Tests run in the `test` environment with:
+
 - `NODE_ENV=test`
 - Separate test database (if configured)
 - Disabled telemetry
@@ -524,12 +541,14 @@ Tests run in the `test` environment with:
 ### 1. Use Factories for Test Data
 
 ✅ **Good:**
+
 ```typescript
 const user = buildUser({ email: 'test@example.com' });
 const product = buildEmpanada();
 ```
 
 ❌ **Bad:**
+
 ```typescript
 const user = {
   email: 'test@example.com',
@@ -543,6 +562,7 @@ const user = {
 ### 2. Always Clean Up
 
 ✅ **Good:**
+
 ```typescript
 afterEach(async () => {
   await rollbackTransaction();
@@ -550,6 +570,7 @@ afterEach(async () => {
 ```
 
 ❌ **Bad:**
+
 ```typescript
 // No cleanup - test data leaks
 ```
@@ -557,6 +578,7 @@ afterEach(async () => {
 ### 3. Use Transaction Isolation
 
 ✅ **Good:**
+
 ```typescript
 beforeEach(async () => {
   await startTransaction();
@@ -568,6 +590,7 @@ afterEach(async () => {
 ```
 
 ❌ **Bad:**
+
 ```typescript
 beforeEach(async () => {
   await prisma.order.deleteMany(); // Slow!
@@ -577,12 +600,14 @@ beforeEach(async () => {
 ### 4. Test Predictably
 
 ✅ **Good:**
+
 ```typescript
 const testUser = buildTestUser('-unique');
 const testProduct = buildTestProduct('-test-1');
 ```
 
 ❌ **Bad:**
+
 ```typescript
 const user = buildUser(); // Random data - hard to debug
 ```
@@ -590,12 +615,14 @@ const user = buildUser(); // Random data - hard to debug
 ### 5. Validate Assumptions
 
 ✅ **Good:**
+
 ```typescript
 const result = await validateTestData(prisma);
 expect(result.valid).toBe(true);
 ```
 
 ❌ **Bad:**
+
 ```typescript
 // Assume data is valid
 ```
@@ -603,11 +630,13 @@ expect(result.valid).toBe(true);
 ### 6. Use Descriptive Test Names
 
 ✅ **Good:**
+
 ```typescript
 it('should create order with correct total when tax and shipping applied', async () => {
 ```
 
 ❌ **Bad:**
+
 ```typescript
 it('test 1', async () => {
 ```
@@ -615,6 +644,7 @@ it('test 1', async () => {
 ### 7. Test One Thing Per Test
 
 ✅ **Good:**
+
 ```typescript
 it('should calculate tax correctly', () => {
   // Test only tax calculation
@@ -626,6 +656,7 @@ it('should calculate shipping correctly', () => {
 ```
 
 ❌ **Bad:**
+
 ```typescript
 it('should do everything', () => {
   // Tests tax, shipping, total, payment, email...
@@ -635,16 +666,18 @@ it('should do everything', () => {
 ### 8. Use data-testid for E2E Tests
 
 ✅ **Good:**
+
 ```tsx
-<button data-testid="checkout-button">Checkout</button>
+<button data-testid="checkout-button">Checkout</button>;
 
 // In test:
 await page.click('[data-testid="checkout-button"]');
 ```
 
 ❌ **Bad:**
+
 ```tsx
-<button className="bg-blue-500">Checkout</button>
+<button className="bg-blue-500">Checkout</button>;
 
 // In test:
 await page.click('.bg-blue-500'); // Fragile!
@@ -657,6 +690,7 @@ await page.click('.bg-blue-500'); // Fragile!
 **Problem:** Tests can't connect to the database.
 
 **Solution:**
+
 1. Check `DATABASE_URL` in `.env.test`
 2. Ensure database is running
 3. Run `pnpm prisma migrate deploy`
@@ -674,6 +708,7 @@ pnpm db:reset
 **Problem:** CI environment differences.
 
 **Solution:**
+
 1. Check environment variables in GitHub Actions
 2. Ensure database service is running in CI
 3. Add retry logic to flaky tests:
@@ -693,6 +728,7 @@ test.describe('Flaky Test', () => {
 **Problem:** Changes persist between tests.
 
 **Solution:**
+
 1. Ensure `startTransaction()` is called in `beforeEach`
 2. Ensure `rollbackTransaction()` is called in `afterEach`
 3. Use `getTestDb()` instead of `prisma` directly
@@ -756,9 +792,9 @@ afterEach(async () => {
 Clean in correct order (children first):
 
 ```typescript
-await prisma.orderItem.deleteMany();  // 1. Children
-await prisma.payment.deleteMany();    // 2. Children
-await prisma.order.deleteMany();      // 3. Parent
+await prisma.orderItem.deleteMany(); // 1. Children
+await prisma.payment.deleteMany(); // 2. Children
+await prisma.order.deleteMany(); // 3. Parent
 ```
 
 Or use `CASCADE` in cleanup:

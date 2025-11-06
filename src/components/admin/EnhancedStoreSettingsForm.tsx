@@ -201,7 +201,9 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
 
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium text-gray-700">Store Name *</Label>
+              <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                Store Name *
+              </Label>
               <Input id="name" {...register('name')} placeholder="Your Store Name" />
               {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
               <p className="text-xs text-gray-500 mt-1">
@@ -210,7 +212,9 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">Business Email *</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                Business Email *
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -224,13 +228,17 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm font-medium text-gray-700">Business Phone *</Label>
+              <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                Business Phone *
+              </Label>
               <Input id="phone" {...register('phone')} placeholder="(555) 123-4567" />
               {errors.phone && <p className="text-sm text-red-600 mt-1">{errors.phone.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-sm font-medium text-gray-700">Business Address *</Label>
+              <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+                Business Address *
+              </Label>
               <Input id="address" {...register('address')} placeholder="123 Business St" />
               {errors.address && (
                 <p className="text-sm text-red-600 mt-1">{errors.address.message}</p>
@@ -238,21 +246,27 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="city" className="text-sm font-medium text-gray-700">City *</Label>
+              <Label htmlFor="city" className="text-sm font-medium text-gray-700">
+                City *
+              </Label>
               <Input id="city" {...register('city')} placeholder="San Francisco" />
               {errors.city && <p className="text-sm text-red-600 mt-1">{errors.city.message}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="state" className="text-sm font-medium text-gray-700">State *</Label>
+                <Label htmlFor="state" className="text-sm font-medium text-gray-700">
+                  State *
+                </Label>
                 <Input id="state" {...register('state')} placeholder="CA" />
                 {errors.state && (
                   <p className="text-sm text-red-600 mt-1">{errors.state.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="zipCode" className="text-sm font-medium text-gray-700">ZIP Code *</Label>
+                <Label htmlFor="zipCode" className="text-sm font-medium text-gray-700">
+                  ZIP Code *
+                </Label>
                 <Input id="zipCode" {...register('zipCode')} placeholder="94105" />
                 {errors.zipCode && (
                   <p className="text-sm text-red-600 mt-1">{errors.zipCode.message}</p>
@@ -304,7 +318,10 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
 
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="taxRate" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="taxRate"
+                className="flex items-center gap-2 text-sm font-medium text-gray-700"
+              >
                 <Calculator className="h-4 w-4 text-green-600" />
                 Tax Rate (%)
               </Label>
@@ -326,7 +343,10 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="minOrderAmount" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="minOrderAmount"
+                className="flex items-center gap-2 text-sm font-medium text-gray-700"
+              >
                 <DollarSign className="h-4 w-4 text-green-600" />
                 Regular Order Minimum ($)
               </Label>
@@ -390,7 +410,10 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
 
           <div className="grid gap-6 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="cateringMinimumAmount" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="cateringMinimumAmount"
+                className="flex items-center gap-2 text-sm font-medium text-gray-700"
+              >
                 <DollarSign className="h-4 w-4 text-orange-600" />
                 General Catering Minimum ($)
               </Label>
@@ -411,7 +434,10 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="minAdvanceHours" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="minAdvanceHours"
+                className="flex items-center gap-2 text-sm font-medium text-gray-700"
+              >
                 <Clock className="h-4 w-4 text-orange-600" />
                 Minimum Advance Hours
               </Label>
@@ -429,7 +455,9 @@ export default function EnhancedStoreSettingsForm({ settings }: EnhancedStoreSet
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="maxDaysInAdvance" className="text-sm font-medium text-gray-700">Maximum Days Advance</Label>
+              <Label htmlFor="maxDaysInAdvance" className="text-sm font-medium text-gray-700">
+                Maximum Days Advance
+              </Label>
               <Input
                 id="maxDaysInAdvance"
                 type="number"

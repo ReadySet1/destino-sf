@@ -148,7 +148,9 @@ export class OrderHelpers {
       },
     });
 
-    console.log(`✅ Created test order: ${order.squareOrderId} (${order.status}/${order.paymentStatus})`);
+    console.log(
+      `✅ Created test order: ${order.squareOrderId} (${order.status}/${order.paymentStatus})`
+    );
     return completeOrder;
   }
 
@@ -185,95 +187,103 @@ export class OrderHelpers {
     nationwideShipping: any;
     archived: any;
   }> {
-    const [pending, processing, ready, completed, cancelled, failedPayment, nationwideShipping, archived] =
-      await Promise.all([
-        // PENDING order with PENDING payment
-        this.createTestOrder({
-          status: 'PENDING',
-          paymentStatus: 'PENDING',
-          customerName: 'Pending Customer',
-          customerEmail: 'pending@test.com',
-        }),
+    const [
+      pending,
+      processing,
+      ready,
+      completed,
+      cancelled,
+      failedPayment,
+      nationwideShipping,
+      archived,
+    ] = await Promise.all([
+      // PENDING order with PENDING payment
+      this.createTestOrder({
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+        customerName: 'Pending Customer',
+        customerEmail: 'pending@test.com',
+      }),
 
-        // PROCESSING order with PAID payment
-        this.createTestOrder({
-          status: 'PROCESSING',
-          paymentStatus: 'PAID',
-          customerName: 'Processing Customer',
-          customerEmail: 'processing@test.com',
-          squareOrderId: 'sq-order-processing-123',
-          squarePaymentId: 'sq-payment-processing-123',
-        }),
+      // PROCESSING order with PAID payment
+      this.createTestOrder({
+        status: 'PROCESSING',
+        paymentStatus: 'PAID',
+        customerName: 'Processing Customer',
+        customerEmail: 'processing@test.com',
+        squareOrderId: 'sq-order-processing-123',
+        squarePaymentId: 'sq-payment-processing-123',
+      }),
 
-        // READY order with PAID payment
-        this.createTestOrder({
-          status: 'READY',
-          paymentStatus: 'PAID',
-          customerName: 'Ready Customer',
-          customerEmail: 'ready@test.com',
-          squareOrderId: 'sq-order-ready-456',
-          squarePaymentId: 'sq-payment-ready-456',
-        }),
+      // READY order with PAID payment
+      this.createTestOrder({
+        status: 'READY',
+        paymentStatus: 'PAID',
+        customerName: 'Ready Customer',
+        customerEmail: 'ready@test.com',
+        squareOrderId: 'sq-order-ready-456',
+        squarePaymentId: 'sq-payment-ready-456',
+      }),
 
-        // COMPLETED order
-        this.createTestOrder({
-          status: 'COMPLETED',
-          paymentStatus: 'PAID',
-          customerName: 'Completed Customer',
-          customerEmail: 'completed@test.com',
-          squareOrderId: 'sq-order-completed-789',
-          squarePaymentId: 'sq-payment-completed-789',
-        }),
+      // COMPLETED order
+      this.createTestOrder({
+        status: 'COMPLETED',
+        paymentStatus: 'PAID',
+        customerName: 'Completed Customer',
+        customerEmail: 'completed@test.com',
+        squareOrderId: 'sq-order-completed-789',
+        squarePaymentId: 'sq-payment-completed-789',
+      }),
 
-        // CANCELLED order
-        this.createTestOrder({
-          status: 'CANCELLED',
-          paymentStatus: 'PENDING',
-          customerName: 'Cancelled Customer',
-          customerEmail: 'cancelled@test.com',
-          notes: 'Order cancelled by customer',
-        }),
+      // CANCELLED order
+      this.createTestOrder({
+        status: 'CANCELLED',
+        paymentStatus: 'PENDING',
+        customerName: 'Cancelled Customer',
+        customerEmail: 'cancelled@test.com',
+        notes: 'Order cancelled by customer',
+      }),
 
-        // Failed payment order
-        this.createTestOrder({
-          status: 'PENDING',
-          paymentStatus: 'FAILED',
-          customerName: 'Failed Payment Customer',
-          customerEmail: 'failed@test.com',
-          notes: 'Payment failed - awaiting retry',
-        }),
+      // Failed payment order
+      this.createTestOrder({
+        status: 'PENDING',
+        paymentStatus: 'FAILED',
+        customerName: 'Failed Payment Customer',
+        customerEmail: 'failed@test.com',
+        notes: 'Payment failed - awaiting retry',
+      }),
 
-        // Nationwide shipping order
-        this.createTestOrder({
-          status: 'PENDING',
-          paymentStatus: 'PAID',
-          fulfillmentType: 'NATIONWIDE_SHIPPING',
-          customerName: 'Nationwide Customer',
-          customerEmail: 'nationwide@test.com',
-          shippingCost: 1595, // $15.95
-          totalAmount: 4951, // Adjusted total
-          shippingAddress: {
-            street: '123 Main St',
-            city: 'New York',
-            state: 'NY',
-            zipCode: '10001',
-          },
-          squareOrderId: 'sq-order-shipping-111',
-          squarePaymentId: 'sq-payment-shipping-111',
-        }),
+      // Nationwide shipping order
+      this.createTestOrder({
+        status: 'PENDING',
+        paymentStatus: 'PAID',
+        fulfillmentType: 'NATIONWIDE_SHIPPING',
+        customerName: 'Nationwide Customer',
+        customerEmail: 'nationwide@test.com',
+        shippingCost: 1595, // $15.95
+        totalAmount: 4951, // Adjusted total
+        shippingAddress: {
+          street: '123 Main St',
+          city: 'New York',
+          state: 'NY',
+          zipCode: '10001',
+        },
+        squareOrderId: 'sq-order-shipping-111',
+        squarePaymentId: 'sq-payment-shipping-111',
+      }),
 
-        // Archived order
-        this.createTestOrder({
-          status: 'COMPLETED',
-          paymentStatus: 'PAID',
-          customerName: 'Archived Customer',
-          customerEmail: 'archived@test.com',
-          isArchived: true,
-          archiveReason: 'Order completed and archived for testing',
-          squareOrderId: 'sq-order-archived-999',
-          squarePaymentId: 'sq-payment-archived-999',
-        }),
-      ]);
+      // Archived order
+      this.createTestOrder({
+        status: 'COMPLETED',
+        paymentStatus: 'PAID',
+        customerName: 'Archived Customer',
+        customerEmail: 'archived@test.com',
+        isArchived: true,
+        archiveReason: 'Order completed and archived for testing',
+        squareOrderId: 'sq-order-archived-999',
+        squarePaymentId: 'sq-payment-archived-999',
+      }),
+    ]);
 
     console.log('✅ Created complete test order set (8 orders)');
     return {
@@ -406,7 +416,7 @@ export class OrderHelpers {
         },
       });
 
-      const orderIds = testOrders.map((o) => o.id);
+      const orderIds = testOrders.map(o => o.id);
 
       if (orderIds.length > 0) {
         // Delete test order items

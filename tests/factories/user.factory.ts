@@ -34,28 +34,38 @@ export function buildUser(options: UserFactoryOptions = {}): Prisma.ProfileUnche
 /**
  * Generate multiple users
  */
-export function buildUsers(count: number, options: UserFactoryOptions = {}): Prisma.ProfileUncheckedCreateInput[] {
+export function buildUsers(
+  count: number,
+  options: UserFactoryOptions = {}
+): Prisma.ProfileUncheckedCreateInput[] {
   return Array.from({ length: count }, () => buildUser(options));
 }
 
 /**
  * Generate admin user
  */
-export function buildAdminUser(options: Omit<UserFactoryOptions, 'role'> = {}): Prisma.ProfileUncheckedCreateInput {
+export function buildAdminUser(
+  options: Omit<UserFactoryOptions, 'role'> = {}
+): Prisma.ProfileUncheckedCreateInput {
   return buildUser({ ...options, role: UserRole.ADMIN });
 }
 
 /**
  * Generate customer user
  */
-export function buildCustomerUser(options: Omit<UserFactoryOptions, 'role'> = {}): Prisma.ProfileUncheckedCreateInput {
+export function buildCustomerUser(
+  options: Omit<UserFactoryOptions, 'role'> = {}
+): Prisma.ProfileUncheckedCreateInput {
   return buildUser({ ...options, role: UserRole.CUSTOMER });
 }
 
 /**
  * Generate user with specific email domain
  */
-export function buildUserWithDomain(domain: string, options: Omit<UserFactoryOptions, 'email'> = {}): Prisma.ProfileUncheckedCreateInput {
+export function buildUserWithDomain(
+  domain: string,
+  options: Omit<UserFactoryOptions, 'email'> = {}
+): Prisma.ProfileUncheckedCreateInput {
   const firstName = faker.person.firstName();
   const lastName = faker.person.lastName();
   const username = faker.internet.username({ firstName, lastName }).toLowerCase();

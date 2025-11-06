@@ -98,7 +98,9 @@ test.describe('Guest Checkout Flow', () => {
     // Step 9: Verify no account was created (should not show "account" navigation)
     // Guest should not have access to account pages
     const accountLink = page.getByRole('link', { name: /my account|account/i, exact: false });
-    await expect(accountLink).not.toBeVisible({ timeout: 2000 }).catch(() => true);
+    await expect(accountLink)
+      .not.toBeVisible({ timeout: 2000 })
+      .catch(() => true);
   });
 
   test('should handle guest checkout with multiple items', async ({ page }) => {
@@ -214,7 +216,9 @@ test.describe('Guest Checkout Flow', () => {
 
       // Verify validation messages appear (check for HTML5 validation)
       const firstNameInput = page.getByLabel('First Name');
-      const isFirstNameValid = await firstNameInput.evaluate((el: HTMLInputElement) => el.validity.valid);
+      const isFirstNameValid = await firstNameInput.evaluate(
+        (el: HTMLInputElement) => el.validity.valid
+      );
       expect(isFirstNameValid).toBe(false);
     } else {
       // Button is disabled, which is also valid behavior
@@ -250,11 +254,13 @@ test.describe('Guest Checkout Flow', () => {
 
     // Verify checkout page shows guest checkout option
     // Look for "Continue as Guest" or similar text
-    await expect(page.getByText(/guest/i)).toBeVisible({ timeout: 5000 }).catch(() => {
-      // If no explicit "guest" text, that's also acceptable
-      // as long as the form allows entry without login
-      return true;
-    });
+    await expect(page.getByText(/guest/i))
+      .toBeVisible({ timeout: 5000 })
+      .catch(() => {
+        // If no explicit "guest" text, that's also acceptable
+        // as long as the form allows entry without login
+        return true;
+      });
 
     // Verify form fields are accessible (not hidden behind login wall)
     await expect(page.getByLabel('First Name')).toBeVisible();

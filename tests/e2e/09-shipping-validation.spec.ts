@@ -171,7 +171,10 @@ test.describe('Shipping and Address Validation', () => {
       await page.waitForTimeout(500);
 
       // Fill SF address
-      await page.getByLabel(/address|street/i).first().fill(validSFAddress.street);
+      await page
+        .getByLabel(/address|street/i)
+        .first()
+        .fill(validSFAddress.street);
       await page.getByLabel(/city/i).fill(validSFAddress.city);
       await page.getByLabel(/zip|postal/i).fill(validSFAddress.zip);
 
@@ -211,7 +214,10 @@ test.describe('Shipping and Address Validation', () => {
       await page.waitForTimeout(500);
 
       // Fill nationwide address (outside local delivery zones)
-      await page.getByLabel(/address|street/i).first().fill(validNationwideAddress.street);
+      await page
+        .getByLabel(/address|street/i)
+        .first()
+        .fill(validNationwideAddress.street);
       await page.getByLabel(/city/i).fill(validNationwideAddress.city);
       await page.getByLabel(/state/i).fill(validNationwideAddress.state);
       await page.getByLabel(/zip|postal/i).fill(validNationwideAddress.zip);
@@ -256,7 +262,10 @@ test.describe('Shipping and Address Validation', () => {
       await page.waitForTimeout(500);
 
       // Fill address
-      await page.getByLabel(/address|street/i).first().fill(validNationwideAddress.street);
+      await page
+        .getByLabel(/address|street/i)
+        .first()
+        .fill(validNationwideAddress.street);
       await page.getByLabel(/city/i).fill(validNationwideAddress.city);
       await page.getByLabel(/state/i).fill(validNationwideAddress.state);
       await page.getByLabel(/zip|postal/i).fill(validNationwideAddress.zip);
@@ -295,14 +304,19 @@ test.describe('Shipping and Address Validation', () => {
 
     // Select delivery/shipping option
     const deliveryOption = page.getByRole('radio', { name: /delivery|shipping/i });
-    const hasDeliveryShipping = await deliveryOption.isVisible({ timeout: 2000 }).catch(() => false);
+    const hasDeliveryShipping = await deliveryOption
+      .isVisible({ timeout: 2000 })
+      .catch(() => false);
 
     if (hasDeliveryShipping) {
       await deliveryOption.click();
       await page.waitForTimeout(500);
 
       // Fill invalid address
-      await page.getByLabel(/address|street/i).first().fill(invalidAddress.street);
+      await page
+        .getByLabel(/address|street/i)
+        .first()
+        .fill(invalidAddress.street);
       await page.getByLabel(/city/i).fill(invalidAddress.city);
       await page.getByLabel(/state/i).fill(invalidAddress.state);
       await page.getByLabel(/zip|postal/i).fill(invalidAddress.zip);
@@ -355,7 +369,10 @@ test.describe('Shipping and Address Validation', () => {
       await page.waitForTimeout(500);
 
       // Fill address
-      await page.getByLabel(/address|street/i).first().fill(validNationwideAddress.street);
+      await page
+        .getByLabel(/address|street/i)
+        .first()
+        .fill(validNationwideAddress.street);
       await page.getByLabel(/city/i).fill(validNationwideAddress.city);
       await page.getByLabel(/state/i).fill(validNationwideAddress.state);
       await page.getByLabel(/zip|postal/i).fill(validNationwideAddress.zip);
@@ -397,7 +414,10 @@ test.describe('Shipping and Address Validation', () => {
       await page.waitForTimeout(500);
 
       // Fill SF address
-      await page.getByLabel(/address|street/i).first().fill(validSFAddress.street);
+      await page
+        .getByLabel(/address|street/i)
+        .first()
+        .fill(validSFAddress.street);
       await page.getByLabel(/city/i).fill(validSFAddress.city);
       await page.getByLabel(/zip|postal/i).fill(validSFAddress.zip);
 
@@ -439,7 +459,10 @@ test.describe('Shipping and Address Validation', () => {
       await page.waitForTimeout(500);
 
       // Fill address
-      await page.getByLabel(/address|street/i).first().fill(validNationwideAddress.street);
+      await page
+        .getByLabel(/address|street/i)
+        .first()
+        .fill(validNationwideAddress.street);
       await page.getByLabel(/city/i).fill(validNationwideAddress.city);
       await page.getByLabel(/state/i).fill(validNationwideAddress.state);
       await page.getByLabel(/zip|postal/i).fill(validNationwideAddress.zip);

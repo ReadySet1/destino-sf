@@ -166,7 +166,9 @@ describe('Payment Idempotency - Error Handling', () => {
 
     mockGetSquareService.mockReturnValue(mockSquareService);
 
-    await expect(createPayment('card-nonce-123', 'order-456', 5000)).rejects.toThrow('Payment declined');
+    await expect(createPayment('card-nonce-123', 'order-456', 5000)).rejects.toThrow(
+      'Payment declined'
+    );
   });
 
   test('should handle idempotency conflict errors from Square', async () => {
@@ -191,7 +193,9 @@ describe('Payment Idempotency - Error Handling', () => {
 
     mockGetSquareService.mockReturnValue(mockSquareService);
 
-    await expect(createPayment('card-nonce-123', 'order-456', 5000)).rejects.toThrow('Network timeout');
+    await expect(createPayment('card-nonce-123', 'order-456', 5000)).rejects.toThrow(
+      'Network timeout'
+    );
   });
 });
 
@@ -205,7 +209,8 @@ describe('Payment Idempotency - Retry Scenarios', () => {
 
   test('should retry payment after recoverable failure', async () => {
     mockSquareService = {
-      createPayment: jest.fn()
+      createPayment: jest
+        .fn()
         .mockRejectedValueOnce(new Error('Temporary failure'))
         .mockResolvedValueOnce({
           payment: {
@@ -219,7 +224,9 @@ describe('Payment Idempotency - Retry Scenarios', () => {
     mockGetSquareService.mockReturnValue(mockSquareService);
 
     // First attempt fails
-    await expect(createPayment('card-nonce-123', 'order-456', 5000)).rejects.toThrow('Temporary failure');
+    await expect(createPayment('card-nonce-123', 'order-456', 5000)).rejects.toThrow(
+      'Temporary failure'
+    );
 
     // Second attempt succeeds (new idempotency key)
     const result = await createPayment('card-nonce-123', 'order-456', 5000);
@@ -234,7 +241,8 @@ describe('Payment Idempotency - Retry Scenarios', () => {
 
   test('should handle multiple retry attempts with different keys', async () => {
     mockSquareService = {
-      createPayment: jest.fn()
+      createPayment: jest
+        .fn()
         .mockRejectedValueOnce(new Error('Attempt 1 failed'))
         .mockRejectedValueOnce(new Error('Attempt 2 failed'))
         .mockResolvedValueOnce({
@@ -273,18 +281,19 @@ describe('Payment Idempotency - Concurrent Operations', () => {
     mockRandomUUID.mockImplementation(() => actualCrypto.randomUUID());
 
     mockSquareService = {
-      createPayment: jest.fn().mockImplementation(() =>
-        new Promise(resolve => {
-          setTimeout(() => {
-            resolve({
-              payment: {
-                id: `payment-${Date.now()}`,
-                status: 'COMPLETED',
-                amountMoney: { amount: BigInt(5000), currency: 'USD' },
-              },
-            });
-          }, 50);
-        })
+      createPayment: jest.fn().mockImplementation(
+        () =>
+          new Promise(resolve => {
+            setTimeout(() => {
+              resolve({
+                payment: {
+                  id: `payment-${Date.now()}`,
+                  status: 'COMPLETED',
+                  amountMoney: { amount: BigInt(5000), currency: 'USD' },
+                },
+              });
+            }, 50);
+          })
       ),
     };
 

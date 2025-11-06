@@ -459,7 +459,9 @@ test.describe('Order Lifecycle and Status Transitions', () => {
       const newUrl = page.url();
 
       // Should either be same URL (still processing) or navigated to confirmation
-      expect(currentUrl === newUrl || newUrl.includes('confirmation') || newUrl.includes('success')).toBe(true);
+      expect(
+        currentUrl === newUrl || newUrl.includes('confirmation') || newUrl.includes('success')
+      ).toBe(true);
     }
 
     // Eventually should reach confirmation

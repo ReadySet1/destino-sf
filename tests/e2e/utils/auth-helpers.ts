@@ -66,7 +66,7 @@ export class AuthHelpers {
 
     // Wait for successful login - admin users redirect to /admin, customers to /menu or /
     // Wait for URL change (navigation away from sign-in page)
-    await page.waitForURL((url) => !url.pathname.includes('/sign-in'), { timeout: 10000 });
+    await page.waitForURL(url => !url.pathname.includes('/sign-in'), { timeout: 10000 });
 
     // Additional verification - wait for page to be fully loaded
     await page.waitForLoadState('networkidle');

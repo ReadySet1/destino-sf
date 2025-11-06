@@ -102,7 +102,10 @@ class ConcurrencyMetricsStore {
   /**
    * Get metrics summary
    */
-  getSummary(): Record<ConcurrencyMetricType, { count: number; successRate: number; avgDuration?: number }> {
+  getSummary(): Record<
+    ConcurrencyMetricType,
+    { count: number; successRate: number; avgDuration?: number }
+  > {
     const summary: any = {};
 
     Object.values(ConcurrencyMetricType).forEach(type => {
@@ -118,7 +121,8 @@ class ConcurrencyMetricsStore {
       const durationsWithValues = typeMetrics.filter(m => m.duration !== undefined);
       const avgDuration =
         durationsWithValues.length > 0
-          ? durationsWithValues.reduce((sum, m) => sum + (m.duration || 0), 0) / durationsWithValues.length
+          ? durationsWithValues.reduce((sum, m) => sum + (m.duration || 0), 0) /
+            durationsWithValues.length
           : undefined;
 
       summary[type] = {
@@ -200,7 +204,9 @@ export function recordRequestDeduplication(
   hit: boolean,
   metadata?: { key?: string; cacheSize?: number }
 ): void {
-  const type = hit ? ConcurrencyMetricType.REQUEST_CACHE_HIT : ConcurrencyMetricType.REQUEST_CACHE_MISS;
+  const type = hit
+    ? ConcurrencyMetricType.REQUEST_CACHE_HIT
+    : ConcurrencyMetricType.REQUEST_CACHE_MISS;
 
   concurrencyMetrics.record({
     type,
@@ -322,9 +328,7 @@ export function getConcurrencyHealth(timeWindow: number = 3600000): ConcurrencyH
   const now = Date.now();
   const windowStart = new Date(now - timeWindow);
 
-  const recentMetrics = concurrencyMetrics
-    .getMetrics()
-    .filter(m => m.timestamp >= windowStart);
+  const recentMetrics = concurrencyMetrics.getMetrics().filter(m => m.timestamp >= windowStart);
 
   const issues: string[] = [];
 
@@ -369,7 +373,9 @@ export function getConcurrencyHealth(timeWindow: number = 3600000): ConcurrencyH
   }
 
   if (optimisticConflicts > 50) {
-    issues.push(`High optimistic lock conflict rate: ${optimisticConflicts} conflicts in last hour`);
+    issues.push(
+      `High optimistic lock conflict rate: ${optimisticConflicts} conflicts in last hour`
+    );
   }
 
   if (deduplicationHitRate > 50) {

@@ -35,7 +35,12 @@ export function FulfillmentSelector({
               : 'border-gray-200 bg-white/80 backdrop-blur-sm hover:border-destino-yellow/60'
           }`}
         >
-          <RadioGroupItem value="pickup" id="pickup" className="absolute right-4 top-4" data-testid="delivery-pickup" />
+          <RadioGroupItem
+            value="pickup"
+            id="pickup"
+            className="absolute right-4 top-4"
+            data-testid="delivery-pickup"
+          />
           <Store className="h-5 w-5 text-destino-orange" />
           <Label htmlFor="pickup" className="cursor-pointer">
             <div className="font-medium text-destino-charcoal">Pickup</div>

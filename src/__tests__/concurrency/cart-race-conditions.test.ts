@@ -406,9 +406,7 @@ describe('Cart Race Conditions', () => {
 
       // Start adding items and clear cart concurrently
       const operations = [
-        ...items.map(item =>
-          act(async () => result.current.addItem(item))
-        ),
+        ...items.map(item => act(async () => result.current.addItem(item))),
         act(async () => {
           // Small delay to let some adds happen
           await new Promise(resolve => setTimeout(resolve, 10));
@@ -437,11 +435,7 @@ describe('Cart Race Conditions', () => {
       }));
 
       // Add all products concurrently
-      await Promise.all(
-        products.map(product =>
-          act(async () => result.current.addItem(product))
-        )
-      );
+      await Promise.all(products.map(product => act(async () => result.current.addItem(product))));
 
       // Verify all products were added
       expect(result.current.items.length).toBe(50);
@@ -549,12 +543,8 @@ describe('Cart Race Conditions', () => {
       const { result } = renderHook(() => useCartStore());
 
       const operations = [
-        act(async () =>
-          result.current.addItem({ id: 'p1', name: 'P1', price: 5, quantity: 3 })
-        ),
-        act(async () =>
-          result.current.addItem({ id: 'p2', name: 'P2', price: 7, quantity: 2 })
-        ),
+        act(async () => result.current.addItem({ id: 'p1', name: 'P1', price: 5, quantity: 3 })),
+        act(async () => result.current.addItem({ id: 'p2', name: 'P2', price: 7, quantity: 2 })),
         act(async () => result.current.updateQuantity('p1', 5)),
       ];
 
@@ -562,10 +552,7 @@ describe('Cart Race Conditions', () => {
         await op;
 
         // Verify consistency
-        const calculatedItems = result.current.items.reduce(
-          (sum, item) => sum + item.quantity,
-          0
-        );
+        const calculatedItems = result.current.items.reduce((sum, item) => sum + item.quantity, 0);
         expect(result.current.totalItems).toBe(calculatedItems);
       }
     });

@@ -47,7 +47,8 @@ export function reportWebVitals(metric: WebVitalsData): void {
   // Log in development
   if (process.env.NODE_ENV === 'development') {
     const threshold = WEB_VITALS_THRESHOLDS[metric.name];
-    const emoji = metric.rating === 'good' ? '✅' : metric.rating === 'needs-improvement' ? '⚠️' : '❌';
+    const emoji =
+      metric.rating === 'good' ? '✅' : metric.rating === 'needs-improvement' ? '⚠️' : '❌';
 
     console.log(
       `${emoji} ${metric.name}:`,
@@ -161,11 +162,14 @@ export async function initWebVitals(): Promise<void> {
 /**
  * Get Web Vitals summary
  */
-export function getWebVitalsSummary(): Record<WebVitalMetric, {
-  value: number;
-  rating: 'good' | 'needs-improvement' | 'poor';
-  threshold: { good: number; needsImprovement: number };
-}> | null {
+export function getWebVitalsSummary(): Record<
+  WebVitalMetric,
+  {
+    value: number;
+    rating: 'good' | 'needs-improvement' | 'poor';
+    threshold: { good: number; needsImprovement: number };
+  }
+> | null {
   const metrics = performanceMonitor.getMetrics();
 
   const webVitalsMetrics = metrics.filter(m => m.name.startsWith('web_vitals_'));
@@ -176,9 +180,7 @@ export function getWebVitalsSummary(): Record<WebVitalMetric, {
 
   // Note: FID was deprecated in web-vitals v4 and removed in v5, replaced by INP
   (['LCP', 'CLS', 'TTFB', 'FCP', 'INP'] as WebVitalMetric[]).forEach(metric => {
-    const metricData = webVitalsMetrics.find(
-      m => m.name === `web_vitals_${metric.toLowerCase()}`
-    );
+    const metricData = webVitalsMetrics.find(m => m.name === `web_vitals_${metric.toLowerCase()}`);
 
     if (metricData) {
       summary[metric] = {

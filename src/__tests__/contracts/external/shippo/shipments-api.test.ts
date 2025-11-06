@@ -33,7 +33,7 @@ describe('Shippo Shipments API Contract Tests', () => {
   describe('ShippoObjectStateSchema', () => {
     it('should validate all object states', () => {
       const states = ['VALID', 'INVALID', 'INCOMPLETE'];
-      states.forEach((state) => {
+      states.forEach(state => {
         expect(matchesSchema(ShippoObjectStateSchema, state)).toBe(true);
       });
     });
@@ -46,7 +46,7 @@ describe('Shippo Shipments API Contract Tests', () => {
   describe('ShippoDistanceUnitSchema', () => {
     it('should validate all distance units', () => {
       const units = ['cm', 'in', 'ft', 'mm', 'm', 'yd'];
-      units.forEach((unit) => {
+      units.forEach(unit => {
         expect(matchesSchema(ShippoDistanceUnitSchema, unit)).toBe(true);
       });
     });
@@ -59,7 +59,7 @@ describe('Shippo Shipments API Contract Tests', () => {
   describe('ShippoMassUnitSchema', () => {
     it('should validate all mass units', () => {
       const units = ['g', 'oz', 'lb', 'kg'];
-      units.forEach((unit) => {
+      units.forEach(unit => {
         expect(matchesSchema(ShippoMassUnitSchema, unit)).toBe(true);
       });
     });

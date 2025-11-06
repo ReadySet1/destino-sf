@@ -21,7 +21,9 @@ export interface ProductFactoryOptions {
 /**
  * Generate product data (does not create in database)
  */
-export function buildProduct(options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput {
+export function buildProduct(
+  options: ProductFactoryOptions = {}
+): Prisma.ProductUncheckedCreateInput {
   const name = options.name || faker.commerce.productName();
   const slug = options.slug || faker.helpers.slugify(name).toLowerCase();
   const price = options.price || parseFloat(faker.commerce.price({ min: 10, max: 100, dec: 2 }));
@@ -42,14 +44,19 @@ export function buildProduct(options: ProductFactoryOptions = {}): Prisma.Produc
 /**
  * Generate multiple products
  */
-export function buildProducts(count: number, options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput[] {
+export function buildProducts(
+  count: number,
+  options: ProductFactoryOptions = {}
+): Prisma.ProductUncheckedCreateInput[] {
   return Array.from({ length: count }, () => buildProduct(options));
 }
 
 /**
  * Generate empanada product
  */
-export function buildEmpanada(options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput {
+export function buildEmpanada(
+  options: ProductFactoryOptions = {}
+): Prisma.ProductUncheckedCreateInput {
   const flavors = ['Beef', 'Chicken', 'Vegetarian', 'Spinach & Cheese', 'Ham & Cheese'];
   const flavor = faker.helpers.arrayElement(flavors);
 
@@ -63,7 +70,9 @@ export function buildEmpanada(options: ProductFactoryOptions = {}): Prisma.Produ
 /**
  * Generate alfajor product
  */
-export function buildAlfajor(options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput {
+export function buildAlfajor(
+  options: ProductFactoryOptions = {}
+): Prisma.ProductUncheckedCreateInput {
   const types = ['Classic', 'Chocolate', 'Dulce de Leche', 'Mixed'];
   const type = faker.helpers.arrayElement(types);
   const count = faker.helpers.arrayElement([6, 12]);
@@ -78,7 +87,9 @@ export function buildAlfajor(options: ProductFactoryOptions = {}): Prisma.Produc
 /**
  * Generate catering package product
  */
-export function buildCateringPackage(options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput {
+export function buildCateringPackage(
+  options: ProductFactoryOptions = {}
+): Prisma.ProductUncheckedCreateInput {
   const sizes = ['Small (10-15 people)', 'Medium (20-30 people)', 'Large (40-50 people)'];
   const size = faker.helpers.arrayElement(sizes);
   const peopleCount = size.includes('10-15') ? 12 : size.includes('20-30') ? 25 : 45;
@@ -93,7 +104,9 @@ export function buildCateringPackage(options: ProductFactoryOptions = {}): Prism
 /**
  * Generate sauce product
  */
-export function buildSauce(options: ProductFactoryOptions = {}): Prisma.ProductUncheckedCreateInput {
+export function buildSauce(
+  options: ProductFactoryOptions = {}
+): Prisma.ProductUncheckedCreateInput {
   const sauces = ['Chimichurri', 'Spicy Mayo', 'Salsa Criolla', 'Aji Verde'];
   const sauce = faker.helpers.arrayElement(sauces);
 
@@ -124,7 +137,10 @@ export function buildTestProduct(suffix: string = ''): Prisma.ProductUncheckedCr
 /**
  * Generate product variants for a base product
  */
-export function buildProductVariants(baseProduct: Prisma.ProductUncheckedCreateInput, count: number): Prisma.ProductUncheckedCreateInput[] {
+export function buildProductVariants(
+  baseProduct: Prisma.ProductUncheckedCreateInput,
+  count: number
+): Prisma.ProductUncheckedCreateInput[] {
   const variants = ['4-pack', '6-pack', '12-pack', 'Single'];
 
   return Array.from({ length: count }, (_, i) => ({
@@ -132,6 +148,6 @@ export function buildProductVariants(baseProduct: Prisma.ProductUncheckedCreateI
     name: `${baseProduct.name} - ${variants[i % variants.length]}`,
     slug: `${baseProduct.slug}-${variants[i % variants.length].toLowerCase()}`,
     squareId: `${baseProduct.squareId}-variant-${i}`,
-    price: baseProduct.price + (i * 500), // Each variant costs $5 more
+    price: baseProduct.price + i * 500, // Each variant costs $5 more
   }));
 }

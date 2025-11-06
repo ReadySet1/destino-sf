@@ -314,9 +314,9 @@ test.describe('Payment Methods Flow', () => {
 
     // Icons should be present (Lucide icons - CreditCardIcon and BanknoteIcon)
     // We can't directly test SVG icons, but we verify the containers are visible
-    const paymentMethodContainers = page.locator('[class*="payment"]').or(
-      page.locator('text="Credit Card"').locator('..').locator('..')
-    );
+    const paymentMethodContainers = page
+      .locator('[class*="payment"]')
+      .or(page.locator('text="Credit Card"').locator('..').locator('..'));
     await expect(paymentMethodContainers.first()).toBeVisible();
   });
 });

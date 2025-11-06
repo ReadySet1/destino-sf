@@ -64,9 +64,7 @@ test.describe('Admin Authentication & Access Control', () => {
     await expect(page).toHaveURL(/\/admin\/orders/);
 
     // Verify page title or heading
-    await expect(
-      page.getByRole('heading', { name: /order management/i })
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /order management/i })).toBeVisible();
 
     console.log('✅ Admin successfully accessed orders page');
   });
@@ -195,7 +193,8 @@ test.describe('Order List Management & Filtering', () => {
     await AdminHelpers.waitForOrderListUpdate(page);
 
     // Verify filtered results contain PAID payment status
-    const paymentBadges = page.locator('[data-testid="payment-status"]')
+    const paymentBadges = page
+      .locator('[data-testid="payment-status"]')
       .or(page.locator('td:has-text("PAID")'));
 
     const badgeCount = await paymentBadges.count();
@@ -275,7 +274,8 @@ test.describe('Order List Management & Filtering', () => {
 
   test('should support pagination through order list', async ({ page }) => {
     // Check if pagination controls exist
-    const nextButton = page.getByRole('button', { name: /next/i })
+    const nextButton = page
+      .getByRole('button', { name: /next/i })
       .or(page.locator('[data-testid="pagination-next"]'));
 
     const hasMultiplePages = await nextButton.isVisible({ timeout: 2000 }).catch(() => false);
@@ -338,12 +338,16 @@ test.describe('Order Details View', () => {
 
     // Verify order status is displayed
     await expect(
-      page.getByText(testOrder.status).or(page.locator(`[data-testid="order-status"]:has-text("${testOrder.status}")`))
+      page
+        .getByText(testOrder.status)
+        .or(page.locator(`[data-testid="order-status"]:has-text("${testOrder.status}")`))
     ).toBeVisible();
 
     // Verify payment status is displayed
     await expect(
-      page.getByText(testOrder.paymentStatus).or(page.locator(`[data-testid="payment-status"]:has-text("${testOrder.paymentStatus}")`))
+      page
+        .getByText(testOrder.paymentStatus)
+        .or(page.locator(`[data-testid="payment-status"]:has-text("${testOrder.paymentStatus}")`))
     ).toBeVisible();
 
     // Verify total amount is displayed
@@ -424,12 +428,12 @@ test.describe('Order Details View', () => {
     // If order has Square IDs, verify they're displayed
     if (testOrder.squareOrderId) {
       // Look for Square order ID (might be in a details section or payment history)
-      await expect(
-        page.getByText(testOrder.squareOrderId).or(page.getByText(/square order/i))
-      ).toBeVisible({ timeout: 5000 }).catch(() => {
-        // Square IDs might be in collapsed section or not prominent
-        console.log('  Note: Square order ID not prominently displayed');
-      });
+      await expect(page.getByText(testOrder.squareOrderId).or(page.getByText(/square order/i)))
+        .toBeVisible({ timeout: 5000 })
+        .catch(() => {
+          // Square IDs might be in collapsed section or not prominent
+          console.log('  Note: Square order ID not prominently displayed');
+        });
     }
 
     // Verify payment method is shown
@@ -482,7 +486,9 @@ test.describe('Order Status Updates', () => {
 
     // Verify status updated in UI
     await expect(
-      page.getByText('PROCESSING').or(page.locator('[data-testid="order-status"]:has-text("PROCESSING")'))
+      page
+        .getByText('PROCESSING')
+        .or(page.locator('[data-testid="order-status"]:has-text("PROCESSING")'))
     ).toBeVisible({ timeout: 5000 });
 
     // Verify in database
@@ -536,7 +542,9 @@ test.describe('Order Status Updates', () => {
 
     // Verify status updated
     await expect(
-      page.getByText('COMPLETED').or(page.locator('[data-testid="order-status"]:has-text("COMPLETED")'))
+      page
+        .getByText('COMPLETED')
+        .or(page.locator('[data-testid="order-status"]:has-text("COMPLETED")'))
     ).toBeVisible({ timeout: 5000 });
 
     // Verify in database
@@ -560,7 +568,8 @@ test.describe('Order Status Updates', () => {
 
     // Try to update to PENDING (invalid backward transition)
     // Note: UI might not allow this, or API might reject it
-    const statusButton = page.locator('[data-testid="update-status"]')
+    const statusButton = page
+      .locator('[data-testid="update-status"]')
       .or(page.getByRole('button', { name: /update status/i }))
       .or(page.locator('select[name="status"]'))
       .first();
@@ -597,7 +606,8 @@ test.describe('Order Status Updates', () => {
     await AdminHelpers.navigateToOrderDetail(page, testOrder.id);
 
     // Get initial status
-    const initialStatus = await page.locator('[data-testid="order-status"]')
+    const initialStatus = await page
+      .locator('[data-testid="order-status"]')
       .or(page.getByText('PENDING'))
       .first()
       .textContent();
@@ -608,9 +618,7 @@ test.describe('Order Status Updates', () => {
     await AdminHelpers.updateOrderStatus(page, testOrder.id, 'PROCESSING');
 
     // Verify UI updated (without page reload)
-    await expect(
-      page.getByText('PROCESSING')
-    ).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('PROCESSING')).toBeVisible({ timeout: 5000 });
 
     console.log('✅ Status update reflected immediately in UI');
 
@@ -631,7 +639,8 @@ test.describe('Order Status Updates', () => {
     await AdminHelpers.updateOrderStatus(page, testOrder.id, 'PROCESSING');
 
     // Look for success notification/toast
-    const notification = page.locator('[role="alert"]')
+    const notification = page
+      .locator('[role="alert"]')
       .or(page.locator('.toast'))
       .or(page.getByText(/success|updated/i))
       .first();
@@ -799,9 +808,7 @@ test.describe('Payment Management', () => {
     await AdminHelpers.navigateToOrderDetail(page, testOrder.id);
 
     // Look for failed payment indicator
-    await expect(
-      page.getByText('FAILED').or(page.getByText(/payment failed/i))
-    ).toBeVisible();
+    await expect(page.getByText('FAILED').or(page.getByText(/payment failed/i))).toBeVisible();
 
     // Look for manual payment button or fix error button
     const retryButton = page.getByRole('button', { name: /manual payment|fix|retry/i }).first();
@@ -1193,11 +1200,14 @@ test.describe('Sorting & Bulk Operations', () => {
     await AdminHelpers.selectOrders(page, orderNumbers);
 
     // Look for bulk action button
-    const bulkArchiveButton = page.getByRole('button', { name: /archive selected/i })
+    const bulkArchiveButton = page
+      .getByRole('button', { name: /archive selected/i })
       .or(page.locator('[data-testid="bulk-archive"]'))
       .first();
 
-    const bulkButtonExists = await bulkArchiveButton.isVisible({ timeout: 2000 }).catch(() => false);
+    const bulkButtonExists = await bulkArchiveButton
+      .isVisible({ timeout: 2000 })
+      .catch(() => false);
 
     if (bulkButtonExists) {
       // Button is enabled for 5 orders (well under typical limit of 100)

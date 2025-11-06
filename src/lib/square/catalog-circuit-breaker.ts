@@ -79,9 +79,7 @@ export const resilientCatalogApi = {
           state: error.state,
           stats: catalogCircuitBreaker.getStats(),
         });
-        throw new Error(
-          `Square Catalog API is temporarily unavailable. Please try again later.`
-        );
+        throw new Error(`Square Catalog API is temporarily unavailable. Please try again later.`);
       }
       throw error;
     }
@@ -101,9 +99,7 @@ export const resilientCatalogApi = {
           state: error.state,
           stats: catalogCircuitBreaker.getStats(),
         });
-        throw new Error(
-          `Square Catalog API is temporarily unavailable. Please try again later.`
-        );
+        throw new Error(`Square Catalog API is temporarily unavailable. Please try again later.`);
       }
       throw error;
     }
@@ -123,9 +119,7 @@ export const resilientCatalogApi = {
           state: error.state,
           stats: catalogCircuitBreaker.getStats(),
         });
-        throw new Error(
-          `Square Catalog API is temporarily unavailable. Please try again later.`
-        );
+        throw new Error(`Square Catalog API is temporarily unavailable. Please try again later.`);
       }
       throw error;
     }

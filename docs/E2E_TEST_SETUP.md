@@ -9,6 +9,7 @@ This document describes the setup required for E2E tests to run successfully.
 The E2E tests expect the following users to exist in your test database:
 
 #### 1. Admin Test User
+
 ```
 Email: test@destino-sf.com
 Password: password123
@@ -16,6 +17,7 @@ Role: ADMIN
 ```
 
 #### 2. Regular Test User
+
 ```
 Email: regular-user@destino-sf.com
 Password: password123
@@ -82,16 +84,19 @@ Make sure these products exist in your database and are active.
 ## Running Tests
 
 ### Run all E2E tests:
+
 ```bash
 pnpm test:e2e
 ```
 
 ### Run specific test file:
+
 ```bash
 pnpm test:e2e tests/e2e/03-authentication.spec.ts
 ```
 
 ### Run tests in UI mode:
+
 ```bash
 pnpm test:e2e:ui
 ```
@@ -101,6 +106,7 @@ pnpm test:e2e:ui
 The following tests are currently skipped and require implementation:
 
 ### Authentication Tests (`03-authentication.spec.ts`)
+
 - ✅ `should register new user` - Active
 - ✅ `should login existing user` - Active (requires test user)
 - ✅ `should show validation errors for invalid credentials` - Active
@@ -116,6 +122,7 @@ The following tests are currently skipped and require implementation:
 ## Troubleshooting
 
 ### Issue: "No such file or directory" errors
+
 **Solution**: Make sure your app is running on `localhost:3000` before running tests.
 
 ```bash
@@ -125,19 +132,25 @@ pnpm test:e2e
 ```
 
 ### Issue: "Timed out waiting for..." errors
+
 **Solution**:
+
 1. Check that all product slugs in `tests/e2e/fixtures/test-data.ts` match your database
 2. Verify the app is accessible at `http://localhost:3000`
 3. Check browser console for JavaScript errors
 
 ### Issue: "Element not found" errors
+
 **Solution**:
+
 1. Verify `data-testid` attributes exist in components
 2. Check that UI elements are visible (not hidden by CSS)
 3. Wait for network idle before assertions
 
 ### Issue: Authentication tests fail
+
 **Solution**:
+
 1. Create test users in Supabase Auth dashboard
 2. Create corresponding profiles in the database
 3. Verify user credentials match `test-data.ts`

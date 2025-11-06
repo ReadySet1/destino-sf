@@ -9,9 +9,7 @@ import { Product, Category } from '@prisma/client';
  * Determines if a product is a catering product based on its category
  * Catering categories all start with "CATERING-" prefix
  */
-export function isCateringProduct(
-  product: Product & { category?: Category | null }
-): boolean {
+export function isCateringProduct(product: Product & { category?: Category | null }): boolean {
   if (!product.category) {
     return false;
   }
@@ -28,9 +26,7 @@ export function isCateringProduct(
  * Regular products (Alfajores, Empanadas): index = true
  * Catering products: index = false (only appear in catering searches)
  */
-export function shouldIndexProduct(
-  product: Product & { category?: Category | null }
-): boolean {
+export function shouldIndexProduct(product: Product & { category?: Category | null }): boolean {
   // Don't index inactive products
   if (!product.active) {
     return false;
