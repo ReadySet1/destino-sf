@@ -27,7 +27,7 @@ export const env = createEnv({
 
     // Shipping Configuration
     SHIPPO_API_KEY: z.string().optional(),
-    SHIPPO_WEBHOOK_SECRET: z.string().min(1),
+    SHIPPO_WEBHOOK_SECRET: z.string().optional(),
     // Twilio Configuration
     TWILIO_ACCOUNT_SID: z.string().optional(),
     TWILIO_AUTH_TOKEN: z.string().optional(),
