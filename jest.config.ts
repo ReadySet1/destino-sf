@@ -56,7 +56,6 @@ const config: Config = {
       testEnvironmentOptions: {
         customExportConditions: ['node', 'node-addons'],
       },
-      testTimeout: 60000, // 60 seconds for integration tests
     },
     {
       displayName: 'node',
