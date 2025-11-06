@@ -247,7 +247,7 @@ if (field.toLowerCase().includes('image')) return <ImageIcon className="h-3 w-3"
 ```
 **Action Required:** Add a descriptive alt attribute.
 
-### components/auth-container.tsx:18
+### components/auth-container.tsx:20
 ```tsx
 <Image
 ```
