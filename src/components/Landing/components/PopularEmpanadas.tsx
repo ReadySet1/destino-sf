@@ -16,6 +16,7 @@ interface MenuItemType {
   name: string;
   imageUrl: string;
   slug: string;
+  altText: string;
 }
 
 const popularEmpanadas: MenuItemType[] = [
@@ -24,18 +25,21 @@ const popularEmpanadas: MenuItemType[] = [
     name: 'Oxtail Empanada',
     imageUrl: '/images/hero/oxtail-empanada.JPG',
     slug: 'oxtail-empanada',
+    altText: 'Oxtail empanada with tender braised beef in golden flaky crust',
   },
   {
     id: '6',
     name: 'Lomo Saltado Empanada',
     imageUrl: '/images/hero/lomo-saltado-empanada.jpeg',
     slug: 'lomo-saltado-empanada',
+    altText: 'Lomo Saltado empanada with Peruvian stir-fried beef and vegetables',
   },
   {
     id: '4',
     name: 'Huacatay Empanada',
     imageUrl: '/images/hero/huacatay-empanada.jpg',
     slug: 'huacatay-empanada',
+    altText: 'Huacatay empanada with Peruvian black mint herb chicken filling',
   },
 ];
 
@@ -70,7 +74,7 @@ export function PopularEmpanadas() {
                   <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden">
                     <Image
                       src={empanada.imageUrl}
-                      alt={empanada.name}
+                      alt={empanada.altText}
                       className="object-cover"
                       sizes="(max-width: 768px) 45vw"
                       quality={35}
@@ -95,7 +99,7 @@ export function PopularEmpanadas() {
                 <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden">
                   <Image
                     src={empanada.imageUrl}
-                    alt={empanada.name}
+                    alt={empanada.altText}
                     className="object-cover"
                     sizes="(min-width: 1024px) 320px, 280px"
                     quality={40}

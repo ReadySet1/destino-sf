@@ -14,6 +14,7 @@ interface MenuItemType {
   name: string;
   imageUrl: string;
   slug: string;
+  altText: string;
 }
 
 const menuItems: MenuItemType[] = [
@@ -22,18 +23,21 @@ const menuItems: MenuItemType[] = [
     name: 'Our Empanadas ',
     imageUrl: '/images/homepage/empanadas.png',
     slug: '/products/category/empanadas',
+    altText: 'Empanadas collection - handcrafted Latin American savory pastries with golden crust',
   },
   {
     id: '2',
     name: 'Our Alfajores',
     imageUrl: '/images/homepage/alfajor.png',
     slug: '/products/category/alfajores',
+    altText: 'Alfajores collection - buttery cookies filled with dulce de leche',
   },
   {
     id: '3',
     name: 'Catering',
     imageUrl: '/images/homepage/catering.png',
     slug: '/catering',
+    altText: 'Catering services - Latin American food for corporate and special events',
   },
 ];
 
@@ -79,7 +83,7 @@ export function MenuSection() {
                 <div className="relative h-32 w-32 sm:h-40 sm:w-40 md:h-56 md:w-56 overflow-hidden rounded-full">
                   <Image
                     src={item.imageUrl}
-                    alt={item.name}
+                    alt={item.altText}
                     width={224}
                     height={224}
                     className="object-cover h-full w-full"

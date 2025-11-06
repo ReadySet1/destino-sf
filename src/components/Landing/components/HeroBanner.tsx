@@ -7,7 +7,7 @@ export function HeroBanner() {
       <div className="relative h-[50vh] md:h-[400px] lg:h-[600px] xl:h-[700px] w-full">
         <Image
           src="/images/hero/hero-empanada.jpg"
-          alt="Delicious Empanadas"
+          alt="Fresh handcrafted empanadas with golden flaky crust - Destino SF Latin American cuisine"
           fill
           className="object-cover object-top"
           priority

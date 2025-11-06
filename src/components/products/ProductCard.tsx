@@ -53,6 +53,30 @@ const formatPrice = (price: any): string => {
   return Number(price).toFixed(2);
 };
 
+// Helper function to generate descriptive alt text for product images
+const getProductAltText = (product: Product): string => {
+  const name = product.name;
+  const categoryName = product.category?.name?.toLowerCase() || '';
+
+  // For empanadas, add descriptive context
+  if (categoryName.includes('empanada') || name.toLowerCase().includes('empanada')) {
+    return `${name} - handcrafted empanada with golden flaky crust`;
+  }
+
+  // For alfajores, add descriptive context
+  if (categoryName.includes('alfajor') || name.toLowerCase().includes('alfajor')) {
+    return `${name} - dulce de leche sandwich cookie`;
+  }
+
+  // For catering items
+  if (categoryName.includes('catering')) {
+    return `${name} - catering package`;
+  }
+
+  // Default: product name with generic enhancement
+  return `${name} - Destino SF handcrafted Latin food`;
+};
+
 // Helper function to create short, card-appropriate descriptions
 // Now handles HTML-formatted descriptions from Square
 const getShortDescription = (productName: string, fullDescription?: string): string => {
@@ -192,7 +216,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           ) : (
             <Image
               src={mainImage}
-              alt={product.name}
+              alt={getProductAltText(product)}
               fill
               className={cn(
                 'object-cover object-center transition-all duration-300',
