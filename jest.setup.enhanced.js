@@ -104,43 +104,223 @@ jest.mock('@prisma/client/runtime/library');
 
 // Create comprehensive Prisma mock
 const createPrismaMock = () => {
-  const baseMethods = {
-    create: jest.fn(),
-    update: jest.fn(),
-    findUnique: jest.fn(),
-    findMany: jest.fn(),
-    findFirst: jest.fn(),
-    delete: jest.fn(),
-    deleteMany: jest.fn(),
-    updateMany: jest.fn(),
-    count: jest.fn(),
-    createMany: jest.fn(),
-    upsert: jest.fn(),
+  // In-memory store for each model to enable persistence across operations
+  const stores = {
+    order: [],
+    orderItem: [],
+    product: [],
+    user: [],
+    profile: [],
+    payment: [],
+    customer: [],
+    emailAlert: [],
+    storeSettings: [],
+    spotlightPick: [],
+    category: [],
+    variant: [],
   };
 
-  return {
-    $transaction: jest.fn(async operations => {
-      if (typeof operations === 'function') {
-        return operations({});
-      }
-      return operations;
-    }),
+  // Create base methods with realistic default return values and persistence
+  const createBaseMethods = (modelName = 'Model') => {
+    const storeName = modelName.toLowerCase();
+
+    // Initialize store if it doesn't exist
+    if (!stores[storeName]) {
+      stores[storeName] = [];
+    }
+
+    return {
+      create: jest.fn(async ({ data, include }) => {
+        const id = `test-${storeName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const createdItem = {
+          id,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          ...data
+        };
+
+        // Handle nested creates for relations
+        if (data.items && data.items.create) {
+          const itemsData = Array.isArray(data.items.create) ? data.items.create : [data.items.create];
+          createdItem.items = itemsData.map((item, idx) => ({
+            id: `item-${idx}-${Date.now()}`,
+            orderId: id,
+            createdAt: new Date(),
+            ...item
+          }));
+          // Store order items
+          stores.orderitem.push(...createdItem.items);
+        }
+
+        // Add to store
+        stores[storeName].push(createdItem);
+
+        return createdItem;
+      }),
+      update: jest.fn(async ({ where, data }) => {
+        const item = stores[storeName].find(i => i.id === where.id);
+        if (item) {
+          Object.assign(item, data, { updatedAt: new Date() });
+          return item;
+        }
+        return { id: where.id || 'test-id', ...data };
+      }),
+      findUnique: jest.fn(async ({ where, include }) => {
+        const item = stores[storeName].find(i => i.id === where.id || i.email === where.email);
+        if (!item) return null;
+
+        // Handle includes
+        if (include && include.items && item.items) {
+          return { ...item };
+        }
+        return item;
+      }),
+      findMany: jest.fn(async ({ where, include, orderBy, take } = {}) => {
+        let results = [...stores[storeName]];
+
+        // Apply where filters
+        if (where) {
+          results = results.filter(item => {
+            // Check all where conditions
+            return Object.keys(where).every(key => {
+              if (key === 'createdAt' && where[key]?.gte) {
+                return new Date(item.createdAt) >= new Date(where[key].gte);
+              }
+              if (key === 'status' && where[key]?.in) {
+                return where[key].in.includes(item.status);
+              }
+              if (Array.isArray(where[key])) {
+                // OR conditions
+                return where[key].some(condition =>
+                  Object.keys(condition).every(k => item[k] === condition[k])
+                );
+              }
+              return item[key] === where[key];
+            });
+          });
+        }
+
+        // Apply ordering
+        if (orderBy) {
+          const [field, direction] = Object.entries(orderBy)[0];
+          results.sort((a, b) => {
+            const aVal = a[field];
+            const bVal = b[field];
+            if (direction === 'desc') {
+              return bVal > aVal ? 1 : -1;
+            }
+            return aVal > bVal ? 1 : -1;
+          });
+        }
+
+        // Apply take limit
+        if (take) {
+          results = results.slice(0, take);
+        }
+
+        // Handle includes
+        if (include && include.items) {
+          results = results.map(order => ({
+            ...order,
+            items: stores.orderitem
+              .filter(item => item.orderId === order.id)
+              .map(item => {
+                const itemWithIncludes = { ...item };
+                // Handle nested includes for product and variant
+                if (include.items.include) {
+                  if (include.items.include.product && item.productId) {
+                    itemWithIncludes.product = { id: item.productId, name: `Product ${item.productId}` };
+                  }
+                  if (include.items.include.variant && item.variantId) {
+                    itemWithIncludes.variant = { id: item.variantId, name: `Variant ${item.variantId}` };
+                  }
+                }
+                return itemWithIncludes;
+              })
+          }));
+        }
+
+        return results;
+      }),
+      findFirst: jest.fn(async ({ where } = {}) => {
+        if (!where) return stores[storeName][0] || null;
+        const result = stores[storeName].find(item => {
+          return Object.keys(where).every(key => item[key] === where[key]);
+        });
+        return result || null;
+      }),
+      delete: jest.fn(async ({ where }) => {
+        const index = stores[storeName].findIndex(i => i.id === where.id);
+        if (index > -1) {
+          const deleted = stores[storeName].splice(index, 1)[0];
+          return deleted;
+        }
+        return { id: where.id || 'test-id' };
+      }),
+      deleteMany: jest.fn(async ({ where } = {}) => {
+        const initialLength = stores[storeName].length;
+        if (where) {
+          stores[storeName] = stores[storeName].filter(item => {
+            return !Object.keys(where).every(key => item[key] === where[key]);
+          });
+        } else {
+          stores[storeName] = [];
+        }
+        const count = initialLength - stores[storeName].length;
+        return { count };
+      }),
+      updateMany: jest.fn(async () => ({ count: 0 })),
+      count: jest.fn(async () => stores[storeName].length),
+      createMany: jest.fn(async ({ data }) => {
+        const items = Array.isArray(data) ? data : [data];
+        items.forEach(itemData => {
+          const id = `test-${storeName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          stores[storeName].push({ id, ...itemData });
+        });
+        return { count: items.length };
+      }),
+      upsert: jest.fn(async ({ where, create, update }) => {
+        const existing = stores[storeName].find(i => i.id === where.id);
+        if (existing) {
+          Object.assign(existing, update);
+          return existing;
+        }
+        const id = `test-${storeName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const created = { id, ...create };
+        stores[storeName].push(created);
+        return created;
+      }),
+    };
+  };
+
+  const prismaMock = {
     $disconnect: jest.fn(),
     $connect: jest.fn(),
     $queryRaw: jest.fn(() => [{ status: 1 }]),
     $executeRaw: jest.fn(),
-    order: { ...baseMethods },
-    product: { ...baseMethods },
-    user: { ...baseMethods },
-    orderItem: { ...baseMethods },
-    emailAlert: { ...baseMethods },
-    storeSettings: { ...baseMethods },
-    spotlightPick: { ...baseMethods },
-    category: { ...baseMethods },
-    variant: { ...baseMethods },
-    payment: { ...baseMethods },
-    customer: { ...baseMethods },
+    order: createBaseMethods('Order'),
+    product: createBaseMethods('Product'),
+    user: createBaseMethods('User'),
+    orderItem: createBaseMethods('OrderItem'),
+    emailAlert: createBaseMethods('EmailAlert'),
+    storeSettings: createBaseMethods('StoreSettings'),
+    spotlightPick: createBaseMethods('SpotlightPick'),
+    category: createBaseMethods('Category'),
+    variant: createBaseMethods('Variant'),
+    payment: createBaseMethods('Payment'),
+    customer: createBaseMethods('Customer'),
+    profile: createBaseMethods('Profile'),
   };
+
+  // $transaction must pass the full prismaMock to callback functions
+  prismaMock.$transaction = jest.fn(async operations => {
+    if (typeof operations === 'function') {
+      return operations(prismaMock);
+    }
+    return operations;
+  });
+
+  return prismaMock;
 };
 
 // Mock modules that cause issues
