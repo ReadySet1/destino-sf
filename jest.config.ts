@@ -3,12 +3,71 @@ import type { Config } from 'jest';
 const config: Config = {
   projects: [
     {
+      displayName: 'integration',
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testMatch: [
+        '<rootDir>/src/__tests__/integration/**/*.test.ts',
+        '<rootDir>/src/__tests__/concurrency/**/*.test.ts',
+      ],
+      moduleNameMapper: {
+        // Path mapping
+        '^@/(.*)$': '<rootDir>/src/$1',
+        '^@/types/(.*)$': '<rootDir>/src/types/$1',
+        '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
+        '^@/components/(.*)$': '<rootDir>/src/components/$1',
+        '^@/app/(.*)$': '<rootDir>/src/app/$1',
+        '^@/utils/(.*)$': '<rootDir>/src/utils/$1',
+        '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
+        '^@/store/(.*)$': '<rootDir>/src/store/$1',
+
+        // Mock external modules (but NOT Prisma for integration tests)
+        '^@supabase/auth-helpers-nextjs$':
+          '<rootDir>/src/__mocks__/@supabase/auth-helpers-nextjs.ts',
+        '^resend$': '<rootDir>/src/__mocks__/resend.ts',
+        '^next/router$': '<rootDir>/src/__mocks__/next/router.ts',
+        '^next/navigation$': '<rootDir>/src/__mocks__/next/navigation.ts',
+        '^@googlemaps/js-api-loader$': '<rootDir>/src/__mocks__/@googlemaps/js-api-loader.ts',
+
+        // Static assets
+        '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+        '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
+      },
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.integration.js'],
+      transform: {
+        '^.+\\.tsx?$': [
+          'ts-jest',
+          {
+            tsconfig: {
+              jsx: 'react',
+              esModuleInterop: true,
+              allowSyntheticDefaultImports: true,
+              moduleResolution: 'node',
+              resolveJsonModule: true,
+              strict: true,
+              skipLibCheck: true,
+            },
+          },
+        ],
+      },
+      transformIgnorePatterns: [
+        'node_modules/(?!(square|shippo|@supabase|@googlemaps|@faker-js)/)',
+      ],
+      testEnvironmentOptions: {
+        customExportConditions: ['node', 'node-addons'],
+      },
+      maxWorkers: 1, // Run serially to avoid database conflicts
+      testTimeout: 60000, // 60 seconds for integration tests
+    },
+    {
       displayName: 'node',
       preset: 'ts-jest',
       testEnvironment: 'node',
       testMatch: [
         '<rootDir>/src/**/__tests__/**/*.test.ts',
         '!<rootDir>/src/**/__tests__/**/*.test.tsx',
+        '!<rootDir>/src/__tests__/integration/**/*.test.ts',
+        '!<rootDir>/src/__tests__/concurrency/**/*.test.ts',
       ],
       moduleNameMapper: {
         // Path mapping
