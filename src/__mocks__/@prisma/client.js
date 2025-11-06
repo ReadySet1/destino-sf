@@ -10,6 +10,12 @@ module.exports = {
         this.name = 'PrismaClientKnownRequestError';
       }
     },
+    TransactionIsolationLevel: {
+      ReadUncommitted: 'ReadUncommitted',
+      ReadCommitted: 'ReadCommitted',
+      RepeatableRead: 'RepeatableRead',
+      Serializable: 'Serializable',
+    },
   },
   // Mock Prisma enums
   OrderStatus: {
