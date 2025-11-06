@@ -14,6 +14,7 @@ import { ProductVisibilityService } from '@/lib/services/product-visibility-serv
 import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
 import { safeBuildTimeStaticParams, isBuildTime } from '@/lib/build-time-utils';
+import { Breadcrumbs } from '@/components/seo/Breadcrumbs';
 
 // Utility function to normalize image data from database
 function normalizeImages(images: any): string[] {
@@ -274,6 +275,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+          {/* Breadcrumb Navigation */}
+          <div className="pt-6">
+            <Breadcrumbs
+              items={[{ name: 'Products', href: '/products' }]}
+              currentPage={category.name}
+            />
+          </div>
           <Suspense
             fallback={
               <div className="flex justify-center items-center h-64">
