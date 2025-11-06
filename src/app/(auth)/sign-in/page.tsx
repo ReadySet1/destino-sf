@@ -31,10 +31,10 @@ export default async function Login({
       </div>
 
       <div className="flex flex-col space-y-4 pt-6">
-        <div className="text-center text-sm">
+        <div className="text-center text-sm text-gray-600">
           Don&apos;t have an account?{' '}
           <Link
-            className="text-primary hover:text-primary/90 underline underline-offset-4 font-medium"
+            className="text-destino-charcoal hover:text-destino-yellow underline underline-offset-4 font-semibold transition-colors duration-200"
             href="/sign-up"
           >
             Sign up
