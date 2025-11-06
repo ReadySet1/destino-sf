@@ -5,6 +5,7 @@ import { OrderHistory, OrderHistoryProps } from '@/components/store/OrderHistory
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import type { Profile } from '@prisma/client';
 import { handleSignOut } from './actions';
 import { User, Package, Clock, Settings, ShoppingBag, Calendar } from 'lucide-react';
@@ -17,32 +18,7 @@ export default async function AccountPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-destino-cream via-white to-gray-50">
-        <div className="container mx-auto py-16 text-center">
-          <div className="mx-auto max-w-md bg-white/95 backdrop-blur-sm rounded-xl p-8 shadow-lg border border-destino-yellow/30">
-            <div className="mb-8 flex justify-center">
-              <div className="rounded-full bg-gradient-to-br from-destino-yellow to-destino-orange p-6 shadow-lg">
-                <User className="h-12 w-12 text-white" />
-              </div>
-            </div>
-            <h1 className="mb-4 text-3xl font-bold text-destino-charcoal">
-              Welcome to Your Account
-            </h1>
-            <p className="mb-8 text-gray-600">
-              Please sign in to access your account and order history.
-            </p>
-            <Button
-              asChild
-              size="lg"
-              className="bg-gradient-to-r from-destino-yellow to-yellow-400 hover:from-yellow-400 hover:to-destino-yellow text-destino-charcoal shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
-            >
-              <Link href="/sign-in">Sign In</Link>
-            </Button>
-          </div>
-        </div>
-      </main>
-    );
+    redirect('/sign-in?returnUrl=/account');
   }
 
   let profile: Profile | null = null;
