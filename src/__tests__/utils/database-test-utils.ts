@@ -126,7 +126,7 @@ export async function createCommonTestData(): Promise<TestDataSetup> {
     data: {
       name: 'Test Category',
       slug: 'test-category',
-      displayOrder: 1,
+      order: 1,
     },
   });
 
@@ -139,8 +139,7 @@ export async function createCommonTestData(): Promise<TestDataSetup> {
       price: 10.0,
       categoryId: category.id,
       isAvailable: true,
-      stripeProductId: 'test-stripe-product',
-      stripePriceId: 'test-stripe-price',
+      squareId: 'test-square-product-123',
     },
   });
 
