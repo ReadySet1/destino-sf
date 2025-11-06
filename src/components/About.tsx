@@ -135,7 +135,7 @@ export const About: React.FC<AboutProps> = ({
             <div className="relative mt-8 h-20 w-64">
               <Image
                 src="/images/about/signature.png"
-                alt="Signature"
+                alt="Signature of Chef James Schenk"
                 fill
                 className="object-contain"
               />
