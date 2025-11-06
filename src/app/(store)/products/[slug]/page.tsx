@@ -8,7 +8,8 @@ import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
 import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityEngine } from '@/lib/availability/engine';
-import { shouldIndexProduct, isCateringProduct } from '@/lib/seo/product-helpers';
+import { shouldIndexProduct, isCateringProduct, getProductCategoryPath } from '@/lib/seo/product-helpers';
+import { Breadcrumbs } from '@/components/seo/Breadcrumbs';
 
 // Helper function to convert product name to URL-friendly slug
 function slugify(text: string): string {
@@ -279,11 +280,35 @@ export default async function ProductPage({ params }: PageProps) {
     images: product.images.length > 0 ? product.images : ['/images/menu/empanadas.png'],
   };
 
+  // Generate breadcrumbs from product category
+  const breadcrumbItems = [];
+  if (validProduct.category) {
+    // Check if it's a catering product by category name
+    const isCatering =
+      validProduct.category.name.toUpperCase().startsWith('CATERING-') ||
+      validProduct.category.slug?.startsWith('catering-') === true;
+
+    if (isCatering) {
+      breadcrumbItems.push({ name: 'Catering', href: '/catering' });
+    } else {
+      breadcrumbItems.push({ name: 'Products', href: '/products' });
+    }
+    if (validProduct.category.slug) {
+      breadcrumbItems.push({
+        name: validProduct.category.name,
+        href: `/products/category/${validProduct.category.slug}`,
+      });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-destino-orange">
       <CategoryHeader title="Details" type="default" className="bg-destino-charcoal" />
       <div className="py-8 mb-0">
         <div className="max-w-4xl mx-auto px-4">
+          {/* Breadcrumb Navigation */}
+          <Breadcrumbs items={breadcrumbItems} currentPage={validProduct.name} />
+
           <ProductDetails product={validProduct} />
         </div>
       </div>
