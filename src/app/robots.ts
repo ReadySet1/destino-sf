@@ -69,7 +69,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: '/',
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${baseUrl}/sitemap-index.xml`,
     host: baseUrl,
   };
 }

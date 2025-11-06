@@ -5,6 +5,8 @@ import MarketingSection from '@/components/Marketing/MarketingSection';
 import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
 import { generatePageSEO } from '@/lib/seo';
 import { MenuStructuredData } from '@/components/seo/StructuredData';
+import { FaqSchema } from '@/components/seo/FaqSchema';
+import { menuFaqData } from '@/data/faq-data';
 
 export const metadata = generatePageSEO('menu');
 
@@ -12,6 +14,7 @@ const MenuPage = () => {
   return (
     <>
       <MenuStructuredData />
+      <FaqSchema items={menuFaqData} />
       <MenuBanner />
 
       <main className="relative overflow-hidden bg-gradient-to-b from-white to-amber-50/30">
