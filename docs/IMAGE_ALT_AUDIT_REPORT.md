@@ -45,10 +45,50 @@
 
 ---
 
+## ⚠️ Audit Script Limitations
+
+This audit performs **static code analysis** and has the following limitations:
+
+### Cannot Validate (Manual Review Required):
+
+**1. Spread Props**
+```tsx
+<Image {...imageProps} />
+```
+Status: Reported as MISSING alt (may be false positive if props contain alt)
+
+**2. Template Literals**
+```tsx
+<Image alt={`${title} image`} />
+```
+Status: Assumed GOOD (cannot verify if template produces generic text like "image")
+
+**3. Conditional Expressions**
+```tsx
+<Image alt={condition ? "Description" : ""} />
+```
+Status: Assumed GOOD (may be empty at runtime)
+
+**4. Dynamic/Computed Props**
+```tsx
+<Image alt={getAltText(product)} />
+<Image alt={product?.name || "Default"} />
+```
+Status: Assumed GOOD (cannot execute functions or evaluate expressions)
+
+### Recommendations:
+- Manually review images marked as "GOOD" that use JSX expressions
+- Verify template literals produce descriptive (non-generic) text
+- Ensure conditional alt text provides appropriate descriptions in all branches
+- For spread props, verify the source object includes proper alt text
+
+---
+
 ## 💡 Recommendations
 
 1. **Fix all missing alt attributes** (0 images)
 2. **Improve generic alt text** (0 images)
 3. **Review empty alt images** to ensure they are decorative
-4. Follow the guidelines in `docs/ALT_TEXT_GUIDELINES.md`
+4. **Manually review dynamic alt text** (images using expressions, templates, or conditionals)
+5. Follow the guidelines in `docs/ALT_TEXT_GUIDELINES.md`
 

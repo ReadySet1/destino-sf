@@ -7,6 +7,80 @@
  * and checks for proper alt text implementation.
  *
  * Usage: node scripts/audit-image-alt.js
+ *
+ * @description
+ * This script performs static analysis of JSX/TSX files to identify Next.js Image
+ * components and validate their alt text attributes for accessibility compliance.
+ *
+ * ## What This Script Validates:
+ * - ✅ Presence of alt attribute on <Image> components
+ * - ✅ Empty alt text (alt="") for decorative images
+ * - ✅ Generic alt text patterns (e.g., "image", "photo", "product")
+ * - ✅ Multi-line JSX with props on separate lines
+ * - ✅ Alt text with string literals (single/double quotes)
+ * - ✅ Alt text with JSX expressions (e.g., {product.name})
+ * - ✅ Component name disambiguation (Image vs ImagePlaceholder)
+ *
+ * ## Known Limitations - Manual Review Required:
+ * The following patterns CANNOT be validated statically and require manual review:
+ *
+ * 1. **Spread Props:**
+ *    ```tsx
+ *    <Image {...imageProps} />
+ *    ```
+ *    The script cannot determine if `imageProps` contains an alt attribute.
+ *    Status: Will be reported as MISSING alt (false positive if props contain alt).
+ *
+ * 2. **Template Literals:**
+ *    ```tsx
+ *    <Image alt={`${title} image`} />
+ *    ```
+ *    The script detects the expression but cannot validate the actual text quality.
+ *    Status: Assumed to be GOOD alt text (may be generic if template produces "image").
+ *
+ * 3. **Conditional Expressions:**
+ *    ```tsx
+ *    <Image alt={condition ? "Description" : ""} />
+ *    <Image alt={condition && "Description"} />
+ *    ```
+ *    The script cannot evaluate runtime conditions.
+ *    Status: Assumed to be GOOD alt text (may be empty at runtime).
+ *
+ * 4. **Dynamic/Computed Props:**
+ *    ```tsx
+ *    <Image alt={getAltText(product)} />
+ *    <Image alt={product?.name || "Default"} />
+ *    ```
+ *    The script cannot execute functions or evaluate complex expressions.
+ *    Status: Assumed to be GOOD alt text.
+ *
+ * 5. **Complex Multi-line Expressions:**
+ *    ```tsx
+ *    <Image
+ *      alt={
+ *        isLoading
+ *          ? "Loading..."
+ *          : product.description
+ *      }
+ *    />
+ *    ```
+ *    Complex formatting may cause incomplete regex matches.
+ *    Status: May be partially captured or assumed to be GOOD.
+ *
+ * ## Recommendations:
+ * - For images with spread props, ensure the source object includes descriptive alt text
+ * - For template literals, verify they produce descriptive (non-generic) text at runtime
+ * - For conditional alt text, ensure all branches provide appropriate descriptions
+ * - Review the generated report and manually verify images marked as "GOOD" that use expressions
+ * - Follow guidelines in `docs/ALT_TEXT_GUIDELINES.md` for best practices
+ *
+ * ## Output:
+ * Generates a detailed report at `docs/IMAGE_ALT_AUDIT_REPORT.md` with:
+ * - Summary statistics and overall score
+ * - High priority issues (missing alt)
+ * - Medium priority issues (generic alt)
+ * - Informational items (empty alt - decorative images)
+ * - Priority files that need attention
  */
 
 import fs from 'fs';
