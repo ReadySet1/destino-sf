@@ -19,15 +19,13 @@ Visual regression testing helps detect unintended UI changes by comparing screen
 
 ```
 tests/e2e/visual/
-├── homepage.visual.spec.ts          # Homepage visual tests
-├── products.visual.spec.ts          # Product pages visual tests
-├── cart.visual.spec.ts              # Shopping cart visual tests
-├── checkout.visual.spec.ts          # Checkout flow visual tests
-├── catering.visual.spec.ts          # Catering pages visual tests
-├── admin.visual.spec.ts             # Admin dashboard visual tests
-└── screenshots/                      # Baseline screenshots (committed to git)
-    └── [test-name]-[viewport].png
+├── [test-name].visual.spec.ts       # Visual test files
+└── [test-name].visual.spec.ts-snapshots/  # Baseline screenshots (committed to git)
+    ├── [screenshot-name]-visual-regression-desktop-chromium.png
+    └── [screenshot-name]-visual-regression-mobile-chromium.png
 ```
+
+**Note**: Baseline screenshots are automatically organized into `-snapshots/` directories alongside their test files. The naming convention includes the project name (desktop/mobile) to differentiate viewport sizes.
 
 ### Configuration
 
@@ -42,6 +40,7 @@ Visual regression tests are configured in `playwright.config.ts` with two dedica
 - **Animations**: Disabled for consistent captures
 - **Caret**: Hidden to avoid cursor-related flakiness
 - **Test matching**: `*.visual.spec.ts` files
+- **Cross-platform compatibility**: Custom `snapshotPathTemplate` ensures baselines generated on macOS work in Linux CI (no platform-specific suffixes)
 
 ## Running Visual Tests
 
@@ -255,7 +254,17 @@ await expect(element).toHaveScreenshot('hero.png', {
 
 ### Current Setup
 
-Visual regression tests are NOT automatically run in CI yet. To add them:
+Visual regression tests are NOT automatically run in CI yet. This is a deliberate decision to allow for incremental test implementation without blocking the CI pipeline.
+
+**Decision Log (2025-11-12):**
+- Infrastructure is in place and ready for visual tests
+- Tests can be run locally and in PR reviews
+- CI integration will be added once we have a stable set of baseline tests
+- This allows us to add tests incrementally without false failures in CI
+
+### Adding Visual Tests to CI (When Ready)
+
+To enable visual regression tests in CI:
 
 1. **Update `.github/workflows/test-suite.yml`**:
    ```yaml
