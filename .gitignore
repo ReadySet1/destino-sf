@@ -55,6 +55,8 @@ next-env.d.ts
 # playwright
 test-results/
 playwright-report/
+# Include visual regression baseline screenshots (they should be committed)
+!tests/e2e/visual/**/*-snapshots/
 
 # archive and backups
 # (Exclude src/app/api/** from this rule to allow API routes)
