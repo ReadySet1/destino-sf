@@ -42,45 +42,102 @@ export default defineConfig({
   },
 
   /* Configure projects for major browsers */
-  projects: process.env.CI
-    ? [
-        // Full browser matrix in CI
-        {
-          name: 'chromium',
-          use: { ...devices['Desktop Chrome'] },
+  projects: [
+    // Visual regression testing project
+    {
+      name: 'visual-regression-desktop',
+      testMatch: /.*\.visual\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+        screenshot: 'on', // Always capture screenshots for visual tests
+        video: 'off', // No video for visual tests
+        trace: 'off', // No trace for visual tests
+        // Disable animations for consistent screenshots
+        launchOptions: {
+          args: ['--disable-animations', '--disable-gpu-vsync'],
         },
-        {
-          name: 'firefox',
-          use: { ...devices['Desktop Firefox'] },
+      },
+      expect: {
+        toHaveScreenshot: {
+          maxDiffPixels: 100, // Allow up to 100 pixels difference
+          maxDiffPixelRatio: 0.002, // 0.2% pixel difference tolerance
+          animations: 'disabled',
+          caret: 'hide',
         },
-        {
-          name: 'webkit',
-          use: { ...devices['Desktop Safari'] },
+      },
+    },
+    {
+      name: 'visual-regression-mobile',
+      testMatch: /.*\.visual\.spec\.ts/,
+      use: {
+        ...devices['iPhone 12'],
+        viewport: { width: 375, height: 667 },
+        screenshot: 'on',
+        video: 'off',
+        trace: 'off',
+        launchOptions: {
+          args: ['--disable-animations', '--disable-gpu-vsync'],
         },
-        {
-          name: 'Mobile Chrome',
-          use: { ...devices['Pixel 5'] },
+      },
+      expect: {
+        toHaveScreenshot: {
+          maxDiffPixels: 100,
+          maxDiffPixelRatio: 0.002,
+          animations: 'disabled',
+          caret: 'hide',
         },
-        {
-          name: 'Mobile Safari',
-          use: { ...devices['iPhone 12'] },
-        },
-        {
-          name: 'Microsoft Edge',
-          use: { ...devices['Desktop Edge'], channel: 'msedge' },
-        },
-        {
-          name: 'Google Chrome',
-          use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-        },
-      ]
-    : [
-        // Only chromium locally for faster testing
-        {
-          name: 'chromium',
-          use: { ...devices['Desktop Chrome'] },
-        },
-      ],
+      },
+    },
+    // Regular E2E test projects
+    ...(process.env.CI
+      ? [
+          // Full browser matrix in CI
+          {
+            name: 'chromium',
+            testIgnore: /.*\.visual\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+          },
+          {
+            name: 'firefox',
+            testIgnore: /.*\.visual\.spec\.ts/,
+            use: { ...devices['Desktop Firefox'] },
+          },
+          {
+            name: 'webkit',
+            testIgnore: /.*\.visual\.spec\.ts/,
+            use: { ...devices['Desktop Safari'] },
+          },
+          {
+            name: 'Mobile Chrome',
+            testIgnore: /.*\.visual\.spec\.ts/,
+            use: { ...devices['Pixel 5'] },
+          },
+          {
+            name: 'Mobile Safari',
+            testIgnore: /.*\.visual\.spec\.ts/,
+            use: { ...devices['iPhone 12'] },
+          },
+          {
+            name: 'Microsoft Edge',
+            testIgnore: /.*\.visual\.spec\.ts/,
+            use: { ...devices['Desktop Edge'], channel: 'msedge' },
+          },
+          {
+            name: 'Google Chrome',
+            testIgnore: /.*\.visual\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+          },
+        ]
+      : [
+          // Only chromium locally for faster testing
+          {
+            name: 'chromium',
+            testIgnore: /.*\.visual\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+          },
+        ]),
+  ],
 
   /* Global timeout for each test - increased for CI reliability */
   timeout: process.env.CI ? 90 * 1000 : 60 * 1000,
