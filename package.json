@@ -18,7 +18,7 @@
     "test": "jest --passWithNoTests",
     "test:unit": "jest --testPathPattern='(utils|lib)' --passWithNoTests",
     "test:api": "jest --testEnvironment=node --testPathPattern='api' --passWithNoTests",
-    "test:components": "jest --testEnvironment=jsdom --testPathPattern='components' --passWithNoTests",
+    "test:components": "jest --selectProjects jsdom --testPathPattern='components' --passWithNoTests",
     "test:coverage": "jest --coverage --passWithNoTests",
     "test:ci": "jest --coverage --watchAll=false --no-cache",
     "test:watch": "jest --watch --passWithNoTests",

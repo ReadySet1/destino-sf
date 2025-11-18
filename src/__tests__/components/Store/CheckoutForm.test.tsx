@@ -83,7 +83,7 @@ jest.mock('@/components/ui/select', () => ({
   SelectValue: () => <div>Select Value</div>,
 }));
 
-jest.mock('@/components/Store/FulfillmentSelector', () => ({
+jest.mock('@/components/store/FulfillmentSelector', () => ({
   FulfillmentSelector: ({
     onFulfillmentChange,
   }: {
@@ -98,15 +98,15 @@ jest.mock('@/components/Store/FulfillmentSelector', () => ({
 
 // Mock AddressForm to only show when delivery is selected
 let showAddressForm = false;
-jest.mock('@/components/Store/AddressForm', () => ({
+jest.mock('@/components/store/AddressForm', () => ({
   AddressForm: () => (showAddressForm ? <div>Address Form</div> : null),
 }));
 
-jest.mock('@/components/Store/PaymentMethodSelector', () => ({
+jest.mock('@/components/store/PaymentMethodSelector', () => ({
   PaymentMethodSelector: () => <div>Payment Method Selector</div>,
 }));
 
-jest.mock('@/components/Store/CheckoutSummary', () => ({
+jest.mock('@/components/store/CheckoutSummary', () => ({
   CheckoutSummary: () => <div>Checkout Summary</div>,
 }));
 
