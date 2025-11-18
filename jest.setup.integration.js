@@ -14,7 +14,11 @@
  */
 
 const { TextEncoder, TextDecoder } = require('util');
-const { cleanDatabase, setupTestDatabase, disconnectTestDatabase } = require('./src/__tests__/utils/database-test-utils');
+const {
+  cleanDatabase,
+  setupTestDatabase,
+  disconnectTestDatabase,
+} = require('./src/__tests__/utils/database-test-utils');
 
 // Fix TextEncoder/TextDecoder
 global.TextEncoder = TextEncoder;
@@ -100,7 +104,7 @@ jest.mock('@supabase/ssr', () => ({
 jest.mock('next/headers', () => ({
   cookies: jest.fn(() => ({
     getAll: jest.fn(() => []),
-    get: jest.fn((name) => ({ value: 'test-cookie-value' })),
+    get: jest.fn(name => ({ value: 'test-cookie-value' })),
     set: jest.fn(),
   })),
 }));

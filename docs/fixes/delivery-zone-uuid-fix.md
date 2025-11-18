@@ -33,9 +33,10 @@ When an empty string is passed, PostgreSQL cannot cast `''` to UUID, resulting i
 ### 1. Updated `src/lib/audit/delivery-zone-audit.ts`
 
 **Changed the `AuditContext` interface to allow null:**
+
 ```typescript
 export interface AuditContext {
-  adminUserId: string | null;  // ✅ Now allows null
+  adminUserId: string | null; // ✅ Now allows null
   adminEmail: string;
   ipAddress?: string;
   userAgent?: string;
@@ -43,6 +44,7 @@ export interface AuditContext {
 ```
 
 **Modified `setAuditContext` to only set admin_user_id when present:**
+
 ```typescript
 export async function setAuditContext(context: AuditContext) {
   // Only set admin_user_id if it's provided (not null/undefined)
@@ -51,7 +53,7 @@ export async function setAuditContext(context: AuditContext) {
       SELECT set_config('app.admin_user_id', ${context.adminUserId}, true)
     `;
   }
-  
+
   await prisma.$executeRaw`
     SELECT set_config('app.admin_email', ${context.adminEmail}, true)
   `;
@@ -62,21 +64,25 @@ export async function setAuditContext(context: AuditContext) {
 ### 2. Updated `src/app/api/admin/delivery-zones/route.ts`
 
 **Changed POST endpoint (line 65):**
+
 ```typescript
 await setAuditContext({
-  adminUserId: authResult.user?.id || null,      // ✅ Use null instead of ''
+  adminUserId: authResult.user?.id || null, // ✅ Use null instead of ''
   adminEmail: authResult.user?.email || 'unknown', // ✅ Better fallback
-  ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+  ipAddress:
+    request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
   userAgent: request.headers.get('user-agent') || undefined,
 });
 ```
 
 **Changed PUT endpoint (line 226):**
+
 ```typescript
 await setAuditContext({
-  adminUserId: authResult.user?.id || null,      // ✅ Use null instead of ''
+  adminUserId: authResult.user?.id || null, // ✅ Use null instead of ''
   adminEmail: authResult.user?.email || 'unknown', // ✅ Better fallback
-  ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+  ipAddress:
+    request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
   userAgent: request.headers.get('user-agent') || undefined,
 });
 ```
@@ -102,12 +108,14 @@ await setAuditContext({
 ## Testing Recommendations
 
 ### 1. Local Testing
+
 ```bash
 # Test updating a delivery zone when authentication context might be missing
 # Verify no UUID errors occur
 ```
 
 ### 2. Production Testing
+
 1. Navigate to Admin Dashboard → Catering Delivery Zones
 2. Edit the East Bay zone
 3. Change delivery fee from $65 to $55
@@ -115,6 +123,7 @@ await setAuditContext({
 5. Check that audit log entries are created correctly
 
 ### 3. Edge Cases to Verify
+
 - Update operation with valid admin user ID ✅
 - Update operation with missing admin user ID ✅
 - Bulk update operations ✅
@@ -123,10 +132,12 @@ await setAuditContext({
 ## Audit Log Behavior
 
 ### Before Fix
+
 - Would crash with UUID cast error when admin user ID was missing
 - Audit log entries would not be created
 
 ### After Fix
+
 - When admin user ID is present: audit log records the actual admin UUID
 - When admin user ID is missing: database trigger falls back to system UUID (`00000000-0000-0000-0000-000000000000`)
 - Audit entries are always created successfully
@@ -146,6 +157,7 @@ await setAuditContext({
 ## Prevention
 
 This fix prevents the UUID casting error by:
+
 1. Using `null` instead of empty string for missing user IDs
 2. Conditionally setting the database config only when a valid ID exists
 3. Allowing the database trigger's COALESCE to handle the NULL case properly
@@ -155,4 +167,3 @@ This fix prevents the UUID casting error by:
 - The regular delivery zones API (`src/app/api/admin/regular-delivery-zones/route.ts`) does NOT use audit context, so no changes were needed there
 - This fix is specific to the catering delivery zones audit system
 - The database trigger was already designed to handle missing admin IDs with COALESCE, we just needed to provide NULL instead of an invalid empty string
-

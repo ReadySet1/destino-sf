@@ -82,9 +82,8 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
   try {
     // Check if the slug is a UUID
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      slug
-    );
+    const isUUID =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
     // Fetch the category from the database with build-time detection
     let category = null;

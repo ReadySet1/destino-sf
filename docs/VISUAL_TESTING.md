@@ -116,11 +116,13 @@ Update baselines when:
 1. **Make your UI changes** in your feature branch
 
 2. **Run visual tests** to see what changed:
+
    ```bash
    pnpm test:e2e:visual
    ```
 
 3. **Review the diff images** in `test-results/`:
+
    ```bash
    # Open the HTML report to see visual diffs
    npx playwright show-report
@@ -129,6 +131,7 @@ Update baselines when:
 4. **Verify changes are intentional** - Examine each diff carefully
 
 5. **Update baselines** if changes are correct:
+
    ```bash
    pnpm test:e2e:visual:update
    ```
@@ -224,19 +227,20 @@ await expect(element).toHaveScreenshot('hero.png', {
 
 ### Current Visual Tests
 
-| Page/Feature | Desktop | Mobile | Tests |
-|--------------|---------|--------|-------|
-| Homepage | ✅ | ✅ | Hero, nav, spotlight, footer, full page |
-| Product Listing | ✅ | ✅ | Alfajores, empanadas, product cards |
-| Product Details | ✅ | ✅ | Individual products, gallery, pricing |
-| Shopping Cart | ✅ | ✅ | Empty, single item, multiple items, controls |
-| Checkout | ✅ | ✅ | Customer info, fulfillment, payment, summary |
-| Catering | ✅ | ✅ | Menu, packages, inquiry form, date picker |
-| Admin Dashboard | ✅ | ✅ | Overview, orders table, product management |
+| Page/Feature    | Desktop | Mobile | Tests                                        |
+| --------------- | ------- | ------ | -------------------------------------------- |
+| Homepage        | ✅      | ✅     | Hero, nav, spotlight, footer, full page      |
+| Product Listing | ✅      | ✅     | Alfajores, empanadas, product cards          |
+| Product Details | ✅      | ✅     | Individual products, gallery, pricing        |
+| Shopping Cart   | ✅      | ✅     | Empty, single item, multiple items, controls |
+| Checkout        | ✅      | ✅     | Customer info, fulfillment, payment, summary |
+| Catering        | ✅      | ✅     | Menu, packages, inquiry form, date picker    |
+| Admin Dashboard | ✅      | ✅     | Overview, orders table, product management   |
 
 ### Adding New Visual Tests
 
 1. **Create test file** with `.visual.spec.ts` suffix:
+
    ```bash
    touch tests/e2e/visual/my-feature.visual.spec.ts
    ```
@@ -244,6 +248,7 @@ await expect(element).toHaveScreenshot('hero.png', {
 2. **Write tests** following existing patterns
 
 3. **Generate baselines**:
+
    ```bash
    pnpm test:e2e:visual:update tests/e2e/visual/my-feature.visual.spec.ts
    ```
@@ -257,6 +262,7 @@ await expect(element).toHaveScreenshot('hero.png', {
 Visual regression tests are NOT automatically run in CI yet. This is a deliberate decision to allow for incremental test implementation without blocking the CI pipeline.
 
 **Decision Log (2025-11-12):**
+
 - Infrastructure is in place and ready for visual tests
 - Tests can be run locally and in PR reviews
 - CI integration will be added once we have a stable set of baseline tests
@@ -267,6 +273,7 @@ Visual regression tests are NOT automatically run in CI yet. This is a deliberat
 To enable visual regression tests in CI:
 
 1. **Update `.github/workflows/test-suite.yml`**:
+
    ```yaml
    - name: Run visual regression tests
      run: pnpm test:e2e:visual
@@ -345,16 +352,19 @@ pnpm test:e2e:visual:update
 ### Debugging Tips
 
 1. **View diff images** in HTML report:
+
    ```bash
    npx playwright show-report
    ```
 
 2. **Run in UI mode** for debugging:
+
    ```bash
    pnpm test:e2e:visual:ui
    ```
 
 3. **Inspect screenshots** manually:
+
    ```bash
    open tests/e2e/visual/[test-name]-snapshots/
    ```

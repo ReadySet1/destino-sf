@@ -212,7 +212,8 @@ import Image from '@/components/Image';
     });
 
     it('should detect good descriptive alt text', () => {
-      const imageTag = '<Image src="/empanada.jpg" alt="Golden beef empanada with chimichurri sauce" />';
+      const imageTag =
+        '<Image src="/empanada.jpg" alt="Golden beef empanada with chimichurri sauce" />';
 
       const altMatch = imageTag.match(/alt\s*=\s*["'`]([^"'`]*)["'`]/);
 

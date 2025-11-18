@@ -169,7 +169,10 @@ export function SignInForm({ redirectUrl }: SignInFormProps) {
   return (
     <div className="space-y-6">
       {/* Sign-in method tabs */}
-      <div className="flex bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-1 shadow-sm" role="tablist">
+      <div
+        className="flex bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-1 shadow-sm"
+        role="tablist"
+      >
         <button
           type="button"
           className={`flex-1 py-3 px-4 text-sm font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-destino-yellow focus:ring-offset-2 transition-all duration-200 ${

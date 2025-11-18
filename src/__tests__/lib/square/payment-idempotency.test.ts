@@ -181,13 +181,11 @@ describe('Payment Idempotency - Retry Scenarios', () => {
   });
 
   test('should retry payment after recoverable failure', async () => {
-    mockCreatePayment
-      .mockRejectedValueOnce(new Error('Temporary failure'))
-      .mockResolvedValueOnce({
-        id: 'payment-retry-success',
-        status: 'COMPLETED',
-        amountMoney: { amount: BigInt(5000), currency: 'USD' },
-      } as any);
+    mockCreatePayment.mockRejectedValueOnce(new Error('Temporary failure')).mockResolvedValueOnce({
+      id: 'payment-retry-success',
+      status: 'COMPLETED',
+      amountMoney: { amount: BigInt(5000), currency: 'USD' },
+    } as any);
 
     // First attempt fails
     await expect(createPayment('card-nonce-123', 'order-456', 5000)).rejects.toThrow(
@@ -227,17 +225,18 @@ describe('Payment Idempotency - Concurrent Operations', () => {
 
     // Mock createPayment to simulate async behavior with unique IDs
     let callCount = 0;
-    mockCreatePayment.mockImplementation(() =>
-      new Promise(resolve => {
-        setTimeout(() => {
-          callCount++;
-          resolve({
-            id: `payment-${Date.now()}-${callCount}`,
-            status: 'COMPLETED',
-            amountMoney: { amount: BigInt(5000), currency: 'USD' },
-          } as any);
-        }, 50);
-      })
+    mockCreatePayment.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          setTimeout(() => {
+            callCount++;
+            resolve({
+              id: `payment-${Date.now()}-${callCount}`,
+              status: 'COMPLETED',
+              amountMoney: { amount: BigInt(5000), currency: 'USD' },
+            } as any);
+          }, 50);
+        })
     );
   });
 

@@ -6,14 +6,14 @@
 
 ## 📊 Summary
 
-| Metric | Count | Percentage |
-|--------|-------|------------|
-| Total Files Scanned | 39 | - |
-| Total Images Found | 48 | 100% |
-| ✅ Good Alt Text | 45 | 93.8% |
-| ⚠️ Generic Alt Text | 0 | 0.0% |
-| ℹ️ Empty Alt (Decorative) | 3 | 6.3% |
-| ❌ Missing Alt | 0 | 0.0% |
+| Metric                    | Count | Percentage |
+| ------------------------- | ----- | ---------- |
+| Total Files Scanned       | 39    | -          |
+| Total Images Found        | 48    | 100%       |
+| ✅ Good Alt Text          | 45    | 93.8%      |
+| ⚠️ Generic Alt Text       | 0     | 0.0%       |
+| ℹ️ Empty Alt (Decorative) | 3     | 6.3%       |
+| ❌ Missing Alt            | 0     | 0.0%       |
 
 ### Overall Alt Text Score: 93.8%
 
@@ -26,21 +26,27 @@
 **Empty Alt Text** - Verify these are truly decorative images.
 
 ### components/Landing/components/MenuSection.tsx:52
+
 ```tsx
 <Image
 ```
+
 **Note:** Empty alt is appropriate for decorative images only.
 
 ### components/Marketing/CateringSection.tsx:24
+
 ```tsx
 <Image
 ```
+
 **Note:** Empty alt is appropriate for decorative images only.
 
 ### components/Marketing/ShopByCategory.tsx:53
+
 ```tsx
 <Image
 ```
+
 **Note:** Empty alt is appropriate for decorative images only.
 
 ---
@@ -52,31 +58,40 @@ This audit performs **static code analysis** and has the following limitations:
 ### Cannot Validate (Manual Review Required):
 
 **1. Spread Props**
+
 ```tsx
 <Image {...imageProps} />
 ```
+
 Status: Reported as MISSING alt (may be false positive if props contain alt)
 
 **2. Template Literals**
+
 ```tsx
 <Image alt={`${title} image`} />
 ```
+
 Status: Assumed GOOD (cannot verify if template produces generic text like "image")
 
 **3. Conditional Expressions**
+
 ```tsx
-<Image alt={condition ? "Description" : ""} />
+<Image alt={condition ? 'Description' : ''} />
 ```
+
 Status: Assumed GOOD (may be empty at runtime)
 
 **4. Dynamic/Computed Props**
+
 ```tsx
 <Image alt={getAltText(product)} />
 <Image alt={product?.name || "Default"} />
 ```
+
 Status: Assumed GOOD (cannot execute functions or evaluate expressions)
 
 ### Recommendations:
+
 - Manually review images marked as "GOOD" that use JSX expressions
 - Verify template literals produce descriptive (non-generic) text
 - Ensure conditional alt text provides appropriate descriptions in all branches
@@ -91,4 +106,3 @@ Status: Assumed GOOD (cannot execute functions or evaluate expressions)
 3. **Review empty alt images** to ensure they are decorative
 4. **Manually review dynamic alt text** (images using expressions, templates, or conditionals)
 5. Follow the guidelines in `docs/ALT_TEXT_GUIDELINES.md`
-

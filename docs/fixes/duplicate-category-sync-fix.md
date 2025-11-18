@@ -41,10 +41,11 @@ interface DuplicateCategoryInfo {
 function detectDuplicateCategories(
   categories: SquareCatalogObject[],
   items: SquareCatalogObject[]
-): DuplicateCategoryInfo[]
+): DuplicateCategoryInfo[];
 ```
 
 **Algorithm**:
+
 1. Group categories by name (case-insensitive)
 2. For groups with multiple categories, count items in each
 3. Select category with most items as "winner"
@@ -85,6 +86,7 @@ if (categoryIdFromItem && categoryRemapping.has(categoryIdFromItem)) {
 Created comprehensive test suite: `src/__tests__/lib/square/duplicate-category-detection.test.ts`
 
 **Test Coverage**:
+
 - ✅ No duplicates when all category names unique
 - ✅ Detect duplicate categories (case-insensitive)
 - ✅ Select category with most items as winner
@@ -100,6 +102,7 @@ Created comprehensive test suite: `src/__tests__/lib/square/duplicate-category-d
 ### Manual Verification
 
 **Sync Results**:
+
 - Found **16 duplicate category sets** in production Square catalog
 - EMPANADAS: 4 duplicate categories → 1 merged category
 - Successfully synced **131 products** with **100% success rate**
@@ -107,6 +110,7 @@ Created comprehensive test suite: `src/__tests__/lib/square/duplicate-category-d
 **Database Verification**:
 
 Before fix:
+
 ```sql
 -- Multiple EMPANADAS categories
 CBCQ73NCXQKUAFWGP2KQFOJN: 1 item
@@ -114,12 +118,14 @@ SDGSB4F4YOUFY3UFJF2KWXUB: 17 items
 ```
 
 After fix:
+
 ```sql
 -- Single EMPANADAS category
 CBCQ73NCXQKUAFWGP2KQFOJN: 18 items (all products merged)
 ```
 
 **Products Now Correctly Merged**:
+
 - Encebollado ✅
 - All 17 frozen empanada packs ✅
 - Salsas and sauces ✅
@@ -140,6 +146,7 @@ The fix provides detailed logging during sync:
 ## Additional Duplicates Found
 
 The fix also detected and merged duplicates for:
+
 - ALFAJORES (2 duplicates)
 - SAUCES (2 duplicates)
 - CATERING- APPETIZERS (2 duplicates)
@@ -164,6 +171,7 @@ The fix also detected and merged duplicates for:
 ## Rollback Plan
 
 If issues occur, the changes are non-destructive:
+
 1. Revert changes to `src/lib/square/sync.ts`
 2. Existing products remain in their current categories
 3. Re-run sync after fix
@@ -199,4 +207,3 @@ Watch sync logs for duplicate category warnings to identify when new duplicates 
 ## Conclusion
 
 The duplicate category sync fix is fully implemented, tested, and verified. Products are no longer split across duplicate categories, ensuring all items are visible and properly organized in the frontend.
-

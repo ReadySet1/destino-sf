@@ -136,17 +136,19 @@ const createPrismaMock = () => {
           id,
           createdAt: new Date(),
           updatedAt: new Date(),
-          ...data
+          ...data,
         };
 
         // Handle nested creates for relations
         if (data.items && data.items.create) {
-          const itemsData = Array.isArray(data.items.create) ? data.items.create : [data.items.create];
+          const itemsData = Array.isArray(data.items.create)
+            ? data.items.create
+            : [data.items.create];
           createdItem.items = itemsData.map((item, idx) => ({
             id: `item-${idx}-${Date.now()}`,
             orderId: id,
             createdAt: new Date(),
-            ...item
+            ...item,
           }));
           // Store order items
           stores.orderitem.push(...createdItem.items);
@@ -229,14 +231,20 @@ const createPrismaMock = () => {
                 // Handle nested includes for product and variant
                 if (include.items.include) {
                   if (include.items.include.product && item.productId) {
-                    itemWithIncludes.product = { id: item.productId, name: `Product ${item.productId}` };
+                    itemWithIncludes.product = {
+                      id: item.productId,
+                      name: `Product ${item.productId}`,
+                    };
                   }
                   if (include.items.include.variant && item.variantId) {
-                    itemWithIncludes.variant = { id: item.variantId, name: `Variant ${item.variantId}` };
+                    itemWithIncludes.variant = {
+                      id: item.variantId,
+                      name: `Variant ${item.variantId}`,
+                    };
                   }
                 }
                 return itemWithIncludes;
-              })
+              }),
           }));
         }
 

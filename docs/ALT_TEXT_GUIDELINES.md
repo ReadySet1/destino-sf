@@ -47,11 +47,9 @@
 **Examples:**
 
 ✅ **Good:**
+
 ```tsx
-<Image
-  src="/images/empanadas/beef.jpg"
-  alt="Argentine beef empanada with golden flaky crust"
-/>
+<Image src="/images/empanadas/beef.jpg" alt="Argentine beef empanada with golden flaky crust" />
 ```
 
 ```tsx
@@ -62,11 +60,12 @@
 ```
 
 ❌ **Bad:**
+
 ```tsx
-alt="product"
-alt="image of empanada"
-alt="photo"
-alt=""  // Only acceptable for purely decorative images
+alt = 'product';
+alt = 'image of empanada';
+alt = 'photo';
+alt = ''; // Only acceptable for purely decorative images
 ```
 
 ### Category Images
@@ -116,19 +115,15 @@ alt=""  // Only acceptable for purely decorative images
 ### Logo Images
 
 **Navbar/Header:**
+
 ```tsx
-<Image
-  src="/logo.png"
-  alt="Destino SF - Handcrafted Latin Food"
-/>
+<Image src="/logo.png" alt="Destino SF - Handcrafted Latin Food" />
 ```
 
 **Footer:**
+
 ```tsx
-<Image
-  src="/logo.png"
-  alt="Destino SF logo"
-/>
+<Image src="/logo.png" alt="Destino SF logo" />
 ```
 
 ### Hero/Banner Images
@@ -145,10 +140,7 @@ alt=""  // Only acceptable for purely decorative images
 ```
 
 ```tsx
-<Image
-  src="/catering-hero.jpg"
-  alt="Elegant catering setup with assorted empanadas and desserts"
-/>
+<Image src="/catering-hero.jpg" alt="Elegant catering setup with assorted empanadas and desserts" />
 ```
 
 ### Promotional/Marketing Images
@@ -158,17 +150,11 @@ alt=""  // Only acceptable for purely decorative images
 **Examples:**
 
 ```tsx
-<Image
-  src="/promo-mothers-day.jpg"
-  alt="Mother's Day special - alfajores gift box with ribbon"
-/>
+<Image src="/promo-mothers-day.jpg" alt="Mother's Day special - alfajores gift box with ribbon" />
 ```
 
 ```tsx
-<Image
-  src="/featured-bundle.jpg"
-  alt="Featured bundle: 12 empanadas and 6 alfajores"
-/>
+<Image src="/featured-bundle.jpg" alt="Featured bundle: 12 empanadas and 6 alfajores" />
 ```
 
 ### About/Team Images
@@ -178,10 +164,7 @@ alt=""  // Only acceptable for purely decorative images
 **Examples:**
 
 ```tsx
-<Image
-  src="/team/chef.jpg"
-  alt="Head chef preparing empanada dough in Destino SF kitchen"
-/>
+<Image src="/team/chef.jpg" alt="Head chef preparing empanada dough in Destino SF kitchen" />
 ```
 
 ```tsx
@@ -198,31 +181,30 @@ alt=""  // Only acceptable for purely decorative images
 ### Decorative Images
 
 **When to use empty alt text (`alt=""`):**
+
 - Pure design elements (borders, dividers, backgrounds)
 - Images that add no informational value
 - Images fully described in adjacent text
 
 **Example:**
+
 ```tsx
-{/* Decorative background pattern */}
-<Image
-  src="/pattern-bg.svg"
-  alt=""
-  aria-hidden="true"
-/>
+{
+  /* Decorative background pattern */
+}
+<Image src="/pattern-bg.svg" alt="" aria-hidden="true" />;
 ```
 
 ### Icons
 
 **Functional icons (clickable):** Describe the action
+
 ```tsx
-<Image
-  src="/icons/cart.svg"
-  alt="View shopping cart"
-/>
+<Image src="/icons/cart.svg" alt="View shopping cart" />
 ```
 
 **Decorative icons (next to text):** Use empty alt or aria-hidden
+
 ```tsx
 <ShoppingCart className="w-5 h-5" aria-hidden="true" />
 <span>Shopping Cart</span>
@@ -244,10 +226,7 @@ alt=""  // Only acceptable for purely decorative images
 **Format:** Just product name (context is provided by surrounding UI)
 
 ```tsx
-<Image
-  src="/thumb/beef-empanada.jpg"
-  alt="Argentine beef empanada"
-/>
+<Image src="/thumb/beef-empanada.jpg" alt="Argentine beef empanada" />
 ```
 
 ---
@@ -264,6 +243,7 @@ alt=""  // Only acceptable for purely decorative images
 ### Automated Testing
 
 Run the audit script regularly:
+
 ```bash
 node scripts/audit-image-alt.js
 ```

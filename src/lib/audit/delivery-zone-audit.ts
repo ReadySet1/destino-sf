@@ -32,7 +32,7 @@ export async function setAuditContext(context: AuditContext) {
       SELECT set_config('app.admin_user_id', ${context.adminUserId}, true)
     `;
   }
-  
+
   await prisma.$executeRaw`
     SELECT set_config('app.admin_email', ${context.adminEmail}, true)
   `;

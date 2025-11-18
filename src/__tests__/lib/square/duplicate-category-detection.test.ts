@@ -43,48 +43,48 @@ function detectDuplicateCategories(
   items: SquareCatalogObject[]
 ): DuplicateCategoryInfo[] {
   const duplicates: DuplicateCategoryInfo[] = [];
-  
+
   // Group categories by name (case-insensitive)
   const categoryGroups = new Map<string, SquareCatalogObject[]>();
-  
+
   for (const category of categories) {
     if (category.type !== 'CATEGORY' || !category.category_data?.name) {
       continue;
     }
-    
+
     const normalizedName = category.category_data.name.trim().toUpperCase();
     const existing = categoryGroups.get(normalizedName) || [];
     existing.push(category);
     categoryGroups.set(normalizedName, existing);
   }
-  
+
   // Find duplicates (more than one category with same name)
   for (const [normalizedName, categoryGroup] of categoryGroups.entries()) {
     if (categoryGroup.length <= 1) {
       continue;
     }
-    
+
     // Count items in each category
     const categoriesWithCounts = categoryGroup.map(cat => {
       const itemCount = items.filter(item => {
         if (item.type !== 'ITEM' || !item.item_data) return false;
-        
+
         const categoryIdFromItem = item.item_data.categories?.[0]?.id || item.item_data.category_id;
         return categoryIdFromItem === cat.id;
       }).length;
-      
+
       return {
         squareId: cat.id,
         itemCount,
       };
     });
-    
+
     // Sort by item count descending
     categoriesWithCounts.sort((a, b) => b.itemCount - a.itemCount);
-    
+
     const winnerId = categoriesWithCounts[0].squareId;
     const duplicateIds = categoriesWithCounts.slice(1).map(c => c.squareId);
-    
+
     duplicates.push({
       categoryName: categoryGroup[0].category_data?.name || normalizedName,
       categories: categoriesWithCounts,
@@ -92,7 +92,7 @@ function detectDuplicateCategories(
       duplicateIds,
     });
   }
-  
+
   return duplicates;
 }
 
@@ -111,11 +111,11 @@ describe('Duplicate Category Detection', () => {
           category_data: { name: 'ALFAJORES' },
         },
       ];
-      
+
       const items: SquareCatalogObject[] = [];
-      
+
       const result = detectDuplicateCategories(categories, items);
-      
+
       expect(result).toHaveLength(0);
     });
 
@@ -132,7 +132,7 @@ describe('Duplicate Category Detection', () => {
           category_data: { name: 'EMPANADAS' },
         },
       ];
-      
+
       const items: SquareCatalogObject[] = [
         {
           type: 'ITEM',
@@ -151,9 +151,9 @@ describe('Duplicate Category Detection', () => {
           },
         },
       ];
-      
+
       const result = detectDuplicateCategories(categories, items);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].categoryName).toBe('EMPANADAS');
       expect(result[0].categories).toHaveLength(2);
@@ -172,7 +172,7 @@ describe('Duplicate Category Detection', () => {
           category_data: { name: 'EMPANADAS' },
         },
       ];
-      
+
       const items: SquareCatalogObject[] = [
         // 1 item in first category
         {
@@ -193,9 +193,9 @@ describe('Duplicate Category Detection', () => {
           },
         })),
       ];
-      
+
       const result = detectDuplicateCategories(categories, items);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].winnerId).toBe('SDGSB4F4YOUFY3UFJF2KWXUB');
       expect(result[0].duplicateIds).toEqual(['CBCQ73NCXQKUAFWGP2KQFOJN']);
@@ -216,7 +216,7 @@ describe('Duplicate Category Detection', () => {
           category_data: { name: 'EMPANADAS' },
         },
       ];
-      
+
       const items: SquareCatalogObject[] = [
         {
           type: 'ITEM',
@@ -243,9 +243,9 @@ describe('Duplicate Category Detection', () => {
           },
         },
       ];
-      
+
       const result = detectDuplicateCategories(categories, items);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].winnerId).toBe('CAT2'); // Has 2 items
       expect(result[0].duplicateIds).toEqual(['CAT1']); // Has 1 item
@@ -274,7 +274,7 @@ describe('Duplicate Category Detection', () => {
           category_data: { name: 'ALFAJORES' },
         },
       ];
-      
+
       const items: SquareCatalogObject[] = [
         {
           type: 'ITEM',
@@ -302,15 +302,15 @@ describe('Duplicate Category Detection', () => {
           item_data: { name: 'Item 5', categories: [{ id: 'ALF2' }] },
         },
       ];
-      
+
       const result = detectDuplicateCategories(categories, items);
-      
+
       expect(result).toHaveLength(2);
-      
+
       const empanadasDup = result.find(d => d.categoryName === 'EMPANADAS');
       expect(empanadasDup).toBeDefined();
       expect(empanadasDup?.winnerId).toBe('EMP2'); // Has 2 items
-      
+
       const alfajoresDup = result.find(d => d.categoryName === 'ALFAJORES');
       expect(alfajoresDup).toBeDefined();
       // ALF1 and ALF2 each have 1 item, so first one wins (stable sort)
@@ -334,7 +334,7 @@ describe('Duplicate Category Detection', () => {
           category_data: { name: 'empanadas' },
         },
       ];
-      
+
       const items: SquareCatalogObject[] = [
         {
           type: 'ITEM',
@@ -342,9 +342,9 @@ describe('Duplicate Category Detection', () => {
           item_data: { name: 'Item 1', categories: [{ id: 'CAT1' }] },
         },
       ];
-      
+
       const result = detectDuplicateCategories(categories, items);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].categories).toHaveLength(3);
     });
@@ -362,11 +362,11 @@ describe('Duplicate Category Detection', () => {
           category_data: { name: 'EMPANADAS' },
         },
       ];
-      
+
       const items: SquareCatalogObject[] = [];
-      
+
       const result = detectDuplicateCategories(categories, items);
-      
+
       expect(result).toHaveLength(0); // Only one valid category
     });
 
@@ -383,11 +383,11 @@ describe('Duplicate Category Detection', () => {
           // No category_data
         },
       ];
-      
+
       const items: SquareCatalogObject[] = [];
-      
+
       const result = detectDuplicateCategories(categories, items);
-      
+
       expect(result).toHaveLength(0);
     });
   });
@@ -406,7 +406,7 @@ describe('Duplicate Category Detection', () => {
           category_data: { name: 'EMPANADAS' },
         },
       ];
-      
+
       const items: SquareCatalogObject[] = [
         {
           type: 'ITEM',
@@ -425,9 +425,9 @@ describe('Duplicate Category Detection', () => {
           },
         })),
       ];
-      
+
       const duplicates = detectDuplicateCategories(categories, items);
-      
+
       // Simulate remapping creation
       const categoryRemapping = new Map<string, string>();
       for (const duplicate of duplicates) {
@@ -435,10 +435,9 @@ describe('Duplicate Category Detection', () => {
           categoryRemapping.set(duplicateId, duplicate.winnerId);
         }
       }
-      
+
       expect(categoryRemapping.size).toBe(1);
       expect(categoryRemapping.get('CBCQ73NCXQKUAFWGP2KQFOJN')).toBe('SDGSB4F4YOUFY3UFJF2KWXUB');
     });
   });
 });
-

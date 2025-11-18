@@ -36,6 +36,7 @@ Prisma: {
 ```
 
 **Files Changed**:
+
 - `src/__mocks__/@prisma/client.js` (Line 13-18)
 
 **Result**: 1 test now passes that was previously failing.
@@ -49,61 +50,76 @@ The remaining failures are concentrated in **integration and concurrency tests**
 ### Failure Categories
 
 #### 1. Payment Edge Cases (7 tests)
+
 **Location**: Various test files
 **Issues**:
+
 - Mock doesn't handle concurrent payment attempts correctly
 - Mock doesn't track payment processing states across calls
 - Square API mocks don't simulate real timeout behavior
 
 **Examples**:
+
 - Should handle multiple concurrent payment attempts for same order
 - Should prevent payment on already processing order
 - Should handle Square API timeout during payment processing
 
 #### 2. Checkout Flow Concurrency (7 tests)
+
 **Location**: `src/__tests__/integration/checkout-flow-concurrency.test.ts`
 **Issues**:
+
 - Full checkout flow requires complex state management across multiple API calls
 - Mocks don't maintain state between checkout → order → payment steps
 - Concurrent user scenarios need real transaction isolation
 
 **Examples**:
+
 - Should complete full checkout flow: cart → order → payment
 - Should prevent double-submit during checkout
 - Should handle 10 concurrent users checking out different orders
 
 #### 3. Payment Race Conditions (15 tests)
+
 **Location**: `src/__tests__/concurrency/payment-race-conditions.test.ts`
 **Issues**:
+
 - Pessimistic locking with `$queryRawUnsafe` not properly mocked
 - Transaction isolation levels don't work in mocks
 - Lock timeout and deadlock scenarios can't be simulated with mocks
 
 **Examples**:
+
 - Should prevent concurrent payment processing on same order
 - Should handle lock timeout gracefully
 - Should update order status atomically within transaction
 
 #### 4. Payment API Route Tests (13 tests)
+
 **Location**: `src/__tests__/app/api/checkout/payment/route.test.ts`
 **Issues**:
+
 - Route tests expect real transaction behavior
 - Mock Prisma doesn't handle error scenarios correctly
 - Database errors and constraints not simulated
 
 **Examples**:
+
 - Should process payment successfully
 - Should handle database errors during order status update
 - Should maintain payment idempotency
 
 #### 5. Order Creation Race Conditions (4 tests)
+
 **Location**: `src/__tests__/concurrency/order-creation-race.test.ts`
 **Issues**:
+
 - `checkForDuplicateOrder` function requires complex WHERE queries that mocks don't support
 - Unique constraints not enforced in mock
 - Concurrent order creation needs real database locking
 
 **Examples**:
+
 - Should prevent duplicate orders from concurrent requests with same items
 - Should detect duplicate order with same items within 24 hours
 - Should prevent duplicate order items via unique constraint
@@ -149,17 +165,20 @@ The remaining failures are concentrated in **integration and concurrency tests**
 **Approach**: Run integration tests against a real PostgreSQL test database
 
 **Pros**:
+
 - Tests real database behavior (transactions, constraints, locking)
 - No need to maintain complex mocks
 - Catches real-world issues
 - More reliable CI
 
 **Cons**:
+
 - Requires database setup in CI
 - Slightly slower test execution
 - Need database cleanup between tests
 
 **Implementation**:
+
 ```bash
 # In CI workflow
 services:
@@ -182,16 +201,19 @@ beforeEach(async () => {
 **Approach**: Enhance `src/__mocks__/@prisma/client.js` to handle all test scenarios
 
 **Pros**:
+
 - No external dependencies
 - Faster test execution
 
 **Cons**:
+
 - Extremely time-consuming (20+ hours of work)
 - Mock will never match real database behavior 100%
 - Maintenance burden as tests evolve
 - Won't catch real database issues
 
 **Required Mock Improvements**:
+
 1. Implement complex `findMany` WHERE clause logic
 2. Add unique constraint checking
 3. Implement transaction isolation simulation
@@ -206,16 +228,19 @@ beforeEach(async () => {
 **Approach**: Split tests into unit tests (use mocks) and integration tests (use real DB)
 
 **Pros**:
+
 - Best of both worlds
 - Fast unit tests with mocks
 - Reliable integration tests with real DB
 - Clear test organization
 
 **Cons**:
+
 - Requires test refactoring
 - Some tests may need to be rewritten
 
 **Implementation**:
+
 - Move integration tests to `src/__tests__/integration/` (already there!)
 - Configure Jest to run integration tests separately
 - Use real database for integration tests only
@@ -227,14 +252,17 @@ beforeEach(async () => {
 **Approach**: Leave `continue-on-error: true` in workflow with plan to fix later
 
 **Pros**:
+
 - Unblocks current development
 - Can be addressed in follow-up work
 
 **Cons**:
+
 - Technical debt remains
 - CI doesn't catch test failures
 
 **Implementation**:
+
 - Keep current workflow configuration
 - Create follow-up tickets (already done: DES-77)
 - Set deadline for proper fix
@@ -322,6 +350,7 @@ If implementing Option 1:
 **Current State**: CI allows critical test failures with `continue-on-error: true`
 
 **Risk Level**: Medium
+
 - Tests don't catch real issues
 - False sense of security
 - Technical debt accumulates
@@ -330,4 +359,4 @@ If implementing Option 1:
 
 ---
 
-*Generated as part of DES-76 implementation*
+_Generated as part of DES-76 implementation_
