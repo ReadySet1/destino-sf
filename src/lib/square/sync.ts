@@ -63,6 +63,19 @@ interface SyncResult {
   debugInfo?: any; // Added for debugging
 }
 
+/**
+ * Information about duplicate categories detected during sync
+ */
+interface DuplicateCategoryInfo {
+  categoryName: string;
+  categories: Array<{
+    squareId: string;
+    itemCount: number;
+  }>;
+  winnerId: string; // Category with most items
+  duplicateIds: string[]; // Categories to merge
+}
+
 // Define a helper type for variant creation
 type VariantCreate = Prisma.VariantCreateWithoutProductInput;
 
@@ -267,6 +280,69 @@ function isCateringCategory(name: string): boolean {
   }
 
   return isCatering;
+}
+
+/**
+ * Detects duplicate category names in Square catalog and determines which one to use
+ * Returns information about duplicates, with the "winner" being the category with most items
+ */
+function detectDuplicateCategories(
+  categories: SquareCatalogObject[],
+  items: SquareCatalogObject[]
+): DuplicateCategoryInfo[] {
+  const duplicates: DuplicateCategoryInfo[] = [];
+  
+  // Group categories by name (case-insensitive)
+  const categoryGroups = new Map<string, SquareCatalogObject[]>();
+  
+  for (const category of categories) {
+    if (category.type !== 'CATEGORY' || !category.category_data?.name) {
+      continue;
+    }
+    
+    const normalizedName = category.category_data.name.trim().toUpperCase();
+    const existing = categoryGroups.get(normalizedName) || [];
+    existing.push(category);
+    categoryGroups.set(normalizedName, existing);
+  }
+  
+  // Find duplicates (more than one category with same name)
+  for (const [normalizedName, categoryGroup] of categoryGroups.entries()) {
+    if (categoryGroup.length <= 1) {
+      continue; // Not a duplicate
+    }
+    
+    // Count items in each category
+    const categoriesWithCounts = categoryGroup.map(cat => {
+      const itemCount = items.filter(item => {
+        if (item.type !== 'ITEM' || !item.item_data) return false;
+        
+        // Check both legacy category_id and modern categories array
+        const categoryIdFromItem = item.item_data.categories?.[0]?.id || item.item_data.category_id;
+        return categoryIdFromItem === cat.id;
+      }).length;
+      
+      return {
+        squareId: cat.id,
+        itemCount,
+      };
+    });
+    
+    // Sort by item count descending - winner has most items
+    categoriesWithCounts.sort((a, b) => b.itemCount - a.itemCount);
+    
+    const winnerId = categoriesWithCounts[0].squareId;
+    const duplicateIds = categoriesWithCounts.slice(1).map(c => c.squareId);
+    
+    duplicates.push({
+      categoryName: categoryGroup[0].category_data?.name || normalizedName,
+      categories: categoriesWithCounts,
+      winnerId,
+      duplicateIds,
+    });
+  }
+  
+  return duplicates;
 }
 
 // Enhanced function to get or create a category with proper upsert logic
@@ -555,6 +631,36 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       debugInfo.categoriesFound = categories.length;
       debugInfo.relatedObjectsFound = relatedObjects.length;
 
+      // Detect duplicate category names and create remapping
+      const duplicateCategories = detectDuplicateCategories(categories, items);
+      const categoryRemapping = new Map<string, string>();
+      
+      if (duplicateCategories.length > 0) {
+        logger.warn(
+          `⚠️ Found ${duplicateCategories.length} duplicate category name(s) in Square catalog`
+        );
+        
+        for (const duplicate of duplicateCategories) {
+          logger.warn(`   📁 Duplicate category: "${duplicate.categoryName}"`);
+          logger.warn(`      Winner: ${duplicate.winnerId} (${duplicate.categories[0].itemCount} items)`);
+          
+          // Log all duplicates for transparency
+          for (let i = 1; i < duplicate.categories.length; i++) {
+            const dup = duplicate.categories[i];
+            logger.warn(`      Merging: ${dup.squareId} (${dup.itemCount} items) → ${duplicate.winnerId}`);
+            categoryRemapping.set(dup.squareId, duplicate.winnerId);
+          }
+        }
+        
+        debugInfo.duplicateCategories = duplicateCategories.map(d => ({
+          name: d.categoryName,
+          winnerCount: d.categories[0].itemCount,
+          duplicatesCount: d.duplicateIds.length,
+        }));
+      } else {
+        logger.info('✓ No duplicate category names detected');
+      }
+
       // Log all found category names for debugging
       if (categories.length > 0) {
         logger.info(
@@ -618,7 +724,7 @@ export async function syncSquareProducts(): Promise<SyncResult> {
 
           try {
             await rateLimiter.throttle(); // Rate limit each item processing
-            await processSquareItem(squareItem, relatedObjects, categoryMap, defaultCategory);
+            await processSquareItem(squareItem, relatedObjects, categoryMap, defaultCategory, categoryRemapping);
             syncedCount++;
             logger.debug(`✅ Processed item: ${squareItem.item_data.name}`);
             return { success: true, itemName: squareItem.item_data.name };
@@ -837,7 +943,8 @@ async function processSquareItem(
   item: SquareCatalogObject,
   relatedObjects: SquareCatalogObject[],
   categoryMap: Map<string, SquareCatalogObject>,
-  defaultCategory: { id: string; name: string }
+  defaultCategory: { id: string; name: string },
+  categoryRemapping: Map<string, string> = new Map()
 ): Promise<void> {
   const itemData = item.item_data!;
   const itemName = itemData.name || '';
@@ -905,7 +1012,16 @@ async function processSquareItem(
   let categoryId = defaultCategory.id;
   let categoryName = defaultCategory.name;
 
-  const categoryIdFromItem = itemData.categories?.[0]?.id || itemData.category_id;
+  let categoryIdFromItem = itemData.categories?.[0]?.id || itemData.category_id;
+
+  // Apply category remapping for duplicate names
+  if (categoryIdFromItem && categoryRemapping.has(categoryIdFromItem)) {
+    const originalCategoryId = categoryIdFromItem;
+    categoryIdFromItem = categoryRemapping.get(categoryIdFromItem)!;
+    logger.debug(
+      `Remapping category for item "${itemName}": ${originalCategoryId} → ${categoryIdFromItem} (duplicate category merge)`
+    );
+  }
 
   if (categoryIdFromItem) {
     // Use CategoryMapper instead of creating by name
