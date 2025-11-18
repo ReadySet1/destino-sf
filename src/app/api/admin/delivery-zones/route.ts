@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
   try {
     // Set audit context for this transaction
     await setAuditContext({
-      adminUserId: authResult.user?.id || '',
-      adminEmail: authResult.user?.email || '',
+      adminUserId: authResult.user?.id || null,
+      adminEmail: authResult.user?.email || 'unknown',
       ipAddress:
         request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
       userAgent: request.headers.get('user-agent') || undefined,
@@ -223,8 +223,8 @@ export async function PUT(request: NextRequest) {
   try {
     // Set audit context for bulk update
     await setAuditContext({
-      adminUserId: authResult.user?.id || '',
-      adminEmail: authResult.user?.email || '',
+      adminUserId: authResult.user?.id || null,
+      adminEmail: authResult.user?.email || 'unknown',
       ipAddress:
         request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
       userAgent: request.headers.get('user-agent') || undefined,

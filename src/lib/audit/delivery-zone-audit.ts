@@ -15,7 +15,7 @@ export interface AuditLogEntry {
 }
 
 export interface AuditContext {
-  adminUserId: string;
+  adminUserId: string | null;
   adminEmail: string;
   ipAddress?: string;
   userAgent?: string;
@@ -26,9 +26,15 @@ export interface AuditContext {
  * This allows the trigger to capture admin user information
  */
 export async function setAuditContext(context: AuditContext) {
+  // Only set admin_user_id if it's provided (not null/undefined)
+  if (context.adminUserId) {
+    await prisma.$executeRaw`
+      SELECT set_config('app.admin_user_id', ${context.adminUserId}, true)
+    `;
+  }
+  
   await prisma.$executeRaw`
-    SELECT set_config('app.admin_user_id', ${context.adminUserId}, true),
-           set_config('app.admin_email', ${context.adminEmail}, true)
+    SELECT set_config('app.admin_email', ${context.adminEmail}, true)
   `;
 
   if (context.ipAddress) {
