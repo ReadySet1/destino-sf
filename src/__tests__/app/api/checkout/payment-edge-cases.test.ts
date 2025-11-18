@@ -278,11 +278,7 @@ describe('Payment Edge Cases - Duplicate Detection', () => {
       const result = await checkForDuplicateOrder(null, cartItems, 'guest@example.com');
 
       expect(result.hasPendingOrder).toBe(true);
-      expect(mockCheckForDuplicateOrder).toHaveBeenCalledWith(
-        null,
-        cartItems,
-        'guest@example.com'
-      );
+      expect(mockCheckForDuplicateOrder).toHaveBeenCalledWith(null, cartItems, 'guest@example.com');
     });
 
     test('should handle duplicate check errors gracefully', async () => {

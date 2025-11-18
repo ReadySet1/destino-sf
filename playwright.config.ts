@@ -68,7 +68,8 @@ export default defineConfig({
           // This ensures baselines generated on macOS work in Linux CI
         },
       },
-      snapshotPathTemplate: '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}-{projectName}{ext}',
+      snapshotPathTemplate:
+        '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}-{projectName}{ext}',
     },
     {
       name: 'visual-regression-mobile',
@@ -91,7 +92,8 @@ export default defineConfig({
           caret: 'hide',
         },
       },
-      snapshotPathTemplate: '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}-{projectName}{ext}',
+      snapshotPathTemplate:
+        '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}-{projectName}{ext}',
     },
     // Regular E2E test projects
     ...(process.env.CI

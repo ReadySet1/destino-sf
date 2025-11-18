@@ -29,21 +29,21 @@ invalid input syntax for type uuid: ""
 ### Production Log (2025-11-18 16:06:05)
 
 ```
-2025-11-18 16:06:05.949 [info] prisma:error 
+2025-11-18 16:06:05.949 [info] prisma:error
 Invalid `prisma.cateringDeliveryZone.update()` invocation:
 
 Error occurred during query execution:
-ConnectorError(ConnectorError { 
-  user_facing_error: None, 
-  kind: QueryError(PostgresError { 
-    code: "22P02", 
-    message: "invalid input syntax for type uuid: \"\"", 
-    severity: "ERROR", 
-    detail: None, 
-    column: None, 
-    hint: None 
-  }), 
-  transient: false 
+ConnectorError(ConnectorError {
+  user_facing_error: None,
+  kind: QueryError(PostgresError {
+    code: "22P02",
+    message: "invalid input syntax for type uuid: \"\"",
+    severity: "ERROR",
+    detail: None,
+    column: None,
+    hint: None
+  }),
+  transient: false
 })
 ```
 
@@ -76,7 +76,7 @@ The audit context initialization in `src/app/api/admin/delivery-zones/route.ts` 
 ```typescript
 // ❌ BEFORE - Line 65
 await setAuditContext({
-  adminUserId: authResult.user?.id || '',  // Empty string causes UUID cast error
+  adminUserId: authResult.user?.id || '', // Empty string causes UUID cast error
   adminEmail: authResult.user?.email || '',
   // ...
 });
@@ -110,9 +110,10 @@ Use `null` instead of empty string for missing user IDs, and conditionally set t
 #### 1. Updated `src/lib/audit/delivery-zone-audit.ts`
 
 **Changed the `AuditContext` interface:**
+
 ```typescript
 export interface AuditContext {
-  adminUserId: string | null;  // ✅ Now allows null instead of requiring string
+  adminUserId: string | null; // ✅ Now allows null instead of requiring string
   adminEmail: string;
   ipAddress?: string;
   userAgent?: string;
@@ -120,6 +121,7 @@ export interface AuditContext {
 ```
 
 **Modified `setAuditContext()` function:**
+
 ```typescript
 export async function setAuditContext(context: AuditContext) {
   // ✅ Only set admin_user_id if it's provided (not null/undefined)
@@ -128,7 +130,7 @@ export async function setAuditContext(context: AuditContext) {
       SELECT set_config('app.admin_user_id', ${context.adminUserId}, true)
     `;
   }
-  
+
   // Always set admin_email
   await prisma.$executeRaw`
     SELECT set_config('app.admin_email', ${context.adminEmail}, true)
@@ -152,23 +154,27 @@ export async function setAuditContext(context: AuditContext) {
 #### 2. Updated `src/app/api/admin/delivery-zones/route.ts`
 
 **POST endpoint (line 65):**
+
 ```typescript
 // ✅ AFTER
 await setAuditContext({
-  adminUserId: authResult.user?.id || null,      // Use null instead of ''
+  adminUserId: authResult.user?.id || null, // Use null instead of ''
   adminEmail: authResult.user?.email || 'unknown', // Better fallback
-  ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+  ipAddress:
+    request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
   userAgent: request.headers.get('user-agent') || undefined,
 });
 ```
 
 **PUT endpoint (line 226):**
+
 ```typescript
 // ✅ AFTER
 await setAuditContext({
-  adminUserId: authResult.user?.id || null,      // Use null instead of ''
+  adminUserId: authResult.user?.id || null, // Use null instead of ''
   adminEmail: authResult.user?.email || 'unknown', // Better fallback
-  ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+  ipAddress:
+    request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
   userAgent: request.headers.get('user-agent') || undefined,
 });
 ```
@@ -193,6 +199,7 @@ await setAuditContext({
 ## Testing Performed
 
 ### Automated Tests
+
 - ✅ TypeScript compilation passes (`pnpm type-check`)
 - ✅ ESLint passes with no errors
 - ✅ No linting errors in modified files
@@ -200,6 +207,7 @@ await setAuditContext({
 ### Manual Testing Needed
 
 #### Test Case 1: Update Delivery Zone (Primary Issue)
+
 1. Navigate to Admin Dashboard → Catering Delivery Zones
 2. Click Edit on the East Bay zone
 3. Change delivery fee from $65 to $55
@@ -208,9 +216,10 @@ await setAuditContext({
 6. **Verify**: Audit log entry is created in `delivery_zone_audit_log` table
 
 #### Test Case 2: Verify Audit Logging
+
 ```sql
 -- Check recent audit logs
-SELECT 
+SELECT
   operation,
   zone_identifier,
   admin_email,
@@ -220,14 +229,17 @@ FROM delivery_zone_audit_log
 ORDER BY created_at DESC
 LIMIT 10;
 ```
+
 **Expected**: Entries show either valid UUIDs or system UUID (`00000000-0000-0000-0000-000000000000`)
 
 #### Test Case 3: Update Other Zones
+
 - Test updating San Francisco zone
 - Test updating South Bay zone
 - **Expected**: All updates work without errors
 
 #### Test Case 4: Bulk Updates
+
 - Test bulk zone updates via PUT endpoint
 - **Expected**: No UUID errors, all zones update successfully
 
@@ -236,11 +248,13 @@ LIMIT 10;
 ## Audit Log Behavior
 
 ### Before Fix
+
 - ❌ Would crash with UUID cast error when admin user ID was missing
 - ❌ Audit log entries would not be created
 - ❌ Admin interface showed generic "Failed to save delivery zone" error
 
 ### After Fix
+
 - ✅ When admin user ID is present: audit log records the actual admin UUID
 - ✅ When admin user ID is missing: database trigger falls back to system UUID (`00000000-0000-0000-0000-000000000000`)
 - ✅ Audit entries are always created successfully
@@ -251,6 +265,7 @@ LIMIT 10;
 ## Deployment Information
 
 ### Deployment Checklist
+
 - ✅ Code changes committed
 - ✅ TypeScript compilation verified
 - ✅ Linting passes
@@ -259,13 +274,16 @@ LIMIT 10;
 - ⏳ Check audit logs in production database
 
 ### Deployment Notes
+
 - **No database migration required** - database trigger already handles NULL/missing values with COALESCE
 - **No breaking changes** - backward compatible with existing code
 - **Safe to deploy immediately** - fix addresses production-blocking bug
 - **No rollback needed** - if there are issues, the old behavior was already broken
 
 ### Rollback Plan
+
 If unexpected issues occur (unlikely):
+
 1. Revert the two modified files
 2. Redeploy
 3. The original bug will return, but no new issues introduced
@@ -275,17 +293,20 @@ If unexpected issues occur (unlikely):
 ## Prevention & Monitoring
 
 ### How This Was Missed
+
 - Local development had valid admin sessions, masking the issue
 - Production authentication context behaved differently
 - Edge case: missing user ID not tested
 
 ### Prevention Measures
+
 1. Add test case for missing authentication context
 2. Add explicit handling for edge cases in authentication
 3. Consider adding Sentry monitoring for UUID cast errors
 4. Add integration test for delivery zone updates without full auth context
 
 ### Monitoring Recommendations
+
 ```sql
 -- Monitor for system UUID usage (indicates missing admin ID)
 SELECT COUNT(*) as missing_admin_count
@@ -307,11 +328,13 @@ AND created_at > NOW() - INTERVAL '24 hours';
 ## Business Impact
 
 ### Before Fix
+
 - ⚠️ Admin unable to update catering delivery zones in production
 - ⚠️ Cannot adjust pricing for East Bay, Peninsula, or other zones
 - ⚠️ Manual database updates required for pricing changes
 
 ### After Fix
+
 - ✅ Admin can update delivery zones normally
 - ✅ Pricing adjustments can be made through admin interface
 - ✅ Audit trail maintained for all changes
@@ -336,4 +359,3 @@ AND created_at > NOW() - INTERVAL '24 hours';
 3. ⏳ Verify audit logs are being created correctly
 4. ⏳ Monitor for any related issues over 24 hours
 5. ⏳ Close ticket once verified in production
-

@@ -291,49 +291,49 @@ function detectDuplicateCategories(
   items: SquareCatalogObject[]
 ): DuplicateCategoryInfo[] {
   const duplicates: DuplicateCategoryInfo[] = [];
-  
+
   // Group categories by name (case-insensitive)
   const categoryGroups = new Map<string, SquareCatalogObject[]>();
-  
+
   for (const category of categories) {
     if (category.type !== 'CATEGORY' || !category.category_data?.name) {
       continue;
     }
-    
+
     const normalizedName = category.category_data.name.trim().toUpperCase();
     const existing = categoryGroups.get(normalizedName) || [];
     existing.push(category);
     categoryGroups.set(normalizedName, existing);
   }
-  
+
   // Find duplicates (more than one category with same name)
   for (const [normalizedName, categoryGroup] of categoryGroups.entries()) {
     if (categoryGroup.length <= 1) {
       continue; // Not a duplicate
     }
-    
+
     // Count items in each category
     const categoriesWithCounts = categoryGroup.map(cat => {
       const itemCount = items.filter(item => {
         if (item.type !== 'ITEM' || !item.item_data) return false;
-        
+
         // Check both legacy category_id and modern categories array
         const categoryIdFromItem = item.item_data.categories?.[0]?.id || item.item_data.category_id;
         return categoryIdFromItem === cat.id;
       }).length;
-      
+
       return {
         squareId: cat.id,
         itemCount,
       };
     });
-    
+
     // Sort by item count descending - winner has most items
     categoriesWithCounts.sort((a, b) => b.itemCount - a.itemCount);
-    
+
     const winnerId = categoriesWithCounts[0].squareId;
     const duplicateIds = categoriesWithCounts.slice(1).map(c => c.squareId);
-    
+
     duplicates.push({
       categoryName: categoryGroup[0].category_data?.name || normalizedName,
       categories: categoriesWithCounts,
@@ -341,7 +341,7 @@ function detectDuplicateCategories(
       duplicateIds,
     });
   }
-  
+
   return duplicates;
 }
 
@@ -634,24 +634,28 @@ export async function syncSquareProducts(): Promise<SyncResult> {
       // Detect duplicate category names and create remapping
       const duplicateCategories = detectDuplicateCategories(categories, items);
       const categoryRemapping = new Map<string, string>();
-      
+
       if (duplicateCategories.length > 0) {
         logger.warn(
           `⚠️ Found ${duplicateCategories.length} duplicate category name(s) in Square catalog`
         );
-        
+
         for (const duplicate of duplicateCategories) {
           logger.warn(`   📁 Duplicate category: "${duplicate.categoryName}"`);
-          logger.warn(`      Winner: ${duplicate.winnerId} (${duplicate.categories[0].itemCount} items)`);
-          
+          logger.warn(
+            `      Winner: ${duplicate.winnerId} (${duplicate.categories[0].itemCount} items)`
+          );
+
           // Log all duplicates for transparency
           for (let i = 1; i < duplicate.categories.length; i++) {
             const dup = duplicate.categories[i];
-            logger.warn(`      Merging: ${dup.squareId} (${dup.itemCount} items) → ${duplicate.winnerId}`);
+            logger.warn(
+              `      Merging: ${dup.squareId} (${dup.itemCount} items) → ${duplicate.winnerId}`
+            );
             categoryRemapping.set(dup.squareId, duplicate.winnerId);
           }
         }
-        
+
         debugInfo.duplicateCategories = duplicateCategories.map(d => ({
           name: d.categoryName,
           winnerCount: d.categories[0].itemCount,
@@ -724,7 +728,13 @@ export async function syncSquareProducts(): Promise<SyncResult> {
 
           try {
             await rateLimiter.throttle(); // Rate limit each item processing
-            await processSquareItem(squareItem, relatedObjects, categoryMap, defaultCategory, categoryRemapping);
+            await processSquareItem(
+              squareItem,
+              relatedObjects,
+              categoryMap,
+              defaultCategory,
+              categoryRemapping
+            );
             syncedCount++;
             logger.debug(`✅ Processed item: ${squareItem.item_data.name}`);
             return { success: true, itemName: squareItem.item_data.name };

@@ -8,7 +8,11 @@ import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
 import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityEngine } from '@/lib/availability/engine';
-import { shouldIndexProduct, isCateringProduct, getProductCategoryPath } from '@/lib/seo/product-helpers';
+import {
+  shouldIndexProduct,
+  isCateringProduct,
+  getProductCategoryPath,
+} from '@/lib/seo/product-helpers';
 import { Breadcrumbs } from '@/components/seo/Breadcrumbs';
 
 // Helper function to convert product name to URL-friendly slug

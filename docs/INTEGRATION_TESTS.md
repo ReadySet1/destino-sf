@@ -5,6 +5,7 @@
 ## Overview
 
 Integration tests use a **REAL PostgreSQL database** (not mocks) to test actual database behavior including:
+
 - Transaction isolation and pessimistic locking
 - Database constraints (unique, foreign key)
 - Complex queries with JOINs and aggregations
@@ -146,6 +147,7 @@ beforeEach(async () => {
 ```
 
 This ensures:
+
 - ✅ Tests don't affect each other
 - ✅ Each test starts with a clean database
 - ✅ Tests can run in any order
@@ -154,6 +156,7 @@ This ensures:
 ### What's Mocked vs Real
 
 **REAL (not mocked)**:
+
 - ✅ Prisma Client
 - ✅ PostgreSQL database
 - ✅ Transactions and locking
@@ -161,6 +164,7 @@ This ensures:
 - ✅ Complex queries
 
 **MOCKED (external services)**:
+
 - ✅ Square API (payments, orders)
 - ✅ Supabase Auth
 - ✅ Resend (email)
@@ -255,6 +259,7 @@ await waitForDatabaseOperation(
 **Problem**: Can't connect to PostgreSQL
 
 **Solutions**:
+
 ```bash
 # 1. Check if PostgreSQL is running
 pg_isready
@@ -289,6 +294,7 @@ afterAll(async () => {
 **Problem**: Tests aren't properly isolated
 
 **Solutions**:
+
 1. Ensure `cleanDatabase()` runs before each test
 2. Use `--runInBand` to run tests serially
 3. Check for race conditions in test code
@@ -299,6 +305,7 @@ afterAll(async () => {
 **Problem**: Database schema doesn't match Prisma schema
 
 **Solution**:
+
 ```bash
 # Generate Prisma client
 pnpm prisma generate
@@ -417,4 +424,4 @@ describe('Order Creation', () => {
 
 ---
 
-*Generated as part of DES-76 implementation*
+_Generated as part of DES-76 implementation_
