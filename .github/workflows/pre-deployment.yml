@@ -258,6 +258,21 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && github.base_ref == 'main')
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: destino_sf_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -275,11 +290,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify PostgreSQL Connection
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          for i in {1..30}; do
+            if pg_isready -h localhost -U postgres > /dev/null 2>&1; then
+              echo "✅ PostgreSQL is ready"
+              break
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 1
+          done
+
       - name: Setup E2E environment
         run: |
           echo "NODE_ENV=test" >> $GITHUB_ENV
           # Database
-          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test_db" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/destino_sf_test" >> $GITHUB_ENV
           # Supabase
           echo "NEXT_PUBLIC_SUPABASE_URL=https://test.supabase.co" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key" >> $GITHUB_ENV
@@ -311,6 +338,16 @@ jobs:
           # Redis
           echo "UPSTASH_REDIS_REST_TOKEN=test-redis-token" >> $GITHUB_ENV
           echo "UPSTASH_REDIS_REST_URL=https://test-redis.upstash.io" >> $GITHUB_ENV
+
+      - name: Setup Database Schema
+        run: |
+          echo "Generating Prisma Client..."
+          pnpm prisma generate
+
+          echo "Pushing database schema..."
+          pnpm prisma db push --skip-generate --accept-data-loss
+
+          echo "✅ Database schema setup complete"
 
       - name: Install Playwright browsers
         run: pnpm playwright install --with-deps chromium
