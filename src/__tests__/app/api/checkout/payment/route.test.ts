@@ -51,6 +51,40 @@ jest.mock('@/lib/square/service', () => ({
   })),
 }));
 
+// Mock pessimistic lock - dynamically fetch order and simulate real behavior
+jest.mock('@/lib/concurrency/pessimistic-lock', () => {
+  const LockAcquisitionError = class extends Error {
+    constructor(
+      public readonly table: string,
+      public readonly id: string,
+      public readonly reason: 'timeout' | 'not_found' | 'deadlock' | 'unknown'
+    ) {
+      super(`Failed to acquire lock on ${table} with id ${id}: ${reason}`);
+      this.name = 'LockAcquisitionError';
+    }
+  };
+
+  return {
+    withRowLock: jest.fn(async (table: string, id: string, callback: any) => {
+      // Import the mocked prisma to check if order exists
+      const { prisma } = require('@/lib/db-unified');
+      
+      // Simulate the real withRowLock behavior - fetch the order first
+      const order = await prisma.order.findUnique({ where: { id } });
+      
+      // If order doesn't exist, throw LockAcquisitionError like the real implementation
+      if (!order) {
+        throw new LockAcquisitionError(table, id, 'not_found');
+      }
+      
+      // Execute callback with the found order
+      return callback(order);
+    }),
+    LockAcquisitionError,
+    isLockAcquisitionError: (error: unknown) => error instanceof LockAcquisitionError,
+  };
+});
+
 // Type-safe mock setup for both mocked prisma instances
 const mockPrisma = {
   order: {
@@ -141,7 +175,10 @@ describe('/api/checkout/payment - POST', () => {
 
       expect(mockPrisma.order.update).toHaveBeenCalledWith({
         where: { id: 'order-123' },
-        data: { status: 'PROCESSING' },
+        data: { 
+          status: 'PROCESSING',
+          paymentStatus: 'PAID',
+        },
       });
 
       // Verify Square payment creation
@@ -279,7 +316,10 @@ describe('/api/checkout/payment - POST', () => {
       const data = await response.json();
 
       expect(response.status).toBe(404);
-      expect(data).toEqual({ error: 'Order not found' });
+      expect(data).toEqual({ 
+        error: 'Order not found',
+        message: 'The order could not be found.',
+      });
       expect(mockCreatePayment).not.toHaveBeenCalled();
     });
 
@@ -300,7 +340,10 @@ describe('/api/checkout/payment - POST', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data).toEqual({ error: 'Order not linked to Square' });
+      expect(data).toEqual({ 
+        error: 'Order not linked to Square',
+        message: 'The order is not properly linked to Square. Please contact support.',
+      });
       expect(mockCreatePayment).not.toHaveBeenCalled();
     });
 
@@ -318,9 +361,14 @@ describe('/api/checkout/payment - POST', () => {
       });
 
       const response = await POST(request);
+      const data = await response.json();
 
-      // Should still attempt payment but handle appropriately
-      expect(response.status).toBe(200);
+      // Should reject already processed orders
+      expect(response.status).toBe(400);
+      expect(data).toMatchObject({ 
+        error: 'Invalid order status',
+      });
+      expect(mockCreatePayment).not.toHaveBeenCalled();
     });
   });
 
