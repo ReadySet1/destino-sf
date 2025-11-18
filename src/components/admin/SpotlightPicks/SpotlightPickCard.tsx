@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Trash2, Package, DollarSign, Loader2, Search, Filter, Check } from 'lucide-react';
+import { sanitizeProductDescription } from '@/lib/utils/product-description';
 
 interface SpotlightPickCardProps {
   pick: SpotlightPick;
@@ -277,9 +278,14 @@ export function SpotlightPickCard({
                                   <h3 className="font-medium text-sm line-clamp-1">
                                     {product.name}
                                   </h3>
-                                  <p className="text-xs text-gray-500 line-clamp-2 mt-1">
-                                    {product.description || 'No description'}
-                                  </p>
+                                  <div
+                                    className="text-xs text-gray-500 line-clamp-2 mt-1"
+                                    dangerouslySetInnerHTML={{
+                                      __html: product.description
+                                        ? sanitizeProductDescription(product.description)
+                                        : 'No description',
+                                    }}
+                                  />
                                   <div className="flex items-center gap-2 mt-2">
                                     <span className="text-sm font-medium text-green-600">
                                       ${product.price.toFixed(2)}
@@ -373,9 +379,12 @@ export function SpotlightPickCard({
               </div>
 
               {pick.product?.description && (
-                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                  {pick.product.description}
-                </p>
+                <div
+                  className="text-xs text-gray-600 line-clamp-2 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeProductDescription(pick.product.description),
+                  }}
+                />
               )}
 
               {pick.product?.price && pick.product.price > 0 && (
