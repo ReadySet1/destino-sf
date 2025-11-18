@@ -146,6 +146,16 @@ async function postPaymentHandler(request: Request) {
 
     // Handle specific error messages from business logic
     if (error instanceof Error) {
+      if (error.message.includes('Order not linked to Square')) {
+        return NextResponse.json(
+          {
+            error: 'Order not linked to Square',
+            message: 'The order is not properly linked to Square. Please contact support.',
+          },
+          { status: 400 }
+        );
+      }
+
       if (error.message.includes('already been completed')) {
         return NextResponse.json(
           {
