@@ -13,11 +13,11 @@ export function PromotionBanner() {
             <h2
               className={`text-4xl font-bold tracking-tight text-black sm:text-5xl ${dancingScript.className}`}
             >
-              Summer Special Offer
+              Winter Special Offer
             </h2>
             <p className="mt-3 text-xl text-gray-800" style={{ fontStyle: 'italic' }}>
-              Get 15% off when you order any catering package for your summer events. Use code{' '}
-              <span className="font-semibold">SUMMER15</span> at checkout.
+              Get 15% off when you order any catering package for your winter events. Use code{' '}
+              <span className="font-semibold">WINTER15</span> at checkout.
             </p>
             <div className="mt-8">
               <div className="inline-flex rounded-md shadow">
@@ -44,7 +44,7 @@ export function PromotionBanner() {
         <div className="relative h-56 w-full md:h-full rounded-r-3xl overflow-hidden">
           <Image
             src="/images/assets/2Recurso 1.png"
-            alt="Summer catering special"
+            alt="Winter catering special"
             fill
             className="object-cover rounded-r-3xl"
             priority
