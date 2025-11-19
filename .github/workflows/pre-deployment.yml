@@ -18,6 +18,12 @@ env:
   NODE_VERSION: '20.x'
   PNPM_VERSION: '10.11.1'
 
+# Grant permissions for the workflow to comment on PRs
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   # Pre-deployment validation checklist
   pre-deployment-checklist:
