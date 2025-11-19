@@ -117,7 +117,7 @@ jest.mock('@/lib/square/orders', () => ({
   }),
 }));
 
-jest.mock('@/lib/square/payments', () => ({
+jest.mock('@/lib/square/payments-api', () => ({
   createPayment: jest.fn().mockResolvedValue({
     id: 'square-payment-123',
     status: 'COMPLETED',
