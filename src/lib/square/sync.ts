@@ -1180,7 +1180,7 @@ async function processSquareItem(
           dietaryPreferences: nutritionInfo.dietaryPreferences || [],
           ingredients: nutritionInfo.ingredients,
           allergens: nutritionInfo.allergens || [],
-          nutritionFacts: nutritionInfo.nutritionFacts,
+          nutritionFacts: nutritionInfo.nutritionFacts as Prisma.InputJsonValue | undefined,
         },
       });
     });
@@ -1219,7 +1219,7 @@ async function processSquareItem(
             dietaryPreferences: nutritionInfo.dietaryPreferences || [],
             ingredients: nutritionInfo.ingredients,
             allergens: nutritionInfo.allergens || [],
-            nutritionFacts: nutritionInfo.nutritionFacts,
+            nutritionFacts: nutritionInfo.nutritionFacts as Prisma.InputJsonValue | undefined,
           },
         });
       });
@@ -1305,7 +1305,7 @@ async function handleUniqueConstraintViolation(
             dietaryPreferences: nutritionInfo.dietaryPreferences || [],
             ingredients: nutritionInfo.ingredients,
             allergens: nutritionInfo.allergens || [],
-            nutritionFacts: nutritionInfo.nutritionFacts,
+            nutritionFacts: nutritionInfo.nutritionFacts as Prisma.InputJsonValue | undefined,
           },
         });
         logger.debug(`Updated existing product (through variant) ${itemName}`);
@@ -1341,7 +1341,7 @@ async function handleUniqueConstraintViolation(
         dietaryPreferences: nutritionInfo.dietaryPreferences || [],
         ingredients: nutritionInfo.ingredients,
         allergens: nutritionInfo.allergens || [],
-        nutritionFacts: nutritionInfo.nutritionFacts,
+        nutritionFacts: nutritionInfo.nutritionFacts as Prisma.InputJsonValue | undefined,
       },
     });
     logger.debug(`Successfully created product with timestamp slug ${itemName}`);
@@ -1904,7 +1904,7 @@ export async function syncProductOrderingFromSquare(): Promise<{
     }
 
     const squareResponse = await squareClient.catalogApi.searchCatalogObjects({
-      object_types: ['ITEM'],
+      object_types: ['ITEM'] as any,
       include_related_objects: true,
       include_deleted_objects: false,
     });
