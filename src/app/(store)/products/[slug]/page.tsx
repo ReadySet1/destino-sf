@@ -26,7 +26,7 @@ function slugify(text: string): string {
 }
 
 // Utility function to normalize image data from database
-function normalizeImages(images: any): string[] {
+function normalizeImages(images: unknown): string[] {
   if (!images) return [];
 
   // Case 1: Already an array of strings
