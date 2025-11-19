@@ -60,7 +60,7 @@ interface SyncResult {
   message?: string;
   syncedProducts: number;
   errors?: string[];
-  debugInfo?: any; // Added for debugging
+  debugInfo?: Record<string, unknown>; // Added for debugging
 }
 
 /**
@@ -524,7 +524,7 @@ async function ensureTestCateringCategory(): Promise<void> {
 export async function syncSquareProducts(): Promise<SyncResult> {
   const errors: string[] = [];
   let syncedCount = 0;
-  const debugInfo: any = {};
+  const debugInfo: Record<string, unknown> = {};
   const validSquareIds: string[] = [];
 
   try {
@@ -1436,14 +1436,14 @@ function extractNutritionInfo(item: SquareCatalogObject): {
   dietaryPreferences?: string[];
   ingredients?: string;
   allergens?: string[];
-  nutritionFacts?: any;
+  nutritionFacts?: Record<string, unknown>;
 } {
   const nutritionInfo: {
     calories?: number;
     dietaryPreferences?: string[];
     ingredients?: string;
     allergens?: string[];
-    nutritionFacts?: any;
+    nutritionFacts?: Record<string, unknown>;
   } = {};
 
   const foodAndBeverageDetails = item.item_data?.food_and_beverage_details;
@@ -1745,7 +1745,10 @@ function normalizeNameForMatching(name: string): string {
 /**
  * Find matching catering items by name with fuzzy matching
  */
-function findMatchingCateringItems(cateringItems: any[], productName: string): any[] {
+function findMatchingCateringItems(
+  cateringItems: Array<{ name: string }>,
+  productName: string
+): Array<{ name: string }> {
   const normalizedProductName = normalizeNameForMatching(productName);
 
   return cateringItems.filter(item => {
@@ -1904,9 +1907,9 @@ export async function syncProductOrderingFromSquare(): Promise<{
       object_types: ['ITEM'],
       include_related_objects: true,
       include_deleted_objects: false,
-    } as any);
+    });
 
-    const squareItems = squareResponse.result?.objects || [];
+    const squareItems = (squareResponse.result?.objects || []) as unknown as SquareCatalogObject[];
     logger.info(`Found ${squareItems.length} items in Square catalog`);
 
     const squareOrdinalsMap = new Map<string, bigint>();
@@ -1914,10 +1917,10 @@ export async function syncProductOrderingFromSquare(): Promise<{
     for (const item of squareItems) {
       if (
         item.type === 'ITEM' &&
-        (item.item_data as any)?.categories &&
-        (item.item_data as any).categories.length > 0
+        item.item_data?.categories &&
+        item.item_data.categories.length > 0
       ) {
-        const ordinal = (item.item_data as any).categories[0].ordinal;
+        const ordinal = item.item_data.categories[0].ordinal;
         if (ordinal !== undefined) {
           squareOrdinalsMap.set(item.id, BigInt(ordinal));
         }

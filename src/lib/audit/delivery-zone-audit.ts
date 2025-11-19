@@ -7,8 +7,8 @@ export interface AuditLogEntry {
   zoneIdentifier: string;
   adminUserId: string;
   adminEmail: string;
-  oldValues?: any;
-  newValues?: any;
+  oldValues?: Record<string, unknown>;
+  newValues?: Record<string, unknown>;
   createdAt: Date;
   ipAddress?: string;
   userAgent?: string;

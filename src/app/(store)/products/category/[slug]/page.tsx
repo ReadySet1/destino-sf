@@ -27,7 +27,7 @@ function slugify(text: string): string {
 }
 
 // Utility function to normalize image data from database
-function normalizeImages(images: any): string[] {
+function normalizeImages(images: unknown): string[] {
   if (!images) return [];
 
   // Case 1: Already an array of strings
@@ -209,7 +209,6 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   // If the category doesn't exist in the database, return 404
   if (!category) {
-    console.log(`Category not found for slug or ID: "${slug}"`);
     notFound();
   }
 
