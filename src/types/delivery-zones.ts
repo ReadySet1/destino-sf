@@ -15,7 +15,7 @@ export const DeliveryZoneRequestSchema = z.object({
   postalCodes: z.array(z.string()).default([]),
   cities: z.array(z.string()).default([]),
   displayOrder: z.number().int().min(0).default(0),
-});
+}).strict();
 
 export const DeliveryZoneUpdateSchema = DeliveryZoneRequestSchema.extend({
   id: z.string().min(1, 'Zone ID is required for updates').uuid('Invalid UUID format'),
