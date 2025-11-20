@@ -157,7 +157,7 @@ jobs:
       # These tests pass locally but have timing issues with test DB setup in CI
       # TODO: Fix concurrency test database initialization in CI environment
       - name: ✅ Critical Path Tests - Payment & Orders
-        run: jest --selectProjects node integration --testPathPattern='(checkout|orders|square|integration)' --testPathIgnorePatterns='concurrency' --no-cache --runInBand --passWithNoTests
+        run: pnpm exec jest --selectProjects node integration --testPathPattern='(checkout|orders|square|integration)' --testPathIgnorePatterns='concurrency' --no-cache --runInBand --passWithNoTests
 
       # ✅ Checklist Item 4: API Tests
       - name: ✅ API Tests - All Routes
