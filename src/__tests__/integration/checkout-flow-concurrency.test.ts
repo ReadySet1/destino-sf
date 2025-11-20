@@ -19,9 +19,6 @@ import { getTestPrismaClient } from '../utils/database-test-utils';
 import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
 import { CartItem } from '@/types/cart';
 
-// Get test database client
-const prisma = getTestPrismaClient();
-
 // Mock Supabase client
 jest.mock('@supabase/ssr', () => ({
   createServerClient: jest.fn((url, key, options) => ({
@@ -123,6 +120,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
     });
 
     // Clean up test data
+    const prisma = getTestPrismaClient();
     await prisma.order.deleteMany({
       where: {
         email: testCustomerInfo.email,
@@ -132,6 +130,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
 
   afterEach(async () => {
     // Clean up after each test
+    const prisma = getTestPrismaClient();
     await prisma.order.deleteMany({
       where: {
         email: testCustomerInfo.email,
@@ -140,6 +139,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
   });
 
   afterAll(async () => {
+    const prisma = getTestPrismaClient();
     await prisma.$disconnect();
   });
 

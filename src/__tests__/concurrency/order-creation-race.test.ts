@@ -17,9 +17,6 @@ import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
 import { getTestPrismaClient } from '../utils/database-test-utils';
 import { CartItem } from '@/types/cart';
 
-// Get test database client
-const prisma = getTestPrismaClient();
-
 // Mock Supabase client
 jest.mock('@supabase/ssr', () => ({
   createServerClient: jest.fn(() => ({
@@ -85,6 +82,7 @@ describe('Order Creation Race Conditions', () => {
     globalDeduplicator.clearAll();
 
     // Clean up test orders
+    const prisma = getTestPrismaClient();
     await prisma.order.deleteMany({
       where: {
         email: testCustomerInfo.email,
@@ -96,6 +94,7 @@ describe('Order Creation Race Conditions', () => {
 
   afterAll(async () => {
     // Clean up after all tests
+    const prisma = getTestPrismaClient();
     await prisma.order.deleteMany({
       where: {
         email: testCustomerInfo.email,
