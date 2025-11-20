@@ -17,6 +17,9 @@ import { getTestPrismaClient } from '../utils/database-test-utils';
 import { withRowLock, LockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
 import { Order } from '@prisma/client';
 
+// Get test database client - will be initialized in beforeEach
+let prisma: ReturnType<typeof getTestPrismaClient>;
+
 // Mock Square payment service
 const mockCreatePayment = jest.fn();
 jest.mock('@/lib/square/orders', () => ({
@@ -45,6 +48,9 @@ describe('Payment Race Conditions', () => {
   let testOrder: Order;
 
   beforeEach(async () => {
+    // Initialize prisma client
+    prisma = getTestPrismaClient();
+    
     jest.clearAllMocks();
 
     // Reset mocks to success by default
@@ -77,15 +83,19 @@ describe('Payment Race Conditions', () => {
 
   afterEach(async () => {
     // Clean up test orders
-    await prisma.order.deleteMany({
-      where: {
-        email: 'payment-test@example.com',
-      },
-    });
+    if (prisma) {
+      await prisma.order.deleteMany({
+        where: {
+          email: 'payment-test@example.com',
+        },
+      });
+    }
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
+    if (prisma) {
+      await prisma.$disconnect();
+    }
   });
 
   describe('Concurrent Payment Prevention with Pessimistic Locking', () => {
