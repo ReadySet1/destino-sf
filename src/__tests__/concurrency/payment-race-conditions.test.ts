@@ -13,9 +13,12 @@
 
 import { NextRequest } from 'next/server';
 import { POST as paymentHandler } from '@/app/api/checkout/payment/route';
-import { prisma } from '@/lib/db-unified';
+import { getTestPrismaClient } from '../utils/database-test-utils';
 import { withRowLock, LockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
 import { Order } from '@prisma/client';
+
+// Get test database client
+const prisma = getTestPrismaClient();
 
 // Mock Square payment service
 const mockCreatePayment = jest.fn();
