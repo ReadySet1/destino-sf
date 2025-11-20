@@ -165,7 +165,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       const orderId = checkoutData.orderId;
 
       // Step 2: Verify order was created
-      const order = await prisma.order.findUnique({
+      const order = await getPrisma().order.findUnique({
         where: { id: orderId },
         include: { items: true },
       });
@@ -194,7 +194,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       expect(paymentData.paymentId).toBeDefined();
 
       // Step 4: Verify order was updated
-      const completedOrder = await prisma.order.findUnique({
+      const completedOrder = await getPrisma().order.findUnique({
         where: { id: orderId },
       });
 
@@ -227,7 +227,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       expect(duplicateCount).toBe(4);
 
       // Verify only 1 order was created
-      const orders = await prisma.order.findMany({
+      const orders = await getPrisma().order.findMany({
         where: { email: testCustomerInfo.email },
       });
 
@@ -247,7 +247,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       const checkoutResponse = await checkoutHandler(checkoutRequest);
       const { orderId } = await checkoutResponse.json();
 
-      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      const order = await getPrisma().order.findUnique({ where: { id: orderId } });
 
       // Create 5 concurrent payment requests
       const paymentRequests = Array.from(
@@ -328,14 +328,14 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       );
 
       // Verify all orders were created
-      const orders = await prisma.order.findMany({
+      const orders = await getPrisma().order.findMany({
         where: { id: { in: orderIds } },
       });
 
       expect(orders.length).toBe(10);
 
       // Clean up
-      await prisma.order.deleteMany({
+      await getPrisma().order.deleteMany({
         where: {
           email: { startsWith: 'concurrent-user-', endsWith: '@example.com' },
         },
@@ -406,7 +406,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       expect(mockCreatePayment).toHaveBeenCalledTimes(10);
 
       // Verify all orders were updated
-      const updatedOrders = await prisma.order.findMany({
+      const updatedOrders = await getPrisma().order.findMany({
         where: { id: { in: orders.map(o => o.id) } },
       });
 
@@ -416,7 +416,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       });
 
       // Clean up
-      await prisma.order.deleteMany({
+      await getPrisma().order.deleteMany({
         where: {
           email: { startsWith: 'payment-user-', endsWith: '@example.com' },
         },
@@ -438,7 +438,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       const checkoutResponse = await checkoutHandler(checkoutRequest);
       const { orderId } = await checkoutResponse.json();
 
-      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      const order = await getPrisma().order.findUnique({ where: { id: orderId } });
 
       // First payment attempt (will fail)
       mockCreatePayment.mockRejectedValueOnce(new Error('Payment declined'));
@@ -456,7 +456,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       expect(payment1Response.status).toBe(500);
 
       // Order should still be PENDING
-      let updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
+      let updatedOrder = await getPrisma().order.findUnique({ where: { id: orderId } });
       expect(updatedOrder?.status).toBe('PENDING');
       expect(updatedOrder?.paymentStatus).toBe('PENDING');
 
@@ -480,7 +480,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       expect(payment2Response.status).toBe(200);
 
       // Order should now be PAID
-      updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
+      updatedOrder = await getPrisma().order.findUnique({ where: { id: orderId } });
       expect(updatedOrder?.status).toBe('PROCESSING');
       expect(updatedOrder?.paymentStatus).toBe('PAID');
     });
@@ -509,7 +509,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       const { orderId } = await checkoutResponse.json();
 
       // Now try concurrent payments
-      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      const order = await getPrisma().order.findUnique({ where: { id: orderId } });
 
       const paymentRequests = Array.from(
         { length: 3 },
@@ -574,7 +574,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       console.log(`Success rate: ${(successCount / 20) * 100}%`);
 
       // Clean up
-      await prisma.order.deleteMany({
+      await getPrisma().order.deleteMany({
         where: {
           email: { startsWith: 'perf-test-', endsWith: '@example.com' },
         },
@@ -613,7 +613,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       await Promise.all(requests.map(req => checkoutHandler(req)));
 
       // Verify all orders have correct data
-      const orders = await prisma.order.findMany({
+      const orders = await getPrisma().order.findMany({
         where: {
           email: { startsWith: 'integrity-test-', endsWith: '@example.com' },
         },
@@ -630,7 +630,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       });
 
       // Clean up
-      await prisma.order.deleteMany({
+      await getPrisma().order.deleteMany({
         where: {
           email: { startsWith: 'integrity-test-', endsWith: '@example.com' },
         },

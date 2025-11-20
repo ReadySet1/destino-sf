@@ -490,7 +490,7 @@ describe('Order Creation Race Conditions', () => {
 
       // Create items with different variants (should all succeed)
       const items = await Promise.all([
-        prisma.orderItem.create({
+        getPrisma().orderItem.create({
           data: {
             orderId: order.id,
             productId: 'product-1',
@@ -499,7 +499,7 @@ describe('Order Creation Race Conditions', () => {
             price: 4.5,
           },
         }),
-        prisma.orderItem.create({
+        getPrisma().orderItem.create({
           data: {
             orderId: order.id,
             productId: 'product-1',
@@ -508,7 +508,7 @@ describe('Order Creation Race Conditions', () => {
             price: 4.5,
           },
         }),
-        prisma.orderItem.create({
+        getPrisma().orderItem.create({
           data: {
             orderId: order.id,
             productId: 'product-1',
