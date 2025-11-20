@@ -19,8 +19,9 @@ import { getTestPrismaClient } from '../utils/database-test-utils';
 import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
 import { CartItem } from '@/types/cart';
 
-// Get test database client - will be initialized in beforeEach
-let prisma: ReturnType<typeof getTestPrismaClient>;
+// Get test database client - call immediately to ensure initialization
+const prisma = getTestPrismaClient();
+const getPrisma = () => prisma;
 
 // Mock Supabase client
 jest.mock('@supabase/ssr', () => ({
@@ -122,9 +123,8 @@ describe('Checkout Flow Concurrency Integration Test', () => {
       state: 'OPEN',
     });
 
-    // Initialize prisma client and clean up test data
-    prisma = getTestPrismaClient();
-    await prisma.order.deleteMany({
+    // Clean up test data
+    await getPrisma().order.deleteMany({
       where: {
         email: testCustomerInfo.email,
       },
@@ -133,19 +133,15 @@ describe('Checkout Flow Concurrency Integration Test', () => {
 
   afterEach(async () => {
     // Clean up after each test
-    if (prisma) {
-      await prisma.order.deleteMany({
-        where: {
-          email: testCustomerInfo.email,
-        },
-      });
-    }
+    await getPrisma().order.deleteMany({
+      where: {
+        email: testCustomerInfo.email,
+      },
+    });
   });
 
   afterAll(async () => {
-    if (prisma) {
-      await prisma.$disconnect();
-    }
+    await getPrisma().$disconnect();
   });
 
   describe('Complete Checkout Flow', () => {

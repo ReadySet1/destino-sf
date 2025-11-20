@@ -17,8 +17,9 @@ import { getTestPrismaClient } from '../utils/database-test-utils';
 import { withRowLock, LockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
 import { Order } from '@prisma/client';
 
-// Get test database client - will be initialized in beforeEach
-let prisma: ReturnType<typeof getTestPrismaClient>;
+// Get test database client - call immediately to ensure initialization
+const prisma = getTestPrismaClient();
+const getPrisma = () => prisma;
 
 // Mock Square payment service
 const mockCreatePayment = jest.fn();
@@ -48,9 +49,6 @@ describe('Payment Race Conditions', () => {
   let testOrder: Order;
 
   beforeEach(async () => {
-    // Initialize prisma client
-    prisma = getTestPrismaClient();
-    
     jest.clearAllMocks();
 
     // Reset mocks to success by default
@@ -66,7 +64,7 @@ describe('Payment Race Conditions', () => {
     });
 
     // Create a test order
-    testOrder = await prisma.order.create({
+    testOrder = await getPrisma().order.create({
       data: {
         status: 'PENDING',
         paymentStatus: 'PENDING',
