@@ -19,9 +19,9 @@ import { getTestPrismaClient } from '../utils/database-test-utils';
 import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
 import { CartItem } from '@/types/cart';
 
-// Get test database client - call immediately to ensure initialization
-const prisma = getTestPrismaClient();
-const getPrisma = () => prisma;
+// Helper to get prisma client - calls getTestPrismaClient() each time
+// This ensures we get the properly initialized client after beforeAll runs
+const getPrisma = () => getTestPrismaClient();
 
 // Mock Supabase client
 jest.mock('@supabase/ssr', () => ({
