@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma, withRetry } from '@/lib/db-unified';
+import { prisma, withTransaction } from '@/lib/db-unified';
 import { requireAdminAccess } from '@/lib/auth/admin-guard';
 import { setAuditContext } from '@/lib/audit/delivery-zone-audit';
 import {
@@ -49,23 +49,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Set audit context for this transaction
-    await setAuditContext({
-      adminUserId: authResult.user?.id || null,
-      adminEmail: authResult.user?.email || 'unknown',
-      ipAddress:
-        request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
-      userAgent: request.headers.get('user-agent') || undefined,
-    });
-
     const body = await request.json();
-
-    // Debug logging to understand production requests
-    console.log('🔍 DEBUG - Request body:', JSON.stringify(body));
 
     // Check if this is an update (has ID) or create (no ID)
     const isUpdate = !!body.id && body.id.trim() !== '';
-    console.log('🔍 DEBUG - isUpdate determination:', isUpdate);
 
     // Validate request body
     let zoneData: DeliveryZoneRequest | DeliveryZoneUpdate;
@@ -73,8 +60,6 @@ export async function POST(request: NextRequest) {
       zoneData = isUpdate
         ? DeliveryZoneUpdateSchema.parse(body)
         : DeliveryZoneRequestSchema.parse(body);
-      
-      console.log('🔍 DEBUG - Parsed zoneData:', JSON.stringify(zoneData));
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
@@ -88,55 +73,67 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    let result;
-
     try {
-      if (isUpdate) {
-        // Update existing zone
-        const updateData = zoneData as DeliveryZoneUpdate;
+      // For updates, validate ID and existence before running transactional write
+      let existingZone = null;
+      let updateData: DeliveryZoneUpdate | null = null;
 
-        // Validate ID before proceeding with database operations
+      if (isUpdate) {
+        updateData = zoneData as DeliveryZoneUpdate;
+
         if (!updateData.id || updateData.id.trim() === '') {
           return NextResponse.json({ error: 'Missing ID for update' }, { status: 400 });
         }
 
-        // Validate ID format (basic UUID check)
         const uuidRegex =
           /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         if (!uuidRegex.test(updateData.id)) {
           return NextResponse.json({ error: 'Invalid ID format for update' }, { status: 400 });
         }
 
-        // First, check if zone exists
-        const existingZone = await prisma.cateringDeliveryZone.findUnique({
+        existingZone = await prisma.cateringDeliveryZone.findUnique({
           where: { id: updateData.id },
         });
 
         if (!existingZone) {
           return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
         }
+      }
 
-        result = await prisma.cateringDeliveryZone.update({
-          where: { id: updateData.id },
-          data: {
-            zone: updateData.zone,
-            name: updateData.name,
-            description: updateData.description,
-            minimumAmount: updateData.minimumAmount,
-            deliveryFee: updateData.deliveryFee,
-            estimatedDeliveryTime: updateData.estimatedDeliveryTime,
-            active: updateData.isActive, // Map frontend isActive to database active
-            postalCodes: updateData.postalCodes,
-            cities: updateData.cities,
-            displayOrder: updateData.displayOrder,
-          },
-        });
+      const auditContext = {
+        adminUserId: authResult.user?.id || null,
+        adminEmail: authResult.user?.email || 'unknown',
+        ipAddress:
+          request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+      };
 
-      } else {
-        // Create new zone
+      const { result } = await withTransaction(async tx => {
+        await setAuditContext(auditContext, tx);
+
+        if (isUpdate && updateData) {
+          const updatedZone = await tx.cateringDeliveryZone.update({
+            where: { id: updateData.id },
+            data: {
+              zone: updateData.zone,
+              name: updateData.name,
+              description: updateData.description,
+              minimumAmount: updateData.minimumAmount,
+              deliveryFee: updateData.deliveryFee,
+              estimatedDeliveryTime: updateData.estimatedDeliveryTime,
+              active: updateData.isActive, // Map frontend isActive to database active
+              postalCodes: updateData.postalCodes,
+              cities: updateData.cities,
+              displayOrder: updateData.displayOrder,
+            },
+          });
+
+          return { result: updatedZone };
+        }
+
         const createData = zoneData as DeliveryZoneRequest;
 
-        result = await prisma.cateringDeliveryZone.create({
+        const createdZone = await tx.cateringDeliveryZone.create({
           data: {
             zone: createData.zone,
             name: createData.name,
@@ -151,7 +148,8 @@ export async function POST(request: NextRequest) {
           },
         });
 
-      }
+        return { result: createdZone };
+      });
 
       // Process result for response
       const processedResult = {
@@ -200,15 +198,6 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    // Set audit context for bulk update
-    await setAuditContext({
-      adminUserId: authResult.user?.id || null,
-      adminEmail: authResult.user?.email || 'unknown',
-      ipAddress:
-        request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
-      userAgent: request.headers.get('user-agent') || undefined,
-    });
-
     const body = await request.json();
     const { zones } = body;
 
@@ -233,26 +222,39 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Update zones in transaction
-    const results = await prisma.$transaction(
-      validatedZones.map(zone =>
-        prisma.cateringDeliveryZone.update({
-          where: { id: zone.id },
-          data: {
-            zone: zone.zone,
-            name: zone.name,
-            description: zone.description,
-            minimumAmount: zone.minimumAmount,
-            deliveryFee: zone.deliveryFee,
-            estimatedDeliveryTime: zone.estimatedDeliveryTime,
-            active: zone.isActive, // Map frontend isActive to database active
-            postalCodes: zone.postalCodes,
-            cities: zone.cities,
-            displayOrder: zone.displayOrder,
-          },
-        })
-      )
-    );
+    const auditContext = {
+      adminUserId: authResult.user?.id || null,
+      adminEmail: authResult.user?.email || 'unknown',
+      ipAddress:
+        request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    };
+
+    const results = await withTransaction(async tx => {
+      await setAuditContext(auditContext, tx);
+
+      const updatedZones = await Promise.all(
+        validatedZones.map(zone =>
+          tx.cateringDeliveryZone.update({
+            where: { id: zone.id },
+            data: {
+              zone: zone.zone,
+              name: zone.name,
+              description: zone.description,
+              minimumAmount: zone.minimumAmount,
+              deliveryFee: zone.deliveryFee,
+              estimatedDeliveryTime: zone.estimatedDeliveryTime,
+              active: zone.isActive, // Map frontend isActive to database active
+              postalCodes: zone.postalCodes,
+              cities: zone.cities,
+              displayOrder: zone.displayOrder,
+            },
+          })
+        )
+      );
+
+      return updatedZones;
+    });
 
     const processedResults = results.map(result => ({
       ...result,
@@ -287,22 +289,38 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Zone ID is required' }, { status: 400 });
     }
 
-    // Check if zone exists
-    const existingZone = await prisma.cateringDeliveryZone.findUnique({
-      where: { id: zoneId },
+    const auditContext = {
+      adminUserId: authResult.user?.id || null,
+      adminEmail: authResult.user?.email || 'unknown',
+      ipAddress:
+        request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    };
+
+    const { existingZone } = await withTransaction(async tx => {
+      await setAuditContext(auditContext, tx);
+
+      const zone = await tx.cateringDeliveryZone.findUnique({
+        where: { id: zoneId },
+      });
+
+      if (!zone) {
+        return { existingZone: null };
+      }
+
+      await tx.cateringDeliveryZone.delete({
+        where: { id: zoneId },
+      });
+
+      return { existingZone: zone };
     });
 
     if (!existingZone) {
       return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
     }
 
-    // Delete the zone
-    await prisma.cateringDeliveryZone.delete({
-      where: { id: zoneId },
-    });
-
     return NextResponse.json({
-      message: `Delivery zone "${existingZone.name}" deleted successfully`,
+      message: `Delivery zone \"${existingZone.name}\" deleted successfully`,
       deletedZone: {
         id: existingZone.id,
         name: existingZone.name,
