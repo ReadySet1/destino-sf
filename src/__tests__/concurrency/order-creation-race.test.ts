@@ -16,6 +16,10 @@ import { checkForDuplicateOrder } from '@/lib/duplicate-order-prevention';
 import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
 import { getTestPrismaClient } from '../utils/database-test-utils';
 import { CartItem } from '@/types/cart';
+import type { PrismaClient } from '@prisma/client';
+
+// Get test database client - will be initialized in beforeEach
+let prisma: ReturnType<typeof getTestPrismaClient>;
 
 // Mock Supabase client
 jest.mock('@supabase/ssr', () => ({
@@ -78,11 +82,13 @@ describe('Order Creation Race Conditions', () => {
   };
 
   beforeEach(async () => {
+    // Initialize prisma client
+    prisma = getTestPrismaClient();
+    
     // Clear any pending orders and deduplicator cache
     globalDeduplicator.clearAll();
 
     // Clean up test orders
-    const prisma = getTestPrismaClient();
     await prisma.order.deleteMany({
       where: {
         email: testCustomerInfo.email,
@@ -94,13 +100,14 @@ describe('Order Creation Race Conditions', () => {
 
   afterAll(async () => {
     // Clean up after all tests
-    const prisma = getTestPrismaClient();
-    await prisma.order.deleteMany({
-      where: {
-        email: testCustomerInfo.email,
-      },
-    });
-    await prisma.$disconnect();
+    if (prisma) {
+      await prisma.order.deleteMany({
+        where: {
+          email: testCustomerInfo.email,
+        },
+      });
+      await prisma.$disconnect();
+    }
   });
 
   describe('Concurrent Order Creation Prevention', () => {
