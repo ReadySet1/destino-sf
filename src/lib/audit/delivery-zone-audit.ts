@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 
 export interface AuditLogEntry {
@@ -25,26 +26,31 @@ export interface AuditContext {
  * Set audit context for the current database transaction
  * This allows the trigger to capture admin user information
  */
-export async function setAuditContext(context: AuditContext) {
+export async function setAuditContext(
+  context: AuditContext,
+  tx?: Prisma.TransactionClient
+) {
+  const client = tx ?? prisma;
+
   // Only set admin_user_id if it's provided (not null/undefined)
   if (context.adminUserId) {
-    await prisma.$executeRaw`
+    await client.$executeRaw`
       SELECT set_config('app.admin_user_id', ${context.adminUserId}, true)
     `;
   }
 
-  await prisma.$executeRaw`
+  await client.$executeRaw`
     SELECT set_config('app.admin_email', ${context.adminEmail}, true)
   `;
 
   if (context.ipAddress) {
-    await prisma.$executeRaw`
+    await client.$executeRaw`
       SELECT set_config('app.ip_address', ${context.ipAddress}, true)
     `;
   }
 
   if (context.userAgent) {
-    await prisma.$executeRaw`
+    await client.$executeRaw`
       SELECT set_config('app.user_agent', ${context.userAgent}, true)
     `;
   }
