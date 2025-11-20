@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     let zoneData: DeliveryZoneRequest | DeliveryZoneUpdate;
     try {
       // Check if this is an update (has ID) or create (no ID)
-      const isUpdate = !!body.id;
+      const isUpdate = !!body.id && body.id.trim() !== '';
       zoneData = isUpdate
         ? DeliveryZoneUpdateSchema.parse(body)
         : DeliveryZoneRequestSchema.parse(body);
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     let result;
-    const isUpdate = 'id' in zoneData;
+    const isUpdate = 'id' in zoneData && typeof (zoneData as DeliveryZoneUpdate).id === 'string' && (zoneData as DeliveryZoneUpdate).id.trim() !== '';
 
     try {
       if (isUpdate) {
