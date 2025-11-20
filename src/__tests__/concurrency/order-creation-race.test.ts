@@ -16,10 +16,10 @@ import { checkForDuplicateOrder } from '@/lib/duplicate-order-prevention';
 import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
 import { getTestPrismaClient } from '../utils/database-test-utils';
 import { CartItem } from '@/types/cart';
-import type { PrismaClient } from '@prisma/client';
 
-// Get test database client - will be initialized in beforeEach
-let prisma: ReturnType<typeof getTestPrismaClient>;
+// Get test database client - call immediately to ensure initialization
+const prisma = getTestPrismaClient();
+const getPrisma = () => prisma;
 
 // Mock Supabase client
 jest.mock('@supabase/ssr', () => ({
@@ -82,14 +82,11 @@ describe('Order Creation Race Conditions', () => {
   };
 
   beforeEach(async () => {
-    // Initialize prisma client
-    prisma = getTestPrismaClient();
-    
     // Clear any pending orders and deduplicator cache
     globalDeduplicator.clearAll();
 
     // Clean up test orders
-    await prisma.order.deleteMany({
+    await getPrisma().order.deleteMany({
       where: {
         email: testCustomerInfo.email,
       },
@@ -100,14 +97,12 @@ describe('Order Creation Race Conditions', () => {
 
   afterAll(async () => {
     // Clean up after all tests
-    if (prisma) {
-      await prisma.order.deleteMany({
-        where: {
-          email: testCustomerInfo.email,
-        },
-      });
-      await prisma.$disconnect();
-    }
+    await getPrisma().order.deleteMany({
+      where: {
+        email: testCustomerInfo.email,
+      },
+    });
+    await getPrisma().$disconnect();
   });
 
   describe('Concurrent Order Creation Prevention', () => {
@@ -143,7 +138,7 @@ describe('Order Creation Race Conditions', () => {
       expect(duplicateResponses.length).toBe(4);
 
       // Verify only 1 order was created in the database
-      const orders = await prisma.order.findMany({
+      const orders = await getPrisma().order.findMany({
         where: { email: testCustomerInfo.email },
       });
 
@@ -216,7 +211,7 @@ describe('Order Creation Race Conditions', () => {
       expect(successCount).toBeGreaterThanOrEqual(1);
 
       // Should have created separate orders
-      const orders = await prisma.order.findMany({
+      const orders = await getPrisma().order.findMany({
         where: { email: testCustomerInfo.email },
         include: { items: true },
       });
@@ -228,7 +223,7 @@ describe('Order Creation Race Conditions', () => {
   describe('Duplicate Order Detection', () => {
     it('should detect duplicate order with same items within 24 hours', async () => {
       // Create first order
-      const order = await prisma.order.create({
+      const order = await getPrisma().order.create({
         data: {
           status: 'PENDING',
           paymentStatus: 'PENDING',
@@ -266,7 +261,7 @@ describe('Order Creation Race Conditions', () => {
 
     it('should not detect duplicate if items are different', async () => {
       // Create first order with different items
-      await prisma.order.create({
+      await getPrisma().order.create({
         data: {
           status: 'PENDING',
           paymentStatus: 'PENDING',
@@ -301,7 +296,7 @@ describe('Order Creation Race Conditions', () => {
 
     it('should not detect duplicate for completed orders', async () => {
       // Create completed order
-      await prisma.order.create({
+      await getPrisma().order.create({
         data: {
           status: 'COMPLETED',
           paymentStatus: 'PAID',
@@ -337,7 +332,7 @@ describe('Order Creation Race Conditions', () => {
       // Create old order (25 hours ago)
       const oldDate = new Date(Date.now() - 25 * 60 * 60 * 1000);
 
-      await prisma.order.create({
+      await getPrisma().order.create({
         data: {
           status: 'PENDING',
           paymentStatus: 'PENDING',
@@ -446,7 +441,7 @@ describe('Order Creation Race Conditions', () => {
   describe('Database Constraint Protection', () => {
     it('should prevent duplicate order items via unique constraint', async () => {
       // Create an order
-      const order = await prisma.order.create({
+      const order = await getPrisma().order.create({
         data: {
           status: 'PENDING',
           paymentStatus: 'PENDING',
@@ -461,7 +456,7 @@ describe('Order Creation Race Conditions', () => {
 
       // Try to create duplicate order items (same product + variant in same order)
       const createDuplicateItem = async () => {
-        return prisma.orderItem.create({
+        return getPrisma().orderItem.create({
           data: {
             orderId: order.id,
             productId: 'product-1',
@@ -480,7 +475,7 @@ describe('Order Creation Race Conditions', () => {
     });
 
     it('should allow multiple order items with different variants', async () => {
-      const order = await prisma.order.create({
+      const order = await getPrisma().order.create({
         data: {
           status: 'PENDING',
           paymentStatus: 'PENDING',
@@ -555,7 +550,7 @@ describe('Order Creation Race Conditions', () => {
       expect(duration).toBeLessThan(10000); // 10 seconds
 
       // Should have created only 1 order
-      const orders = await prisma.order.findMany({
+      const orders = await getPrisma().order.findMany({
         where: { email: testCustomerInfo.email },
       });
 
@@ -584,7 +579,7 @@ describe('Order Creation Race Conditions', () => {
       await Promise.all(requests);
 
       // Verify all orders were created
-      const orders = await prisma.order.findMany({
+      const orders = await getPrisma().order.findMany({
         where: {
           email: {
             startsWith: 'test',
@@ -605,7 +600,7 @@ describe('Order Creation Race Conditions', () => {
       });
 
       // Clean up
-      await prisma.order.deleteMany({
+      await getPrisma().order.deleteMany({
         where: {
           email: {
             startsWith: 'test',
