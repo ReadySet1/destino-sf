@@ -17,9 +17,9 @@ import { getTestPrismaClient } from '../utils/database-test-utils';
 import { withRowLock, LockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
 import { Order } from '@prisma/client';
 
-// Get test database client - call immediately to ensure initialization
-const prisma = getTestPrismaClient();
-const getPrisma = () => prisma;
+// Helper to get prisma client - calls getTestPrismaClient() each time
+// This ensures we get the properly initialized client after beforeAll runs
+const getPrisma = () => getTestPrismaClient();
 
 // Mock Square payment service
 const mockCreatePayment = jest.fn();
