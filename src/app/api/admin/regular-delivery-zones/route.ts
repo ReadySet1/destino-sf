@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     console.log('📦 Request data received:', requestData);
 
     // If it's an existing zone (has ID), update it
-    if (requestData.id) {
+    if (requestData.id && requestData.id.trim() !== '') {
       console.log(`🔄 Updating existing zone: ${requestData.id}`);
 
       // Validate ID before proceeding with database operations

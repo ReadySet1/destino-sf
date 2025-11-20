@@ -134,7 +134,7 @@ export default function DeliveryZoneModal({
     try {
       const zoneData = {
         ...data,
-        id: zone?.id,
+        ...(zone?.id && { id: zone.id }),
         postalCodes: data.postalCodes
           .split(',')
           .map(code => code.trim())

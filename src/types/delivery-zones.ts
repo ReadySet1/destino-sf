@@ -18,7 +18,7 @@ export const DeliveryZoneRequestSchema = z.object({
 });
 
 export const DeliveryZoneUpdateSchema = DeliveryZoneRequestSchema.extend({
-  id: z.string().min(1, 'Zone ID is required for updates'),
+  id: z.string().min(1, 'Zone ID is required for updates').uuid('Invalid UUID format'),
 });
 
 export type DeliveryZoneRequest = z.infer<typeof DeliveryZoneRequestSchema>;
