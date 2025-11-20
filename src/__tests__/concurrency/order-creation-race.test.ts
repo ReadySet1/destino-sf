@@ -14,8 +14,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { POST as checkoutHandler } from '@/app/api/checkout/route';
 import { checkForDuplicateOrder } from '@/lib/duplicate-order-prevention';
 import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
-import { prisma } from '@/lib/db-unified';
+import { getTestPrismaClient } from '../utils/database-test-utils';
 import { CartItem } from '@/types/cart';
+
+// Get test database client
+const prisma = getTestPrismaClient();
 
 // Mock Supabase client
 jest.mock('@supabase/ssr', () => ({

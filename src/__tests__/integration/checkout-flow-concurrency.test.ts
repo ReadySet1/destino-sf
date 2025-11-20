@@ -15,9 +15,12 @@
 import { NextRequest } from 'next/server';
 import { POST as checkoutHandler } from '@/app/api/checkout/route';
 import { POST as paymentHandler } from '@/app/api/checkout/payment/route';
-import { prisma } from '@/lib/db-unified';
+import { getTestPrismaClient } from '../utils/database-test-utils';
 import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
 import { CartItem } from '@/types/cart';
+
+// Get test database client
+const prisma = getTestPrismaClient();
 
 // Mock Supabase client
 jest.mock('@supabase/ssr', () => ({
