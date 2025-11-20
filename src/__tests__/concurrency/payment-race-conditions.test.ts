@@ -81,19 +81,15 @@ describe('Payment Race Conditions', () => {
 
   afterEach(async () => {
     // Clean up test orders
-    if (prisma) {
-      await prisma.order.deleteMany({
-        where: {
-          email: 'payment-test@example.com',
-        },
-      });
-    }
+    await getPrisma().order.deleteMany({
+      where: {
+        email: 'payment-test@example.com',
+      },
+    });
   });
 
   afterAll(async () => {
-    if (prisma) {
-      await prisma.$disconnect();
-    }
+    // Database disconnect is handled by jest.setup.integration.js
   });
 
   describe('Concurrent Payment Prevention with Pessimistic Locking', () => {
@@ -129,7 +125,7 @@ describe('Payment Race Conditions', () => {
       expect(conflictResponses.length).toBe(4);
 
       // Verify order was only charged once
-      const updatedOrder = await prisma.order.findUnique({
+      const updatedOrder = await getPrisma().order.findUnique({
         where: { id: testOrder.id },
       });
 
@@ -186,7 +182,7 @@ describe('Payment Race Conditions', () => {
   describe('Payment Status Validation', () => {
     it('should reject payment for already paid order', async () => {
       // Update order to PAID status
-      await prisma.order.update({
+      await getPrisma().order.update({
         where: { id: testOrder.id },
         data: {
           status: 'PROCESSING',
@@ -219,7 +215,7 @@ describe('Payment Race Conditions', () => {
 
     it('should reject payment for completed order', async () => {
       // Update order to COMPLETED status
-      await prisma.order.update({
+      await getPrisma().order.update({
         where: { id: testOrder.id },
         data: {
           status: 'COMPLETED',
@@ -408,7 +404,7 @@ describe('Payment Race Conditions', () => {
       expect(response.status).toBe(500);
 
       // Order should still be in PENDING state (transaction rolled back)
-      const order = await prisma.order.findUnique({
+      const order = await getPrisma().order.findUnique({
         where: { id: testOrder.id },
       });
 
@@ -435,7 +431,7 @@ describe('Payment Race Conditions', () => {
       expect(response.status).toBe(200);
 
       // Verify order was updated correctly
-      const updatedOrder = await prisma.order.findUnique({
+      const updatedOrder = await getPrisma().order.findUnique({
         where: { id: testOrder.id },
       });
 
@@ -464,7 +460,7 @@ describe('Payment Race Conditions', () => {
       expect(response.status).toBe(200);
 
       // Order should be marked as paid
-      const order = await prisma.order.findUnique({
+      const order = await getPrisma().order.findUnique({
         where: { id: testOrder.id },
       });
 
@@ -506,7 +502,7 @@ describe('Payment Race Conditions', () => {
       // Create 5 additional test orders
       const orders = await Promise.all(
         Array.from({ length: 5 }, async (_, i) => {
-          return prisma.order.create({
+          return getPrisma().order.create({
             data: {
               status: 'PENDING',
               paymentStatus: 'PENDING',
@@ -541,7 +537,7 @@ describe('Payment Race Conditions', () => {
       expect(successCount).toBe(5);
 
       // Verify all orders were updated
-      const updatedOrders = await prisma.order.findMany({
+      const updatedOrders = await getPrisma().order.findMany({
         where: {
           id: { in: orders.map(o => o.id) },
         },
