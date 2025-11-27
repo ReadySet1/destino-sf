@@ -259,9 +259,9 @@ function renderComponent(
       return (
         <div className="space-y-4 max-w-md" data-testid="error-display-showcase">
           <ErrorDisplay
-            error={{ message: 'An error occurred while processing your request.' }}
-            returnUrl={state === 'with-link' ? '/' : undefined}
-            data-testid={`error-display${state === 'with-link' ? '-with-link' : ''}`}
+            title="Error"
+            message="An error occurred while processing your request."
+            returnLink={state === 'with-link' ? { href: '/', label: 'Return home' } : undefined}
           />
         </div>
       );
