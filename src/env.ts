@@ -39,6 +39,11 @@ export const env = createEnv({
     // Cron and Webhook Security
     CRON_SECRET: z.string().optional(),
     WEBHOOK_SECRET: z.string().optional(),
+    // Sentry Error Monitoring (server-side)
+    SENTRY_DSN: z.string().optional(),
+    SENTRY_AUTH_TOKEN: z.string().optional(),
+    SENTRY_ORG: z.string().optional(),
+    SENTRY_PROJECT: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url(),
@@ -94,6 +99,11 @@ export const env = createEnv({
     // Cron and Webhook Security
     CRON_SECRET: process.env.CRON_SECRET,
     WEBHOOK_SECRET: process.env.WEBHOOK_SECRET,
+    // Sentry Error Monitoring (server-side)
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    SENTRY_ORG: process.env.SENTRY_ORG,
+    SENTRY_PROJECT: process.env.SENTRY_PROJECT,
     // Client-side environment variables
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
