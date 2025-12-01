@@ -83,8 +83,11 @@ export async function cleanTables(tableNames: string[]): Promise<void> {
  * Call this in global teardown or afterAll
  */
 export async function disconnectTestDatabase(): Promise<void> {
-  if (testPrisma) {
+  if (testPrisma && typeof testPrisma.$disconnect === 'function') {
     await testPrisma.$disconnect();
+    testPrisma = null;
+  } else {
+    // Handle case where testPrisma is a mock object without $disconnect
     testPrisma = null;
   }
 }
