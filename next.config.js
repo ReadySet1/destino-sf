@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {
@@ -123,11 +125,11 @@ const nextConfig = {
                   key: 'Content-Security-Policy',
                   value: [
                     "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:",
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://analytics.readysetllc.com https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com",
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://analytics.readysetllc.com https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://browser.sentry-cdn.com",
                     "style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com data: blob:",
                     "font-src 'self' https://fonts.gstatic.com data:",
                     "img-src 'self' data: blob: https://*.s3.us-west-2.amazonaws.com https://*.s3.amazonaws.com https://*.squarecdn.com https://*.supabase.co https://destino-sf.square.site https://maps.googleapis.com https://maps.gstatic.com",
-                    "connect-src 'self' https://analytics.readysetllc.com https://*.supabase.co https://connect.squareup.com https://connect.squareupsandbox.com https://*.upstash.io https://api.resend.com https://vitals.vercel-insights.com https://maps.googleapis.com https://maps.google.com https://*.googleapis.com https://*.gstatic.com ws: wss:",
+                    "connect-src 'self' https://analytics.readysetllc.com https://*.supabase.co https://connect.squareup.com https://connect.squareupsandbox.com https://*.upstash.io https://api.resend.com https://vitals.vercel-insights.com https://maps.googleapis.com https://maps.google.com https://*.googleapis.com https://*.gstatic.com https://*.ingest.sentry.io https://*.sentry.io ws: wss:",
                     "frame-src 'self' https://js.squareup.com https://sandbox.web.squarecdn.com https://web.squarecdn.com",
                     "media-src 'self' data: blob:",
                     "object-src 'self' data:",
@@ -283,4 +285,29 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Sentry organization and project slugs
+  org: 'ready-set-llc',
+  project: 'destino-sf',
+
+  // Suppress CLI output during build (except in CI)
+  silent: !process.env.CI,
+
+  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  widenClientFileUpload: true,
+
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
+
+  // Automatically instrument Vercel cron monitors
+  automaticVercelMonitors: true,
+
+  // Hides source maps from generated client bundles
+  hideSourceMaps: true,
+
+  // Transpiles SDK to be compatible with IE11 (increases bundle size)
+  transpileClientSDK: false,
+
+  // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers
+  tunnelRoute: '/monitoring',
+});
