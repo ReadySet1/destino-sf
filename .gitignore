@@ -56,8 +56,11 @@ next-env.d.ts
 # playwright
 test-results/
 playwright-report/
+blob-report/
+playwright/.cache/
+.playwright-mcp/
 # Include visual regression baseline screenshots (they should be committed)
-!tests/e2e/visual/**/*-snapshots/
+# Baseline snapshots are in: tests/e2e/visual/*-snapshots/*.png
 
 # archive and backups
 # (Exclude src/app/api/** from this rule to allow API routes)
@@ -74,3 +77,7 @@ production-monitoring-*.log
 *.bak
 *.dump
 *.dump.metadata.json
+
+# Claude
+.mcp.json
+.claude
