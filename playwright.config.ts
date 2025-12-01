@@ -96,53 +96,12 @@ export default defineConfig({
         '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}-{projectName}{ext}',
     },
     // Regular E2E test projects
-    ...(process.env.CI
-      ? [
-          // Full browser matrix in CI
-          {
-            name: 'chromium',
-            testIgnore: /.*\.visual\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-          },
-          {
-            name: 'firefox',
-            testIgnore: /.*\.visual\.spec\.ts/,
-            use: { ...devices['Desktop Firefox'] },
-          },
-          {
-            name: 'webkit',
-            testIgnore: /.*\.visual\.spec\.ts/,
-            use: { ...devices['Desktop Safari'] },
-          },
-          {
-            name: 'Mobile Chrome',
-            testIgnore: /.*\.visual\.spec\.ts/,
-            use: { ...devices['Pixel 5'] },
-          },
-          {
-            name: 'Mobile Safari',
-            testIgnore: /.*\.visual\.spec\.ts/,
-            use: { ...devices['iPhone 12'] },
-          },
-          {
-            name: 'Microsoft Edge',
-            testIgnore: /.*\.visual\.spec\.ts/,
-            use: { ...devices['Desktop Edge'], channel: 'msedge' },
-          },
-          {
-            name: 'Google Chrome',
-            testIgnore: /.*\.visual\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-          },
-        ]
-      : [
-          // Only chromium locally for faster testing
-          {
-            name: 'chromium',
-            testIgnore: /.*\.visual\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-          },
-        ]),
+    // Only run chromium for both CI and local - CI workflow only installs chromium
+    {
+      name: 'chromium',
+      testIgnore: /.*\.visual\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
 
   /* Global timeout for each test - increased for CI reliability */
