@@ -10,7 +10,8 @@
  * Route: /test/visual-components
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,15 +40,23 @@ import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2, AlertCircle, Info, Plus, Minus, X } from 'lucide-react';
 
-// Block access in production
-if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_TEST_PAGES) {
-  throw new Error('Visual components test page is not available in production');
-}
-
 export default function VisualComponentsPage() {
+  const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [errorToastVisible, setErrorToastVisible] = useState(false);
+
+  // Block access in production - redirect to 404
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_ALLOW_TEST_PAGES) {
+      router.replace('/not-found');
+    }
+  }, [router]);
+
+  // Don't render anything in production while checking
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_ALLOW_TEST_PAGES) {
+    return null;
+  }
 
   const showToast = () => {
     setToastVisible(true);
