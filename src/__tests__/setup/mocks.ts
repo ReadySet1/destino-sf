@@ -356,7 +356,7 @@ export const mockEmailService = () => {
     emails: {
       send: jest.fn().mockResolvedValue({
         id: 'mock-email-id',
-        from: 'noreply@destino-sf.com',
+        from: 'noreply@destinosf.com',
         to: ['customer@example.com'],
         subject: 'Order Confirmation',
         created_at: new Date().toISOString(),

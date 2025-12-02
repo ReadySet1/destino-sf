@@ -50,7 +50,7 @@ describe('Admin Management Workflow', () => {
     // Create admin profile for tests
     adminProfile = await getTestDb().profile.create({
       data: createMockProfile('ADMIN', {
-        email: 'admin@destino-sf.com',
+        email: 'admin@destinosf.com',
         name: 'Test Admin',
       }),
     });
@@ -88,7 +88,7 @@ describe('Admin Management Workflow', () => {
           id: 'default-settings',
           name: 'Destino SF',
           phone: '+14155551234',
-          email: 'orders@destino-sf.com',
+          email: 'orders@destinosf.com',
           minOrderAmount: 25.00,
           taxRate: 8.25,
           ...shippingConfig,
@@ -175,7 +175,7 @@ describe('Admin Management Workflow', () => {
       // Act 7: Send notification to customer
       const customerNotification = await waitForApiCall(
         mocks.email.emails.send({
-          from: 'orders@destino-sf.com',
+          from: 'orders@destinosf.com',
           to: [readyOrder.email],
           subject: `Your order is ready! #${readyOrder.id}`,
           html: `
@@ -258,7 +258,7 @@ describe('Admin Management Workflow', () => {
       // Send cancellation email to customer
       await waitForApiCall(
         mocks.email.emails.send({
-          from: 'orders@destino-sf.com',
+          from: 'orders@destinosf.com',
           to: [refundedOrder.email],
           subject: `Order Cancelled - Refund Processed #${refundedOrder.id}`,
           html: `
@@ -470,7 +470,7 @@ describe('Admin Management Workflow', () => {
       // Act 2: Send delivery notification
       await waitForApiCall(
         mocks.email.emails.send({
-          from: 'delivery@destino-sf.com',
+          from: 'delivery@destinosf.com',
           to: [assignedOrder.email],
           subject: `Your order is on the way! #${assignedOrder.id}`,
           html: `
@@ -496,7 +496,7 @@ describe('Admin Management Workflow', () => {
       // Act 4: Send completion confirmation
       await waitForApiCall(
         mocks.email.emails.send({
-          from: 'orders@destino-sf.com',
+          from: 'orders@destinosf.com',
           to: [completedOrder.email],
           subject: `Order Delivered! #${completedOrder.id}`,
           html: `
@@ -540,7 +540,7 @@ describe('Admin Management Workflow', () => {
       // Send pickup ready notification
       await waitForApiCall(
         mocks.email.emails.send({
-          from: 'orders@destino-sf.com',
+          from: 'orders@destinosf.com',
           to: [pickupOrder.email],
           subject: `Order Ready for Pickup! #${pickupOrder.id}`,
           html: `
@@ -596,7 +596,7 @@ describe('Admin Management Workflow', () => {
       // Retry delivery with customer communication
       await waitForApiCall(
         mocks.email.emails.send({
-          from: 'delivery@destino-sf.com',
+          from: 'delivery@destinosf.com',
           to: [failedOrder.email],
           subject: `Delivery Rescheduled #${failedOrder.id}`,
           html: `

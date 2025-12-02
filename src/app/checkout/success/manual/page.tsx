@@ -323,8 +323,8 @@ export default async function ManualSuccessPage({ searchParams }: ManualSuccessP
         <p className="text-sm text-gray-600">
           If you have any questions about your order or any special date/time requests please
           contact us at{' '}
-          <a href="mailto:orders@destino-sf.com" className="text-blue-600 hover:underline">
-            orders@destino-sf.com
+          <a href="mailto:orders@destinosf.com" className="text-blue-600 hover:underline">
+            orders@destinosf.com
           </a>{' '}
           or call us at{' '}
           <a href="tel:+14155771677" className="text-blue-600 hover:underline">

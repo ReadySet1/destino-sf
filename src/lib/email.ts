@@ -24,7 +24,7 @@ export async function sendOrderConfirmationEmail(order: OrderWithPaymentMethod):
   try {
     const paymentInstructions = getPaymentInstructions(order);
     const shopName = process.env.SHOP_NAME || 'Destino SF';
-    const fromEmail = process.env.FROM_EMAIL || 'orders@destino-sf.com';
+    const fromEmail = process.env.FROM_EMAIL || 'orders@destinosf.com';
 
     // Create HTML email template
     const emailHtml = createEmailTemplate({
@@ -146,7 +146,7 @@ function createEmailTemplate({
               &copy; ${currentYear} ${shopName}. All rights reserved.
             </p>
             <p style="margin: 5px 0;">
-              <a href="https://destino-sf.com" style="color: #3182ce; text-decoration: none;">Visit our website</a>
+              <a href="https://destinosf.com" style="color: #3182ce; text-decoration: none;">Visit our website</a>
             </p>
           </div>
         </div>
@@ -195,7 +195,7 @@ export async function sendCateringOrderNotification(orderId: string): Promise<vo
       : null;
 
     const shopName = process.env.SHOP_NAME || 'Destino SF';
-    const fromEmail = process.env.FROM_EMAIL || 'orders@destino-sf.com';
+    const fromEmail = process.env.FROM_EMAIL || 'orders@destinosf.com';
 
     // Send email to admin - using HTML template instead of React component for now
     const { data, error } = await resend.emails.send({
@@ -243,7 +243,7 @@ export async function sendCateringOrderNotification(orderId: string): Promise<vo
 async function sendCateringConfirmationToCustomer(order: any): Promise<void> {
   try {
     const shopName = process.env.SHOP_NAME || 'Destino SF';
-    const fromEmail = process.env.FROM_EMAIL || 'orders@destino-sf.com';
+    const fromEmail = process.env.FROM_EMAIL || 'orders@destinosf.com';
 
     const formattedEventDate = new Date(order.eventDate).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -377,7 +377,7 @@ async function sendCateringConfirmationToCustomer(order: any): Promise<void> {
                   </p>
                   <p style="font-size: 14px; color: #6b7280; margin: 8px 0;">
                     Call us at <a href="tel:+14155551234" style="color: #d97706; text-decoration: none;">(415) 555-1234</a>
-                    or email <a href="mailto:catering@destino-sf.com" style="color: #d97706; text-decoration: none;">catering@destino-sf.com</a>
+                    or email <a href="mailto:catering@destinosf.com" style="color: #d97706; text-decoration: none;">catering@destinosf.com</a>
                   </p>
                 </div>
 
@@ -392,7 +392,7 @@ async function sendCateringConfirmationToCustomer(order: any): Promise<void> {
                   &copy; ${new Date().getFullYear()} ${shopName}. All rights reserved.
                 </p>
                 <p style="font-size: 12px; margin: 4px 0;">
-                  <a href="https://destino-sf.com" style="color: #d97706; text-decoration: none;">Visit our website</a>
+                  <a href="https://destinosf.com" style="color: #d97706; text-decoration: none;">Visit our website</a>
                 </p>
               </div>
 

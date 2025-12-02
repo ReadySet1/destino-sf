@@ -233,7 +233,7 @@ POST /api/auth/admin/login
 Content-Type: application/json
 
 {
-  "email": "admin@destino-sf.com",
+  "email": "admin@destinosf.com",
   "password": "adminPassword123",
   "role": "admin"
 }

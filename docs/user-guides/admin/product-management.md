@@ -232,7 +232,7 @@ Understand how products work in Destino SF! This guide explains how products are
 
 **Contact Information**:
 
-- **Technical Support**: admin-support@destino-sf.com
+- **Technical Support**: admin-support@destinosf.com
 - **Training Resources**: Available in admin dashboard
 - **Documentation**: Keep this guide bookmarked
 

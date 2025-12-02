@@ -88,7 +88,7 @@ export class AlertSystem {
         type: 'EMAIL',
         config: {
           to: process.env.ALERT_EMAIL_TO,
-          from: process.env.ALERT_EMAIL_FROM || 'noreply@destino-sf.com',
+          from: process.env.ALERT_EMAIL_FROM || 'noreply@destinosf.com',
           subject: 'Square Integration Alert',
         },
         enabled: true,
