@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
 
+// DES-81: Increase function timeout for database connection resilience
+export const maxDuration = 60;
+
 /**
  * GET /api/catering/order/[orderId]
  * Fetches catering order details with optimized query and timeout handling

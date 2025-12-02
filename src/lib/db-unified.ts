@@ -1,12 +1,19 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { dbCircuitBreaker, getCircuitBreakerStatus } from './db-circuit-breaker';
+import { dbPoolMetrics } from './db-pool-metrics';
 
 /**
  * Unified database client that consolidates all database connection logic
  * and provides optimized handling for different use cases (webhooks, regular operations)
  *
  * FIX: DES-53 & DES-54 - Updated to use correct Supabase pooler connection
- * Uses aws-0-us-west-1.pooler.supabase.com:6543 with proper pgbouncer params
+ * FIX: DES-80 - Added auth error detection and fail-fast
+ * FIX: DES-81 - Increased timeouts, retries, circuit breaker, connection pre-warming
  */
+
+// Configurable connection timeout (default 45s for Vercel cold starts)
+const CONNECTION_TIMEOUT_SECONDS = parseInt(process.env.DB_CONNECTION_TIMEOUT || '45');
+const MAX_CONNECTION_RETRIES = parseInt(process.env.DB_MAX_RETRIES || '4');
 
 // Global singleton storage
 const globalForPrisma = globalThis as unknown as {
@@ -83,7 +90,7 @@ function buildOptimizedPoolerUrl(baseUrl: string): string {
       // Optimized timeouts for webhook processing and Vercel cold starts
       if (isProduction) {
         url.searchParams.set('pool_timeout', '300'); // 5 minutes for high load
-        url.searchParams.set('connection_timeout', '30'); // 30 seconds to connect (increased for cold starts)
+        url.searchParams.set('connection_timeout', String(CONNECTION_TIMEOUT_SECONDS)); // Configurable for cold starts
         url.searchParams.set('statement_timeout', '60000'); // 60 seconds for queries
         url.searchParams.set('idle_in_transaction_session_timeout', '60000');
         url.searchParams.set('socket_timeout', '120'); // 2 minutes socket timeout
@@ -133,6 +140,9 @@ function buildOptimizedPoolerUrl(baseUrl: string): string {
  * Create optimized Prisma client with explicit connection and enhanced retry logic
  */
 async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClient> {
+  const startTime = Date.now();
+  const isColdStart = process.env.VERCEL === '1' && retryAttempt === 0;
+
   // In test environment, return dummy client immediately
   if (process.env.NODE_ENV === 'test') {
     return {
@@ -141,6 +151,17 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
       $queryRaw: () => Promise.resolve([]),
       $transaction: (fn: any) => Promise.resolve(fn({} as any)),
     } as any as PrismaClient;
+  }
+
+  // Check circuit breaker before attempting connection
+  if (!dbCircuitBreaker.canExecute()) {
+    const error = dbCircuitBreaker.getOpenCircuitError();
+    console.error('[DB_CIRCUIT_OPEN]', {
+      message: error.message,
+      state: dbCircuitBreaker.getState(),
+      metrics: dbCircuitBreaker.getMetrics(),
+    });
+    throw error;
   }
 
   const isProduction = process.env.NODE_ENV === 'production';
@@ -201,8 +222,13 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
 
     await Promise.race([client.$queryRaw`SELECT 1 as connection_test`, queryTimeout]);
 
+    // Record successful connection in metrics and circuit breaker
+    const latencyMs = Date.now() - startTime;
+    dbPoolMetrics.recordSuccess(latencyMs, retryAttempt, isColdStart);
+    dbCircuitBreaker.recordSuccess();
+
     if (process.env.DB_DEBUG === 'true') {
-      console.log('✅ Prisma connection verified');
+      console.log(`✅ Prisma connection verified (${latencyMs}ms, attempt ${retryAttempt + 1})`);
     }
   } catch (error) {
     const errorMessage = (error as Error).message;
@@ -238,9 +264,28 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
       errorMessage.includes('ECONNRESET') ||
       errorMessage.includes('ENOTFOUND');
 
-    if (isRetryableError && retryAttempt < 2) {
-      const delayMs = Math.pow(2, retryAttempt) * 2000; // 2s, 4s exponential backoff
-      console.log(`⏳ Retrying connection in ${delayMs / 1000}s...`);
+    // Record failure in metrics (isColdStart defined at function top)
+    dbPoolMetrics.recordFailure(Date.now() - startTime, error as Error, retryAttempt, isColdStart);
+
+    // Record failure in circuit breaker (only for connection errors)
+    if (isRetryableError) {
+      dbCircuitBreaker.recordFailure(error as Error);
+    }
+
+    if (isRetryableError && retryAttempt < MAX_CONNECTION_RETRIES - 1) {
+      // Progressive backoff: 3s, 6s, 12s, 24s (45s total retry window)
+      const delayMs = 3000 * Math.pow(2, retryAttempt);
+
+      // Structured logging for timeout debugging
+      console.error('[DB_CONNECTION_RETRY]', {
+        attempt: retryAttempt + 1,
+        maxRetries: MAX_CONNECTION_RETRIES,
+        timeoutMs: CONNECTION_TIMEOUT_SECONDS * 1000,
+        isColdStart,
+        circuitState: dbCircuitBreaker.getState(),
+        nextDelayMs: delayMs,
+        error: errorMessage,
+      });
 
       await new Promise(resolve => setTimeout(resolve, delayMs));
       return createPrismaClient(retryAttempt + 1);
@@ -757,15 +802,52 @@ export async function withWebhookRetry<T>(
 }
 
 /**
+ * Pre-warm connection for cold start optimization
+ * Call this early in request lifecycle to minimize latency
+ */
+export async function warmConnection(): Promise<boolean> {
+  try {
+    // Check circuit breaker first
+    if (!dbCircuitBreaker.canExecute()) {
+      console.warn('[DB_WARM] Skipping warm-up: circuit breaker open');
+      return false;
+    }
+
+    const client = await getPrismaClient();
+    await client.$queryRaw`SELECT 1`;
+
+    if (process.env.DB_DEBUG === 'true') {
+      console.log('[DB_WARM] Connection pre-warmed successfully');
+    }
+    return true;
+  } catch (error) {
+    console.warn('[DB_WARM] Failed to warm connection:', (error as Error).message);
+    return false;
+  }
+}
+
+/**
  * Health check for monitoring
  */
 export async function getHealthStatus(): Promise<{
   connected: boolean;
   latency: number;
   version: string;
+  circuitBreaker: {
+    state: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+    failures: number;
+    totalTrips: number;
+  };
+  poolMetrics: {
+    successRate: number;
+    avgLatencyMs: number;
+    totalAttempts: number;
+  };
   error?: string;
 }> {
   const start = Date.now();
+  const circuitStatus = getCircuitBreakerStatus();
+  const poolStatus = dbPoolMetrics.getSummary();
 
   try {
     const client = await getPrismaClient();
@@ -774,12 +856,32 @@ export async function getHealthStatus(): Promise<{
       connected: true,
       latency: Date.now() - start,
       version: CURRENT_PRISMA_VERSION,
+      circuitBreaker: {
+        state: circuitStatus.state,
+        failures: circuitStatus.failures,
+        totalTrips: circuitStatus.totalTrips,
+      },
+      poolMetrics: {
+        successRate: poolStatus.successRate,
+        avgLatencyMs: poolStatus.avgLatencyMs,
+        totalAttempts: poolStatus.totalAttempts,
+      },
     };
   } catch (error) {
     return {
       connected: false,
       latency: Date.now() - start,
       version: CURRENT_PRISMA_VERSION,
+      circuitBreaker: {
+        state: circuitStatus.state,
+        failures: circuitStatus.failures,
+        totalTrips: circuitStatus.totalTrips,
+      },
+      poolMetrics: {
+        successRate: poolStatus.successRate,
+        avgLatencyMs: poolStatus.avgLatencyMs,
+        totalAttempts: poolStatus.totalAttempts,
+      },
       error: (error as Error).message,
     };
   }

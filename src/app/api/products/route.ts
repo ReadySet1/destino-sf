@@ -9,6 +9,9 @@ import {
   GetProductsPaginatedResponseSchema,
 } from '@/lib/api/schemas/products';
 
+// DES-81: Increase function timeout for database connection resilience
+export const maxDuration = 60;
+
 // Types are now handled by ProductVisibilityService
 
 async function getProductsHandler(request: NextRequest) {

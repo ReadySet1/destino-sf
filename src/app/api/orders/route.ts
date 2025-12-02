@@ -8,6 +8,8 @@ import { createClient } from '@/utils/supabase/server';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 
 export const dynamic = 'force-dynamic';
+// DES-81: Increase function timeout for database connection resilience
+export const maxDuration = 60;
 // Do not use edge runtime with Prisma
 
 export async function GET(request: NextRequest) {

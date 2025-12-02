@@ -14,6 +14,9 @@ import { ApiErrorSchema } from '@/lib/api/schemas/common';
 import { withRowLock, LockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
 import { Order } from '@prisma/client';
 
+// DES-81: Increase function timeout for database connection resilience
+export const maxDuration = 60;
+
 async function postPaymentHandler(request: Request) {
   // Apply strict rate limiting for payment endpoint (5 requests per minute per IP)
   const rateLimitResponse = await applyStrictRateLimit(request as any, 5);

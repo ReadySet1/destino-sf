@@ -3,6 +3,9 @@ import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { safeCateringApiOperation } from '@/lib/catering-api-utils';
 
+// DES-81: Increase function timeout for database connection resilience
+export const maxDuration = 60;
+
 async function getSpotlightPicks(): Promise<SpotlightPick[]> {
   // Fetch spotlight picks with product data using Prisma
   const rawSpotlightPicks = await withRetry(
