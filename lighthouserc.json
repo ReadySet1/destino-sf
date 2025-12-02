@@ -2,8 +2,8 @@
   "ci": {
     "collect": {
       "startServerCommand": "pnpm build && pnpm start",
-      "startServerReadyPattern": "started server on|Ready in",
-      "startServerReadyTimeout": 90000,
+      "startServerReadyPattern": "Ready in|started server on|localhost:3000",
+      "startServerReadyTimeout": 180000,
       "url": [
         "http://localhost:3000",
         "http://localhost:3000/products/category/empanadas",
