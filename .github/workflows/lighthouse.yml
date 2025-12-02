@@ -1,0 +1,285 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main, development]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+env:
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '10.11.1'
+
+jobs:
+  # Desktop Lighthouse Tests
+  lighthouse-desktop:
+    name: Lighthouse Desktop
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup build environment variables
+        run: |
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+          # Database
+          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test_db" >> $GITHUB_ENV
+          # Supabase
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://test.supabase.co" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=test-service-role-key" >> $GITHUB_ENV
+          # App Configuration
+          echo "NEXT_PUBLIC_APP_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "ADMIN_EMAIL=admin@test.com" >> $GITHUB_ENV
+          echo "FROM_EMAIL=noreply@test.com" >> $GITHUB_ENV
+          # API Keys
+          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=test-google-maps-key" >> $GITHUB_ENV
+          echo "RESEND_API_KEY=test-resend-key" >> $GITHUB_ENV
+          # Square Payment
+          echo "SQUARE_ENVIRONMENT=sandbox" >> $GITHUB_ENV
+          echo "SQUARE_LOCATION_ID=test-location-id" >> $GITHUB_ENV
+          echo "SQUARE_ACCESS_TOKEN=test-square-token" >> $GITHUB_ENV
+          echo "SQUARE_WEBHOOK_SECRET=test-webhook-secret" >> $GITHUB_ENV
+          # Shipping
+          echo "SHIPPING_ORIGIN_CITY=San Francisco" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_EMAIL=shipping@test.com" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_NAME=Test Shop" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_PHONE=4155551234" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_STATE=CA" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_STREET1=123 Test St" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_ZIP=94102" >> $GITHUB_ENV
+          echo "SHIPPO_API_KEY=test-shippo-key" >> $GITHUB_ENV
+          # Shop
+          echo "SHOP_NAME=Test Shop" >> $GITHUB_ENV
+          # Redis
+          echo "UPSTASH_REDIS_REST_TOKEN=test-redis-token" >> $GITHUB_ENV
+          echo "UPSTASH_REDIS_REST_URL=https://test-redis.upstash.io" >> $GITHUB_ENV
+
+      - name: Run Lighthouse CI (Desktop)
+        run: pnpm test:performance:lighthouse
+        continue-on-error: true
+        id: lighthouse-desktop
+
+      - name: Upload Lighthouse Desktop Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-desktop-report
+          path: |
+            .lighthouseci/
+            *.report.html
+            *.report.json
+          retention-days: 30
+
+      - name: Save Desktop Results
+        if: always()
+        run: |
+          if [ -d ".lighthouseci" ]; then
+            echo "DESKTOP_RESULT=success" >> $GITHUB_ENV
+          else
+            echo "DESKTOP_RESULT=failed" >> $GITHUB_ENV
+          fi
+
+  # Mobile Lighthouse Tests
+  lighthouse-mobile:
+    name: Lighthouse Mobile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup build environment variables
+        run: |
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+          # Database
+          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test_db" >> $GITHUB_ENV
+          # Supabase
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://test.supabase.co" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=test-service-role-key" >> $GITHUB_ENV
+          # App Configuration
+          echo "NEXT_PUBLIC_APP_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "ADMIN_EMAIL=admin@test.com" >> $GITHUB_ENV
+          echo "FROM_EMAIL=noreply@test.com" >> $GITHUB_ENV
+          # API Keys
+          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=test-google-maps-key" >> $GITHUB_ENV
+          echo "RESEND_API_KEY=test-resend-key" >> $GITHUB_ENV
+          # Square Payment
+          echo "SQUARE_ENVIRONMENT=sandbox" >> $GITHUB_ENV
+          echo "SQUARE_LOCATION_ID=test-location-id" >> $GITHUB_ENV
+          echo "SQUARE_ACCESS_TOKEN=test-square-token" >> $GITHUB_ENV
+          echo "SQUARE_WEBHOOK_SECRET=test-webhook-secret" >> $GITHUB_ENV
+          # Shipping
+          echo "SHIPPING_ORIGIN_CITY=San Francisco" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_EMAIL=shipping@test.com" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_NAME=Test Shop" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_PHONE=4155551234" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_STATE=CA" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_STREET1=123 Test St" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_ZIP=94102" >> $GITHUB_ENV
+          echo "SHIPPO_API_KEY=test-shippo-key" >> $GITHUB_ENV
+          # Shop
+          echo "SHOP_NAME=Test Shop" >> $GITHUB_ENV
+          # Redis
+          echo "UPSTASH_REDIS_REST_TOKEN=test-redis-token" >> $GITHUB_ENV
+          echo "UPSTASH_REDIS_REST_URL=https://test-redis.upstash.io" >> $GITHUB_ENV
+
+      - name: Run Lighthouse CI (Mobile)
+        run: pnpm test:performance:lighthouse:mobile
+        continue-on-error: true
+        id: lighthouse-mobile
+
+      - name: Upload Lighthouse Mobile Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-mobile-report
+          path: |
+            .lighthouseci/
+            *.report.html
+            *.report.json
+          retention-days: 30
+
+  # Summary and PR Comment
+  lighthouse-summary:
+    name: Lighthouse Summary
+    runs-on: ubuntu-latest
+    needs: [lighthouse-desktop, lighthouse-mobile]
+    if: always()
+    steps:
+      - name: Download Desktop Report
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-desktop-report
+          path: desktop-report
+        continue-on-error: true
+
+      - name: Download Mobile Report
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-mobile-report
+          path: mobile-report
+        continue-on-error: true
+
+      - name: Create PR Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        env:
+          DESKTOP_RESULT: ${{ needs.lighthouse-desktop.result }}
+          MOBILE_RESULT: ${{ needs.lighthouse-mobile.result }}
+        with:
+          script: |
+            const desktopResult = process.env.DESKTOP_RESULT;
+            const mobileResult = process.env.MOBILE_RESULT;
+
+            const desktopIcon = desktopResult === 'success' ? '✅' : '⚠️';
+            const mobileIcon = mobileResult === 'success' ? '✅' : '⚠️';
+
+            const body = `## 🚦 Lighthouse Performance Report
+
+            ### Results
+            | Platform | Status |
+            |----------|--------|
+            | Desktop | ${desktopIcon} ${desktopResult} |
+            | Mobile | ${mobileIcon} ${mobileResult} |
+
+            ### 📊 Reports
+            Download the detailed HTML reports from the workflow artifacts:
+            - **lighthouse-desktop-report**: Desktop performance analysis
+            - **lighthouse-mobile-report**: Mobile performance analysis
+
+            ### 📈 Performance Budgets
+            | Metric | Desktop Target | Mobile Target |
+            |--------|----------------|---------------|
+            | FCP | < 2000ms | < 2500ms |
+            | LCP | < 3000ms | < 4000ms |
+            | CLS | < 0.1 | < 0.1 |
+            | TBT | < 500ms | < 600ms |
+            | Speed Index | < 3500ms | < 4500ms |
+
+            > 💡 **Tip**: Review the HTML reports for detailed optimization suggestions.
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Check Budget Violations (main branch only)
+        if: github.base_ref == 'main' && (needs.lighthouse-desktop.result == 'failure' || needs.lighthouse-mobile.result == 'failure')
+        env:
+          DESKTOP_RESULT: ${{ needs.lighthouse-desktop.result }}
+          MOBILE_RESULT: ${{ needs.lighthouse-mobile.result }}
+        run: |
+          echo "❌ Lighthouse performance budgets exceeded!"
+          echo "Desktop result: $DESKTOP_RESULT"
+          echo "Mobile result: $MOBILE_RESULT"
+          echo ""
+          echo "Performance budgets must be met for PRs to main branch."
+          echo "Please review the Lighthouse reports and optimize performance."
+          exit 1
+
+# Workflow-level settings
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
