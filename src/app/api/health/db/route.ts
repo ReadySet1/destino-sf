@@ -3,6 +3,9 @@ import { getHealthStatus, prisma, withRetry } from '@/lib/db-unified';
 import type { ConnectionHealth } from '@/types/database';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 
+// DES-81: Explicit timeout for health checks
+export const maxDuration = 30;
+
 export async function GET(request: NextRequest) {
   try {
     // Perform basic health check
@@ -31,11 +34,19 @@ export async function GET(request: NextRequest) {
       console.debug('Could not check prepared statement errors:', error);
     }
 
-    // Determine status based on performance and prepared statement errors
+    // Determine status based on performance, circuit breaker, and prepared statement errors
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     if (!basicHealth.connected) {
       status = 'unhealthy';
-    } else if (basicHealth.latency > 500 || queryTime > 500 || preparedStatementErrors > 0) {
+    } else if (basicHealth.circuitBreaker?.state === 'OPEN') {
+      // DES-81: Circuit breaker open means service is degraded
+      status = 'degraded';
+    } else if (
+      basicHealth.latency > 500 ||
+      queryTime > 500 ||
+      preparedStatementErrors > 0 ||
+      basicHealth.circuitBreaker?.state === 'HALF_OPEN'
+    ) {
       status = 'degraded';
     }
 
@@ -55,13 +66,17 @@ export async function GET(request: NextRequest) {
       lastChecked: new Date(),
     };
 
-    // Enhanced response with Vercel-specific information
+    // Enhanced response with Vercel-specific information and DES-81 resilience metrics
     const response = {
       ...health,
       status,
       timestamp: new Date().toISOString(),
       connection: 'active',
       prepared_statement_errors: preparedStatementErrors,
+      // DES-81: Circuit breaker status
+      circuitBreaker: basicHealth.circuitBreaker,
+      // DES-81: Pool metrics
+      poolMetrics: basicHealth.poolMetrics,
       environment: {
         isVercel: process.env.VERCEL === '1',
         nodeEnv: process.env.NODE_ENV,

@@ -10,6 +10,9 @@ import { syncCustomerToProfile } from '@/lib/profile-sync';
 import { checkForDuplicateOrder } from '@/lib/duplicate-order-prevention';
 import { globalDeduplicator, userKey } from '@/lib/concurrency/request-deduplicator';
 
+// DES-81: Increase function timeout for database connection resilience
+export const maxDuration = 60;
+
 // Helper function moved outside the POST handler
 async function getSupabaseClient() {
   const cookieStore = await cookies();
