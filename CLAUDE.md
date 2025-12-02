@@ -42,6 +42,18 @@ pnpm test:basic                # Example: basic utils test
 jest --selectProjects node path/to/test.test.ts --no-cache
 ```
 
+### Performance Testing
+
+```bash
+pnpm test:performance:lighthouse        # Desktop Lighthouse tests
+pnpm test:performance:lighthouse:mobile # Mobile Lighthouse tests
+```
+
+Lighthouse CI runs against key pages (homepage, product pages, cart, checkout) and enforces performance budgets. See `docs/PERFORMANCE_GUIDELINES.md` for:
+- Performance budgets and thresholds
+- Optimization guidelines
+- CI integration details
+
 ### Database Operations
 
 ```bash

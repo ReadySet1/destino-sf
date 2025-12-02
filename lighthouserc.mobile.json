@@ -15,19 +15,19 @@
       ],
       "numberOfRuns": 3,
       "settings": {
-        "preset": "desktop",
+        "preset": "mobile",
         "chromeFlags": ["--no-sandbox", "--disable-gpu", "--headless"],
         "throttling": {
-          "rttMs": 40,
-          "throughputKbps": 10240,
-          "cpuSlowdownMultiplier": 1
+          "rttMs": 150,
+          "throughputKbps": 1638,
+          "cpuSlowdownMultiplier": 4
         },
-        "formFactor": "desktop",
+        "formFactor": "mobile",
         "screenEmulation": {
-          "mobile": false,
-          "width": 1350,
-          "height": 940,
-          "deviceScaleFactor": 1,
+          "mobile": true,
+          "width": 375,
+          "height": 667,
+          "deviceScaleFactor": 2,
           "disabled": false
         }
       }
@@ -35,19 +35,19 @@
     "assert": {
       "preset": "lighthouse:recommended",
       "assertions": {
-        "categories:performance": ["error", { "minScore": 0.8 }],
+        "categories:performance": ["error", { "minScore": 0.7 }],
         "categories:accessibility": ["error", { "minScore": 0.9 }],
         "categories:best-practices": ["error", { "minScore": 0.85 }],
         "categories:seo": ["error", { "minScore": 0.9 }],
 
-        "first-contentful-paint": ["error", { "maxNumericValue": 2000 }],
-        "largest-contentful-paint": ["error", { "maxNumericValue": 3000 }],
+        "first-contentful-paint": ["error", { "maxNumericValue": 2500 }],
+        "largest-contentful-paint": ["error", { "maxNumericValue": 4000 }],
         "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1 }],
-        "total-blocking-time": ["error", { "maxNumericValue": 500 }],
-        "speed-index": ["error", { "maxNumericValue": 3500 }],
+        "total-blocking-time": ["error", { "maxNumericValue": 600 }],
+        "speed-index": ["error", { "maxNumericValue": 4500 }],
 
-        "interactive": ["error", { "maxNumericValue": 5000 }],
-        "max-potential-fid": ["error", { "maxNumericValue": 200 }],
+        "interactive": ["error", { "maxNumericValue": 7500 }],
+        "max-potential-fid": ["error", { "maxNumericValue": 250 }],
 
         "uses-optimized-images": "warn",
         "modern-image-formats": "warn",
@@ -65,8 +65,8 @@
         "total-byte-weight": ["warn", { "maxNumericValue": 3000000 }],
 
         "dom-size": ["warn", { "maxNumericValue": 1500 }],
-        "bootup-time": ["warn", { "maxNumericValue": 3500 }],
-        "mainthread-work-breakdown": ["warn", { "maxNumericValue": 4000 }],
+        "bootup-time": ["warn", { "maxNumericValue": 5000 }],
+        "mainthread-work-breakdown": ["warn", { "maxNumericValue": 5000 }],
 
         "font-display": "warn",
         "uses-passive-event-listeners": "warn",
@@ -89,7 +89,7 @@
     },
     "upload": {
       "target": "temporary-public-storage",
-      "reportFilenamePattern": "lighthouse-%%PATHNAME%%-%%DATETIME%%.report.%%EXTENSION%%"
+      "reportFilenamePattern": "lighthouse-mobile-%%PATHNAME%%-%%DATETIME%%.report.%%EXTENSION%%"
     },
     "server": {},
     "wizard": {}
