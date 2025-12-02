@@ -217,7 +217,21 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
       console.warn('Error disconnecting failed client:', disconnectError);
     }
 
-    // Enhanced retry logic for Vercel deployments
+    // FAIL FAST on authentication errors - they won't succeed with retries
+    if (isAuthenticationError(error as Error)) {
+      const actionableMessage = getAuthenticationErrorMessage(error as Error);
+      console.error('\n' + '='.repeat(60));
+      console.error(actionableMessage);
+      console.error('='.repeat(60) + '\n');
+
+      // Throw with actionable message
+      const authError = new Error(actionableMessage);
+      (authError as any).code = 'AUTH_ERROR';
+      (authError as any).originalError = error;
+      throw authError;
+    }
+
+    // Enhanced retry logic for Vercel deployments (only for connection errors)
     const isRetryableError =
       isConnectionError(error as Error) ||
       errorMessage.includes('timeout') ||
@@ -521,9 +535,78 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
 }
 
 /**
+ * Check if error is an authentication/authorization error (non-retryable)
+ * These errors indicate credential or configuration issues that won't be fixed by retrying.
+ */
+function isAuthenticationError(error: Error): boolean {
+  const authErrors = [
+    'Tenant or user not found',
+    'password authentication failed',
+    'FATAL: password authentication failed',
+    'FATAL: Tenant or user not found',
+    'authentication failed',
+    'role "postgres" does not exist',
+    'FATAL: role',
+  ];
+
+  const message = error.message;
+  return authErrors.some(msg => message.toLowerCase().includes(msg.toLowerCase()));
+}
+
+/**
+ * Get actionable error message for authentication errors
+ */
+function getAuthenticationErrorMessage(error: Error): string {
+  const message = error.message;
+
+  if (message.includes('Tenant or user not found')) {
+    return `
+DATABASE AUTHENTICATION FAILED: "Tenant or user not found"
+
+This error indicates the DATABASE_URL has an incorrect username format.
+
+REQUIRED FORMAT for Supabase Pooler:
+  postgresql://postgres.PROJECT_ID:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
+
+CURRENT PROJECT IDs:
+  - Development: drrejylrcjbeldnzodjd
+  - Production: ocusztulyiegeawqptrs
+
+TO FIX:
+1. Check Vercel environment variables: vercel env ls production
+2. Ensure DATABASE_URL username is "postgres.PROJECT_ID" (not just "postgres")
+3. Redeploy: vercel --prod
+
+Example correct format:
+  postgresql://postgres.PROJECT_ID:PASSWORD@aws-X-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&prepared_statements=false&statement_cache_size=0
+`.trim();
+  }
+
+  if (message.includes('password authentication failed')) {
+    return `
+DATABASE AUTHENTICATION FAILED: Invalid password
+
+The password in DATABASE_URL is incorrect.
+
+TO FIX:
+1. Get the correct password from Supabase Dashboard > Settings > Database
+2. Update DATABASE_URL in Vercel environment variables
+3. Redeploy: vercel --prod
+`.trim();
+  }
+
+  return `Database authentication error: ${message}`;
+}
+
+/**
  * Check if error is connection-related
  */
 function isConnectionError(error: Error): boolean {
+  // Auth errors are NOT connection errors - they should not be retried
+  if (isAuthenticationError(error)) {
+    return false;
+  }
+
   const connectionErrors = [
     "Can't reach database server",
     'Connection terminated',
@@ -575,6 +658,18 @@ export async function withRetry<T>(
       return result;
     } catch (error) {
       lastError = error as Error;
+
+      // FAIL FAST on authentication errors - don't waste time retrying
+      if (isAuthenticationError(lastError)) {
+        const actionableMessage = getAuthenticationErrorMessage(lastError);
+        console.error(`${operationName} failed with authentication error:`);
+        console.error(actionableMessage);
+
+        const authError = new Error(actionableMessage);
+        (authError as any).code = 'AUTH_ERROR';
+        (authError as any).originalError = error;
+        throw authError;
+      }
 
       if (isConnectionError(lastError) && attempt < maxRetries) {
         if (process.env.DB_DEBUG === 'true') {
