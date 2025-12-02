@@ -116,21 +116,24 @@ export default function Footer() {
                   <div className="flex justify-center gap-6">
                     <a
                       href="https://facebook.com/destinosf"
+                      aria-label="Follow us on Facebook"
                       className="text-gray-800 hover:text-gray-900"
                     >
-                      <Facebook size={28} />
+                      <Facebook size={28} aria-hidden="true" />
                     </a>
                     <a
                       href="https://instagram.com/destinosf"
+                      aria-label="Follow us on Instagram"
                       className="text-gray-800 hover:text-gray-900"
                     >
-                      <Instagram size={28} />
+                      <Instagram size={28} aria-hidden="true" />
                     </a>
                     <a
                       href="https://linkedin.com/company/destinosf"
+                      aria-label="Follow us on LinkedIn"
                       className="text-gray-800 hover:text-gray-900"
                     >
-                      <Linkedin size={28} />
+                      <Linkedin size={28} aria-hidden="true" />
                     </a>
                   </div>
                   <span className="text-xl font-medium text-gray-800">@destinosf</span>

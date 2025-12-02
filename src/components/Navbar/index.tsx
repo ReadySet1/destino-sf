@@ -61,10 +61,11 @@ export default function Navbar() {
           <div className="flex items-center gap-1 md:hidden ml-auto">
             <Link
               href="/cart"
+              aria-label="Shopping cart"
               className="relative flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
             >
               <div className="relative">
-                <ShoppingCart className="h-6 w-6" />
+                <ShoppingCart className="h-6 w-6" aria-hidden="true" />
                 {mounted && items.length > 0 && (
                   <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                     {items.reduce((total, item) => total + item.quantity, 0)}
@@ -74,9 +75,10 @@ export default function Navbar() {
             </Link>
             <Link
               href="/account"
+              aria-label="My account"
               className="hidden md:flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
             >
-              <User className="h-6 w-6" />
+              <User className="h-6 w-6" aria-hidden="true" />
             </Link>
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -183,10 +185,11 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-4 ml-auto">
             <Link
               href="/cart"
+              aria-label="Shopping cart"
               className="relative flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
             >
               <div className="relative">
-                <ShoppingCart className="h-6 w-6" />
+                <ShoppingCart className="h-6 w-6" aria-hidden="true" />
                 {mounted && items.length > 0 && (
                   <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                     {items.reduce((total, item) => total + item.quantity, 0)}
@@ -196,9 +199,10 @@ export default function Navbar() {
             </Link>
             <Link
               href="/account"
+              aria-label="My account"
               className="hidden md:flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-200"
             >
-              <User className="h-6 w-6" />
+              <User className="h-6 w-6" aria-hidden="true" />
             </Link>
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
