@@ -49,9 +49,9 @@
 
 **Skipped Tests**:
 
-- `should protect admin routes for non-admin users` - Requires `regular-user@destino-sf.com`
-- `should allow logout functionality` - Requires `test@destino-sf.com`
-- `should persist authentication across page reloads` - Requires `test@destino-sf.com`
+- `should protect admin routes for non-admin users` - Requires `regular-user@destinosf.com`
+- `should allow logout functionality` - Requires `test@destinosf.com`
+- `should persist authentication across page reloads` - Requires `test@destinosf.com`
 
 **Next Steps**: Create test user seeding script (see `docs/E2E_TEST_SETUP.md`)
 

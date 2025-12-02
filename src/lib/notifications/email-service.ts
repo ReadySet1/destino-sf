@@ -52,7 +52,7 @@ export class EmailService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://destino-sf.com';
+    this.baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://destinosf.com';
   }
 
   /**

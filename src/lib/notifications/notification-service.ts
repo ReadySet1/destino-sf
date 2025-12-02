@@ -239,7 +239,7 @@ export class NotificationService {
     ruleName?: string
   ): Promise<void> {
     // Get admin emails (TODO: implement admin user management)
-    const adminEmails = ['admin@destino-sf.com']; // Placeholder
+    const adminEmails = ['admin@destinosf.com']; // Placeholder
 
     await this.emailService.sendAdminAlert({
       to: adminEmails,
@@ -267,7 +267,7 @@ export class NotificationService {
    * Send system alerts to administrators
    */
   private async sendAdminSystemAlert(data: any): Promise<void> {
-    const adminEmails = ['admin@destino-sf.com']; // Placeholder
+    const adminEmails = ['admin@destinosf.com']; // Placeholder
 
     await this.emailService.sendSystemAlert({
       to: adminEmails,

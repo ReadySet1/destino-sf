@@ -84,8 +84,8 @@ interface SubmitButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
 
 ### ⏭️ Skipped Tests (Require Test Users)
 
-1. **Login Existing User** - Needs `test@destino-sf.com` in database
-2. **Admin Route Protection (non-admin)** - Needs `regular-user@destino-sf.com`
+1. **Login Existing User** - Needs `test@destinosf.com` in database
+2. **Admin Route Protection (non-admin)** - Needs `regular-user@destinosf.com`
 3. **Logout Functionality** - Needs authenticated user
 4. **Session Persistence** - Needs authenticated user
 5. **Password Confirmation** - Form doesn't have this field
@@ -100,12 +100,12 @@ You need to create these users in your Supabase Auth dashboard:
 
 ```
 Admin User:
-- Email: test@destino-sf.com
+- Email: test@destinosf.com
 - Password: password123
 - Then create profile with role: ADMIN
 
 Regular User:
-- Email: regular-user@destino-sf.com
+- Email: regular-user@destinosf.com
 - Password: password123
 - Then create profile with role: CUSTOMER
 ```
@@ -119,14 +119,14 @@ Regular User:
 INSERT INTO public.profiles (id, email, role)
 VALUES (
   '<admin-user-uuid-from-supabase-auth>',
-  'test@destino-sf.com',
+  'test@destinosf.com',
   'ADMIN'
 );
 
 INSERT INTO public.profiles (id, email, role)
 VALUES (
   '<regular-user-uuid-from-supabase-auth>',
-  'regular-user@destino-sf.com',
+  'regular-user@destinosf.com',
   'CUSTOMER'
 );
 ```

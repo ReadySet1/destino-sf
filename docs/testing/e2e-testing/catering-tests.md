@@ -14,7 +14,7 @@ We've created predefined test users for different scenarios:
 // Available test users (from tests/e2e/utils/auth-helpers.ts)
 const testUsers = {
   admin: {
-    email: 'test@destino-sf.com',
+    email: 'test@destinosf.com',
     password: 'password123',
     role: 'admin',
   },

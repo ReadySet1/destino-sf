@@ -104,7 +104,7 @@ export const OrderConfirmationEmail: React.FC<OrderConfirmationEmailProps> = ({
           </Text>
 
           <Text style={styles.footer}>
-            <Link href="https://destino-sf.com">Visit our website</Link>
+            <Link href="https://destinosf.com">Visit our website</Link>
           </Text>
         </Container>
       </Body>

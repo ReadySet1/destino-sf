@@ -756,7 +756,7 @@ const user = buildUser();
 
 // Use:
 const user = buildUser({
-  email: faker.internet.email({ provider: 'destino-sf.com' }),
+  email: faker.internet.email({ provider: 'destinosf.com' }),
   phone: faker.phone.number('(###) ###-####'), // Match US format
 });
 ```

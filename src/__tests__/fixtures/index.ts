@@ -231,7 +231,7 @@ export const mockProfiles = {
 
   admin: {
     id: 'profile-admin-001',
-    email: 'admin@destino-sf.com',
+    email: 'admin@destinosf.com',
     name: 'Admin User',
     phone: '+14155559999',
     role: 'ADMIN' as const,

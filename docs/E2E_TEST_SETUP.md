@@ -11,7 +11,7 @@ The E2E tests expect the following users to exist in your test database:
 #### 1. Admin Test User
 
 ```
-Email: test@destino-sf.com
+Email: test@destinosf.com
 Password: password123
 Role: ADMIN
 ```
@@ -19,7 +19,7 @@ Role: ADMIN
 #### 2. Regular Test User
 
 ```
-Email: regular-user@destino-sf.com
+Email: regular-user@destinosf.com
 Password: password123
 Role: CUSTOMER
 ```
@@ -33,7 +33,7 @@ You can create these users using the Supabase dashboard or by running the follow
 INSERT INTO public.profiles (id, email, role, created_at, updated_at)
 VALUES (
   'test-admin-uuid',  -- Replace with actual Supabase auth user ID
-  'test@destino-sf.com',
+  'test@destinosf.com',
   'ADMIN',
   NOW(),
   NOW()
@@ -43,7 +43,7 @@ VALUES (
 INSERT INTO public.profiles (id, email, role, created_at, updated_at)
 VALUES (
   'test-user-uuid',  -- Replace with actual Supabase auth user ID
-  'regular-user@destino-sf.com',
+  'regular-user@destinosf.com',
   'CUSTOMER',
   NOW(),
   NOW()

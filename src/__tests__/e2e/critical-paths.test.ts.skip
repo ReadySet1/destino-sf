@@ -239,7 +239,7 @@ describe.skip('Critical User Paths E2E Tests', () => {
   describe('3. Admin Order Management', () => {
     const mockAdminUser = {
       id: 'admin-123',
-      email: 'admin@destino-sf.com',
+      email: 'admin@destinosf.com',
       role: 'admin',
     };
 

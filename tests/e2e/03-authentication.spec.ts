@@ -33,7 +33,7 @@ test.describe('Authentication Flow', () => {
   });
 
   test.skip('should login existing user', async ({ page }) => {
-    // This test is skipped because it requires test user: test@destino-sf.com
+    // This test is skipped because it requires test user: test@destinosf.com
     // TODO: Create test user in database first
     await page.goto('/sign-in');
   });
@@ -109,7 +109,7 @@ test.describe('Authentication Flow', () => {
     await page.goto('/forgot-password');
 
     // Fill in email for password reset
-    await page.fill('[data-testid="email"]', 'test@destino-sf.com');
+    await page.fill('[data-testid="email"]', 'test@destinosf.com');
     await page.click('[data-testid="reset-password-button"]');
 
     // Should show password reset confirmation
