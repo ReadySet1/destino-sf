@@ -27,6 +27,127 @@ const KNOWN_DATABASES: Record<string, DatabaseEnvironmentConfig> = {
   },
 };
 
+/**
+ * Result of DATABASE_URL format validation
+ */
+export interface DatabaseUrlValidation {
+  isValid: boolean;
+  warnings: string[];
+  errors: string[];
+  parsed: {
+    username: string;
+    projectId: string | null;
+    host: string;
+    port: number;
+    database: string;
+    isPooler: boolean;
+    hasPgBouncer: boolean;
+    hasPreparedStatementsDisabled: boolean;
+    hasStatementCacheDisabled: boolean;
+  } | null;
+}
+
+/**
+ * Validates DATABASE_URL format for Supabase pooler connections.
+ * Detects common authentication issues BEFORE attempting connection.
+ *
+ * The Supabase pooler requires username format: postgres.PROJECT_ID
+ * This catches "Tenant or user not found" errors early.
+ */
+export function validateDatabaseUrlFormat(databaseUrl?: string): DatabaseUrlValidation {
+  const result: DatabaseUrlValidation = {
+    isValid: true,
+    warnings: [],
+    errors: [],
+    parsed: null,
+  };
+
+  const url = databaseUrl || process.env.DATABASE_URL;
+
+  // Skip validation during build time
+  if (!url) {
+    if (
+      process.env.NEXT_PHASE === 'phase-production-build' ||
+      process.env.NEXT_PHASE === 'phase-development-build' ||
+      process.env.NODE_ENV === 'test'
+    ) {
+      return result; // Skip validation during build/test
+    }
+    result.isValid = false;
+    result.errors.push('DATABASE_URL environment variable is not defined');
+    return result;
+  }
+
+  try {
+    const parsed = new URL(url);
+    const isPooler = parsed.hostname.includes('pooler.supabase.com');
+    const port = parseInt(parsed.port) || 5432;
+
+    // Extract project ID from username (format: postgres.PROJECT_ID)
+    const usernameParts = decodeURIComponent(parsed.username).split('.');
+    const hasProjectIdInUsername = usernameParts.length === 2 && usernameParts[0] === 'postgres';
+    const projectIdFromUsername = hasProjectIdInUsername ? usernameParts[1] : null;
+
+    result.parsed = {
+      username: decodeURIComponent(parsed.username),
+      projectId: projectIdFromUsername,
+      host: parsed.hostname,
+      port,
+      database: parsed.pathname.replace('/', '') || 'postgres',
+      isPooler,
+      hasPgBouncer: parsed.searchParams.get('pgbouncer') === 'true',
+      hasPreparedStatementsDisabled: parsed.searchParams.get('prepared_statements') === 'false',
+      hasStatementCacheDisabled: parsed.searchParams.get('statement_cache_size') === '0',
+    };
+
+    // CRITICAL: Username must include project ID for pooler connections
+    if (isPooler && !hasProjectIdInUsername) {
+      result.isValid = false;
+      result.errors.push(
+        'AUTHENTICATION ERROR: Supabase pooler requires username format "postgres.PROJECT_ID". ' +
+          `Current username: "${result.parsed.username}". ` +
+          'Expected format: "postgres.drrejylrcjbeldnzodjd" (dev) or "postgres.ocusztulyiegeawqptrs" (prod). ' +
+          'This will cause "Tenant or user not found" error.'
+      );
+    }
+
+    // Validate project ID matches known databases
+    if (isPooler && projectIdFromUsername) {
+      const knownDb = KNOWN_DATABASES[projectIdFromUsername];
+      if (!knownDb) {
+        result.warnings.push(
+          `Unknown project ID "${projectIdFromUsername}" in DATABASE_URL. ` +
+            `Known project IDs: ${Object.keys(KNOWN_DATABASES).join(', ')}`
+        );
+      }
+    }
+
+    // Warn about missing pgbouncer parameters for pooler connections
+    if (isPooler) {
+      if (!result.parsed.hasPgBouncer) {
+        result.warnings.push(
+          'Missing pgbouncer=true parameter in DATABASE_URL (recommended for pooler connections)'
+        );
+      }
+      if (!result.parsed.hasPreparedStatementsDisabled) {
+        result.warnings.push(
+          'Missing prepared_statements=false parameter in DATABASE_URL (recommended for pgbouncer)'
+        );
+      }
+      if (!result.parsed.hasStatementCacheDisabled) {
+        result.warnings.push(
+          'Missing statement_cache_size=0 parameter in DATABASE_URL (recommended for pgbouncer)'
+        );
+      }
+    }
+  } catch (error) {
+    result.isValid = false;
+    result.errors.push(`Invalid DATABASE_URL format: ${(error as Error).message}`);
+  }
+
+  return result;
+}
+
 interface ValidationResult {
   isValid: boolean;
   currentDatabase: DatabaseEnvironmentConfig | null;
@@ -202,6 +323,33 @@ export function getDatabaseInfo(): {
 export async function validateStartupDatabase(): Promise<void> {
   try {
     console.log('🔍 Validating database environment configuration...');
+
+    // FIRST: Validate DATABASE_URL format to catch auth issues early
+    const urlValidation = validateDatabaseUrlFormat();
+
+    if (!urlValidation.isValid) {
+      console.error('\n' + '='.repeat(60));
+      console.error('DATABASE_URL FORMAT VALIDATION FAILED');
+      console.error('='.repeat(60));
+      urlValidation.errors.forEach(err => console.error(`ERROR: ${err}`));
+      console.error('='.repeat(60) + '\n');
+      throw new Error(`Database URL validation failed: ${urlValidation.errors.join('; ')}`);
+    }
+
+    // Log warnings in debug mode
+    if (urlValidation.warnings.length > 0 && process.env.DB_DEBUG === 'true') {
+      console.warn('DATABASE_URL warnings:');
+      urlValidation.warnings.forEach(warn => console.warn(`  WARNING: ${warn}`));
+    }
+
+    // Log parsed URL info in debug mode
+    if (urlValidation.parsed && process.env.DB_DEBUG === 'true') {
+      console.log('📊 DATABASE_URL parsed:');
+      console.log(`   Username: ${urlValidation.parsed.username}`);
+      console.log(`   Project ID: ${urlValidation.parsed.projectId || 'not found'}`);
+      console.log(`   Host: ${urlValidation.parsed.host}`);
+      console.log(`   Is Pooler: ${urlValidation.parsed.isPooler}`);
+    }
 
     // Validate environment
     enforceEnvironmentValidation();
