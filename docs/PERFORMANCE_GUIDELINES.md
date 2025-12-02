@@ -44,12 +44,11 @@ Future targets to work toward:
 Lighthouse CI runs against these URLs:
 
 1. **Homepage** (`/`)
-2. **Product Category - Empanadas** (`/products/category/empanadas`)
-3. **Product Category - Alfajores** (`/products/category/alfajores`)
-4. **Product Detail** (`/products/empanada-carne`)
-5. **Catering** (`/catering`)
-6. **Cart** (`/cart`)
-7. **Checkout** (`/checkout`)
+2. **About** (`/about`)
+3. **Contact** (`/contact`)
+4. **Cart** (`/cart`)
+
+> **Note**: Database-dependent pages (product categories, product details, checkout) are excluded from Lighthouse CI tests because they require a database connection. These pages should be tested manually or with a dedicated test database setup.
 
 ## Running Performance Tests
 

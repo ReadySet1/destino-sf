@@ -6,12 +6,9 @@
       "startServerReadyTimeout": 180000,
       "url": [
         "http://localhost:3000",
-        "http://localhost:3000/products/category/empanadas",
-        "http://localhost:3000/products/category/alfajores",
-        "http://localhost:3000/products/empanada-carne",
-        "http://localhost:3000/catering",
-        "http://localhost:3000/cart",
-        "http://localhost:3000/checkout"
+        "http://localhost:3000/about",
+        "http://localhost:3000/contact",
+        "http://localhost:3000/cart"
       ],
       "numberOfRuns": 3,
       "settings": {
