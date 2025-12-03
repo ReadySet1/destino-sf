@@ -290,8 +290,8 @@ export default withSentryConfig(nextConfig, {
   org: 'ready-set-llc',
   project: 'destino-sf',
 
-  // Suppress CLI output during build (except in CI)
-  silent: !process.env.CI,
+  // Always suppress CLI output (removes 2000+ lines of source map upload logs)
+  silent: true,
 
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
@@ -304,6 +304,11 @@ export default withSentryConfig(nextConfig, {
 
   // Hides source maps from generated client bundles
   hideSourceMaps: true,
+
+  // Delete source maps after upload to keep deployment clean
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
 
   // Transpiles SDK to be compatible with IE11 (increases bundle size)
   transpileClientSDK: false,

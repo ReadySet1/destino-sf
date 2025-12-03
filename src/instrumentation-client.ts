@@ -1,3 +1,13 @@
+/**
+ * Next.js Client Instrumentation File
+ *
+ * This file replaces the deprecated sentry.client.config.ts approach.
+ * It's automatically loaded by Next.js for client-side instrumentation.
+ *
+ * @see https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client
+ * @see https://docs.sentry.io/platforms/javascript/guides/nextjs/
+ */
+
 import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
@@ -7,8 +17,8 @@ Sentry.init({
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: process.env.NODE_ENV === 'development',
+  // Note: debug option removed - it doesn't work with bundled Sentry builds
+  // and causes "[Sentry] Cannot initialize SDK with `debug` option using a non-debug bundle"
 
   beforeSend(event, hint) {
     // Filter out sensitive information
@@ -99,3 +109,11 @@ Sentry.init({
     /node_modules/,
   ],
 });
+
+/**
+ * Export the router transition hook for navigation instrumentation.
+ * This enables Sentry to track client-side page navigations.
+ *
+ * @see https://docs.sentry.io/platforms/javascript/guides/nextjs/
+ */
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
