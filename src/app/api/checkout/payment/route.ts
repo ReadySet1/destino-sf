@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createPayment } from '@/lib/square/orders';
-import { prisma, withRetry } from '@/lib/db-unified';
+import { prisma } from '@/lib/db-unified';
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
-import { getSquareService } from '@/lib/square/service';
-import { randomUUID } from 'crypto';
 import { withValidation } from '@/middleware/api-validator';
 import {
   CreatePaymentRequestSchema,
@@ -92,12 +90,8 @@ async function postPaymentHandler(request: Request) {
         }
 
         // Process payment with Square (this is idempotent via Square's idempotency key)
+        // Note: createPayment uses autocomplete: true which automatically finalizes the order
         const payment = await createPayment(sourceId, lockedOrder.squareOrderId, amount);
-
-        // Ensure order is finalized in Square (fallback if autocomplete doesn't work)
-        if (payment.status === 'COMPLETED' || payment.status === 'APPROVED') {
-          await finalizeSquareOrder(lockedOrder.squareOrderId);
-        }
 
         // Update order status within the transaction
         await prisma.order.update({
@@ -206,28 +200,3 @@ export const POST = withValidation(
   },
   { mode: 'warn' } // Start with warn mode
 );
-
-/**
- * Fallback function to finalize Square order if autocomplete doesn't work
- */
-async function finalizeSquareOrder(squareOrderId: string): Promise<void> {
-  try {
-    const squareService = getSquareService();
-
-    // Update order to OPEN state
-    const updateRequest = {
-      order: {
-        locationId: process.env.SQUARE_LOCATION_ID!,
-        state: 'OPEN',
-        version: undefined, // Let Square handle versioning
-      },
-      fieldsToClear: [],
-      idempotencyKey: randomUUID(),
-    };
-
-    await squareService.updateOrder(squareOrderId, updateRequest);
-  } catch (error) {
-    console.error(`Failed to finalize Square order ${squareOrderId}:`, error);
-    // Don't throw - payment succeeded, this is a secondary operation
-  }
-}
