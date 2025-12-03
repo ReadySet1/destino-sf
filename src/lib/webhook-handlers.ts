@@ -7,6 +7,7 @@ import { AlertService } from '@/lib/alerts';
 import { errorMonitor } from '@/lib/error-monitoring';
 import { purchaseShippingLabel } from '@/app/actions/labels';
 import { SquareClient, SquareEnvironment } from 'square';
+import { sendOrderConfirmationEmail } from '@/lib/email';
 
 interface SquareWebhookPayload {
   merchant_id: string;
@@ -656,6 +657,21 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
             const alertService = new AlertService();
             await alertService.sendNewOrderAlert(orderWithItems);
             console.log(`✅ New order alert sent for paid order ${internalOrderId}`);
+
+            // Send customer order confirmation email
+            try {
+              await sendOrderConfirmationEmail({
+                ...orderWithItems,
+                paymentMethod: 'SQUARE' as const,
+              });
+              console.log(`📧 Customer confirmation email sent for order ${internalOrderId}`);
+            } catch (emailError: any) {
+              console.error(
+                `Failed to send customer confirmation email for order ${internalOrderId}:`,
+                emailError
+              );
+              // Don't fail the webhook if email fails
+            }
           }
         } catch (alertError: any) {
           console.error(`Failed to send new order alert for order ${internalOrderId}:`, alertError);
@@ -962,6 +978,21 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
           const alertService = new AlertService();
           await alertService.sendNewOrderAlert(orderWithItems);
           console.log(`✅ New order alert sent for paid order ${order.id}`);
+
+          // Send customer order confirmation email
+          try {
+            await sendOrderConfirmationEmail({
+              ...orderWithItems,
+              paymentMethod: 'SQUARE' as const,
+            });
+            console.log(`📧 Customer confirmation email sent for order ${order.id}`);
+          } catch (emailError: any) {
+            console.error(
+              `Failed to send customer confirmation email for order ${order.id}:`,
+              emailError
+            );
+            // Don't fail the webhook if email fails
+          }
         }
       } catch (alertError: any) {
         console.error(`Failed to send new order alert for order ${order.id}:`, alertError);
