@@ -756,8 +756,9 @@ export class AlertService {
     try {
       const shopName = env.SHOP_NAME || 'Destino SF';
 
-      // Sanitize the subject to prevent email sending issues
+      // Sanitize inputs to prevent email sending issues (newlines not allowed in subjects)
       const sanitizedSubject = this.sanitizeEmailSubject(data.subject);
+      const sanitizedName = data.name.replace(/[\r\n]+/g, ' ').trim();
 
       // Auto-reply to customer
       const { data: customerEmailData, error: customerError } = await resend.emails.send({
@@ -783,7 +784,7 @@ export class AlertService {
       const { data: adminEmailData, error: adminError } = await resend.emails.send({
         from: `${shopName} Alerts <${env.FROM_EMAIL}>`,
         to: [adminRecipientEmail],
-        subject: `New Contact Form: ${data.type} - ${data.name}${sanitizedSubject !== 'General inquiry' ? ` - ${sanitizedSubject}` : ''}`,
+        subject: `New Contact Form: ${data.type} - ${sanitizedName}${sanitizedSubject !== 'General inquiry' ? ` - ${sanitizedSubject}` : ''}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">New Contact Form Submission</h2>
