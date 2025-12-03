@@ -8,8 +8,8 @@ Sentry.init({
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: process.env.NODE_ENV === 'development',
+  // Note: debug option removed - it doesn't work with bundled Sentry builds
+  // and causes "[Sentry] Cannot initialize SDK with `debug` option using a non-debug bundle"
 
   beforeSend(event, hint) {
     // Filter out sensitive information
