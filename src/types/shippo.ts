@@ -446,6 +446,8 @@ export interface ShippoClientAPI {
 
 export interface ShippingLabelResponse {
   success: boolean;
+  /** True when another concurrent process is handling label purchase (not a failure) */
+  blockedByConcurrent?: boolean;
   labelUrl?: string;
   trackingNumber?: string;
   error?: string;

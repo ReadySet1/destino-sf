@@ -1050,6 +1050,15 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
           console.log(
             `✅ Successfully purchased label for order ${order.id}. Tracking: ${labelResult.trackingNumber}`
           );
+        } else if (labelResult.blockedByConcurrent) {
+          // Another process is handling label purchase - this is expected behavior in serverless
+          console.log(
+            `⏸️ [LABEL-CONCURRENT] Order ${order.id} being handled by concurrent process`
+          );
+          // Schedule verification to ensure label was created (non-blocking, fire-and-forget)
+          verifyLabelCreation(order.id).catch(err =>
+            console.error(`Label verification failed for ${order.id}:`, err)
+          );
         } else {
           console.error(
             `❌ Failed to purchase label automatically for order ${order.id}: ${labelResult.error}`
@@ -1181,5 +1190,32 @@ export async function handleRefundUpdated(payload: SquareWebhookPayload): Promis
       console.error(`Error updating refund ${data.id}:`, error);
       throw error;
     }
+  }
+}
+
+/**
+ * Verify label creation after concurrent processing
+ *
+ * This function is called when a webhook discovers another process is already
+ * handling label purchase. It waits and then verifies the label was created.
+ * If not, it logs an error for manual intervention.
+ */
+async function verifyLabelCreation(orderId: string, delayMs = 15000): Promise<void> {
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { trackingNumber: true, labelUrl: true, status: true },
+  });
+
+  if (!order?.trackingNumber) {
+    console.error(
+      `⚠️ [LABEL-VERIFY-FAIL] Order ${orderId} has no label after ${delayMs}ms - may need manual intervention`
+    );
+    // TODO: Could trigger admin alert here if needed
+  } else {
+    console.log(
+      `✅ [LABEL-VERIFY-OK] Order ${orderId} label confirmed: ${order.trackingNumber}`
+    );
   }
 }
