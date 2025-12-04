@@ -680,6 +680,43 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
               );
               // Don't fail the webhook if email fails
             }
+
+            // Purchase shipping label for nationwide shipping orders
+            if (
+              orderWithItems.fulfillmentType === 'nationwide_shipping' &&
+              orderWithItems.shippingRateId
+            ) {
+              console.log(
+                `🔄 Payment confirmed for shipping order ${internalOrderId}. Triggering label purchase with rate ID: ${orderWithItems.shippingRateId}`
+              );
+              try {
+                const labelResult = await purchaseShippingLabel(
+                  internalOrderId,
+                  orderWithItems.shippingRateId
+                );
+                if (labelResult.success) {
+                  console.log(
+                    `✅ Successfully purchased label for order ${internalOrderId}. Tracking: ${labelResult.trackingNumber}`
+                  );
+                } else if (labelResult.blockedByConcurrent) {
+                  console.log(
+                    `⏸️ [LABEL-CONCURRENT] Order ${internalOrderId} being handled by concurrent process`
+                  );
+                  verifyLabelCreation(internalOrderId).catch(err =>
+                    console.error(`Label verification failed for ${internalOrderId}:`, err)
+                  );
+                } else {
+                  console.error(
+                    `❌ Failed to purchase label automatically for order ${internalOrderId}: ${labelResult.error}`
+                  );
+                }
+              } catch (labelError: any) {
+                console.error(
+                  `❌ Unexpected error calling purchaseShippingLabel for order ${internalOrderId}: ${labelError?.message}`
+                );
+                // Don't fail the webhook if label purchase fails
+              }
+            }
           }
         } catch (alertError: any) {
           console.error(`Failed to send new order alert for order ${internalOrderId}:`, alertError);
