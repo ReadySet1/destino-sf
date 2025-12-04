@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
 import { prisma, withRetry } from '@/lib/db-unified';
-import { updateShippingConfiguration } from '@/lib/shippingUtils';
+import {
+  updateShippingConfiguration,
+  getShippingGlobalConfig,
+  updateShippingGlobalConfig,
+} from '@/lib/shippingUtils';
 
-// Schema for validation
+// Schema for per-product configuration
 const configurationSchema = z.object({
   productName: z.string().min(1, 'Product name is required'),
   baseWeightLb: z
@@ -19,8 +23,22 @@ const configurationSchema = z.object({
   applicableForNationwideOnly: z.boolean(),
 });
 
+// Schema for global configuration
+const globalConfigSchema = z.object({
+  packagingWeightLb: z
+    .number()
+    .min(0, 'Packaging weight cannot be negative')
+    .max(20, 'Packaging weight cannot exceed 20 lbs'),
+  minimumTotalWeightLb: z
+    .number()
+    .min(0.1, 'Minimum total weight must be at least 0.1 lbs')
+    .max(10, 'Minimum total weight cannot exceed 10 lbs'),
+  isActive: z.boolean(),
+});
+
 const requestSchema = z.object({
   configurations: z.array(configurationSchema),
+  globalConfig: globalConfigSchema.optional(),
 });
 
 type RequestData = z.infer<typeof requestSchema>;
@@ -76,9 +94,9 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    const { configurations }: RequestData = body;
+    const { configurations, globalConfig }: RequestData = body;
 
-    // Update each configuration
+    // Update each per-product configuration
     const updatedConfigurations = [];
     for (const config of configurations) {
       try {
@@ -95,9 +113,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Update global configuration if provided
+    let updatedGlobalConfig = null;
+    if (globalConfig) {
+      try {
+        updatedGlobalConfig = await updateShippingGlobalConfig({
+          packagingWeightLb: globalConfig.packagingWeightLb,
+          minimumTotalWeightLb: globalConfig.minimumTotalWeightLb,
+          isActive: globalConfig.isActive,
+        });
+        console.log('Global shipping config updated:', updatedGlobalConfig);
+      } catch (error) {
+        console.error('Failed to update global shipping configuration:', error);
+      }
+    }
+
     return NextResponse.json({
       message: 'Shipping configurations updated successfully',
       configurations: updatedConfigurations,
+      globalConfig: updatedGlobalConfig,
     });
   } catch (error) {
     console.error('Error updating shipping configurations:', error);
@@ -115,12 +149,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // This route is mainly for POST, but we can return current configurations if needed
+    // Fetch per-product configurations and global config
     const { getAllShippingConfigurations } = await import('@/lib/shippingUtils');
     const configurations = await getAllShippingConfigurations();
+    const globalConfig = await getShippingGlobalConfig();
 
     return NextResponse.json({
       configurations,
+      globalConfig,
     });
   } catch (error) {
     console.error('Error fetching shipping configurations:', error);

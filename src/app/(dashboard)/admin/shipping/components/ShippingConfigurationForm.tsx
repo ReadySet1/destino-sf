@@ -5,13 +5,13 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Trash2, Plus, Save } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Trash2, Plus, Save, Package } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { type ShippingWeightConfig } from '@/lib/shippingUtils';
+import { type ShippingWeightConfig, type ShippingGlobalConfigData } from '@/lib/shippingUtils';
 import { FormContainer } from '@/components/ui/form/FormContainer';
 import { FormHeader } from '@/components/ui/form/FormHeader';
 import { FormSection } from '@/components/ui/form/FormSection';
@@ -26,9 +26,10 @@ import { FormIcons } from '@/components/ui/form/FormIcons';
 
 interface ShippingConfigurationFormProps {
   configurations: ShippingWeightConfig[];
+  globalConfig?: ShippingGlobalConfigData;
 }
 
-// Schema for form validation
+// Schema for per-product configuration
 const configurationSchema = z.object({
   productName: z.string().min(1, 'Product name is required'),
   baseWeightLb: z
@@ -43,14 +44,29 @@ const configurationSchema = z.object({
   applicableForNationwideOnly: z.boolean(),
 });
 
+// Schema for global configuration
+const globalConfigSchema = z.object({
+  packagingWeightLb: z
+    .number()
+    .min(0, 'Packaging weight cannot be negative')
+    .max(20, 'Packaging weight cannot exceed 20 lbs'),
+  minimumTotalWeightLb: z
+    .number()
+    .min(0.1, 'Minimum total weight must be at least 0.1 lbs')
+    .max(10, 'Minimum total weight cannot exceed 10 lbs'),
+  isActive: z.boolean(),
+});
+
 const formSchema = z.object({
   configurations: z.array(configurationSchema),
+  globalConfig: globalConfigSchema,
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 export default function ShippingConfigurationForm({
   configurations,
+  globalConfig,
 }: ShippingConfigurationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -58,6 +74,11 @@ export default function ShippingConfigurationForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       configurations: configurations,
+      globalConfig: globalConfig || {
+        packagingWeightLb: 1.5,
+        minimumTotalWeightLb: 1.0,
+        isActive: true,
+      },
     },
   });
 
@@ -108,7 +129,100 @@ export default function ShippingConfigurationForm({
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      {/* Global Shipping Settings */}
+      <Card className="border-2 border-orange-200 bg-orange-50/50">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-orange-600" />
+            <CardTitle className="text-lg text-orange-900">Packaging & Materials Weight</CardTitle>
+          </div>
+          <CardDescription className="text-orange-700">
+            This weight is added to every shipment for box, ice packs, padding, and insulation
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="globalConfig.packagingWeightLb">Packaging Weight (lbs)</Label>
+              <Input
+                type="number"
+                step="0.1"
+                min="0"
+                max="20"
+                {...form.register('globalConfig.packagingWeightLb', {
+                  valueAsNumber: true,
+                })}
+                className="mt-1 bg-white"
+              />
+              {form.formState.errors.globalConfig?.packagingWeightLb && (
+                <p className="text-sm text-red-600 mt-1">
+                  {form.formState.errors.globalConfig.packagingWeightLb.message}
+                </p>
+              )}
+              <p className="text-xs text-orange-700 mt-1">
+                Weight for shipping box, ice packs, padding, tape, etc.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="globalConfig.minimumTotalWeightLb">Minimum Total Weight (lbs)</Label>
+              <Input
+                type="number"
+                step="0.1"
+                min="0.1"
+                max="10"
+                {...form.register('globalConfig.minimumTotalWeightLb', {
+                  valueAsNumber: true,
+                })}
+                className="mt-1 bg-white"
+              />
+              {form.formState.errors.globalConfig?.minimumTotalWeightLb && (
+                <p className="text-sm text-red-600 mt-1">
+                  {form.formState.errors.globalConfig.minimumTotalWeightLb.message}
+                </p>
+              )}
+              <p className="text-xs text-orange-700 mt-1">
+                Shippo minimum weight requirement
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={form.watch('globalConfig.isActive')}
+              onCheckedChange={checked => form.setValue('globalConfig.isActive', checked)}
+            />
+            <Label>Active</Label>
+          </div>
+
+          {/* Weight Preview */}
+          <div className="bg-white p-3 rounded-md border border-orange-200">
+            <p className="text-sm font-medium text-orange-900 mb-2">
+              Total Weight Example:
+            </p>
+            <div className="text-xs text-orange-700 space-y-1">
+              {(() => {
+                const packagingWeight = form.watch('globalConfig.packagingWeightLb') || 0;
+                const productWeight = 2.0; // Example product weight
+                const total = productWeight + packagingWeight;
+                return (
+                  <>
+                    <p>Product weight: {productWeight.toFixed(1)} lbs</p>
+                    <p>+ Packaging weight: {packagingWeight.toFixed(1)} lbs</p>
+                    <p className="font-semibold pt-1 border-t border-orange-200">
+                      = Total to Shippo: {total.toFixed(1)} lbs
+                    </p>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Per-Product Configurations */}
       <div className="space-y-4">
+        <h3 className="text-lg font-medium">Per-Product Weight Configuration</h3>
         {fields.map((field, index) => (
           <Card key={field.id} className="relative">
             <CardHeader className="pb-4">
