@@ -11,6 +11,7 @@ import { ApiErrorSchema } from '@/lib/api/schemas/common';
 // DES-60 Phase 4: Pessimistic locking for payment processing
 import { withRowLock, LockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
 import { Order } from '@prisma/client';
+import { purchaseShippingLabel } from '@/app/actions/labels';
 
 // DES-81: Increase function timeout for database connection resilience
 export const maxDuration = 60;
@@ -101,6 +102,29 @@ async function postPaymentHandler(request: Request) {
             paymentStatus: 'PAID',
           },
         });
+
+        // Trigger shipping label creation for nationwide shipping orders
+        // This is done inside the lock to prevent race conditions with webhook handler
+        if (lockedOrder.fulfillmentType === 'nationwide_shipping' && lockedOrder.shippingRateId) {
+          console.log(
+            `🚀 Triggering label purchase for nationwide shipping order ${orderId} with rate ${lockedOrder.shippingRateId}`
+          );
+          try {
+            const labelResult = await purchaseShippingLabel(orderId, lockedOrder.shippingRateId);
+            if (labelResult.success) {
+              console.log(
+                `✅ Label created for order ${orderId}: Tracking ${labelResult.trackingNumber}`
+              );
+            } else if (labelResult.blockedByConcurrent) {
+              console.log(`⏸️ Label creation blocked by concurrent process for order ${orderId}`);
+            } else {
+              console.error(`❌ Label creation failed for order ${orderId}: ${labelResult.error}`);
+            }
+          } catch (labelError) {
+            console.error(`❌ Unexpected error creating label for order ${orderId}:`, labelError);
+            // Don't fail the payment response - label can be created via admin UI or retry
+          }
+        }
 
         return {
           success: true,
