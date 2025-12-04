@@ -34,16 +34,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('🔔 Received Square webhook request');
 
-    // Debug: Log all headers received from Square
-    console.log('📋 Request headers received:', {
-      'x-square-signature': request.headers.get('x-square-signature'),
-      'content-type': request.headers.get('content-type'),
-      'user-agent': request.headers.get('user-agent'),
-      host: request.headers.get('host'),
-      'x-forwarded-host': request.headers.get('x-forwarded-host'),
-      'x-forwarded-proto': request.headers.get('x-forwarded-proto'),
-      'content-length': request.headers.get('content-length'),
-      allHeaders: Object.fromEntries(request.headers.entries()),
+    // Concise header logging (reduced from verbose full dump)
+    console.log('📋 Webhook headers:', {
+      hasSignature: !!request.headers.get('x-square-signature'),
+      hasHmac: !!request.headers.get('x-square-hmacsha256-signature'),
+      contentLength: request.headers.get('content-length'),
+      environment: request.headers.get('square-environment') || 'unknown',
     });
 
     // Step 1: Security validation (rate limiting, headers, etc.)
