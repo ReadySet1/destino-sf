@@ -8,11 +8,11 @@
  */
 export function isBuildTime(): boolean {
   return (
+    // Only during actual build phase, NOT production server runtime
     process.env.NEXT_PHASE === 'phase-production-build' ||
-    process.env.NEXT_PHASE === 'phase-production-server' ||
     // Only during CI builds, not production runtime
     (process.env.CI === 'true' && !process.env.VERCEL_ENV) ||
-    // Vercel build phase specifically
+    // Vercel build phase specifically (no VERCEL_ENV means it's build time)
     (process.env.VERCEL === '1' && process.env.VERCEL_ENV === undefined)
   );
 }
