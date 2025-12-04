@@ -8,6 +8,14 @@ import { errorMonitor } from '@/lib/error-monitoring';
 import { purchaseShippingLabel } from '@/app/actions/labels';
 import { SquareClient, SquareEnvironment } from 'square';
 import { sendOrderConfirmationEmail } from '@/lib/email';
+import { RequestDeduplicator, resourceKey } from '@/lib/concurrency/request-deduplicator';
+
+// Deduplicator for payment webhook processing - prevents concurrent processing of same payment
+// Uses longer TTL (2 minutes) to match the label purchase retry window
+const paymentWebhookDeduplicator = new RequestDeduplicator({
+  ttl: 120000, // 2 minutes
+  logDuplicates: true,
+});
 
 interface SquareWebhookPayload {
   merchant_id: string;
@@ -692,6 +700,9 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
 
 /**
  * Handle payment.updated webhook events
+ *
+ * Uses request deduplication to prevent concurrent processing of the same payment,
+ * which can occur when Square sends multiple payment.updated webhooks in rapid succession.
  */
 export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promise<void> {
   const { data } = payload;
@@ -712,11 +723,6 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     eventId,
   });
 
-  // Enhanced logging for debugging the fix
-  console.log(`🔍 [WEBHOOK-FIX] Starting payment.updated processing`);
-  console.log(`🔍 [WEBHOOK-FIX] Looking for order with squareOrderId: ${squareOrderId}`);
-  console.log(`🔍 [WEBHOOK-FIX] Payment status from Square: ${paymentStatus}`);
-
   if (!squareOrderId) {
     console.error(
       `❌ CRITICAL: No order_id found in payment.updated payload for payment ${squarePaymentId}. Event ID: ${eventId}. Payload:`,
@@ -725,7 +731,16 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     return;
   }
 
-  try {
+  // Use request deduplication to prevent concurrent processing of the same payment
+  // Key is based on payment ID to deduplicate across different event IDs
+  return await paymentWebhookDeduplicator.deduplicate(
+    resourceKey('payment', squarePaymentId, 'webhook'),
+    async () => {
+      console.log(`🔍 [WEBHOOK-FIX] Starting payment.updated processing`);
+      console.log(`🔍 [WEBHOOK-FIX] Looking for order with squareOrderId: ${squareOrderId}`);
+      console.log(`🔍 [WEBHOOK-FIX] Payment status from Square: ${paymentStatus}`);
+
+      try {
     // Check for catering order first with retry logic
     const cateringOrder = await withRetry(
       async () => {
@@ -801,6 +816,7 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
             paymentStatus: true,
             fulfillmentType: true,
             shippingRateId: true,
+            gratuityAmount: true, // Include for no-op detection
           },
         });
       },
@@ -867,11 +883,28 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       `🔍 [WEBHOOK-FIX] Payment status mapping: ${paymentStatus} → ${updatedPaymentStatus} (Event: ${payload.event_id})`
     );
 
+    // CRITICAL FIX: Track if this is an actual payment transition (for label purchase decision)
+    const wasNotPaid = order.paymentStatus !== 'PAID';
+
     // Update order status only if payment is newly PAID
     const updatedOrderStatus =
-      order.paymentStatus !== 'PAID' && updatedPaymentStatus === 'PAID'
-        ? OrderStatus.PROCESSING
-        : order.status;
+      wasNotPaid && updatedPaymentStatus === 'PAID' ? OrderStatus.PROCESSING : order.status;
+
+    // CRITICAL FIX: Detect no-op updates to skip redundant processing
+    const isPaymentTransition = order.paymentStatus !== updatedPaymentStatus;
+    const isStatusTransition = order.status !== updatedOrderStatus;
+    const hasTipToCapture =
+      tipAmount > 0 && Number(order.gratuityAmount ?? 0) !== tipAmount / 100;
+
+    // Skip processing if nothing will change (prevents duplicate label purchases)
+    if (!isPaymentTransition && !isStatusTransition && !hasTipToCapture) {
+      console.log(
+        `⏭️ [WEBHOOK-DEDUP] Skipping no-op update for order ${order.id}: ` +
+          `payment ${order.paymentStatus} → ${updatedPaymentStatus}, ` +
+          `status ${order.status} → ${updatedOrderStatus} (Event: ${payload.event_id})`
+      );
+      return;
+    }
 
     console.log(
       `🔍 [WEBHOOK-FIX] Order status update: ${order.status} → ${updatedOrderStatus} (Event: ${payload.event_id})`
@@ -880,9 +913,9 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       `🔍 [WEBHOOK-FIX] Payment status update: ${order.paymentStatus} → ${updatedPaymentStatus} (Event: ${payload.event_id})`
     );
 
-    if (order.paymentStatus === 'PENDING' && updatedPaymentStatus === 'PAID') {
+    if (wasNotPaid && updatedPaymentStatus === 'PAID') {
       console.log(
-        `🎉 [WEBHOOK-FIX] *** CRITICAL FIX WORKING *** Payment status changing from PENDING to PAID for order ${order.id}!`
+        `🎉 [WEBHOOK-FIX] *** CRITICAL FIX WORKING *** Payment status changing from ${order.paymentStatus} to PAID for order ${order.id}!`
       );
     }
 
@@ -1000,14 +1033,16 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       }
     }
 
-    // Purchase shipping label if applicable (PRIMARY trigger - no duplicates)
+    // Purchase shipping label if applicable (PRIMARY trigger)
+    // CRITICAL FIX: Only trigger on actual transition to PAID (wasNotPaid check prevents duplicate purchases)
     if (
+      wasNotPaid &&
       updatedPaymentStatus === 'PAID' &&
       order.fulfillmentType === 'nationwide_shipping' &&
       order.shippingRateId
     ) {
       console.log(
-        `🔄 Payment confirmed for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`
+        `🔄 Payment transition to PAID for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`
       );
       try {
         const labelResult = await purchaseShippingLabel(order.id, order.shippingRateId);
@@ -1055,9 +1090,11 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       });
     }
 
-    // Re-throw the error to trigger webhook retry
-    throw error;
-  }
+        // Re-throw the error to trigger webhook retry
+        throw error;
+      }
+    }
+  ); // End of paymentWebhookDeduplicator.deduplicate
 }
 
 /**

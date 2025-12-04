@@ -11,6 +11,7 @@ import {
   createShippoError,
   DEFAULT_RETRY_CONFIG,
 } from '@/types/shippo';
+import { withRowLock, isLockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
 
 /**
  * Enhanced label purchase with automatic retry and rate refresh
@@ -69,7 +70,23 @@ export async function purchaseShippingLabel(
 }
 
 /**
- * Attempt label purchase with optimized transaction handling
+ * Type for raw SQL order result (snake_case column names)
+ */
+interface RawOrderRow {
+  id: string;
+  tracking_number: string | null;
+  label_url: string | null;
+  last_retry_at: Date | null;
+  status: string;
+}
+
+/**
+ * Attempt label purchase with pessimistic locking to prevent race conditions
+ *
+ * Uses a two-phase locking pattern:
+ * 1. Phase 1: Acquire lock, validate state, claim attempt, release lock
+ * 2. Phase 2: Call Shippo API (no lock held - avoids holding lock during slow external call)
+ * 3. Phase 3: Acquire lock again, double-check state, save result, release lock
  */
 async function attemptLabelPurchase(
   order: any,
@@ -81,67 +98,95 @@ async function attemptLabelPurchase(
   try {
     console.log(`🔄 Attempt ${retryAttempt + 1} for Order ID: ${orderId}`);
 
-    // Check if label creation is already in progress or completed
-    const currentOrder = await prisma.order.findUnique({
-      where: { id: orderId },
-      select: {
-        id: true,
-        trackingNumber: true,
-        labelUrl: true,
-        lastRetryAt: true,
-        status: true,
-      },
-    });
-
-    if (!currentOrder) {
-      throw new Error(`Order not found: ${orderId}`);
-    }
-
-    // Prevent concurrent operations - if already has label
-    if (currentOrder.trackingNumber) {
-      return {
-        success: true,
-        labelUrl: currentOrder.labelUrl || undefined,
-        trackingNumber: currentOrder.trackingNumber,
-        retryAttempt: retryAttempt,
-      };
-    }
-
-    // Prevent concurrent operations - check for active label creation attempts
-    // Only block if there's a recent lastRetryAt (indicating actual label creation attempts)
-    // Don't block on general order updates from webhooks
-    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    if (currentOrder.lastRetryAt && currentOrder.lastRetryAt > twoMinutesAgo) {
-      console.log(
-        `⏳ Order ${orderId} has recent label creation attempt, skipping to prevent concurrent processing`
-      );
-      return {
-        success: false,
-        error: 'Label creation already in progress. Please wait before retrying.',
-        errorCode: 'CONCURRENT_PROCESSING',
-        retryAttempt: retryAttempt,
-      };
-    }
-
-    // Get Shippo client
-    const shippo = ShippoClientManager.getInstance();
-
-    // Validate rate ID before attempting transaction
+    // Validate rate ID before attempting any operations
     if (!shippoRateId || shippoRateId === 'undefined' || shippoRateId === 'NO_ID_FOUND') {
       throw new Error(
         `Invalid rate ID: ${shippoRateId}. Cannot create transaction with undefined rate.`
       );
     }
 
-    // Update lastRetryAt to prevent concurrent processing during this attempt
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        lastRetryAt: new Date(),
-      },
-    });
+    // ========================================
+    // PHASE 1: Acquire lock, validate, and claim the attempt
+    // ========================================
+    let claimResult: { proceed: boolean; existingLabel?: ShippingLabelResponse };
 
-    // Call Shippo API FIRST (no database lock held during external API call)
+    try {
+      claimResult = await withRowLock<RawOrderRow, { proceed: boolean; existingLabel?: ShippingLabelResponse }>(
+        'orders',
+        orderId,
+        async (lockedOrder) => {
+          // ATOMIC CHECK 1: Already has a label - return it
+          if (lockedOrder.tracking_number) {
+            console.log(
+              `⏭️ [LABEL-LOCK] Order ${orderId} already has tracking: ${lockedOrder.tracking_number}`
+            );
+            return {
+              proceed: false,
+              existingLabel: {
+                success: true,
+                labelUrl: lockedOrder.label_url || undefined,
+                trackingNumber: lockedOrder.tracking_number,
+                retryAttempt,
+              },
+            };
+          }
+
+          // ATOMIC CHECK 2: Recent attempt in progress - block concurrent processing
+          const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+          if (lockedOrder.last_retry_at && new Date(lockedOrder.last_retry_at) > twoMinutesAgo) {
+            console.log(
+              `⏳ [LABEL-LOCK] Order ${orderId} has recent attempt at ${lockedOrder.last_retry_at}, blocking`
+            );
+            return {
+              proceed: false,
+              existingLabel: {
+                success: false,
+                error: 'Label creation already in progress. Please wait.',
+                errorCode: 'CONCURRENT_PROCESSING',
+                retryAttempt,
+              },
+            };
+          }
+
+          // CLAIM: Mark this attempt start (under lock)
+          await prisma.order.update({
+            where: { id: orderId },
+            data: { lastRetryAt: new Date() },
+          });
+
+          console.log(`✅ [LABEL-LOCK] Claimed label purchase attempt for order ${orderId}`);
+          return { proceed: true };
+        },
+        {
+          timeout: 5000, // Short timeout for claim phase
+          noWait: true, // Fail fast if another process holds the lock
+        }
+      );
+    } catch (lockError) {
+      if (isLockAcquisitionError(lockError) && lockError.reason === 'timeout') {
+        console.log(
+          `⏸️ [LABEL-LOCK] Could not acquire lock for ${orderId}, another process is handling it`
+        );
+        return {
+          success: false,
+          error: 'Label purchase already in progress by another process',
+          errorCode: 'LOCK_TIMEOUT',
+          retryAttempt,
+        };
+      }
+      throw lockError;
+    }
+
+    // If claim phase returned early (already has label or in progress), return that result
+    if (!claimResult.proceed && claimResult.existingLabel) {
+      return claimResult.existingLabel;
+    }
+
+    // ========================================
+    // PHASE 2: Call Shippo API (no lock held)
+    // ========================================
+    const shippo = ShippoClientManager.getInstance();
+
     console.log(`📦 Creating Shippo transaction for Order ID: ${orderId}`);
     const transaction = await shippo.transactions.create({
       rate: shippoRateId,
@@ -156,28 +201,48 @@ async function attemptLabelPurchase(
       hasTracking: !!transaction.trackingNumber,
     });
 
-    // Check for success
+    // ========================================
+    // PHASE 3: Acquire lock again and save result
+    // ========================================
     if (transaction.status === 'SUCCESS' && transaction.labelUrl && transaction.trackingNumber) {
       console.log(`✅ Label purchased successfully for Order ID: ${orderId}`);
 
-      // QUICK database update (minimal lock time - external API call already completed)
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          trackingNumber: transaction.trackingNumber,
-          labelUrl: transaction.labelUrl,
-          labelCreatedAt: new Date(),
-          status: OrderStatus.SHIPPING,
-          retryCount: retryAttempt + 1,
-          lastRetryAt: new Date(),
+      // Save with lock to prevent race conditions
+      await withRowLock<RawOrderRow, void>(
+        'orders',
+        orderId,
+        async (lockedOrder) => {
+          // DOUBLE-CHECK: Ensure no one else completed while we were calling Shippo
+          if (lockedOrder.tracking_number) {
+            console.log(
+              `⚠️ [LABEL-RACE] Another process completed label for ${orderId} while we were processing`
+            );
+            return; // Another process won the race, skip our update
+          }
+
+          // Safe to save our result
+          await prisma.order.update({
+            where: { id: orderId },
+            data: {
+              trackingNumber: transaction.trackingNumber,
+              labelUrl: transaction.labelUrl,
+              labelCreatedAt: new Date(),
+              status: OrderStatus.SHIPPING,
+              retryCount: retryAttempt + 1,
+              lastRetryAt: new Date(),
+            },
+          });
         },
-      });
+        {
+          timeout: 10000, // Longer timeout for save phase - we have data to persist
+          noWait: false, // Wait for lock since we need to save
+        }
+      );
 
       // Log the label URL prominently so it can be accessed
       console.log(`🏷️ LABEL CREATED FOR ORDER ${orderId}:`);
       console.log(`📄 PDF URL: ${transaction.labelUrl}`);
       console.log(`📦 TRACKING: ${transaction.trackingNumber}`);
-      console.log(`🔗 Direct Link: ${transaction.labelUrl}`);
 
       return {
         success: true,
