@@ -129,22 +129,29 @@ function getShippoConfig() {
   };
 }
 
-// In-memory cache for shipping rates
-const rateCache = new Map<string, ShippingRate[]>();
+// In-memory cache for shipping rates with TTL
+interface CachedRate {
+  rates: ShippingRate[];
+  timestamp: number;
+}
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes - rates expire to ensure fresh data
+const rateCache = new Map<string, CachedRate>();
 
 /** Helper to get Shippo client */
 function getShippoClient(): any {
   return ShippoClientManager.getInstance();
 }
 
-// Utility to build cache key from request
-function buildCacheKey(request: any): string {
+// Utility to build cache key from request - includes weight to ensure rate accuracy
+function buildCacheKey(request: any, weight: number): string {
   return JSON.stringify({
     to: request.shippingAddress ?? request.toAddress,
     items: request.cartItems ?? request.items,
     length: request.estimatedLengthIn,
     width: request.estimatedWidthIn,
     height: request.estimatedHeightIn,
+    weight: weight, // Include calculated weight to prevent stale rates when packaging weight changes
   });
 }
 
@@ -194,16 +201,8 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       };
     }
 
-    // Cache key – identical requests should hit cache
-    const cacheKey = buildCacheKey(request);
-    if (rateCache.has(cacheKey)) {
-      return {
-        success: true,
-        rates: rateCache.get(cacheKey)!,
-      };
-    }
-
-    // Calculate package weight
+    // Calculate package weight BEFORE checking cache
+    // This ensures the cache key includes the current weight (including packaging weight from DB)
     const weightLbs = await calculateShippingWeight(
       cartItems.map((item: any) => ({
         id: item.id,
@@ -213,6 +212,17 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       })),
       'nationwide_shipping'
     );
+
+    // Cache key includes weight – ensures fresh rates when packaging weight changes
+    const cacheKey = buildCacheKey(request, weightLbs);
+    const cached = rateCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      console.log(`📦 Cache HIT for weight ${weightLbs}lb - returning cached rates`);
+      return {
+        success: true,
+        rates: cached.rates,
+      };
+    }
 
     console.log('📦 Shipping calculation details:', {
       cartItems: cartItems.map((item: any) => ({ name: item.name, quantity: item.quantity })),
@@ -358,7 +368,8 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
     };
 
     if (isValidAddress) {
-      rateCache.set(cacheKey, rates);
+      rateCache.set(cacheKey, { rates, timestamp: Date.now() });
+      console.log(`📦 Cache STORED for weight ${weightLbs}lb - ${rates.length} rates cached`);
     }
 
     return response;
