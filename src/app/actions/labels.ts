@@ -406,7 +406,7 @@ async function updateRetryTracking(
     data: {
       retryCount,
       lastRetryAt: new Date(),
-      ...(errorMessage && { notes: `Last error: ${errorMessage}` }),
+      ...(errorMessage && { shippingLabelError: errorMessage }),
     },
   });
 }
