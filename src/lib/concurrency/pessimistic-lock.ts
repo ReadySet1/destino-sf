@@ -139,8 +139,8 @@ export async function withRowLock<T, R = unknown>(
   try {
     return await prisma.$transaction(
       async tx => {
-        // Build lock query
-        let lockQuery = `SELECT * FROM ${table} WHERE id = $1 FOR UPDATE`;
+        // Build lock query (cast to uuid for PostgreSQL compatibility)
+        let lockQuery = `SELECT * FROM ${table} WHERE id = $1::uuid FOR UPDATE`;
 
         if (noWait) {
           lockQuery += ' NOWAIT';
@@ -277,8 +277,8 @@ export async function withRowLocks<T, R = unknown>(
   try {
     return await prisma.$transaction(
       async tx => {
-        // Build lock query for multiple IDs
-        let lockQuery = `SELECT * FROM ${table} WHERE id = ANY($1) FOR UPDATE`;
+        // Build lock query for multiple IDs (cast to uuid[] for PostgreSQL compatibility)
+        let lockQuery = `SELECT * FROM ${table} WHERE id = ANY($1::uuid[]) FOR UPDATE`;
 
         if (noWait) {
           lockQuery += ' NOWAIT';
