@@ -163,16 +163,24 @@ async function attemptLabelPurchase(
         }
       );
     } catch (lockError) {
-      if (isLockAcquisitionError(lockError) && lockError.reason === 'timeout') {
-        console.log(
-          `⏸️ [LABEL-LOCK] Could not acquire lock for ${orderId}, another process is handling it`
+      if (isLockAcquisitionError(lockError)) {
+        if (lockError.reason === 'timeout') {
+          // Expected behavior - another process is handling label purchase
+          console.log(
+            `⏸️ [LABEL-CONCURRENT] Order ${orderId} label purchase in progress by another process`
+          );
+          return {
+            success: false,
+            blockedByConcurrent: true,
+            error: 'Label purchase in progress by another process',
+            errorCode: 'CONCURRENT_PROCESSING',
+            retryAttempt,
+          };
+        }
+        // For unknown/unexpected errors, log with the original error for debugging
+        console.error(
+          `❌ [LABEL-ERROR] Unexpected lock error for ${orderId}: ${lockError.originalError || lockError.reason}`
         );
-        return {
-          success: false,
-          error: 'Label purchase already in progress by another process',
-          errorCode: 'LOCK_TIMEOUT',
-          retryAttempt,
-        };
       }
       throw lockError;
     }

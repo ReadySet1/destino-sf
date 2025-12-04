@@ -46,18 +46,21 @@ export class LockAcquisitionError extends Error {
   constructor(
     public readonly table: string,
     public readonly id: string,
-    public readonly reason: 'timeout' | 'not_found' | 'deadlock' | 'unknown'
+    public readonly reason: 'timeout' | 'not_found' | 'deadlock' | 'unknown',
+    public readonly originalError?: string
   ) {
-    super(
-      `Failed to acquire lock on ${table} with id ${id}: ${reason}. ` +
-        (reason === 'timeout'
-          ? 'Another transaction is holding the lock. Please try again.'
-          : reason === 'not_found'
-            ? 'Record not found.'
-            : reason === 'deadlock'
-              ? 'Deadlock detected. Transaction was rolled back.'
-              : 'Unknown error.')
-    );
+    const reasonDetail =
+      reason === 'timeout'
+        ? 'Another transaction is holding the lock. Please try again.'
+        : reason === 'not_found'
+          ? 'Record not found.'
+          : reason === 'deadlock'
+            ? 'Deadlock detected. Transaction was rolled back.'
+            : originalError
+              ? `Unknown error: ${originalError}`
+              : 'Unknown error.';
+
+    super(`Failed to acquire lock on ${table} with id ${id}: ${reasonDetail}`);
     this.name = 'LockAcquisitionError';
   }
 }
@@ -218,15 +221,16 @@ export async function withRowLock<T, R = unknown>(
       }
     }
 
-    // Unknown error
+    // Unknown error - preserve original error message for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error(`Failed to acquire lock`, {
       table,
       id,
       duration,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
     });
 
-    throw new LockAcquisitionError(table, id, 'unknown');
+    throw new LockAcquisitionError(table, id, 'unknown', errorMessage);
   }
 }
 
@@ -342,13 +346,14 @@ export async function withRowLocks<T, R = unknown>(
       }
     }
 
+    const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error(`Failed to acquire locks`, {
       table,
       ids,
       duration,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
     });
 
-    throw new LockAcquisitionError(table, ids.join(','), 'unknown');
+    throw new LockAcquisitionError(table, ids.join(','), 'unknown', errorMessage);
   }
 }
