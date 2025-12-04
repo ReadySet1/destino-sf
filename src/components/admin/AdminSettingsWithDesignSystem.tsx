@@ -14,18 +14,20 @@ import DeliveryZoneManager from '@/components/admin/DeliveryZoneManager';
 import RegularDeliveryZoneManager from '@/components/admin/RegularDeliveryZoneManager';
 import EnhancedStoreSettingsForm from '@/components/admin/EnhancedStoreSettingsForm';
 import ShippingConfigurationForm from '@/app/(dashboard)/admin/shipping/components/ShippingConfigurationForm';
-import type { ShippingWeightConfig } from '@/lib/shippingUtils';
+import type { ShippingWeightConfig, ShippingGlobalConfigData } from '@/lib/shippingUtils';
 
 interface AdminSettingsProps {
   storeSettings?: any;
   deliveryZones?: any[];
   shippingConfigurations?: ShippingWeightConfig[];
+  shippingGlobalConfig?: ShippingGlobalConfigData;
 }
 
 export default function AdminSettingsWithDesignSystem({
   storeSettings,
   deliveryZones,
   shippingConfigurations = [],
+  shippingGlobalConfig,
 }: AdminSettingsProps) {
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
@@ -168,7 +170,10 @@ export default function AdminSettingsWithDesignSystem({
                   </div>
                 </div>
 
-                <ShippingConfigurationForm configurations={shippingConfigurations} />
+                <ShippingConfigurationForm
+                  configurations={shippingConfigurations}
+                  globalConfig={shippingGlobalConfig}
+                />
               </FormSection>
             </TabsContent>
           </div>

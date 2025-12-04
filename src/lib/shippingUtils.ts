@@ -24,6 +24,25 @@ export interface ShippingWeightConfig {
 }
 
 /**
+ * Interface for global shipping configuration
+ */
+export interface ShippingGlobalConfigData {
+  id?: string;
+  packagingWeightLb: number;
+  minimumTotalWeightLb: number;
+  isActive: boolean;
+}
+
+/**
+ * Default global shipping configuration
+ */
+const DEFAULT_GLOBAL_CONFIG: ShippingGlobalConfigData = {
+  packagingWeightLb: 1.5, // Default packaging weight (box, ice packs, padding)
+  minimumTotalWeightLb: 1.0, // Minimum weight for Shippo
+  isActive: true,
+};
+
+/**
  * Default weight configurations for products
  * These will be used as fallbacks if no database configuration exists
  */
@@ -119,6 +138,83 @@ export async function getShippingWeightConfig(
 }
 
 /**
+ * Gets global shipping configuration from database or defaults
+ */
+export async function getShippingGlobalConfig(): Promise<ShippingGlobalConfigData> {
+  // During build time, return default configuration
+  if (isBuildTime()) {
+    return DEFAULT_GLOBAL_CONFIG;
+  }
+
+  try {
+    const dbConfig = await prisma.shippingGlobalConfig.findFirst({
+      where: { isActive: true },
+    });
+
+    if (dbConfig) {
+      const config: ShippingGlobalConfigData = {
+        id: dbConfig.id,
+        packagingWeightLb: Number(dbConfig.packagingWeightLb),
+        minimumTotalWeightLb: Number(dbConfig.minimumTotalWeightLb),
+        isActive: dbConfig.isActive,
+      };
+      logger.info(`[Shipping] ✓ Found global config from database:`, config);
+      return config;
+    }
+
+    logger.warn(`[Shipping] ⚠️ No global config in database, using default:`, DEFAULT_GLOBAL_CONFIG);
+    return DEFAULT_GLOBAL_CONFIG;
+  } catch (error) {
+    logger.error('[Shipping] ❌ Error fetching global shipping config:', error);
+    return DEFAULT_GLOBAL_CONFIG;
+  }
+}
+
+/**
+ * Updates or creates global shipping configuration
+ */
+export async function updateShippingGlobalConfig(
+  config: Omit<ShippingGlobalConfigData, 'id'>
+): Promise<ShippingGlobalConfigData> {
+  // Find existing active config or create a new one
+  const existing = await prisma.shippingGlobalConfig.findFirst({
+    where: { isActive: true },
+  });
+
+  if (existing) {
+    const updated = await prisma.shippingGlobalConfig.update({
+      where: { id: existing.id },
+      data: {
+        packagingWeightLb: config.packagingWeightLb,
+        minimumTotalWeightLb: config.minimumTotalWeightLb,
+        isActive: config.isActive,
+      },
+    });
+    return {
+      id: updated.id,
+      packagingWeightLb: Number(updated.packagingWeightLb),
+      minimumTotalWeightLb: Number(updated.minimumTotalWeightLb),
+      isActive: updated.isActive,
+    };
+  }
+
+  const created = await prisma.shippingGlobalConfig.create({
+    data: {
+      packagingWeightLb: config.packagingWeightLb,
+      minimumTotalWeightLb: config.minimumTotalWeightLb,
+      isActive: config.isActive,
+    },
+  });
+
+  return {
+    id: created.id,
+    packagingWeightLb: Number(created.packagingWeightLb),
+    minimumTotalWeightLb: Number(created.minimumTotalWeightLb),
+    isActive: created.isActive,
+  };
+}
+
+/**
  * Calculates total shipping weight for cart items
  */
 export async function calculateShippingWeight(
@@ -187,8 +283,19 @@ export async function calculateShippingWeight(
     totalWeight = 0.5;
   }
 
-  // Ensure minimum weight for shipping (most carriers require at least 0.5 lb for small packages)
-  const finalWeight = Math.max(totalWeight, 0.5);
+  // Get global shipping configuration for packaging weight
+  const globalConfig = await getShippingGlobalConfig();
+  const packagingWeight = globalConfig.packagingWeightLb;
+  const minimumTotalWeight = globalConfig.minimumTotalWeightLb;
+
+  // Add packaging weight (box, ice packs, padding, insulation)
+  const totalWithPackaging = totalWeight + packagingWeight;
+  console.log(
+    `📦 Adding packaging weight: ${totalWeight}lb (products) + ${packagingWeight}lb (packaging) = ${totalWithPackaging}lb`
+  );
+
+  // Ensure minimum weight for shipping
+  const finalWeight = Math.max(totalWithPackaging, minimumTotalWeight);
 
   // Round to 2 decimal places to avoid floating point precision issues
   const roundedWeight = Math.round(finalWeight * 100) / 100;
@@ -201,7 +308,7 @@ export async function calculateShippingWeight(
   }
 
   logger.info(
-    `[Shipping] 📏 Final weight calculation: ${totalWeight}lb → min(0.5) → ${finalWeight}lb → ${roundedWeight}lb (rounded)`
+    `[Shipping] 📏 Final weight calculation: ${totalWeight}lb (products) + ${packagingWeight}lb (packaging) = ${totalWithPackaging}lb → min(${minimumTotalWeight}) → ${roundedWeight}lb (rounded)`
   );
 
   return roundedWeight;

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import AdminSettingsWithDesignSystem from '@/components/admin/AdminSettingsWithDesignSystem';
 import DeliveryZoneDebugger from '@/components/admin/DeliveryZoneDebugger';
-import { getAllShippingConfigurations } from '@/lib/shippingUtils';
+import { getAllShippingConfigurations, getShippingGlobalConfig } from '@/lib/shippingUtils';
 
 export const metadata = {
   title: 'Store Settings | Admin',
@@ -23,8 +23,10 @@ export default async function SettingsPage() {
 
   // Fetch store settings, delivery zones, and shipping configurations
   let shippingConfigurations: Awaited<ReturnType<typeof getAllShippingConfigurations>> = [];
+  let shippingGlobalConfig: Awaited<ReturnType<typeof getShippingGlobalConfig>> | undefined;
   try {
     shippingConfigurations = await getAllShippingConfigurations();
+    shippingGlobalConfig = await getShippingGlobalConfig();
   } catch (error) {
     console.error('Error fetching shipping configurations:', error);
   }
@@ -61,6 +63,7 @@ export default async function SettingsPage() {
         storeSettings={processedSettings}
         deliveryZones={processedDeliveryZones}
         shippingConfigurations={shippingConfigurations}
+        shippingGlobalConfig={shippingGlobalConfig}
       />
 
       {/* Debugger for development */}
