@@ -681,44 +681,16 @@ export async function handlePaymentCreated(payload: SquareWebhookPayload): Promi
               // Don't fail the webhook if email fails
             }
 
-            // Purchase shipping label for nationwide shipping orders
+            // Note: Label purchase is now triggered ONLY from handlePaymentUpdated
+            // to prevent duplicate concurrent calls when both payment.created and payment.updated
+            // webhooks arrive close together. The payment.updated handler has better status tracking.
             if (
               orderWithItems.fulfillmentType === 'nationwide_shipping' &&
               orderWithItems.shippingRateId
             ) {
-              const labelStartTime = Date.now();
               console.log(
-                `🔄 [LABEL-TIMING] Payment confirmed for shipping order ${internalOrderId}. Starting label purchase with rate ID: ${orderWithItems.shippingRateId}`
+                `ℹ️ [LABEL-DEFERRED] Shipping order ${internalOrderId} detected in payment.created. Label purchase will be triggered by payment.updated webhook.`
               );
-              try {
-                const labelResult = await purchaseShippingLabel(
-                  internalOrderId,
-                  orderWithItems.shippingRateId
-                );
-                const labelDuration = Date.now() - labelStartTime;
-                if (labelResult.success) {
-                  console.log(
-                    `✅ [LABEL-TIMING] Successfully purchased label for order ${internalOrderId}. Tracking: ${labelResult.trackingNumber}. Duration: ${labelDuration}ms`
-                  );
-                } else if (labelResult.blockedByConcurrent) {
-                  console.log(
-                    `⏸️ [LABEL-CONCURRENT] Order ${internalOrderId} being handled by concurrent process. Duration: ${labelDuration}ms`
-                  );
-                  verifyLabelCreation(internalOrderId).catch(err =>
-                    console.error(`Label verification failed for ${internalOrderId}:`, err)
-                  );
-                } else {
-                  console.error(
-                    `❌ [LABEL-TIMING] Failed to purchase label automatically for order ${internalOrderId}: ${labelResult.error}. ErrorCode: ${labelResult.errorCode}. Duration: ${labelDuration}ms`
-                  );
-                }
-              } catch (labelError: any) {
-                const labelDuration = Date.now() - labelStartTime;
-                console.error(
-                  `❌ [LABEL-TIMING] Unexpected error calling purchaseShippingLabel for order ${internalOrderId}: ${labelError?.message}. Duration: ${labelDuration}ms`
-                );
-                // Don't fail the webhook if label purchase fails
-              }
             }
           }
         } catch (alertError: any) {

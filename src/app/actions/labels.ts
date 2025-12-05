@@ -160,8 +160,8 @@ async function attemptLabelPurchase(
           return { proceed: true };
         },
         {
-          timeout: 5000, // Short timeout for claim phase
-          noWait: true, // Fail fast if another process holds the lock
+          timeout: 10000, // Wait up to 10s to acquire lock (allows for brief DB operations to complete)
+          noWait: false, // Wait for lock instead of failing immediately - prevents race conditions
         }
       );
     } catch (lockError) {
