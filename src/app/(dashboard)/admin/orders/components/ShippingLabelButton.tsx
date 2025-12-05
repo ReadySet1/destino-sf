@@ -7,6 +7,7 @@ import {
   purchaseShippingLabel,
   refreshAndRetryLabel,
   forceRetryLabelPurchase,
+  releaseLabelLock,
 } from '@/app/actions/labels';
 import { toast } from 'sonner';
 import {
@@ -16,6 +17,7 @@ import {
   AlertCircle,
   Download,
   RotateCcw,
+  Unlock,
 } from 'lucide-react';
 
 interface ShippingLabelButtonProps {
@@ -42,6 +44,7 @@ export function ShippingLabelButton({
   const [isCreating, setIsCreating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isForceRetrying, setIsForceRetrying] = useState(false);
+  const [isReleasingLock, setIsReleasingLock] = useState(false);
   const [showForceRetry, setShowForceRetry] = useState(false);
 
   // Only show for nationwide shipping orders
@@ -160,6 +163,28 @@ export function ShippingLabelButton({
       toast.error('Unexpected error in force retry');
     } finally {
       setIsForceRetrying(false);
+    }
+  };
+
+  const handleReleaseLock = async () => {
+    setIsReleasingLock(true);
+    try {
+      const result = await releaseLabelLock(orderId);
+
+      if (result.success) {
+        toast.success('Lock released! You can now try creating the label again.', {
+          duration: 5000,
+        });
+        // Reset UI state
+        setShowForceRetry(false);
+      } else {
+        toast.error(`Failed to release lock: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Error releasing lock:', error);
+      toast.error('Unexpected error releasing lock');
+    } finally {
+      setIsReleasingLock(false);
     }
   };
 
@@ -304,25 +329,49 @@ export function ShippingLabelButton({
 
               {/* Force Retry button - shown when Create Label fails or user has retry issues */}
               {(showForceRetry || hasRetryIssues) && (
-                <Button
-                  onClick={handleForceRetry}
-                  disabled={isForceRetrying}
-                  size="sm"
-                  variant="outline"
-                  className="border-red-300 text-red-600 hover:bg-red-50"
-                >
-                  {isForceRetrying ? (
-                    <>
-                      <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
-                      Forcing...
-                    </>
-                  ) : (
-                    <>
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Force Retry
-                    </>
-                  )}
-                </Button>
+                <>
+                  <Button
+                    onClick={handleForceRetry}
+                    disabled={isForceRetrying || isReleasingLock}
+                    size="sm"
+                    variant="outline"
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    {isForceRetrying ? (
+                      <>
+                        <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                        Forcing...
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Force Retry
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Release Lock button - clears lock without retrying */}
+                  <Button
+                    onClick={handleReleaseLock}
+                    disabled={isReleasingLock || isForceRetrying}
+                    size="sm"
+                    variant="outline"
+                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                    title="Release stuck lock without creating label"
+                  >
+                    {isReleasingLock ? (
+                      <>
+                        <Unlock className="h-4 w-4 mr-2 animate-pulse" />
+                        Releasing...
+                      </>
+                    ) : (
+                      <>
+                        <Unlock className="h-4 w-4 mr-2" />
+                        Release Lock
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
             </div>
           )}
