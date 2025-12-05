@@ -11,7 +11,11 @@ import {
   createShippoError,
   DEFAULT_RETRY_CONFIG,
 } from '@/types/shippo';
-import { withRowLock, isLockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
+import {
+  acquireLabelLease,
+  releaseLabelLease,
+  forceReleaseLabelLease,
+} from '@/lib/concurrency/label-lease';
 
 /**
  * Enhanced label purchase with automatic retry and rate refresh
@@ -72,23 +76,15 @@ export async function purchaseShippingLabel(
 }
 
 /**
- * Type for raw SQL order result (snake_case column names)
- */
-interface RawOrderRow {
-  id: string;
-  tracking_number: string | null;
-  label_url: string | null;
-  last_retry_at: Date | null;
-  status: string;
-}
-
-/**
- * Attempt label purchase with pessimistic locking to prevent race conditions
+ * Attempt label purchase with lease-based locking to prevent race conditions.
  *
- * Uses a two-phase locking pattern:
- * 1. Phase 1: Acquire lock, validate state, claim attempt, release lock
- * 2. Phase 2: Call Shippo API (no lock held - avoids holding lock during slow external call)
- * 3. Phase 3: Acquire lock again, double-check state, save result, release lock
+ * Uses application-level leases that auto-expire, avoiding "ghost locks" when
+ * serverless functions timeout but database connections don't close.
+ *
+ * Flow:
+ * 1. Acquire lease (atomic UPDATE, no blocking transaction)
+ * 2. Call Shippo API (with timeout)
+ * 3. Save result and release lease
  */
 async function attemptLabelPurchase(
   order: any,
@@ -97,9 +93,10 @@ async function attemptLabelPurchase(
   forceMode: boolean = false
 ): Promise<ShippingLabelResponse> {
   const orderId = order.id;
+  let lockId: string | null = null;
 
   try {
-    console.log(`🔄 Attempt ${retryAttempt + 1} for Order ID: ${orderId}`);
+    console.log(`🔄 Attempt ${retryAttempt + 1} for Order ID: ${orderId}${forceMode ? ' (FORCE MODE)' : ''}`);
 
     // Validate rate ID before attempting any operations
     if (!shippoRateId || shippoRateId === 'undefined' || shippoRateId === 'NO_ID_FOUND') {
@@ -109,99 +106,54 @@ async function attemptLabelPurchase(
     }
 
     // ========================================
-    // PHASE 1: Acquire lock, validate, and claim the attempt
+    // STEP 1: Acquire lease (non-blocking)
     // ========================================
-    let claimResult: { proceed: boolean; existingLabel?: ShippingLabelResponse };
+    const lease = await acquireLabelLease(orderId, 60); // 60 second lease
 
-    try {
-      claimResult = await withRowLock<RawOrderRow, { proceed: boolean; existingLabel?: ShippingLabelResponse }>(
-        'orders',
-        orderId,
-        async (lockedOrder) => {
-          // ATOMIC CHECK 1: Already has a label - return it
-          if (lockedOrder.tracking_number) {
-            console.log(
-              `⏭️ [LABEL-LOCK] Order ${orderId} already has tracking: ${lockedOrder.tracking_number}`
-            );
-            return {
-              proceed: false,
-              existingLabel: {
-                success: true,
-                labelUrl: lockedOrder.label_url || undefined,
-                trackingNumber: lockedOrder.tracking_number,
-                retryAttempt,
-              },
-            };
-          }
+    if (!lease.acquired) {
+      if (lease.reason === 'already_has_label') {
+        // Order already has a label - fetch and return it
+        const existingOrder = await prisma.order.findUnique({
+          where: { id: orderId },
+          select: { trackingNumber: true, labelUrl: true },
+        });
 
-          // ATOMIC CHECK 2: Recent attempt in progress - block concurrent processing
-          // Reduced from 2 minutes to 45 seconds - allows faster manual retries after failures
-          // SKIP this check if forceMode is enabled (admin force retry)
-          if (!forceMode) {
-            const blockingWindowMs = 45 * 1000; // 45 seconds
-            const blockingWindowStart = new Date(Date.now() - blockingWindowMs);
-            if (lockedOrder.last_retry_at && new Date(lockedOrder.last_retry_at) > blockingWindowStart) {
-              console.log(
-                `⏳ [LABEL-LOCK] Order ${orderId} has recent attempt at ${lockedOrder.last_retry_at}, blocking for ${blockingWindowMs / 1000}s window`
-              );
-              return {
-                proceed: false,
-                existingLabel: {
-                  success: false,
-                  error: 'Label creation already in progress. Please wait 45 seconds before retrying.',
-                  errorCode: 'CONCURRENT_PROCESSING',
-                  retryAttempt,
-                },
-              };
-            }
-          } else {
-            console.log(`⚡ [LABEL-FORCE] Bypassing blocking check for order ${orderId} (force mode enabled)`);
-          }
-
-          // CLAIM: Mark this attempt start (under lock)
-          await prisma.order.update({
-            where: { id: orderId },
-            data: { lastRetryAt: new Date() },
-          });
-
-          console.log(`✅ [LABEL-LOCK] Claimed label purchase attempt for order ${orderId}`);
-          return { proceed: true };
-        },
-        {
-          timeout: 10000, // Wait up to 10s to acquire lock (allows for brief DB operations to complete)
-          noWait: false, // Wait for lock instead of failing immediately - prevents race conditions
-        }
-      );
-    } catch (lockError) {
-      if (isLockAcquisitionError(lockError)) {
-        if (lockError.reason === 'timeout') {
-          // Expected behavior - another process is handling label purchase
-          console.log(
-            `⏸️ [LABEL-CONCURRENT] Order ${orderId} label purchase in progress by another process`
-          );
-          return {
-            success: false,
-            blockedByConcurrent: true,
-            error: 'Label purchase in progress by another process',
-            errorCode: 'CONCURRENT_PROCESSING',
-            retryAttempt,
-          };
-        }
-        // For unknown/unexpected errors, log with the original error for debugging
-        console.error(
-          `❌ [LABEL-ERROR] Unexpected lock error for ${orderId}: ${lockError.originalError || lockError.reason}`
-        );
+        console.log(`⏭️ [LABEL-LEASE] Order ${orderId} already has tracking: ${existingOrder?.trackingNumber}`);
+        return {
+          success: true,
+          labelUrl: existingOrder?.labelUrl || undefined,
+          trackingNumber: existingOrder?.trackingNumber || undefined,
+          retryAttempt,
+        };
       }
-      throw lockError;
+
+      if (lease.reason === 'already_locked') {
+        console.log(
+          `⏸️ [LABEL-LEASE] Order ${orderId} is locked by process ${lease.holder}, expires at ${lease.expiresAt}`
+        );
+        return {
+          success: false,
+          blockedByConcurrent: true,
+          error: `Label creation in progress by another process. Lease expires at ${lease.expiresAt?.toISOString() || 'unknown'}.`,
+          errorCode: 'CONCURRENT_PROCESSING',
+          retryAttempt,
+        };
+      }
+
+      // order_not_found or other error
+      return {
+        success: false,
+        error: `Cannot acquire lease: ${lease.reason}`,
+        errorCode: 'LEASE_ERROR',
+        retryAttempt,
+      };
     }
 
-    // If claim phase returned early (already has label or in progress), return that result
-    if (!claimResult.proceed && claimResult.existingLabel) {
-      return claimResult.existingLabel;
-    }
+    lockId = lease.lockId;
+    console.log(`✅ [LABEL-LEASE] Acquired lease ${lockId} for order ${orderId}`);
 
     // ========================================
-    // PHASE 2: Call Shippo API (no lock held)
+    // STEP 2: Call Shippo API
     // ========================================
     const shippo = ShippoClientManager.getInstance();
 
@@ -241,42 +193,26 @@ async function attemptLabelPurchase(
     }, null, 2));
 
     // ========================================
-    // PHASE 3: Acquire lock again and save result
+    // STEP 3: Save result and release lease
     // ========================================
     if (transaction.status === 'SUCCESS' && transaction.labelUrl && transaction.trackingNumber) {
       console.log(`✅ Label purchased successfully for Order ID: ${orderId}`);
 
-      // Save with lock to prevent race conditions
-      await withRowLock<RawOrderRow, void>(
-        'orders',
-        orderId,
-        async (lockedOrder) => {
-          // DOUBLE-CHECK: Ensure no one else completed while we were calling Shippo
-          if (lockedOrder.tracking_number) {
-            console.log(
-              `⚠️ [LABEL-RACE] Another process completed label for ${orderId} while we were processing`
-            );
-            return; // Another process won the race, skip our update
-          }
-
-          // Safe to save our result
-          await prisma.order.update({
-            where: { id: orderId },
-            data: {
-              trackingNumber: transaction.trackingNumber,
-              labelUrl: transaction.labelUrl,
-              labelCreatedAt: new Date(),
-              status: OrderStatus.SHIPPING,
-              retryCount: retryAttempt + 1,
-              lastRetryAt: new Date(),
-            },
-          });
+      // Save the label data
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          trackingNumber: transaction.trackingNumber,
+          labelUrl: transaction.labelUrl,
+          labelCreatedAt: new Date(),
+          status: OrderStatus.SHIPPING,
+          retryCount: retryAttempt + 1,
+          lastRetryAt: new Date(),
+          // Clear the lease
+          labelLockHolder: null,
+          labelLockExpiresAt: null,
         },
-        {
-          timeout: 10000, // Longer timeout for save phase - we have data to persist
-          noWait: false, // Wait for lock since we need to save
-        }
-      );
+      });
 
       // Log the label URL prominently so it can be accessed
       console.log(`🏷️ LABEL CREATED FOR ORDER ${orderId}:`);
@@ -299,6 +235,12 @@ async function attemptLabelPurchase(
 
       console.error(`❌ Label creation failed for Order ID: ${orderId}: ${errorMessage}`);
       console.error(`❌ Full transaction object:`, JSON.stringify(transaction, null, 2));
+
+      // Release lease before attempting rate refresh
+      if (lockId) {
+        await releaseLabelLease(orderId, lockId);
+        lockId = null;
+      }
 
       // Check if this is a rate expiration issue
       const isRateIssue = errorMessages.toLowerCase().includes('rate') ||
@@ -328,6 +270,12 @@ async function attemptLabelPurchase(
   } catch (error: any) {
     console.log(`⚠️ Attempt ${retryAttempt + 1} failed for Order ID: ${orderId}:`, error.message);
 
+    // Release lease on error
+    if (lockId) {
+      await releaseLabelLease(orderId, lockId);
+      lockId = null;
+    }
+
     // Check if this is a rate expiration error or invalid input (undefined rate)
     if (isRateExpiredError(error) || error.message.includes('Input validation failed')) {
       console.log(`🔄 Rate expired/invalid for Order ID: ${orderId}, attempting refresh...`);
@@ -353,6 +301,11 @@ async function attemptLabelPurchase(
       errorCode: shippoError.type,
       retryAttempt: retryAttempt + 1,
     };
+  } finally {
+    // Ensure lease is released if still held
+    if (lockId) {
+      await releaseLabelLease(orderId, lockId);
+    }
   }
 }
 
@@ -728,19 +681,48 @@ export async function resetOrderShippingRate(
 }
 
 /**
- * Force retry label purchase - bypasses blocking check and attempts label creation
+ * Force retry label purchase - force releases any existing lease and attempts label creation
  * Use this when the label creation is stuck due to a timeout or failed attempt
  *
- * This uses forceMode to bypass the lastRetryAt blocking check entirely,
- * instead of clearing lastRetryAt (which gets re-set inside the purchase function)
+ * This force-releases any existing lease (even if not expired) before attempting,
+ * ensuring we can bypass a stuck process.
  */
 export async function forceRetryLabelPurchase(
   orderId: string,
   shippoRateId: string
 ): Promise<ShippingLabelResponse> {
-  console.log(`🔄 Force retry initiated for order ${orderId} with forceMode enabled`);
+  console.log(`🔄 Force retry initiated for order ${orderId} - releasing any existing lease`);
 
-  // Use forceMode to bypass the blocking check - don't clear lastRetryAt
-  // because it gets immediately re-set inside purchaseShippingLabel anyway
+  try {
+    // Force release any existing lease
+    await forceReleaseLabelLease(orderId);
+    console.log(`✅ Force released lease for order ${orderId}`);
+  } catch (error) {
+    console.error(`⚠️ Error force releasing lease (continuing anyway):`, error);
+  }
+
+  // Now attempt label purchase - the lease should be clear
   return await purchaseShippingLabel(orderId, shippoRateId, { forceMode: true });
+}
+
+/**
+ * Admin action to release a stuck label lock without attempting purchase
+ * Use this to clear a lock when you don't want to immediately retry
+ */
+export async function releaseLabelLock(orderId: string): Promise<{ success: boolean; message: string }> {
+  console.log(`🔓 Admin releasing label lock for order ${orderId}`);
+
+  try {
+    await forceReleaseLabelLease(orderId);
+    return {
+      success: true,
+      message: `Successfully released label lock for order ${orderId}`,
+    };
+  } catch (error) {
+    console.error(`❌ Error releasing label lock:`, error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
 }

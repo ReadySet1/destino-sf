@@ -219,6 +219,9 @@ model Order {
   retryCount                Int           @default(0) @map("retry_count")
   labelUrl                  String?       @map("label_url")
   labelCreatedAt            DateTime?     @map("label_created_at")
+  // Lease-based locking for label creation (replaces row locks)
+  labelLockHolder           String?       @map("label_lock_holder")
+  labelLockExpiresAt        DateTime?     @map("label_lock_expires_at")
   // DES-60 Phase 4: Version field for optimistic locking
   version                   Int           @default(1)
   emailAlerts               EmailAlert[]
