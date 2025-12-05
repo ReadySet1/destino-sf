@@ -132,16 +132,18 @@ async function attemptLabelPurchase(
           }
 
           // ATOMIC CHECK 2: Recent attempt in progress - block concurrent processing
-          const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-          if (lockedOrder.last_retry_at && new Date(lockedOrder.last_retry_at) > twoMinutesAgo) {
+          // Reduced from 2 minutes to 45 seconds - allows faster manual retries after failures
+          const blockingWindowMs = 45 * 1000; // 45 seconds
+          const blockingWindowStart = new Date(Date.now() - blockingWindowMs);
+          if (lockedOrder.last_retry_at && new Date(lockedOrder.last_retry_at) > blockingWindowStart) {
             console.log(
-              `⏳ [LABEL-LOCK] Order ${orderId} has recent attempt at ${lockedOrder.last_retry_at}, blocking`
+              `⏳ [LABEL-LOCK] Order ${orderId} has recent attempt at ${lockedOrder.last_retry_at}, blocking for ${blockingWindowMs / 1000}s window`
             );
             return {
               proceed: false,
               existingLabel: {
                 success: false,
-                error: 'Label creation already in progress. Please wait.',
+                error: 'Label creation already in progress. Please wait 45 seconds before retrying.',
                 errorCode: 'CONCURRENT_PROCESSING',
                 retryAttempt,
               },
@@ -196,12 +198,26 @@ async function attemptLabelPurchase(
     const shippo = ShippoClientManager.getInstance();
 
     console.log(`📦 Creating Shippo transaction for Order ID: ${orderId}`);
-    const transaction = await shippo.transactions.create({
-      rate: shippoRateId,
-      labelFileType: 'PDF_4x6',
-      async: false,
-      metadata: `order_id=${orderId}_attempt_${retryAttempt + 1}`,
-    });
+
+    // Add timeout to prevent indefinite hanging on Shippo API calls
+    const SHIPPO_API_TIMEOUT = 30000; // 30 seconds
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error('Shippo API call timed out after 30 seconds')),
+        SHIPPO_API_TIMEOUT
+      )
+    );
+
+    const transaction = await Promise.race([
+      shippo.transactions.create({
+        rate: shippoRateId,
+        labelFileType: 'PDF_4x6',
+        async: false,
+        metadata: `order_id=${orderId}_attempt_${retryAttempt + 1}`,
+      }),
+      timeoutPromise,
+    ]);
 
     console.log(`📋 Transaction result for Order ID ${orderId}:`, {
       status: transaction.status,
@@ -677,6 +693,41 @@ export async function resetOrderShippingRate(
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Force retry label purchase - clears blocking state and attempts label creation
+ * Use this when the label creation is stuck due to a timeout or failed attempt
+ */
+export async function forceRetryLabelPurchase(
+  orderId: string,
+  shippoRateId: string
+): Promise<ShippingLabelResponse> {
+  console.log(`🔄 Force retry initiated for order ${orderId}`);
+
+  try {
+    // Clear blocking state first to bypass the concurrent processing check
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        lastRetryAt: null,
+      },
+    });
+
+    console.log(`✅ Cleared blocking state for order ${orderId}, attempting label purchase`);
+
+    // Then attempt label purchase normally
+    return await purchaseShippingLabel(orderId, shippoRateId);
+  } catch (error) {
+    console.error(`❌ Error in forceRetryLabelPurchase for Order ID: ${orderId}:`, error);
+    const shippoError = createShippoError(error);
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      errorCode: shippoError.type,
     };
   }
 }
