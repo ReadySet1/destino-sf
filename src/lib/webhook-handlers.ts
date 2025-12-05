@@ -909,8 +909,16 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     const hasTipToCapture =
       tipAmount > 0 && Number(order.gratuityAmount ?? 0) !== tipAmount / 100;
 
-    // Skip processing if nothing will change (prevents duplicate label purchases)
-    if (!isPaymentTransition && !isStatusTransition && !hasTipToCapture) {
+    // Check if this order needs a label (nationwide shipping with rate but no tracking number yet)
+    // IMPORTANT: This must be checked BEFORE the no-op skip to enable fallback label creation
+    const needsLabel =
+      order.fulfillmentType === 'nationwide_shipping' &&
+      order.shippingRateId &&
+      !order.trackingNumber;
+
+    // Skip processing if nothing will change AND no label is needed
+    // Don't skip if we still need to create a label for a PAID order (fallback mechanism)
+    if (!isPaymentTransition && !isStatusTransition && !hasTipToCapture && !needsLabel) {
       console.log(
         `⏭️ [WEBHOOK-DEDUP] Skipping no-op update for order ${order.id}: ` +
           `payment ${order.paymentStatus} → ${updatedPaymentStatus}, ` +
@@ -1047,12 +1055,7 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
     }
 
     // Purchase shipping label if applicable
-    // Check if this order needs a label (nationwide shipping with rate but no tracking number yet)
-    const needsLabel =
-      order.fulfillmentType === 'nationwide_shipping' &&
-      order.shippingRateId &&
-      !order.trackingNumber;
-
+    // needsLabel is already defined above (before the no-op skip)
     // Trigger label creation in two scenarios:
     // 1. Normal transition: order just transitioned to PAID (wasNotPaid check)
     // 2. Fallback: order is already PAID but missing a label (backup for failed payment route label creation)
