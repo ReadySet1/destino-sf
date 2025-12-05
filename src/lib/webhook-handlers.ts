@@ -829,6 +829,7 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
             fulfillmentType: true,
             shippingRateId: true,
             gratuityAmount: true, // Include for no-op detection
+            trackingNumber: true, // Include for label fallback check
           },
         });
       },
@@ -1045,17 +1046,31 @@ export async function handlePaymentUpdated(payload: SquareWebhookPayload): Promi
       }
     }
 
-    // Purchase shipping label if applicable (PRIMARY trigger)
-    // CRITICAL FIX: Only trigger on actual transition to PAID (wasNotPaid check prevents duplicate purchases)
-    if (
-      wasNotPaid &&
-      updatedPaymentStatus === 'PAID' &&
+    // Purchase shipping label if applicable
+    // Check if this order needs a label (nationwide shipping with rate but no tracking number yet)
+    const needsLabel =
       order.fulfillmentType === 'nationwide_shipping' &&
-      order.shippingRateId
-    ) {
-      console.log(
-        `🔄 Payment transition to PAID for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`
-      );
+      order.shippingRateId &&
+      !order.trackingNumber;
+
+    // Trigger label creation in two scenarios:
+    // 1. Normal transition: order just transitioned to PAID (wasNotPaid check)
+    // 2. Fallback: order is already PAID but missing a label (backup for failed payment route label creation)
+    const isNormalTransition = wasNotPaid && updatedPaymentStatus === 'PAID' && needsLabel;
+    const isFallbackTrigger = !wasNotPaid && updatedPaymentStatus === 'PAID' && needsLabel;
+
+    if ((isNormalTransition || isFallbackTrigger) && order.shippingRateId) {
+      // Log whether this is a normal trigger or fallback
+      if (isFallbackTrigger) {
+        console.log(
+          `🔄 [LABEL-FALLBACK] Order ${order.id} is PAID but missing label. Triggering fallback label creation with rate ID: ${order.shippingRateId}`
+        );
+      } else {
+        console.log(
+          `🔄 Payment transition to PAID for shipping order ${order.id}. Triggering label purchase with rate ID: ${order.shippingRateId}`
+        );
+      }
+
       try {
         const labelResult = await purchaseShippingLabel(order.id, order.shippingRateId);
         if (labelResult.success) {
