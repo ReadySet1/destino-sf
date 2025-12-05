@@ -18,9 +18,11 @@ import { withRowLock, isLockAcquisitionError } from '@/lib/concurrency/pessimist
  */
 export async function purchaseShippingLabel(
   orderId: string,
-  shippoRateId: string
+  shippoRateId: string,
+  options?: { forceMode?: boolean }
 ): Promise<ShippingLabelResponse> {
-  console.log(`🚀 Starting label purchase for Order ID: ${orderId} with Rate ID: ${shippoRateId}`);
+  const forceMode = options?.forceMode ?? false;
+  console.log(`🚀 Starting label purchase for Order ID: ${orderId} with Rate ID: ${shippoRateId}${forceMode ? ' (FORCE MODE)' : ''}`);
 
   try {
     // Get current order and check retry count
@@ -56,7 +58,7 @@ export async function purchaseShippingLabel(
       };
     }
 
-    return await attemptLabelPurchase(order, shippoRateId, order.retryCount);
+    return await attemptLabelPurchase(order, shippoRateId, order.retryCount, forceMode);
   } catch (error) {
     console.error(`❌ Error in purchaseShippingLabel for Order ID: ${orderId}:`, error);
     const shippoError = createShippoError(error);
@@ -91,7 +93,8 @@ interface RawOrderRow {
 async function attemptLabelPurchase(
   order: any,
   shippoRateId: string,
-  retryAttempt: number = 0
+  retryAttempt: number = 0,
+  forceMode: boolean = false
 ): Promise<ShippingLabelResponse> {
   const orderId = order.id;
 
@@ -133,21 +136,26 @@ async function attemptLabelPurchase(
 
           // ATOMIC CHECK 2: Recent attempt in progress - block concurrent processing
           // Reduced from 2 minutes to 45 seconds - allows faster manual retries after failures
-          const blockingWindowMs = 45 * 1000; // 45 seconds
-          const blockingWindowStart = new Date(Date.now() - blockingWindowMs);
-          if (lockedOrder.last_retry_at && new Date(lockedOrder.last_retry_at) > blockingWindowStart) {
-            console.log(
-              `⏳ [LABEL-LOCK] Order ${orderId} has recent attempt at ${lockedOrder.last_retry_at}, blocking for ${blockingWindowMs / 1000}s window`
-            );
-            return {
-              proceed: false,
-              existingLabel: {
-                success: false,
-                error: 'Label creation already in progress. Please wait 45 seconds before retrying.',
-                errorCode: 'CONCURRENT_PROCESSING',
-                retryAttempt,
-              },
-            };
+          // SKIP this check if forceMode is enabled (admin force retry)
+          if (!forceMode) {
+            const blockingWindowMs = 45 * 1000; // 45 seconds
+            const blockingWindowStart = new Date(Date.now() - blockingWindowMs);
+            if (lockedOrder.last_retry_at && new Date(lockedOrder.last_retry_at) > blockingWindowStart) {
+              console.log(
+                `⏳ [LABEL-LOCK] Order ${orderId} has recent attempt at ${lockedOrder.last_retry_at}, blocking for ${blockingWindowMs / 1000}s window`
+              );
+              return {
+                proceed: false,
+                existingLabel: {
+                  success: false,
+                  error: 'Label creation already in progress. Please wait 45 seconds before retrying.',
+                  errorCode: 'CONCURRENT_PROCESSING',
+                  retryAttempt,
+                },
+              };
+            }
+          } else {
+            console.log(`⚡ [LABEL-FORCE] Bypassing blocking check for order ${orderId} (force mode enabled)`);
           }
 
           // CLAIM: Mark this attempt start (under lock)
@@ -219,11 +227,18 @@ async function attemptLabelPurchase(
       timeoutPromise,
     ]);
 
-    console.log(`📋 Transaction result for Order ID ${orderId}:`, {
+    // Log comprehensive Shippo response for debugging
+    console.log(`📋 Transaction FULL response for Order ID ${orderId}:`, JSON.stringify({
       status: transaction.status,
-      hasLabel: !!transaction.labelUrl,
-      hasTracking: !!transaction.trackingNumber,
-    });
+      objectState: transaction.objectState,
+      labelUrl: transaction.labelUrl,
+      trackingNumber: transaction.trackingNumber,
+      messages: transaction.messages,
+      eta: transaction.eta,
+      test: transaction.test,
+      rate: transaction.rate,
+      trackingStatus: transaction.trackingStatus,
+    }, null, 2));
 
     // ========================================
     // PHASE 3: Acquire lock again and save result
@@ -275,19 +290,34 @@ async function attemptLabelPurchase(
         retryAttempt: retryAttempt + 1,
       };
     } else {
-      // Handle transaction failure - update retry count without throwing
-      const errorMessage =
-        transaction.messages?.map((m: any) => m.text).join(', ') ||
-        `Transaction failed with status: ${transaction.status}`;
+      // Handle transaction failure - extract detailed error messages
+      const errorMessages = transaction.messages?.map((m: any) =>
+        `[${m.source || 'unknown'}] ${m.text || m.code || 'No message'}`
+      ).join('; ') || 'No error details';
+
+      const errorMessage = `Transaction status: ${transaction.status}. ${errorMessages}`;
+
+      console.error(`❌ Label creation failed for Order ID: ${orderId}: ${errorMessage}`);
+      console.error(`❌ Full transaction object:`, JSON.stringify(transaction, null, 2));
+
+      // Check if this is a rate expiration issue
+      const isRateIssue = errorMessages.toLowerCase().includes('rate') ||
+                          errorMessages.toLowerCase().includes('expired') ||
+                          errorMessages.toLowerCase().includes('invalid') ||
+                          transaction.status === 'ERROR';
+
+      if (isRateIssue) {
+        console.log(`🔄 Detected possible rate issue for Order ${orderId}, attempting rate refresh...`);
+        return await handleRateExpiration(order, retryAttempt);
+      }
 
       // Update retry tracking safely
       try {
-        await updateRetryTracking(orderId, retryAttempt);
+        await updateRetryTracking(orderId, retryAttempt, errorMessage);
       } catch (updateError) {
         console.error(`Failed to update retry tracking for order ${orderId}:`, updateError);
       }
 
-      console.error(`❌ Label creation failed for Order ID: ${orderId}: ${errorMessage}`);
       return {
         success: false,
         error: errorMessage,
@@ -698,36 +728,19 @@ export async function resetOrderShippingRate(
 }
 
 /**
- * Force retry label purchase - clears blocking state and attempts label creation
+ * Force retry label purchase - bypasses blocking check and attempts label creation
  * Use this when the label creation is stuck due to a timeout or failed attempt
+ *
+ * This uses forceMode to bypass the lastRetryAt blocking check entirely,
+ * instead of clearing lastRetryAt (which gets re-set inside the purchase function)
  */
 export async function forceRetryLabelPurchase(
   orderId: string,
   shippoRateId: string
 ): Promise<ShippingLabelResponse> {
-  console.log(`🔄 Force retry initiated for order ${orderId}`);
+  console.log(`🔄 Force retry initiated for order ${orderId} with forceMode enabled`);
 
-  try {
-    // Clear blocking state first to bypass the concurrent processing check
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        lastRetryAt: null,
-      },
-    });
-
-    console.log(`✅ Cleared blocking state for order ${orderId}, attempting label purchase`);
-
-    // Then attempt label purchase normally
-    return await purchaseShippingLabel(orderId, shippoRateId);
-  } catch (error) {
-    console.error(`❌ Error in forceRetryLabelPurchase for Order ID: ${orderId}:`, error);
-    const shippoError = createShippoError(error);
-
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-      errorCode: shippoError.type,
-    };
-  }
+  // Use forceMode to bypass the blocking check - don't clear lastRetryAt
+  // because it gets immediately re-set inside purchaseShippingLabel anyway
+  return await purchaseShippingLabel(orderId, shippoRateId, { forceMode: true });
 }
