@@ -3,9 +3,20 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { purchaseShippingLabel, refreshAndRetryLabel } from '@/app/actions/labels';
+import {
+  purchaseShippingLabel,
+  refreshAndRetryLabel,
+  forceRetryLabelPurchase,
+} from '@/app/actions/labels';
 import { toast } from 'sonner';
-import { RefreshCcw, Package, ExternalLink, AlertCircle, Download } from 'lucide-react';
+import {
+  RefreshCcw,
+  Package,
+  ExternalLink,
+  AlertCircle,
+  Download,
+  RotateCcw,
+} from 'lucide-react';
 
 interface ShippingLabelButtonProps {
   orderId: string;
@@ -30,6 +41,8 @@ export function ShippingLabelButton({
 }: ShippingLabelButtonProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isForceRetrying, setIsForceRetrying] = useState(false);
+  const [showForceRetry, setShowForceRetry] = useState(false);
 
   // Only show for nationwide shipping orders
   if (fulfillmentType !== 'nationwide_shipping') {
@@ -72,13 +85,17 @@ export function ShippingLabelButton({
       } else {
         // Handle specific error cases
         if (result.errorCode === 'CONCURRENT_PROCESSING') {
-          toast.warning('Label creation in progress', {
+          toast.warning('Label creation blocked', {
             description:
-              "Please wait a moment and try again if the label doesn't appear automatically.",
+              'Another process may be in progress. Use "Force Retry" to bypass the lock.',
             duration: 8000,
           });
+          // Show the Force Retry button so admin can bypass the lock
+          setShowForceRetry(true);
         } else {
           toast.error(`Failed to create label: ${result.error}`);
+          // Show Force Retry for other errors too
+          setShowForceRetry(true);
         }
       }
     } catch (error) {
@@ -106,6 +123,43 @@ export function ShippingLabelButton({
       toast.error('Unexpected error refreshing label');
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleForceRetry = async () => {
+    if (!shippingRateId) {
+      toast.error('No shipping rate ID found. Cannot create label.');
+      return;
+    }
+
+    setIsForceRetrying(true);
+    try {
+      const result = await forceRetryLabelPurchase(orderId, shippingRateId);
+
+      if (result.success) {
+        toast.success(`Label created! Tracking: ${result.trackingNumber}`, {
+          duration: 10000,
+          description: result.labelUrl
+            ? `PDF URL: ${result.labelUrl}`
+            : 'Check console for PDF URL',
+        });
+
+        if (result.labelUrl) {
+          const download = confirm('Download shipping label PDF now?');
+          if (download) {
+            window.open(result.labelUrl, '_blank');
+          }
+        }
+
+        window.location.reload();
+      } else {
+        toast.error(`Force retry failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error in force retry:', error);
+      toast.error('Unexpected error in force retry');
+    } finally {
+      setIsForceRetrying(false);
     }
   };
 
@@ -247,17 +301,40 @@ export function ShippingLabelButton({
                   )}
                 </Button>
               )}
+
+              {/* Force Retry button - shown when Create Label fails or user has retry issues */}
+              {(showForceRetry || hasRetryIssues) && (
+                <Button
+                  onClick={handleForceRetry}
+                  disabled={isForceRetrying}
+                  size="sm"
+                  variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  {isForceRetrying ? (
+                    <>
+                      <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                      Forcing...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Force Retry
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           )}
 
           {hasRetryIssues && (
             <div className="text-xs text-gray-500">
               Previous attempts failed. Try &quot;Refresh &amp; Retry&quot; to get fresh shipping
-              rates.
+              rates, or &quot;Force Retry&quot; to bypass the blocking lock.
             </div>
           )}
 
-          {!hasRetryIssues && paymentStatus === 'PAID' && shippingRateId && (
+          {!hasRetryIssues && !showForceRetry && paymentStatus === 'PAID' && shippingRateId && (
             <div className="text-xs text-gray-500">
               Note: Labels are created automatically when payment is confirmed. Manual creation is
               for backup only.
