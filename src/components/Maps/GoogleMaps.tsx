@@ -50,7 +50,6 @@ function GoogleMaps({ apiKey }: GoogleMapsProps) {
         const options = {
           center: location,
           zoom: 15,
-          mapId: 'map',
         };
 
         // Verificar nuevamente que el contenedor existe
@@ -61,11 +60,12 @@ function GoogleMaps({ apiKey }: GoogleMapsProps) {
         // Crear el mapa
         const map = new Map(mapRef.current, options);
 
-        const { AdvancedMarkerElement } = await loader.importLibrary('marker');
-
-        new AdvancedMarkerElement({
+        // Use classic Marker instead of AdvancedMarkerElement (no Map ID required)
+        // Fixes DESTINO-SF-2: "Could not load marker" error
+        new window.google.maps.Marker({
           position: location,
           map: map,
+          title: 'Destino SF',
         });
 
         setIsLoading(false);
