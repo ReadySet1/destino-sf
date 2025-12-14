@@ -224,6 +224,8 @@ model Order {
   labelLockExpiresAt        DateTime?     @map("label_lock_expires_at")
   // DES-60 Phase 4: Version field for optimistic locking
   version                   Int           @default(1)
+  // Idempotency key for duplicate order prevention (race condition fix)
+  idempotencyKey            String?       @unique @map("idempotency_key")
   emailAlerts               EmailAlert[]
   items                     OrderItem[]
   archivedByUser            Profile?      @relation("ArchivedOrders", fields: [archivedBy], references: [id])

@@ -50,6 +50,8 @@ interface CheckoutRequestBody {
     phone: string;
     pickupTime: string;
   };
+  // Idempotency key for duplicate prevention (frontend-generated UUID)
+  idempotencyKey?: string;
 }
 
 export async function POST(request: Request) {
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const { items, customerInfo }: CheckoutRequestBody = await request.json();
+    const { items, customerInfo, idempotencyKey }: CheckoutRequestBody = await request.json();
 
     // Validate cart items
     if (!items || !items.length) {
@@ -127,23 +129,54 @@ export async function POST(request: Request) {
       // Calculate total
       const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-      // Create order in database with connection management
-      const order = await withRetry(() =>
-        prisma.order.create({
-          data: {
-            status: 'PENDING',
-            total,
-            userId: user?.id,
-            customerName: customerInfo.name,
-            email: customerInfo.email,
-            phone: customerInfo.phone,
-            pickupTime: new Date(customerInfo.pickupTime),
-            items: {
-              create: orderItems,
+      // Create order in database with connection management and idempotency
+      let order;
+      try {
+        order = await withRetry(() =>
+          prisma.order.create({
+            data: {
+              status: 'PENDING',
+              total,
+              userId: user?.id,
+              customerName: customerInfo.name,
+              email: customerInfo.email,
+              phone: customerInfo.phone,
+              pickupTime: new Date(customerInfo.pickupTime),
+              idempotencyKey: idempotencyKey || undefined, // Database-level duplicate prevention
+              items: {
+                create: orderItems,
+              },
             },
-          },
-        })
-      );
+            include: {
+              items: true,
+            },
+          })
+        );
+      } catch (createError: any) {
+        // Handle unique constraint violation on idempotencyKey (P2002)
+        if (createError?.code === 'P2002' && idempotencyKey) {
+          console.log('[Checkout] Idempotency key collision, returning existing order', {
+            idempotencyKey,
+            email: customerInfo.email,
+          });
+
+          // Return the existing order with this idempotency key
+          const existingOrder = await prisma.order.findFirst({
+            where: { idempotencyKey },
+            include: { items: true },
+          });
+
+          if (existingOrder) {
+            return NextResponse.json({
+              orderId: existingOrder.id,
+              message: 'Order already created with this idempotency key',
+              existing: true,
+            });
+          }
+        }
+        // Re-throw if not an idempotency collision
+        throw createError;
+      }
 
       // Sync customer information to profile (async, non-blocking)
       syncCustomerToProfile(user?.id, {

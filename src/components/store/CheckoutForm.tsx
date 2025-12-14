@@ -266,6 +266,9 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
   // DES-52: Add session state tracking
   const [sessionError, setSessionError] = useState<string | null>(null);
+  // Idempotency key for duplicate order prevention (race condition fix)
+  // Generate once on mount and persist through checkout to prevent duplicate orders
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
   // Client Supabase for session checking
   const supabase = createClient();
 
@@ -974,6 +977,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           customerInfo,
           fulfillment: fulfillmentData,
           paymentMethod: formData.paymentMethod,
+          idempotencyKey, // Prevent duplicate orders from race conditions
           items: items.map(item => ({
             id: item.id,
             name: item.name,
@@ -988,6 +992,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           customerInfo,
           fulfillment: fulfillmentData,
           paymentMethod: formData.paymentMethod,
+          idempotencyKey, // Prevent duplicate orders from race conditions
           items: items.map(item => ({
             id: item.id,
             name: item.name,
@@ -1185,6 +1190,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           customerInfo: customerInfo,
           fulfillment: fulfillmentData,
           paymentMethod: formData.paymentMethod,
+          idempotencyKey, // Prevent duplicate orders from race conditions
         };
 
         const result = await createOrderAndGenerateCheckoutUrl(actionPayload as any);
@@ -1222,6 +1228,7 @@ export function CheckoutForm({ initialUserData }: CheckoutFormProps) {
           })),
           customerInfo: customerInfo,
           fulfillment: fulfillmentData,
+          idempotencyKey, // Prevent duplicate orders from race conditions
         };
 
         const result = await createOrderAndGenerateCheckoutUrl(actionPayload as any);

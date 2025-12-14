@@ -108,6 +108,8 @@ const PayloadSchema = z.object({
   customerInfo: CustomerInfoSchema,
   fulfillment: FulfillmentSchema, // Use the discriminated union type
   paymentMethod: z.nativeEnum(PaymentMethod).optional(), // Make it optional for backward compatibility
+  // Idempotency key for duplicate order prevention (frontend-generated UUID)
+  idempotencyKey: z.string().uuid().optional(),
 });
 
 // --- Types ---
@@ -492,6 +494,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   customerInfo: z.infer<typeof CustomerInfoSchema>;
   fulfillment: z.infer<typeof FulfillmentSchema>; // Use the discriminated union type
   paymentMethod: PaymentMethod; // CASH, SQUARE, etc.
+  idempotencyKey?: string; // UUID for duplicate order prevention
 }): Promise<ServerActionResult> {
   if (process.env.NODE_ENV === 'development') {
     console.log('Server Action: createOrderAndGenerateCheckoutUrl started.');
@@ -550,7 +553,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     };
   }
 
-  const { items, customerInfo, fulfillment, paymentMethod } = validationResult.data; // Use validated data
+  const { items, customerInfo, fulfillment, paymentMethod, idempotencyKey } = validationResult.data; // Use validated data
 
   // Check if store is open
   const storeOpen = await isStoreOpen();
@@ -736,6 +739,8 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       phone: customerInfo.phone,
       // Set the catering order flag
       isCateringOrder: hasCateringItems,
+      // Idempotency key for duplicate order prevention (race condition fix)
+      idempotencyKey: idempotencyKey || undefined,
       // Spread the prepared fulfillment data
       ...dbFulfillmentData,
       items: {
@@ -748,13 +753,40 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
       },
     };
 
-    dbOrder = await prisma.order.create({
-      data: orderInputData,
-      select: { id: true }, // Select only the ID
-    });
-    console.log(
-      `Database order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`
-    );
+    try {
+      dbOrder = await prisma.order.create({
+        data: orderInputData,
+        select: { id: true }, // Select only the ID
+      });
+      console.log(
+        `Database order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`
+      );
+    } catch (createError: any) {
+      // Handle unique constraint violation on idempotencyKey (P2002)
+      if (createError?.code === 'P2002' && idempotencyKey) {
+        console.log('[Checkout] Idempotency key collision, returning existing order', {
+          idempotencyKey,
+          email: customerInfo.email,
+        });
+
+        // Return the existing order with this idempotency key
+        const existingOrder = await prisma.order.findFirst({
+          where: { idempotencyKey },
+          select: { id: true, paymentUrl: true },
+        });
+
+        if (existingOrder) {
+          return {
+            success: true,
+            error: null,
+            checkoutUrl: existingOrder.paymentUrl,
+            orderId: existingOrder.id,
+          };
+        }
+      }
+      // Re-throw if not an idempotency collision
+      throw createError;
+    }
 
     // Send new order alert to admin ONLY for CASH orders
     // For credit card orders, wait for payment confirmation webhook (DES-55)
@@ -1173,6 +1205,7 @@ export async function createManualPaymentOrder(formData: {
   customerInfo: z.infer<typeof CustomerInfoSchema>;
   fulfillment: z.infer<typeof FulfillmentSchema>;
   paymentMethod: PaymentMethod; // CASH, etc.
+  idempotencyKey?: string; // UUID for duplicate order prevention
 }): Promise<ServerActionResult> {
   console.log('Server Action: createManualPaymentOrder started.');
 
@@ -1202,7 +1235,7 @@ export async function createManualPaymentOrder(formData: {
     };
   }
 
-  const { items, customerInfo, fulfillment, paymentMethod } = formData;
+  const { items, customerInfo, fulfillment, paymentMethod, idempotencyKey } = formData;
 
   // Check if store is open
   const storeOpen = await isStoreOpen();
@@ -1405,6 +1438,8 @@ export async function createManualPaymentOrder(formData: {
       email: customerInfo.email,
       phone: customerInfo.phone,
       isCateringOrder: hasCateringItems,
+      // Idempotency key for duplicate order prevention (race condition fix)
+      idempotencyKey: idempotencyKey || undefined,
       ...dbFulfillmentData,
       items: {
         create: orderItemsData.map(item => ({
@@ -1416,13 +1451,44 @@ export async function createManualPaymentOrder(formData: {
       },
     };
 
-    dbOrder = await prisma.order.create({
-      data: orderInputData,
-      select: { id: true },
-    });
-    console.log(
-      `Manual payment order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`
-    );
+    try {
+      dbOrder = await prisma.order.create({
+        data: orderInputData,
+        select: { id: true },
+      });
+      console.log(
+        `Manual payment order created with ID: ${dbOrder.id} (isCateringOrder: ${hasCateringItems})`
+      );
+    } catch (createError: any) {
+      // Handle unique constraint violation on idempotencyKey (P2002)
+      if (createError?.code === 'P2002' && idempotencyKey) {
+        console.log('[ManualPayment] Idempotency key collision, returning existing order', {
+          idempotencyKey,
+          email: customerInfo.email,
+        });
+
+        // Return the existing order with this idempotency key
+        const existingOrder = await prisma.order.findFirst({
+          where: { idempotencyKey },
+          select: { id: true },
+        });
+
+        if (existingOrder) {
+          const origin = env.NEXT_PUBLIC_APP_URL;
+          const paymentPageUrl = new URL(`/payment/${existingOrder.id}`, origin);
+          paymentPageUrl.searchParams.set('method', paymentMethod);
+
+          return {
+            success: true,
+            error: null,
+            checkoutUrl: paymentPageUrl.toString(),
+            orderId: existingOrder.id,
+          };
+        }
+      }
+      // Re-throw if not an idempotency collision
+      throw createError;
+    }
 
     // Send new order alert to admin for manual payment orders (CASH only)
     // Cash orders get immediate notification since payment confirmation happens at pickup/delivery (DES-55)
