@@ -821,7 +821,18 @@ export class AlertService {
         },
       });
 
-      return { success: !customerError && !adminError };
+      // Return proper error messages when email sending fails
+      if (customerError || adminError) {
+        const errors: string[] = [];
+        if (customerError) errors.push(`Customer email: ${customerError.message}`);
+        if (adminError) errors.push(`Admin email: ${adminError.message}`);
+        return {
+          success: false,
+          error: errors.join('; ') || 'Email delivery failed',
+          retryable: true,
+        };
+      }
+      return { success: true };
     } catch (error) {
       console.error('Error processing contact form:', error);
       return {

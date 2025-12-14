@@ -212,11 +212,11 @@ export async function POST(request: NextRequest) {
         message: `Customer alert sent successfully`,
       });
     } else {
-      console.error('Alert failed:', result.error);
+      console.error('Alert failed:', result.error || 'Unknown error');
       return NextResponse.json(
         {
           success: false,
-          error: result.error,
+          error: result.error || 'Unknown alert error',
         },
         { status: 500 }
       );
