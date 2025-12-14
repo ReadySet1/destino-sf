@@ -12,6 +12,18 @@ import {
   Hr,
 } from '@react-email/components';
 import * as React from 'react';
+import { EmailHeader } from '../shared/EmailHeader';
+import { EmailFooter } from '../shared/EmailFooter';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailFontSizes,
+  emailBorderRadius,
+  emailLineHeights,
+  baseBodyStyle,
+  baseContainerStyle,
+} from '../shared/email-styles';
 
 interface DailySummaryData {
   date: Date;
@@ -43,93 +55,168 @@ interface DailySummaryAlertProps {
   };
 }
 
-const main = {
-  backgroundColor: '#ffffff',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
+// Styles using design tokens
+const styles = {
+  summaryHeader: {
+    padding: emailSpacing['3xl'],
+    textAlign: 'center' as const,
+    backgroundColor: emailColors.primaryLight,
+    border: `2px solid ${emailColors.primary}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.xl} 0`,
+  },
+  summaryTitle: {
+    fontSize: emailFontSizes['2xl'],
+    fontWeight: 'bold',
+    color: emailColors.secondary,
+    margin: `0 0 ${emailSpacing.md} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  summaryDate: {
+    fontSize: emailFontSizes.md,
+    color: emailColors.warningDark,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  sectionTitle: {
+    fontSize: emailFontSizes.lg,
+    fontWeight: 'bold',
+    color: emailColors.secondary,
+    margin: `0 0 ${emailSpacing.lg} 0`,
+    borderBottom: `2px solid ${emailColors.primary}`,
+    paddingBottom: emailSpacing.sm,
+    fontFamily: emailFonts.primary,
+  },
+  metricBox: {
+    backgroundColor: emailColors.white,
+    border: `1px solid ${emailColors.border}`,
+    borderRadius: emailBorderRadius.lg,
+    padding: emailSpacing.lg,
+    textAlign: 'center' as const,
+    margin: `${emailSpacing.sm} 0`,
+  },
+  bigNumber: {
+    fontSize: '32px',
+    fontWeight: 'bold',
+    color: emailColors.successDark,
+    margin: '0',
+    lineHeight: '1',
+    fontFamily: emailFonts.primary,
+  },
+  metricLabel: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.textMuted,
+    margin: `${emailSpacing.sm} 0 0 0`,
+    fontFamily: emailFonts.primary,
+  },
+  changePositive: {
+    fontSize: emailFontSizes.xs,
+    color: emailColors.successDark,
+    fontWeight: 'bold',
+    fontFamily: emailFonts.primary,
+  },
+  changeNegative: {
+    fontSize: emailFontSizes.xs,
+    color: emailColors.errorDark,
+    fontWeight: 'bold',
+    fontFamily: emailFonts.primary,
+  },
+  changeNeutral: {
+    fontSize: emailFontSizes.xs,
+    color: emailColors.textMuted,
+    fontWeight: 'bold',
+    fontFamily: emailFonts.primary,
+  },
+  fulfillmentSection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.backgroundAlt,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  topProductsSection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.white,
+    border: `1px solid ${emailColors.border}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  productRow: {
+    padding: `${emailSpacing.sm} 0`,
+    borderBottom: `1px solid ${emailColors.border}`,
+  },
+  productName: {
+    fontSize: emailFontSizes.sm,
+    fontWeight: '600',
+    color: emailColors.secondary,
+    margin: `${emailSpacing.sm} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  productQuantity: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.textMuted,
+    margin: `${emailSpacing.sm} 0`,
+    textAlign: 'center' as const,
+    fontFamily: emailFonts.primary,
+  },
+  productRevenue: {
+    fontSize: emailFontSizes.sm,
+    fontWeight: '600',
+    color: emailColors.secondary,
+    margin: `${emailSpacing.sm} 0`,
+    textAlign: 'right' as const,
+    fontFamily: emailFonts.primary,
+  },
+  healthSection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.backgroundAlt,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  healthBoxSuccess: {
+    backgroundColor: emailColors.successLight,
+    border: `1px solid ${emailColors.success}`,
+    borderRadius: emailBorderRadius.lg,
+    padding: emailSpacing.lg,
+    textAlign: 'center' as const,
+    margin: `${emailSpacing.sm} 0`,
+  },
+  healthBoxError: {
+    backgroundColor: emailColors.errorLight,
+    border: `1px solid ${emailColors.error}`,
+    borderRadius: emailBorderRadius.lg,
+    padding: emailSpacing.lg,
+    textAlign: 'center' as const,
+    margin: `${emailSpacing.sm} 0`,
+  },
+  healthBoxWarning: {
+    backgroundColor: emailColors.primaryLight,
+    border: `1px solid ${emailColors.primary}`,
+    borderRadius: emailBorderRadius.lg,
+    padding: emailSpacing.lg,
+    textAlign: 'center' as const,
+    margin: `${emailSpacing.sm} 0`,
+  },
+  actionRequired: {
+    padding: emailSpacing.lg,
+    backgroundColor: emailColors.errorLight,
+    border: `2px solid ${emailColors.error}`,
+    borderRadius: emailBorderRadius.md,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  actionText: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.errorDark,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+    lineHeight: emailLineHeights.relaxed,
+  },
+  footerNote: {
+    fontSize: emailFontSizes.xs,
+    color: emailColors.textMuted,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
 };
-
-const container = {
-  margin: '0 auto',
-  padding: '20px 0 48px',
-};
-
-const logo = {
-  margin: '0 auto',
-};
-
-const section = {
-  padding: '24px',
-  border: 'solid 1px #dedede',
-  borderRadius: '5px',
-  textAlign: 'center' as const,
-  backgroundColor: '#f9f9f9',
-};
-
-const summarySection = {
-  padding: '24px',
-  border: 'solid 1px #e5e7eb',
-  borderRadius: '5px',
-  backgroundColor: '#f8fafc',
-  margin: '20px 0',
-};
-
-const text = {
-  fontSize: '14px',
-  lineHeight: '26px',
-};
-
-const h1 = {
-  color: '#333',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  margin: '30px 0',
-  padding: '0',
-  lineHeight: '42px',
-};
-
-const h2 = {
-  color: '#333',
-  fontSize: '18px',
-  fontWeight: 'bold',
-  margin: '20px 0 10px',
-};
-
-const h3 = {
-  color: '#333',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  margin: '16px 0 8px',
-};
-
-const metricBox = {
-  backgroundColor: '#ffffff',
-  border: '1px solid #e5e7eb',
-  borderRadius: '8px',
-  padding: '16px',
-  textAlign: 'center' as const,
-  margin: '8px 0',
-};
-
-const bigNumber = {
-  fontSize: '32px',
-  fontWeight: 'bold',
-  color: '#059669',
-  margin: '0',
-  lineHeight: '1',
-};
-
-const metricLabel = {
-  fontSize: '14px',
-  color: '#6b7280',
-  margin: '8px 0 0 0',
-};
-
-const changeIndicator = (change: number) => ({
-  fontSize: '12px',
-  color: change > 0 ? '#059669' : change < 0 ? '#dc2626' : '#6b7280',
-  fontWeight: 'bold',
-});
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -152,53 +239,51 @@ export const DailySummaryAlert = ({
   shopName = 'Destino SF',
   previousDayComparison,
 }: DailySummaryAlertProps) => {
-  const previewText = `📊 Daily Summary for ${formatDate(summary.date)}: ${summary.totalOrders} orders, ${formatCurrency(summary.totalRevenue)} revenue`;
+  const previewText = `Daily Summary for ${formatDate(summary.date)}: ${summary.totalOrders} orders, ${formatCurrency(summary.totalRevenue)} revenue`;
+
+  const getChangeStyle = (change: number) => {
+    if (change > 0) return styles.changePositive;
+    if (change < 0) return styles.changeNegative;
+    return styles.changeNeutral;
+  };
 
   return (
     <Html>
       <Head />
       <Preview>{previewText}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Section style={section}>
-            <Text style={logo}>
-              <strong>{shopName}</strong>
-            </Text>
-          </Section>
+      <Body style={baseBodyStyle}>
+        <Container style={baseContainerStyle}>
+          <EmailHeader shopName={shopName} variant="admin" tagline="Daily Report" />
 
-          <Section style={summarySection}>
-            <Heading style={h1}>📊 Daily Sales Summary</Heading>
-
-            <Text
-              style={{ ...text, textAlign: 'center' as const, fontSize: '16px', color: '#6b7280' }}
-            >
-              {formatDate(summary.date)}
-            </Text>
+          {/* Summary Header */}
+          <Section style={styles.summaryHeader}>
+            <Text style={styles.summaryTitle}>Daily Sales Summary</Text>
+            <Text style={styles.summaryDate}>{formatDate(summary.date)}</Text>
           </Section>
 
           {/* Key Metrics */}
           <Section>
-            <Heading style={h2}>📈 Key Metrics</Heading>
+            <Heading as="h2" style={styles.sectionTitle}>Key Metrics</Heading>
 
             <Row>
-              <Column style={{ width: '50%', paddingRight: '8px' }}>
-                <div style={metricBox}>
-                  <Text style={bigNumber}>{summary.totalOrders}</Text>
-                  <Text style={metricLabel}>Total Orders</Text>
+              <Column style={{ width: '50%', paddingRight: emailSpacing.sm }}>
+                <div style={styles.metricBox}>
+                  <Text style={styles.bigNumber}>{summary.totalOrders}</Text>
+                  <Text style={styles.metricLabel}>Total Orders</Text>
                   {previousDayComparison && (
-                    <Text style={changeIndicator(previousDayComparison.ordersChange)}>
+                    <Text style={getChangeStyle(previousDayComparison.ordersChange)}>
                       {previousDayComparison.ordersChange > 0 ? '+' : ''}
                       {previousDayComparison.ordersChange}%
                     </Text>
                   )}
                 </div>
               </Column>
-              <Column style={{ width: '50%', paddingLeft: '8px' }}>
-                <div style={metricBox}>
-                  <Text style={bigNumber}>{formatCurrency(summary.totalRevenue)}</Text>
-                  <Text style={metricLabel}>Total Revenue</Text>
+              <Column style={{ width: '50%', paddingLeft: emailSpacing.sm }}>
+                <div style={styles.metricBox}>
+                  <Text style={styles.bigNumber}>{formatCurrency(summary.totalRevenue)}</Text>
+                  <Text style={styles.metricLabel}>Total Revenue</Text>
                   {previousDayComparison && (
-                    <Text style={changeIndicator(previousDayComparison.revenueChange)}>
+                    <Text style={getChangeStyle(previousDayComparison.revenueChange)}>
                       {previousDayComparison.revenueChange > 0 ? '+' : ''}
                       {previousDayComparison.revenueChange}%
                     </Text>
@@ -208,48 +293,48 @@ export const DailySummaryAlert = ({
             </Row>
 
             <Row>
-              <Column style={{ width: '50%', paddingRight: '8px' }}>
-                <div style={metricBox}>
-                  <Text style={bigNumber}>{formatCurrency(summary.averageOrderValue)}</Text>
-                  <Text style={metricLabel}>Average Order Value</Text>
+              <Column style={{ width: '50%', paddingRight: emailSpacing.sm }}>
+                <div style={styles.metricBox}>
+                  <Text style={styles.bigNumber}>{formatCurrency(summary.averageOrderValue)}</Text>
+                  <Text style={styles.metricLabel}>Average Order Value</Text>
                 </div>
               </Column>
-              <Column style={{ width: '50%', paddingLeft: '8px' }}>
-                <div style={metricBox}>
-                  <Text style={bigNumber}>{summary.pendingOrders}</Text>
-                  <Text style={metricLabel}>Pending Orders</Text>
+              <Column style={{ width: '50%', paddingLeft: emailSpacing.sm }}>
+                <div style={styles.metricBox}>
+                  <Text style={{ ...styles.bigNumber, color: emailColors.warningDark }}>{summary.pendingOrders}</Text>
+                  <Text style={styles.metricLabel}>Pending Orders</Text>
                 </div>
               </Column>
             </Row>
           </Section>
 
           {/* Fulfillment Breakdown */}
-          <Section>
-            <Heading style={h2}>🚚 Fulfillment Breakdown</Heading>
+          <Section style={styles.fulfillmentSection}>
+            <Heading as="h2" style={styles.sectionTitle}>Fulfillment Breakdown</Heading>
 
             <Row>
-              <Column style={{ width: '33.33%', paddingRight: '4px' }}>
-                <div style={metricBox}>
-                  <Text style={{ ...bigNumber, fontSize: '24px' }}>
+              <Column style={{ width: '33.33%', paddingRight: emailSpacing.xs }}>
+                <div style={styles.metricBox}>
+                  <Text style={{ ...styles.bigNumber, fontSize: '24px' }}>
                     {summary.ordersByFulfillment.pickup}
                   </Text>
-                  <Text style={metricLabel}>Pickup Orders</Text>
+                  <Text style={styles.metricLabel}>Pickup</Text>
                 </div>
               </Column>
-              <Column style={{ width: '33.33%', padding: '0 4px' }}>
-                <div style={metricBox}>
-                  <Text style={{ ...bigNumber, fontSize: '24px' }}>
+              <Column style={{ width: '33.33%', padding: `0 ${emailSpacing.xs}` }}>
+                <div style={styles.metricBox}>
+                  <Text style={{ ...styles.bigNumber, fontSize: '24px' }}>
                     {summary.ordersByFulfillment.local_delivery}
                   </Text>
-                  <Text style={metricLabel}>Local Delivery</Text>
+                  <Text style={styles.metricLabel}>Delivery</Text>
                 </div>
               </Column>
-              <Column style={{ width: '33.33%', paddingLeft: '4px' }}>
-                <div style={metricBox}>
-                  <Text style={{ ...bigNumber, fontSize: '24px' }}>
+              <Column style={{ width: '33.33%', paddingLeft: emailSpacing.xs }}>
+                <div style={styles.metricBox}>
+                  <Text style={{ ...styles.bigNumber, fontSize: '24px' }}>
                     {summary.ordersByFulfillment.nationwide_shipping}
                   </Text>
-                  <Text style={metricLabel}>Shipping Orders</Text>
+                  <Text style={styles.metricLabel}>Shipping</Text>
                 </div>
               </Column>
             </Row>
@@ -257,23 +342,21 @@ export const DailySummaryAlert = ({
 
           {/* Top Products */}
           {summary.topProducts.length > 0 && (
-            <Section>
-              <Heading style={h2}>🔥 Top Products</Heading>
+            <Section style={styles.topProductsSection}>
+              <Heading as="h2" style={styles.sectionTitle}>Top Products</Heading>
 
               {summary.topProducts.slice(0, 5).map((product, index) => (
-                <Row key={index}>
+                <Row key={index} style={styles.productRow}>
                   <Column style={{ width: '50%' }}>
-                    <Text style={{ ...text, fontWeight: 'bold', margin: '8px 0' }}>
+                    <Text style={styles.productName}>
                       {index + 1}. {product.name}
                     </Text>
                   </Column>
-                  <Column style={{ width: '25%', textAlign: 'center' as const }}>
-                    <Text style={{ ...text, margin: '8px 0' }}>{product.quantity} sold</Text>
+                  <Column style={{ width: '25%' }}>
+                    <Text style={styles.productQuantity}>{product.quantity} sold</Text>
                   </Column>
-                  <Column style={{ width: '25%', textAlign: 'right' as const }}>
-                    <Text style={{ ...text, fontWeight: 'bold', margin: '8px 0' }}>
-                      {formatCurrency(product.revenue)}
-                    </Text>
+                  <Column style={{ width: '25%' }}>
+                    <Text style={styles.productRevenue}>{formatCurrency(product.revenue)}</Text>
                   </Column>
                 </Row>
               ))}
@@ -281,65 +364,62 @@ export const DailySummaryAlert = ({
           )}
 
           {/* System Health */}
-          <Section>
-            <Heading style={h2}>🔧 System Health</Heading>
+          <Section style={styles.healthSection}>
+            <Heading as="h2" style={styles.sectionTitle}>System Health</Heading>
 
             <Row>
-              <Column style={{ width: '33.33%', paddingRight: '4px' }}>
-                <div
-                  style={{
-                    ...metricBox,
-                    borderColor: summary.failedOrders > 0 ? '#dc2626' : '#10b981',
-                    backgroundColor: summary.failedOrders > 0 ? '#fef2f2' : '#f0fdf4',
-                  }}
-                >
-                  <Text
-                    style={{
-                      ...bigNumber,
-                      fontSize: '24px',
-                      color: summary.failedOrders > 0 ? '#dc2626' : '#059669',
-                    }}
-                  >
+              <Column style={{ width: '33.33%', paddingRight: emailSpacing.xs }}>
+                <div style={summary.failedOrders > 0 ? styles.healthBoxError : styles.healthBoxSuccess}>
+                  <Text style={{
+                    ...styles.bigNumber,
+                    fontSize: '24px',
+                    color: summary.failedOrders > 0 ? emailColors.errorDark : emailColors.successDark,
+                  }}>
                     {summary.failedOrders}
                   </Text>
-                  <Text style={metricLabel}>Failed Orders</Text>
+                  <Text style={styles.metricLabel}>Failed Orders</Text>
                 </div>
               </Column>
-              <Column style={{ width: '33.33%', padding: '0 4px' }}>
-                <div
-                  style={{
-                    ...metricBox,
-                    borderColor: summary.systemErrors > 0 ? '#f59e0b' : '#10b981',
-                    backgroundColor: summary.systemErrors > 0 ? '#fffbeb' : '#f0fdf4',
-                  }}
-                >
-                  <Text
-                    style={{
-                      ...bigNumber,
-                      fontSize: '24px',
-                      color: summary.systemErrors > 0 ? '#f59e0b' : '#059669',
-                    }}
-                  >
+              <Column style={{ width: '33.33%', padding: `0 ${emailSpacing.xs}` }}>
+                <div style={summary.systemErrors > 0 ? styles.healthBoxWarning : styles.healthBoxSuccess}>
+                  <Text style={{
+                    ...styles.bigNumber,
+                    fontSize: '24px',
+                    color: summary.systemErrors > 0 ? emailColors.warningDark : emailColors.successDark,
+                  }}>
                     {summary.systemErrors}
                   </Text>
-                  <Text style={metricLabel}>System Errors</Text>
+                  <Text style={styles.metricLabel}>System Errors</Text>
                 </div>
               </Column>
-              <Column style={{ width: '33.33%', paddingLeft: '4px' }}>
-                <div style={metricBox}>
-                  <Text style={{ ...bigNumber, fontSize: '24px', color: '#6366f1' }}>
+              <Column style={{ width: '33.33%', paddingLeft: emailSpacing.xs }}>
+                <div style={styles.metricBox}>
+                  <Text style={{ ...styles.bigNumber, fontSize: '24px', color: emailColors.accentDark }}>
                     {summary.alertsSent}
                   </Text>
-                  <Text style={metricLabel}>Alerts Sent</Text>
+                  <Text style={styles.metricLabel}>Alerts Sent</Text>
                 </div>
               </Column>
             </Row>
           </Section>
 
-          <Hr />
+          {/* Action Required Warning */}
+          {(summary.failedOrders > 0 || summary.systemErrors > 0) && (
+            <Section style={styles.actionRequired}>
+              <Text style={styles.actionText}>
+                <strong>Action Required:</strong> There were{' '}
+                {summary.failedOrders > 0 && `${summary.failedOrders} failed orders`}
+                {summary.failedOrders > 0 && summary.systemErrors > 0 && ' and '}
+                {summary.systemErrors > 0 && `${summary.systemErrors} system errors`} that need your
+                attention.
+              </Text>
+            </Section>
+          )}
 
-          <Section>
-            <Text style={{ ...text, fontSize: '12px', color: '#666' }}>
+          <Hr style={{ borderColor: emailColors.border, margin: `${emailSpacing.xl} 0` }} />
+
+          <Section style={{ padding: emailSpacing.md, textAlign: 'center' as const }}>
+            <Text style={styles.footerNote}>
               This daily summary was automatically generated at{' '}
               {new Date().toLocaleString('en-US', {
                 hour: '2-digit',
@@ -348,17 +428,9 @@ export const DailySummaryAlert = ({
               })}
               .
             </Text>
-
-            {(summary.failedOrders > 0 || summary.systemErrors > 0) && (
-              <Text style={{ ...text, fontSize: '12px', color: '#dc2626', marginTop: '10px' }}>
-                <strong>Action Required:</strong> There were{' '}
-                {summary.failedOrders > 0 && `${summary.failedOrders} failed orders`}
-                {summary.failedOrders > 0 && summary.systemErrors > 0 && ' and '}
-                {summary.systemErrors > 0 && `${summary.systemErrors} system errors`} that need your
-                attention.
-              </Text>
-            )}
           </Section>
+
+          <EmailFooter shopName={shopName} variant="admin" />
         </Container>
       </Body>
     </Html>

@@ -1,6 +1,15 @@
 import { Section, Text, Row, Column, Hr } from '@react-email/components';
 import * as React from 'react';
 import { formatOrderNotes } from '@/lib/email-utils';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailFontSizes,
+  emailBorderRadius,
+  emailLineHeights,
+  preorderBadgeStyle,
+} from './email-styles';
 
 interface OrderItem {
   id: string;
@@ -42,90 +51,114 @@ interface OrderSummaryProps {
 }
 
 const summarySection = {
-  padding: '24px',
-  backgroundColor: '#f8fafc',
-  border: '1px solid #e2e8f0',
-  borderRadius: '8px',
-  margin: '16px 0',
+  padding: emailSpacing['2xl'],
+  backgroundColor: emailColors.backgroundAlt,
+  border: `1px solid ${emailColors.border}`,
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.lg} 0`,
 };
 
 const summaryTitle = {
-  fontSize: '18px',
+  fontSize: emailFontSizes.lg,
   fontWeight: 'bold',
-  color: '#2d3748',
-  margin: '0 0 16px 0',
+  color: emailColors.secondary,
+  margin: `0 0 ${emailSpacing.lg} 0`,
+  fontFamily: emailFonts.primary,
+  borderBottom: `2px solid ${emailColors.primary}`,
+  paddingBottom: emailSpacing.sm,
 };
 
 const itemRow = {
-  padding: '8px 0',
-  borderBottom: '1px solid #e2e8f0',
+  padding: `${emailSpacing.sm} 0`,
+  borderBottom: `1px solid ${emailColors.border}`,
 };
 
 const itemName = {
-  fontSize: '14px',
+  fontSize: emailFontSizes.base,
   fontWeight: '600',
-  color: '#2d3748',
+  color: emailColors.secondary,
   margin: '0',
+  fontFamily: emailFonts.primary,
+  lineHeight: emailLineHeights.normal,
 };
 
 const itemDetails = {
-  fontSize: '12px',
-  color: '#718096',
-  margin: '2px 0 0 0',
+  fontSize: emailFontSizes.sm,
+  color: emailColors.textMuted,
+  margin: `${emailSpacing.xs} 0 0 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const priceText = {
-  fontSize: '14px',
+  fontSize: emailFontSizes.base,
   fontWeight: '600',
-  color: '#2d3748',
+  color: emailColors.secondary,
   textAlign: 'right' as const,
   margin: '0',
-};
-
-const preorderBadge = {
-  display: 'inline-block',
-  padding: '2px 8px',
-  backgroundColor: '#dbeafe',
-  color: '#1e40af',
-  fontSize: '11px',
-  fontWeight: 'bold',
-  borderRadius: '4px',
-  marginLeft: '8px',
-  textTransform: 'uppercase' as const,
+  fontFamily: emailFonts.primary,
 };
 
 const totalRow = {
-  padding: '12px 0',
-  borderTop: '2px solid #2d3748',
-  marginTop: '8px',
+  padding: `${emailSpacing.md} 0`,
+  borderTop: `2px solid ${emailColors.secondary}`,
+  marginTop: emailSpacing.sm,
 };
 
 const totalText = {
-  fontSize: '16px',
+  fontSize: emailFontSizes.md,
   fontWeight: 'bold',
-  color: '#2d3748',
+  color: emailColors.secondary,
   margin: '0',
+  fontFamily: emailFonts.primary,
 };
 
 const fulfillmentSection = {
-  marginTop: '16px',
-  padding: '16px',
-  backgroundColor: '#ffffff',
-  border: '1px solid #e2e8f0',
-  borderRadius: '6px',
+  marginTop: emailSpacing.lg,
+  padding: emailSpacing.lg,
+  backgroundColor: emailColors.white,
+  border: `1px solid ${emailColors.border}`,
+  borderRadius: emailBorderRadius.md,
 };
 
 const fulfillmentTitle = {
-  fontSize: '14px',
+  fontSize: emailFontSizes.base,
   fontWeight: 'bold',
-  color: '#2d3748',
-  margin: '0 0 8px 0',
+  color: emailColors.secondary,
+  margin: `0 0 ${emailSpacing.sm} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const fulfillmentText = {
-  fontSize: '13px',
-  color: '#4a5568',
-  margin: '2px 0',
+  fontSize: emailFontSizes.sm,
+  color: emailColors.secondaryLight,
+  margin: `${emailSpacing.xs} 0`,
+  fontFamily: emailFonts.primary,
+  lineHeight: emailLineHeights.relaxed,
+};
+
+const specialNotesSection = {
+  marginTop: emailSpacing.lg,
+  padding: emailSpacing.lg,
+  backgroundColor: emailColors.primaryLight,
+  border: `1px solid ${emailColors.primary}`,
+  borderRadius: emailBorderRadius.md,
+};
+
+const specialNotesTitle = {
+  fontSize: emailFontSizes.base,
+  fontWeight: 'bold',
+  color: emailColors.warningDark,
+  margin: `0 0 ${emailSpacing.sm} 0`,
+  fontFamily: emailFonts.primary,
+};
+
+const specialNotesText = {
+  fontSize: emailFontSizes.base,
+  color: emailColors.warningDark,
+  margin: '0',
+  whiteSpace: 'pre-wrap' as const,
+  fontFamily: emailFonts.primary,
+  lineHeight: emailLineHeights.relaxed,
 };
 
 const formatCurrency = (amount: number) => {
@@ -210,10 +243,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       {/* Order Items */}
       {items.map((item, index) => (
         <Row key={index} style={itemRow}>
-          <Column style={{ width: '60%' }}>
+          <Column style={{ width: '65%' }}>
             <Text style={itemName}>
               {item.quantity}x {item.product.name}
-              {item.product.isPreorder && <span style={preorderBadge}>Pre-order</span>}
+              {item.product.isPreorder && <span style={preorderBadgeStyle}>Pre-order</span>}
             </Text>
             {item.variant && <Text style={itemDetails}>{item.variant.name}</Text>}
             {item.product.isPreorder && item.product.preorderEndDate && (
@@ -222,23 +255,23 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               </Text>
             )}
           </Column>
-          <Column style={{ width: '40%' }}>
+          <Column style={{ width: '35%' }}>
             <Text style={priceText}>{formatCurrency(item.price * item.quantity)}</Text>
           </Column>
         </Row>
       ))}
 
-      <Hr style={{ borderColor: '#e2e8f0', margin: '16px 0' }} />
+      <Hr style={{ borderColor: emailColors.border, margin: `${emailSpacing.lg} 0` }} />
 
       {/* Pricing Information */}
       {showPricing && (
         <>
           {subtotal && (
-            <Row style={{ padding: '4px 0' }}>
-              <Column style={{ width: '60%' }}>
+            <Row style={{ padding: `${emailSpacing.xs} 0` }}>
+              <Column style={{ width: '65%' }}>
                 <Text style={itemDetails}>Subtotal:</Text>
               </Column>
-              <Column style={{ width: '40%' }}>
+              <Column style={{ width: '35%' }}>
                 <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
                   {formatCurrency(subtotal)}
                 </Text>
@@ -247,11 +280,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           )}
 
           {tax && tax > 0 && (
-            <Row style={{ padding: '4px 0' }}>
-              <Column style={{ width: '60%' }}>
+            <Row style={{ padding: `${emailSpacing.xs} 0` }}>
+              <Column style={{ width: '65%' }}>
                 <Text style={itemDetails}>Tax:</Text>
               </Column>
-              <Column style={{ width: '40%' }}>
+              <Column style={{ width: '35%' }}>
                 <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
                   {formatCurrency(tax)}
                 </Text>
@@ -260,11 +293,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           )}
 
           {shippingCost && shippingCost > 0 && (
-            <Row style={{ padding: '4px 0' }}>
-              <Column style={{ width: '60%' }}>
+            <Row style={{ padding: `${emailSpacing.xs} 0` }}>
+              <Column style={{ width: '65%' }}>
                 <Text style={itemDetails}>Shipping:</Text>
               </Column>
-              <Column style={{ width: '40%' }}>
+              <Column style={{ width: '35%' }}>
                 <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
                   {formatCurrency(shippingCost)}
                 </Text>
@@ -273,11 +306,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           )}
 
           {deliveryFee && deliveryFee > 0 && (
-            <Row style={{ padding: '4px 0' }}>
-              <Column style={{ width: '60%' }}>
+            <Row style={{ padding: `${emailSpacing.xs} 0` }}>
+              <Column style={{ width: '65%' }}>
                 <Text style={itemDetails}>Delivery Fee:</Text>
               </Column>
-              <Column style={{ width: '40%' }}>
+              <Column style={{ width: '35%' }}>
                 <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
                   {formatCurrency(deliveryFee)}
                 </Text>
@@ -286,11 +319,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           )}
 
           {serviceFee && serviceFee > 0 && (
-            <Row style={{ padding: '4px 0' }}>
-              <Column style={{ width: '60%' }}>
+            <Row style={{ padding: `${emailSpacing.xs} 0` }}>
+              <Column style={{ width: '65%' }}>
                 <Text style={itemDetails}>Service Fee:</Text>
               </Column>
-              <Column style={{ width: '40%' }}>
+              <Column style={{ width: '35%' }}>
                 <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
                   {formatCurrency(serviceFee)}
                 </Text>
@@ -299,11 +332,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           )}
 
           {gratuityAmount && gratuityAmount > 0 && (
-            <Row style={{ padding: '4px 0' }}>
-              <Column style={{ width: '60%' }}>
+            <Row style={{ padding: `${emailSpacing.xs} 0` }}>
+              <Column style={{ width: '65%' }}>
                 <Text style={itemDetails}>Gratuity:</Text>
               </Column>
-              <Column style={{ width: '40%' }}>
+              <Column style={{ width: '35%' }}>
                 <Text style={{ ...itemDetails, textAlign: 'right' as const }}>
                   {formatCurrency(gratuityAmount)}
                 </Text>
@@ -312,10 +345,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           )}
 
           <Row style={totalRow}>
-            <Column style={{ width: '60%' }}>
+            <Column style={{ width: '65%' }}>
               <Text style={totalText}>Total:</Text>
             </Column>
-            <Column style={{ width: '40%' }}>
+            <Column style={{ width: '35%' }}>
               <Text style={{ ...totalText, textAlign: 'right' as const }}>
                 {formatCurrency(Number(total))}
               </Text>
@@ -382,35 +415,9 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
 
       {/* Special Notes Section */}
       {formattedNotes.otherNotes && (
-        <Section
-          style={{
-            marginTop: '16px',
-            padding: '16px',
-            backgroundColor: '#fefce8',
-            border: '1px solid #f59e0b',
-            borderRadius: '6px',
-          }}
-        >
-          <Text
-            style={{
-              fontSize: '14px',
-              fontWeight: 'bold',
-              color: '#92400e',
-              margin: '0 0 8px 0',
-            }}
-          >
-            Special Requests:
-          </Text>
-          <Text
-            style={{
-              fontSize: '14px',
-              color: '#92400e',
-              margin: '0',
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {formattedNotes.otherNotes}
-          </Text>
+        <Section style={specialNotesSection}>
+          <Text style={specialNotesTitle}>Special Requests:</Text>
+          <Text style={specialNotesText}>{formattedNotes.otherNotes}</Text>
         </Section>
       )}
     </Section>

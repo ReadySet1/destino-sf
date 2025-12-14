@@ -1,61 +1,142 @@
-import { Section, Text, Hr, Img } from '@react-email/components';
+import { Section, Text, Img } from '@react-email/components';
 import * as React from 'react';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailBorderRadius,
+  getLogoUrl,
+} from './email-styles';
 
 interface EmailHeaderProps {
   shopName?: string;
   logoUrl?: string;
-  backgroundColor?: string;
-  textColor?: string;
+  tagline?: string;
+  variant?: 'default' | 'admin' | 'catering';
 }
 
-const headerSection = {
-  padding: '24px 20px',
-  textAlign: 'center' as const,
-  backgroundColor: '#f8fafc',
-  borderBottom: '1px solid #e2e8f0',
+const getHeaderStyle = (variant: string) => {
+  const baseStyle = {
+    padding: `${emailSpacing['2xl']} ${emailSpacing.xl}`,
+    textAlign: 'center' as const,
+  };
+
+  switch (variant) {
+    case 'admin':
+      return {
+        ...baseStyle,
+        backgroundColor: emailColors.secondary,
+      };
+    case 'catering':
+      return {
+        ...baseStyle,
+        backgroundColor: emailColors.accent,
+      };
+    default:
+      return {
+        ...baseStyle,
+        backgroundColor: emailColors.primary,
+      };
+  }
 };
 
-const logoText = {
+const logoContainerStyle = {
+  margin: '0 auto',
+  textAlign: 'center' as const,
+};
+
+const logoImageStyle = {
+  maxWidth: '180px',
+  width: '100%',
+  height: 'auto',
+  margin: '0 auto',
+  display: 'block',
+};
+
+const logoTextStyle = {
   fontSize: '28px',
   fontWeight: 'bold',
-  color: '#1a202c',
+  color: emailColors.secondary,
   margin: '0',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  fontFamily: emailFonts.primary,
+  letterSpacing: '-0.5px',
 };
 
-const tagline = {
-  fontSize: '14px',
-  color: '#718096',
-  margin: '8px 0 0 0',
-  fontStyle: 'italic' as const,
+const adminLogoTextStyle = {
+  ...logoTextStyle,
+  color: emailColors.white,
+};
+
+const cateringLogoTextStyle = {
+  ...logoTextStyle,
+  color: emailColors.white,
+};
+
+const taglineStyle = {
+  fontSize: '13px',
+  color: emailColors.secondary,
+  margin: `${emailSpacing.sm} 0 0 0`,
+  fontFamily: emailFonts.primary,
+  opacity: '0.85',
+};
+
+const adminTaglineStyle = {
+  ...taglineStyle,
+  color: emailColors.primaryLight,
+};
+
+const cateringTaglineStyle = {
+  ...taglineStyle,
+  color: emailColors.white,
+  opacity: '0.9',
+};
+
+const accentBarStyle = {
+  height: '4px',
+  backgroundColor: emailColors.accent,
+  margin: '0',
+  borderRadius: `0 0 ${emailBorderRadius.sm} ${emailBorderRadius.sm}`,
+};
+
+const adminAccentBarStyle = {
+  ...accentBarStyle,
+  backgroundColor: emailColors.primary,
 };
 
 export const EmailHeader: React.FC<EmailHeaderProps> = ({
   shopName = 'Destino SF',
   logoUrl,
-  backgroundColor = '#f8fafc',
-  textColor = '#1a202c',
+  tagline = 'Authentic Argentine Cuisine',
+  variant = 'default',
 }) => {
+  const headerStyle = getHeaderStyle(variant);
+  const textStyle =
+    variant === 'admin' ? adminLogoTextStyle : variant === 'catering' ? cateringLogoTextStyle : logoTextStyle;
+  const subtitleStyle =
+    variant === 'admin' ? adminTaglineStyle : variant === 'catering' ? cateringTaglineStyle : taglineStyle;
+  const barStyle = variant === 'admin' ? adminAccentBarStyle : accentBarStyle;
+
+  // Use provided logoUrl or default to the brand logo
+  const finalLogoUrl = logoUrl || getLogoUrl();
+
   return (
-    <Section style={{ ...headerSection, backgroundColor }}>
-      {logoUrl ? (
-        <Img
-          src={logoUrl}
-          alt={shopName}
-          style={{
-            maxWidth: '200px',
-            height: 'auto',
-            margin: '0 auto',
-            display: 'block',
-          }}
-        />
-      ) : (
-        <>
-          <Text style={{ ...logoText, color: textColor }}>{shopName}</Text>
-          <Text style={tagline}>Authentic Mexican Cuisine in San Francisco</Text>
-        </>
-      )}
-    </Section>
+    <>
+      <Section style={headerStyle}>
+        <div style={logoContainerStyle}>
+          {finalLogoUrl ? (
+            <Img
+              src={finalLogoUrl}
+              alt={shopName}
+              style={logoImageStyle}
+            />
+          ) : (
+            <Text style={textStyle}>{shopName}</Text>
+          )}
+          {tagline && <Text style={subtitleStyle}>{tagline}</Text>}
+        </div>
+      </Section>
+      {variant !== 'catering' && <div style={barStyle} />}
+    </>
   );
 };
 

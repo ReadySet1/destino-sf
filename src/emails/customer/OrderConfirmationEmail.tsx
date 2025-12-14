@@ -2,7 +2,6 @@ import {
   Body,
   Container,
   Head,
-  Heading,
   Html,
   Preview,
   Section,
@@ -16,6 +15,20 @@ import * as React from 'react';
 import { EmailHeader } from '../shared/EmailHeader';
 import { EmailFooter } from '../shared/EmailFooter';
 import { OrderSummary } from '../shared/OrderSummary';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailFontSizes,
+  emailBorderRadius,
+  emailLineHeights,
+  baseBodyStyle,
+  baseContainerStyle,
+  primaryButtonStyle,
+  secondaryButtonStyle,
+  infoBoxStyle,
+  linkStyle,
+} from '../shared/email-styles';
 
 interface OrderItem {
   id: string;
@@ -57,105 +70,79 @@ interface OrderConfirmationEmailProps {
   estimatedPreparationTime?: string;
 }
 
-const main = {
-  backgroundColor: '#ffffff',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
-};
-
-const container = {
-  margin: '0 auto',
-  padding: '0',
-  maxWidth: '600px',
-};
-
 const confirmationSection = {
-  padding: '32px 24px',
+  padding: emailSpacing['3xl'],
   textAlign: 'center' as const,
-  backgroundColor: '#f0f9ff',
-  border: '1px solid #0ea5e9',
-  borderRadius: '8px',
-  margin: '20px 0',
+  backgroundColor: emailColors.primaryLight,
+  border: `2px solid ${emailColors.primary}`,
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.xl} 0`,
 };
 
 const thankYouTitle = {
-  fontSize: '28px',
+  fontSize: emailFontSizes['2xl'],
   fontWeight: 'bold',
-  color: '#0c4a6e',
-  margin: '0 0 16px 0',
+  color: emailColors.secondary,
+  margin: `0 0 ${emailSpacing.lg} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const confirmationText = {
-  fontSize: '16px',
-  color: '#0c4a6e',
-  margin: '0 0 8px 0',
-  lineHeight: '24px',
+  fontSize: emailFontSizes.md,
+  color: emailColors.secondary,
+  margin: `0 0 ${emailSpacing.sm} 0`,
+  lineHeight: emailLineHeights.relaxed,
+  fontFamily: emailFonts.primary,
 };
 
-const orderIdText = {
-  fontSize: '18px',
+const orderIdBadge = {
+  fontSize: emailFontSizes.lg,
   fontWeight: 'bold',
-  color: '#1e40af',
-  margin: '16px 0',
-  padding: '12px',
-  backgroundColor: '#ffffff',
-  border: '2px solid #3b82f6',
-  borderRadius: '6px',
+  color: emailColors.secondary,
+  margin: `${emailSpacing.lg} 0`,
+  padding: emailSpacing.md,
+  backgroundColor: emailColors.white,
+  border: `2px solid ${emailColors.primary}`,
+  borderRadius: emailBorderRadius.md,
   display: 'inline-block',
+  fontFamily: emailFonts.primary,
 };
 
-const infoSection = {
-  padding: '24px',
-  backgroundColor: '#fefce8',
-  border: '1px solid #facc15',
-  borderRadius: '8px',
-  margin: '20px 0',
+const infoSectionStyle = {
+  ...infoBoxStyle,
 };
 
 const infoTitle = {
-  fontSize: '18px',
+  fontSize: emailFontSizes.lg,
   fontWeight: 'bold',
-  color: '#713f12',
-  margin: '0 0 12px 0',
+  color: emailColors.warningDark,
+  margin: `0 0 ${emailSpacing.md} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const infoText = {
-  fontSize: '14px',
-  color: '#713f12',
-  margin: '8px 0',
-  lineHeight: '20px',
+  fontSize: emailFontSizes.base,
+  color: emailColors.warningDark,
+  margin: `${emailSpacing.sm} 0`,
+  lineHeight: emailLineHeights.relaxed,
+  fontFamily: emailFonts.primary,
 };
 
 const ctaSection = {
   textAlign: 'center' as const,
-  padding: '20px 0',
+  padding: `${emailSpacing.xl} 0`,
 };
 
-const primaryButton = {
-  backgroundColor: '#059669',
-  borderRadius: '6px',
-  color: '#ffffff',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
+const contactSection = {
+  padding: emailSpacing.xl,
   textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 24px',
-  margin: '8px',
 };
 
-const secondaryButton = {
-  backgroundColor: '#ffffff',
-  borderRadius: '6px',
-  border: '2px solid #059669',
-  color: '#059669',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '10px 22px',
-  margin: '8px',
+const contactText = {
+  fontSize: emailFontSizes.base,
+  color: emailColors.secondaryLight,
+  margin: `${emailSpacing.sm} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const formatFulfillmentType = (type: string) => {
@@ -196,8 +183,8 @@ const formatDateTime = (date: Date | string | null, time?: string | null) => {
 export const OrderConfirmationEmail = ({
   order,
   shopName = 'Destino SF',
-  supportEmail = 'support@destinosf.com',
-  supportPhone = '(415) 555-0123',
+  supportEmail = 'hola@destinosf.com',
+  supportPhone = '(415) 872-9372',
   websiteUrl = 'https://destinosf.com',
   estimatedPreparationTime = '30-45 minutes',
 }: OrderConfirmationEmailProps) => {
@@ -213,17 +200,17 @@ export const OrderConfirmationEmail = ({
     <Html>
       <Head />
       <Preview>{previewText}</Preview>
-      <Body style={main}>
-        <Container style={container}>
+      <Body style={baseBodyStyle}>
+        <Container style={baseContainerStyle}>
           <EmailHeader shopName={shopName} />
 
           {/* Order Confirmation Section */}
           <Section style={confirmationSection}>
-            <Text style={thankYouTitle}>🎉 Order Confirmed!</Text>
+            <Text style={thankYouTitle}>Order Confirmed!</Text>
             <Text style={confirmationText}>
               Thank you, {order.customerName}! Your order has been received and is being prepared.
             </Text>
-            <div style={orderIdText}>Order #{order.id}</div>
+            <div style={orderIdBadge}>Order #{order.id}</div>
           </Section>
 
           {/* Order Summary */}
@@ -245,8 +232,8 @@ export const OrderConfirmationEmail = ({
           />
 
           {/* Fulfillment Information */}
-          <Section style={infoSection}>
-            <Text style={infoTitle}>📋 Order Details</Text>
+          <Section style={infoSectionStyle}>
+            <Text style={infoTitle}>Order Details</Text>
 
             {order.fulfillmentType === 'pickup' && (
               <>
@@ -300,10 +287,10 @@ export const OrderConfirmationEmail = ({
           <Section style={ctaSection}>
             <Row>
               <Column>
-                <Button href={`${websiteUrl}/orders/${order.id}`} style={primaryButton}>
+                <Button href={`${websiteUrl}/orders/${order.id}`} style={primaryButtonStyle}>
                   Track Your Order
                 </Button>
-                <Button href={websiteUrl} style={secondaryButton}>
+                <Button href={websiteUrl} style={secondaryButtonStyle}>
                   Order Again
                 </Button>
               </Column>
@@ -311,17 +298,15 @@ export const OrderConfirmationEmail = ({
           </Section>
 
           {/* Contact Information */}
-          <Section style={{ padding: '20px', textAlign: 'center' as const }}>
-            <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
-              Questions about your order?
-            </Text>
-            <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
+          <Section style={contactSection}>
+            <Text style={contactText}>Questions about your order?</Text>
+            <Text style={contactText}>
               Call us at{' '}
-              <Link href={`tel:${supportPhone}`} style={{ color: '#059669' }}>
+              <Link href={`tel:${supportPhone.replace(/[^\d+]/g, '')}`} style={linkStyle}>
                 {supportPhone}
               </Link>{' '}
               or email{' '}
-              <Link href={`mailto:${supportEmail}`} style={{ color: '#059669' }}>
+              <Link href={`mailto:${supportEmail}`} style={linkStyle}>
                 {supportEmail}
               </Link>
             </Text>
