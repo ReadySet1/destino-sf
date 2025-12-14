@@ -15,6 +15,20 @@ import * as React from 'react';
 import { EmailHeader } from '../shared/EmailHeader';
 import { EmailFooter } from '../shared/EmailFooter';
 import { OrderSummary } from '../shared/OrderSummary';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailFontSizes,
+  emailBorderRadius,
+  emailLineHeights,
+  baseBodyStyle,
+  baseContainerStyle,
+  primaryButtonStyle,
+  secondaryButtonStyle,
+  infoBoxStyle,
+  linkStyle,
+} from '../shared/email-styles';
 
 interface OrderItem {
   id: string;
@@ -48,135 +62,111 @@ interface PickupReadyEmailProps {
   preparationTime?: string;
 }
 
-const main = {
-  backgroundColor: '#ffffff',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
-};
-
-const container = {
-  margin: '0 auto',
-  padding: '0',
-  maxWidth: '600px',
-};
-
 const readySection = {
-  padding: '32px 24px',
+  padding: emailSpacing['3xl'],
   textAlign: 'center' as const,
-  backgroundColor: '#dcfce7',
-  border: '2px solid #16a34a',
-  borderRadius: '8px',
-  margin: '20px 0',
+  backgroundColor: emailColors.successLight,
+  border: `2px solid ${emailColors.success}`,
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.xl} 0`,
 };
 
 const readyTitle = {
-  fontSize: '28px',
+  fontSize: emailFontSizes['2xl'],
   fontWeight: 'bold',
-  color: '#166534',
-  margin: '0 0 16px 0',
+  color: emailColors.successDark,
+  margin: `0 0 ${emailSpacing.lg} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const readyText = {
-  fontSize: '18px',
-  color: '#166534',
-  margin: '0 0 8px 0',
-  lineHeight: '24px',
+  fontSize: emailFontSizes.lg,
+  color: emailColors.successDark,
+  margin: `0 0 ${emailSpacing.sm} 0`,
+  lineHeight: emailLineHeights.relaxed,
+  fontFamily: emailFonts.primary,
 };
 
-const orderIdText = {
-  fontSize: '20px',
+const orderIdBadge = {
+  fontSize: emailFontSizes.xl,
   fontWeight: 'bold',
-  color: '#166534',
-  margin: '16px 0',
-  padding: '12px',
-  backgroundColor: '#ffffff',
-  border: '2px solid #16a34a',
-  borderRadius: '6px',
+  color: emailColors.successDark,
+  margin: `${emailSpacing.lg} 0`,
+  padding: emailSpacing.md,
+  backgroundColor: emailColors.white,
+  border: `2px solid ${emailColors.success}`,
+  borderRadius: emailBorderRadius.md,
   display: 'inline-block',
+  fontFamily: emailFonts.primary,
 };
 
-const infoSection = {
-  padding: '24px',
-  backgroundColor: '#fef3c7',
-  border: '1px solid #f59e0b',
-  borderRadius: '8px',
-  margin: '20px 0',
+const pickupInfoSection = {
+  ...infoBoxStyle,
 };
 
 const infoTitle = {
-  fontSize: '18px',
+  fontSize: emailFontSizes.lg,
   fontWeight: 'bold',
-  color: '#92400e',
-  margin: '0 0 12px 0',
+  color: emailColors.warningDark,
+  margin: `0 0 ${emailSpacing.md} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const infoText = {
-  fontSize: '14px',
-  color: '#92400e',
-  margin: '8px 0',
-  lineHeight: '20px',
+  fontSize: emailFontSizes.base,
+  color: emailColors.warningDark,
+  margin: `${emailSpacing.sm} 0`,
+  lineHeight: emailLineHeights.relaxed,
+  fontFamily: emailFonts.primary,
 };
 
 const instructionsSection = {
-  padding: '20px',
-  backgroundColor: '#e0f2fe',
-  border: '1px solid #0891b2',
-  borderRadius: '8px',
-  margin: '20px 0',
+  padding: emailSpacing.xl,
+  backgroundColor: emailColors.accentLight,
+  border: `1px solid ${emailColors.accent}`,
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.xl} 0`,
 };
 
 const instructionsTitle = {
-  fontSize: '16px',
+  fontSize: emailFontSizes.md,
   fontWeight: 'bold',
-  color: '#164e63',
-  margin: '0 0 12px 0',
+  color: emailColors.accentDark,
+  margin: `0 0 ${emailSpacing.md} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const instructionsText = {
-  fontSize: '14px',
-  color: '#164e63',
-  margin: '8px 0',
-  lineHeight: '20px',
+  fontSize: emailFontSizes.base,
+  color: emailColors.accentDark,
+  margin: `${emailSpacing.sm} 0`,
+  lineHeight: emailLineHeights.relaxed,
+  fontFamily: emailFonts.primary,
 };
 
 const ctaSection = {
   textAlign: 'center' as const,
-  padding: '20px 0',
-};
-
-const primaryButton = {
-  backgroundColor: '#16a34a',
-  borderRadius: '6px',
-  color: '#ffffff',
-  fontSize: '18px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '16px 32px',
-  margin: '8px',
-};
-
-const secondaryButton = {
-  backgroundColor: '#ffffff',
-  borderRadius: '6px',
-  border: '2px solid #16a34a',
-  color: '#16a34a',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 24px',
-  margin: '8px',
+  padding: `${emailSpacing.xl} 0`,
 };
 
 const mapSection = {
   textAlign: 'center' as const,
-  padding: '16px',
-  backgroundColor: '#f8fafc',
-  borderRadius: '6px',
-  margin: '16px 0',
+  padding: emailSpacing.lg,
+  backgroundColor: emailColors.backgroundAlt,
+  borderRadius: emailBorderRadius.md,
+  margin: `${emailSpacing.lg} 0`,
+};
+
+const contactSection = {
+  padding: emailSpacing.xl,
+  textAlign: 'center' as const,
+};
+
+const contactText = {
+  fontSize: emailFontSizes.base,
+  color: emailColors.secondaryLight,
+  margin: `${emailSpacing.sm} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const formatDateTime = (date: Date | string | null) => {
@@ -199,45 +189,45 @@ const formatDateTime = (date: Date | string | null) => {
 export const PickupReadyEmail = ({
   order,
   shopName = 'Destino SF',
-  shopAddress = '123 Main St, San Francisco, CA 94102',
-  shopPhone = '(415) 555-0123',
-  supportEmail = 'support@destinosf.com',
+  shopAddress = '2351 Mission St, San Francisco, CA 94110',
+  shopPhone = '(415) 872-9372',
+  supportEmail = 'hola@destinosf.com',
   websiteUrl = 'https://destinosf.com',
   pickupInstructions = 'Please come to the front counter and provide your name and order number.',
-  parkingInfo = 'Free parking is available on the street. Limited 15-minute parking spots are available directly in front of our store.',
+  parkingInfo = 'Street parking is available on Mission Street. Please check local signs for restrictions.',
   preparationTime = '30-45 minutes',
 }: PickupReadyEmailProps) => {
-  const previewText = `🎉 Order #${order.id} is ready for pickup at ${shopName}!`;
+  const previewText = `Order #${order.id} is ready for pickup at ${shopName}!`;
 
   return (
     <Html>
       <Head />
       <Preview>{previewText}</Preview>
-      <Body style={main}>
-        <Container style={container}>
+      <Body style={baseBodyStyle}>
+        <Container style={baseContainerStyle}>
           <EmailHeader shopName={shopName} />
 
           {/* Ready for Pickup Section */}
           <Section style={readySection}>
-            <Text style={readyTitle}>🎉 Your Order is Ready!</Text>
+            <Text style={readyTitle}>Your Order is Ready!</Text>
             <Text style={readyText}>
               Hi {order.customerName}, your delicious order is ready for pickup!
             </Text>
-            <div style={orderIdText}>Order #{order.id}</div>
-            <Text style={{ ...readyText, fontSize: '16px', marginTop: '16px' }}>
+            <div style={orderIdBadge}>Order #{order.id}</div>
+            <Text style={{ ...readyText, fontSize: emailFontSizes.md, marginTop: emailSpacing.lg }}>
               Please come by when convenient to pick up your fresh, hot meal.
             </Text>
           </Section>
 
           {/* Pickup Information */}
-          <Section style={infoSection}>
-            <Text style={infoTitle}>📍 Pickup Information</Text>
+          <Section style={pickupInfoSection}>
+            <Text style={infoTitle}>Pickup Information</Text>
             <Text style={infoText}>
               <strong>Location:</strong> {shopAddress}
             </Text>
             <Text style={infoText}>
               <strong>Phone:</strong>{' '}
-              <Link href={`tel:${shopPhone}`} style={{ color: '#92400e' }}>
+              <Link href={`tel:${shopPhone.replace(/[^\d+]/g, '')}`} style={{ color: emailColors.warningDark }}>
                 {shopPhone}
               </Link>
             </Text>
@@ -258,15 +248,15 @@ export const PickupReadyEmail = ({
 
           {/* Pickup Instructions */}
           <Section style={instructionsSection}>
-            <Text style={instructionsTitle}>📋 Pickup Instructions</Text>
+            <Text style={instructionsTitle}>Pickup Instructions</Text>
             <Text style={instructionsText}>{pickupInstructions}</Text>
             {parkingInfo && (
               <>
-                <Text style={instructionsTitle}>🅿️ Parking Information</Text>
+                <Text style={{ ...instructionsTitle, marginTop: emailSpacing.lg }}>Parking Information</Text>
                 <Text style={instructionsText}>{parkingInfo}</Text>
               </>
             )}
-            <Text style={instructionsTitle}>⏰ Keep in Mind</Text>
+            <Text style={{ ...instructionsTitle, marginTop: emailSpacing.lg }}>Keep in Mind</Text>
             <Text style={instructionsText}>
               For food safety and optimal taste, we recommend picking up your order within 30
               minutes of this notification.
@@ -288,14 +278,14 @@ export const PickupReadyEmail = ({
           <Section style={ctaSection}>
             <Row>
               <Column>
-                <Button href={`tel:${shopPhone}`} style={primaryButton}>
-                  📞 Call if Questions
+                <Button href={`tel:${shopPhone.replace(/[^\d+]/g, '')}`} style={primaryButtonStyle}>
+                  Call if Questions
                 </Button>
                 <Button
                   href={`https://maps.google.com/?q=${encodeURIComponent(shopAddress)}`}
-                  style={secondaryButton}
+                  style={secondaryButtonStyle}
                 >
-                  📍 Get Directions
+                  Get Directions
                 </Button>
               </Column>
             </Row>
@@ -305,25 +295,26 @@ export const PickupReadyEmail = ({
           <Section style={mapSection}>
             <Text
               style={{
-                fontSize: '14px',
-                color: '#4a5568',
-                margin: '0 0 8px 0',
+                fontSize: emailFontSizes.base,
+                color: emailColors.secondaryLight,
+                margin: `0 0 ${emailSpacing.sm} 0`,
                 fontWeight: 'bold',
+                fontFamily: emailFonts.primary,
               }}
             >
               Need directions?
             </Text>
-            <Text style={{ fontSize: '12px', color: '#6b7280', margin: '0' }}>
+            <Text style={{ fontSize: emailFontSizes.sm, color: emailColors.textMuted, margin: '0', fontFamily: emailFonts.primary }}>
               <Link
                 href={`https://maps.google.com/?q=${encodeURIComponent(shopAddress)}`}
-                style={{ color: '#0891b2' }}
+                style={linkStyle}
               >
                 Open in Google Maps
               </Link>
               {' | '}
               <Link
                 href={`https://maps.apple.com/?q=${encodeURIComponent(shopAddress)}`}
-                style={{ color: '#0891b2' }}
+                style={linkStyle}
               >
                 Open in Apple Maps
               </Link>
@@ -331,17 +322,15 @@ export const PickupReadyEmail = ({
           </Section>
 
           {/* Contact Information */}
-          <Section style={{ padding: '20px', textAlign: 'center' as const }}>
-            <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
-              Unable to pick up right now or have questions?
-            </Text>
-            <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
+          <Section style={contactSection}>
+            <Text style={contactText}>Unable to pick up right now or have questions?</Text>
+            <Text style={contactText}>
               Call us at{' '}
-              <Link href={`tel:${shopPhone}`} style={{ color: '#16a34a' }}>
+              <Link href={`tel:${shopPhone.replace(/[^\d+]/g, '')}`} style={linkStyle}>
                 {shopPhone}
               </Link>{' '}
               or email{' '}
-              <Link href={`mailto:${supportEmail}`} style={{ color: '#16a34a' }}>
+              <Link href={`mailto:${supportEmail}`} style={linkStyle}>
                 {supportEmail}
               </Link>
             </Text>
