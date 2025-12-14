@@ -27,6 +27,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState<string>('');
 
   // Initialize the form
   const form = useForm<ContactFormValues>({
@@ -55,6 +56,7 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
           email: data.email,
           message: data.message,
           contactType: 'catering',
+          website: honeypot, // Honeypot field for spam detection
         }),
       });
 
@@ -82,6 +84,17 @@ export function ContactForm({ onSubmitSuccess }: ContactFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Honeypot field - hidden from users, bots will fill it */}
+        <input
+          type="text"
+          name="website"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+          style={{ position: 'absolute', left: '-9999px', opacity: 0 }}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+        />
         <div className="space-y-4">
           <FormField
             control={form.control}

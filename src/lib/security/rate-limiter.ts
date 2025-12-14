@@ -168,3 +168,10 @@ export class EnvironmentAwareRateLimiter {
 }
 
 export const environmentRateLimiter = new EnvironmentAwareRateLimiter();
+
+// Contact form rate limiter - 5 submissions per hour per IP
+export const contactFormRateLimiter = new RateLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 submissions per hour
+  message: 'Too many contact form submissions. Please try again later.',
+});

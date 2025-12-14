@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { alertService } from '@/lib/alerts';
 import { prisma, withRetry } from '@/lib/db-unified';
+import { contactFormRateLimiter } from '@/lib/security/rate-limiter';
 import type {
   CustomerOrderConfirmationData,
   CustomerOrderStatusData,
@@ -8,6 +9,9 @@ import type {
   CustomerFeedbackRequestData,
   ContactFormReceivedData,
 } from '@/types/alerts';
+
+// Maximum message length to prevent abuse
+const MAX_MESSAGE_LENGTH = 5000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -161,6 +165,35 @@ export async function POST(request: NextRequest) {
       case 'contact_form':
         console.log('Processing contact form submission:', data);
 
+        // Honeypot check - if filled, it's a bot
+        if (data.website) {
+          console.log('[SPAM] Honeypot triggered:', {
+            email: data.email,
+            name: data.name,
+            honeypotValue: data.website,
+            timestamp: new Date().toISOString(),
+          });
+          // Return success to not alert bots, but don't process
+          return NextResponse.json({ success: true, messageId: 'filtered' });
+        }
+
+        // Rate limiting check
+        const clientIp =
+          request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+          request.headers.get('x-real-ip') ||
+          'unknown';
+        const rateLimitResult = await contactFormRateLimiter.check(clientIp);
+        if (!rateLimitResult.allowed) {
+          console.log('[RATE_LIMIT] Contact form rate limit exceeded:', {
+            ip: clientIp,
+            remaining: rateLimitResult.remaining,
+          });
+          return NextResponse.json(
+            { error: rateLimitResult.message },
+            { status: 429 }
+          );
+        }
+
         if (!data.name || !data.email || !data.message) {
           console.log('Missing required fields:', {
             name: !!data.name,
@@ -171,6 +204,18 @@ export async function POST(request: NextRequest) {
             {
               error: 'name, email, and message required for contact form',
             },
+            { status: 400 }
+          );
+        }
+
+        // Message length validation
+        if (data.message.length > MAX_MESSAGE_LENGTH) {
+          console.log('[VALIDATION] Message too long:', {
+            length: data.message.length,
+            maxLength: MAX_MESSAGE_LENGTH,
+          });
+          return NextResponse.json(
+            { error: `Message must be less than ${MAX_MESSAGE_LENGTH} characters` },
             { status: 400 }
           );
         }
