@@ -12,6 +12,18 @@ import {
   Hr,
 } from '@react-email/components';
 import * as React from 'react';
+import { EmailHeader } from '../shared/EmailHeader';
+import { EmailFooter } from '../shared/EmailFooter';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailFontSizes,
+  emailBorderRadius,
+  emailLineHeights,
+  baseBodyStyle,
+  baseContainerStyle,
+} from '../shared/email-styles';
 
 interface SystemErrorAlertProps {
   error: {
@@ -33,90 +45,131 @@ interface SystemErrorAlertProps {
   shopName: string;
 }
 
-const main = {
-  backgroundColor: '#ffffff',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
+// Severity color mapping using brand colors
+const severityStyles: Record<string, { backgroundColor: string; color: string; borderColor: string }> = {
+  LOW: { backgroundColor: emailColors.primaryLight, color: emailColors.warningDark, borderColor: emailColors.primary },
+  MEDIUM: { backgroundColor: emailColors.accentLight, color: emailColors.accentDark, borderColor: emailColors.accent },
+  HIGH: { backgroundColor: emailColors.errorLight, color: emailColors.errorDark, borderColor: emailColors.error },
+  CRITICAL: { backgroundColor: emailColors.errorLight, color: emailColors.errorDark, borderColor: emailColors.error },
 };
 
-const container = {
-  margin: '0 auto',
-  padding: '20px 0 48px',
+// Styles using design tokens
+const styles = {
+  errorHeader: {
+    padding: emailSpacing['3xl'],
+    textAlign: 'center' as const,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.xl} 0`,
+  },
+  errorTitle: {
+    fontSize: emailFontSizes['2xl'],
+    fontWeight: 'bold',
+    margin: `0 0 ${emailSpacing.md} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  errorSubtitle: {
+    fontSize: emailFontSizes.md,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+    lineHeight: emailLineHeights.relaxed,
+  },
+  severityBadge: {
+    display: 'inline-block',
+    padding: `${emailSpacing.xs} ${emailSpacing.md}`,
+    borderRadius: emailBorderRadius.sm,
+    fontSize: emailFontSizes.xs,
+    fontWeight: 'bold',
+    textTransform: 'uppercase' as const,
+    fontFamily: emailFonts.primary,
+  },
+  sectionTitle: {
+    fontSize: emailFontSizes.lg,
+    fontWeight: 'bold',
+    color: emailColors.secondary,
+    margin: `0 0 ${emailSpacing.lg} 0`,
+    borderBottom: `2px solid ${emailColors.primary}`,
+    paddingBottom: emailSpacing.sm,
+    fontFamily: emailFonts.primary,
+  },
+  detailSection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.backgroundAlt,
+    border: `1px solid ${emailColors.border}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  detailRow: {
+    marginBottom: emailSpacing.md,
+  },
+  detailLabel: {
+    fontSize: emailFontSizes.sm,
+    fontWeight: '600',
+    color: emailColors.textMuted,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  detailValue: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.secondary,
+    margin: `${emailSpacing.xs} 0 0 0`,
+    fontFamily: emailFonts.primary,
+    lineHeight: emailLineHeights.relaxed,
+  },
+  errorMessage: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.errorDark,
+    margin: `${emailSpacing.xs} 0 0 0`,
+    fontFamily: emailFonts.primary,
+    lineHeight: emailLineHeights.relaxed,
+  },
+  codeBlock: {
+    display: 'block',
+    padding: emailSpacing.lg,
+    backgroundColor: emailColors.secondary,
+    borderRadius: emailBorderRadius.md,
+    border: `1px solid ${emailColors.border}`,
+    color: emailColors.background,
+    fontSize: emailFontSizes.xs,
+    fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+    lineHeight: '1.4',
+    textAlign: 'left' as const,
+    whiteSpace: 'pre-wrap' as const,
+    wordBreak: 'break-all' as const,
+    margin: `${emailSpacing.md} 0`,
+    overflow: 'auto',
+  },
+  contextSection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.white,
+    border: `1px solid ${emailColors.border}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  footerNote: {
+    fontSize: emailFontSizes.xs,
+    color: emailColors.textMuted,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+    lineHeight: emailLineHeights.relaxed,
+  },
+  criticalNote: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.errorDark,
+    fontWeight: 'bold',
+    fontFamily: emailFonts.primary,
+  },
+  testBadge: {
+    display: 'inline-block',
+    padding: `${emailSpacing.xs} ${emailSpacing.md}`,
+    backgroundColor: emailColors.accentLight,
+    color: emailColors.accentDark,
+    borderRadius: emailBorderRadius.sm,
+    fontSize: emailFontSizes.xs,
+    fontWeight: 'bold',
+    fontFamily: emailFonts.primary,
+    marginBottom: emailSpacing.md,
+  },
 };
-
-const logo = {
-  margin: '0 auto',
-};
-
-const section = {
-  padding: '24px',
-  border: 'solid 1px #dedede',
-  borderRadius: '5px',
-  textAlign: 'center' as const,
-  backgroundColor: '#f9f9f9',
-};
-
-const errorSection = {
-  padding: '24px',
-  border: 'solid 2px #dc2626',
-  borderRadius: '5px',
-  backgroundColor: '#fef2f2',
-  margin: '20px 0',
-};
-
-const severityStyles = {
-  LOW: { color: '#d97706', backgroundColor: '#fef3c7' },
-  MEDIUM: { color: '#ea580c', backgroundColor: '#fed7aa' },
-  HIGH: { color: '#dc2626', backgroundColor: '#fecaca' },
-  CRITICAL: { color: '#991b1b', backgroundColor: '#fee2e2' },
-};
-
-const text = {
-  fontSize: '14px',
-  lineHeight: '26px',
-};
-
-const h1 = {
-  color: '#333',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  margin: '30px 0',
-  padding: '0',
-  lineHeight: '42px',
-};
-
-const h2 = {
-  color: '#333',
-  fontSize: '18px',
-  fontWeight: 'bold',
-  margin: '20px 0 10px',
-};
-
-const code = {
-  display: 'inline-block',
-  padding: '16px 4.5%',
-  width: '90.5%',
-  backgroundColor: '#f4f4f4',
-  borderRadius: '5px',
-  border: '1px solid #eee',
-  color: '#333',
-  fontSize: '12px',
-  fontFamily: 'monospace',
-  lineHeight: '1.4',
-  textAlign: 'left' as const,
-  whiteSpace: 'pre-wrap' as const,
-  wordBreak: 'break-all' as const,
-};
-
-const severityBadge = (severity: string) => ({
-  display: 'inline-block',
-  padding: '4px 8px',
-  borderRadius: '4px',
-  fontSize: '12px',
-  fontWeight: 'bold',
-  textTransform: 'uppercase' as const,
-  ...(severityStyles[severity as keyof typeof severityStyles] || severityStyles.MEDIUM),
-});
 
 export const SystemErrorAlert = ({
   error = {
@@ -131,166 +184,166 @@ export const SystemErrorAlert = ({
   const isManualTrigger = context.manualTrigger || false;
   const timestamp = context.timestamp || new Date();
 
-  const previewText = `${isManualTrigger ? '🧪 TEST: ' : '🚨 '}${severity} error in ${context.component || 'System'}: ${error.message.slice(0, 50)}...`;
+  const severityStyle = severityStyles[severity] || severityStyles.MEDIUM;
+
+  const previewText = `${isManualTrigger ? 'TEST: ' : ''}${severity} error in ${context.component || 'System'}: ${error.message.slice(0, 50)}...`;
+
+  const formattedTimestamp = timestamp.toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+  });
 
   return (
     <Html>
       <Head />
       <Preview>{previewText}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Section style={section}>
-            <Text style={logo}>
-              <strong>{shopName}</strong>
+      <Body style={baseBodyStyle}>
+        <Container style={baseContainerStyle}>
+          <EmailHeader shopName={shopName} variant="admin" tagline="System Alert" />
+
+          {/* Error Header */}
+          <Section style={{
+            ...styles.errorHeader,
+            backgroundColor: severityStyle.backgroundColor,
+            border: `2px solid ${severityStyle.borderColor}`,
+          }}>
+            {isManualTrigger && (
+              <div style={styles.testBadge}>TEST ALERT</div>
+            )}
+            <Text style={{ ...styles.errorTitle, color: severityStyle.color }}>
+              {isManualTrigger ? 'Test Alert' : 'System Error Alert'}
             </Text>
-          </Section>
-
-          <Section style={errorSection}>
-            <Heading style={h1}>
-              {isManualTrigger ? '🧪 Test Alert' : '🚨 System Error Alert'}
-            </Heading>
-
-            <Row>
-              <Column>
-                <div style={severityBadge(severity)}>{severity} SEVERITY</div>
-              </Column>
-            </Row>
-
-            <Text style={{ ...text, marginTop: '20px' }}>
+            <div style={{ marginBottom: emailSpacing.md }}>
+              <span style={{
+                ...styles.severityBadge,
+                backgroundColor: severityStyle.color,
+                color: emailColors.white,
+              }}>
+                {severity} SEVERITY
+              </span>
+            </div>
+            <Text style={{ ...styles.errorSubtitle, color: severityStyle.color }}>
               A {severity.toLowerCase()} error has been detected in your {shopName} system
               {isManualTrigger && ' (this is a test alert)'}.
             </Text>
           </Section>
 
-          <Section>
-            <Heading style={h2}>Error Details</Heading>
+          {/* Error Details */}
+          <Section style={styles.detailSection}>
+            <Heading as="h2" style={styles.sectionTitle}>Error Details</Heading>
 
-            <Row>
-              <Column style={{ paddingRight: '8px' }}>
-                <Text style={{ ...text, fontWeight: 'bold', margin: '0' }}>Error Type:</Text>
-              </Column>
+            <Row style={styles.detailRow}>
               <Column>
-                <Text style={{ ...text, margin: '0' }}>{error.name}</Text>
+                <Text style={styles.detailLabel}>Error Type:</Text>
+                <Text style={styles.detailValue}>{error.name}</Text>
               </Column>
             </Row>
 
-            <Row>
-              <Column style={{ paddingRight: '8px' }}>
-                <Text style={{ ...text, fontWeight: 'bold', margin: '0' }}>Message:</Text>
-              </Column>
+            <Row style={styles.detailRow}>
               <Column>
-                <Text style={{ ...text, margin: '0', color: '#dc2626' }}>{error.message}</Text>
+                <Text style={styles.detailLabel}>Message:</Text>
+                <Text style={styles.errorMessage}>{error.message}</Text>
               </Column>
             </Row>
 
-            <Row>
-              <Column style={{ paddingRight: '8px' }}>
-                <Text style={{ ...text, fontWeight: 'bold', margin: '0' }}>Timestamp:</Text>
-              </Column>
+            <Row style={styles.detailRow}>
               <Column>
-                <Text style={{ ...text, margin: '0' }}>
-                  {timestamp.toLocaleString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    timeZoneName: 'short',
-                  })}
-                </Text>
+                <Text style={styles.detailLabel}>Timestamp:</Text>
+                <Text style={styles.detailValue}>{formattedTimestamp}</Text>
               </Column>
             </Row>
           </Section>
 
-          {(context.component || context.action) && (
-            <Section>
-              <Heading style={h2}>Context Information</Heading>
+          {/* Context Information */}
+          {(context.component || context.action || context.orderId || context.paymentId) && (
+            <Section style={styles.contextSection}>
+              <Heading as="h2" style={styles.sectionTitle}>Context Information</Heading>
 
               {context.component && (
-                <Row>
-                  <Column style={{ paddingRight: '8px' }}>
-                    <Text style={{ ...text, fontWeight: 'bold', margin: '0' }}>Component:</Text>
-                  </Column>
+                <Row style={styles.detailRow}>
                   <Column>
-                    <Text style={{ ...text, margin: '0' }}>{context.component}</Text>
+                    <Text style={styles.detailLabel}>Component:</Text>
+                    <Text style={styles.detailValue}>{context.component}</Text>
                   </Column>
                 </Row>
               )}
 
               {context.action && (
-                <Row>
-                  <Column style={{ paddingRight: '8px' }}>
-                    <Text style={{ ...text, fontWeight: 'bold', margin: '0' }}>Action:</Text>
-                  </Column>
+                <Row style={styles.detailRow}>
                   <Column>
-                    <Text style={{ ...text, margin: '0' }}>{context.action}</Text>
+                    <Text style={styles.detailLabel}>Action:</Text>
+                    <Text style={styles.detailValue}>{context.action}</Text>
                   </Column>
                 </Row>
               )}
 
               {context.orderId && (
-                <Row>
-                  <Column style={{ paddingRight: '8px' }}>
-                    <Text style={{ ...text, fontWeight: 'bold', margin: '0' }}>Order ID:</Text>
-                  </Column>
+                <Row style={styles.detailRow}>
                   <Column>
-                    <Text style={{ ...text, margin: '0' }}>{context.orderId}</Text>
+                    <Text style={styles.detailLabel}>Order ID:</Text>
+                    <Text style={styles.detailValue}>{context.orderId}</Text>
                   </Column>
                 </Row>
               )}
 
               {context.paymentId && (
-                <Row>
-                  <Column style={{ paddingRight: '8px' }}>
-                    <Text style={{ ...text, fontWeight: 'bold', margin: '0' }}>Payment ID:</Text>
-                  </Column>
+                <Row style={styles.detailRow}>
                   <Column>
-                    <Text style={{ ...text, margin: '0' }}>{context.paymentId}</Text>
+                    <Text style={styles.detailLabel}>Payment ID:</Text>
+                    <Text style={styles.detailValue}>{context.paymentId}</Text>
                   </Column>
                 </Row>
               )}
             </Section>
           )}
 
+          {/* Stack Trace */}
           {error.stack && (
-            <Section>
-              <Heading style={h2}>Stack Trace</Heading>
-              <div style={code}>{error.stack}</div>
+            <Section style={styles.detailSection}>
+              <Heading as="h2" style={styles.sectionTitle}>Stack Trace</Heading>
+              <div style={styles.codeBlock}>{error.stack}</div>
             </Section>
           )}
 
+          {/* Additional Data */}
           {context.additionalData && Object.keys(context.additionalData).length > 0 && (
-            <Section>
-              <Heading style={h2}>Additional Data</Heading>
-              <div style={code}>{JSON.stringify(context.additionalData, null, 2)}</div>
+            <Section style={styles.detailSection}>
+              <Heading as="h2" style={styles.sectionTitle}>Additional Data</Heading>
+              <div style={styles.codeBlock}>{JSON.stringify(context.additionalData, null, 2)}</div>
             </Section>
           )}
 
-          <Hr />
+          <Hr style={{ borderColor: emailColors.border, margin: `${emailSpacing.xl} 0` }} />
 
-          <Section>
-            <Text style={{ ...text, fontSize: '12px', color: '#666' }}>
+          {/* Footer Note */}
+          <Section style={{ padding: emailSpacing.md, textAlign: 'center' as const }}>
+            <Text style={styles.footerNote}>
               {isManualTrigger ? (
                 <>This is a test alert triggered manually. No immediate action is required.</>
               ) : (
                 <>
                   This alert was automatically generated when an error was detected in your system.
                   {severity === 'CRITICAL' && (
-                    <strong style={{ color: '#dc2626' }}>
-                      {' '}
-                      This is a critical error that requires immediate attention.
-                    </strong>
+                    <span style={styles.criticalNote}>
+                      {' '}This is a critical error that requires immediate attention.
+                    </span>
                   )}
                 </>
               )}
             </Text>
 
-            <Text style={{ ...text, fontSize: '12px', color: '#666', marginTop: '10px' }}>
+            <Text style={{ ...styles.footerNote, marginTop: emailSpacing.md }}>
               For more details, check your application logs or contact your development team.
             </Text>
           </Section>
+
+          <EmailFooter shopName={shopName} variant="admin" />
         </Container>
       </Body>
     </Html>

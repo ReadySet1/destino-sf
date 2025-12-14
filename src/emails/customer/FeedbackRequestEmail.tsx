@@ -8,12 +8,24 @@ import {
   Text,
   Link,
   Button,
-  Row,
-  Column,
 } from '@react-email/components';
 import * as React from 'react';
 import { EmailHeader } from '../shared/EmailHeader';
 import { EmailFooter } from '../shared/EmailFooter';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailFontSizes,
+  emailBorderRadius,
+  emailLineHeights,
+  baseBodyStyle,
+  baseContainerStyle,
+  primaryButtonStyle,
+  accentButtonStyle,
+  linkStyle,
+  cardStyle,
+} from '../shared/email-styles';
 
 interface FeedbackRequestEmailProps {
   order: {
@@ -38,155 +50,150 @@ interface FeedbackRequestEmailProps {
   };
 }
 
-const main = {
-  backgroundColor: '#ffffff',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
-};
-
-const container = {
-  margin: '0 auto',
-  padding: '0',
-  maxWidth: '600px',
-};
-
 const feedbackSection = {
-  padding: '32px 24px',
+  padding: emailSpacing['3xl'],
   textAlign: 'center' as const,
-  backgroundColor: '#fef7ff',
-  border: '1px solid #d946ef',
-  borderRadius: '8px',
-  margin: '20px 0',
+  backgroundColor: emailColors.primaryLight,
+  border: `2px solid ${emailColors.primary}`,
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.xl} 0`,
 };
 
 const feedbackTitle = {
-  fontSize: '28px',
+  fontSize: emailFontSizes['2xl'],
   fontWeight: 'bold',
-  color: '#86198f',
-  margin: '0 0 16px 0',
+  color: emailColors.secondary,
+  margin: `0 0 ${emailSpacing.lg} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const feedbackText = {
-  fontSize: '16px',
-  color: '#86198f',
-  margin: '0 0 8px 0',
-  lineHeight: '24px',
+  fontSize: emailFontSizes.md,
+  color: emailColors.secondary,
+  margin: `0 0 ${emailSpacing.sm} 0`,
+  lineHeight: emailLineHeights.relaxed,
+  fontFamily: emailFonts.primary,
 };
 
 const ratingSection = {
-  padding: '24px',
-  backgroundColor: '#fefce8',
-  border: '1px solid #facc15',
-  borderRadius: '8px',
-  margin: '20px 0',
+  padding: emailSpacing['2xl'],
+  backgroundColor: emailColors.background,
+  border: `1px solid ${emailColors.border}`,
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.xl} 0`,
   textAlign: 'center' as const,
 };
 
 const ratingTitle = {
-  fontSize: '18px',
+  fontSize: emailFontSizes.lg,
   fontWeight: 'bold',
-  color: '#713f12',
-  margin: '0 0 16px 0',
+  color: emailColors.secondary,
+  margin: `0 0 ${emailSpacing.lg} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const starButton = {
   display: 'inline-block',
-  fontSize: '32px',
-  margin: '4px 2px',
+  fontSize: '28px',
+  margin: `${emailSpacing.xs} ${emailSpacing.xs}`,
   textDecoration: 'none',
-  borderRadius: '4px',
-  padding: '8px 12px',
-  transition: 'all 0.2s ease',
+  borderRadius: emailBorderRadius.md,
+  padding: `${emailSpacing.sm} ${emailSpacing.md}`,
 };
 
 const reviewPlatformSection = {
-  padding: '20px',
-  backgroundColor: '#f0f9ff',
-  border: '1px solid #0ea5e9',
-  borderRadius: '8px',
-  margin: '20px 0',
+  padding: emailSpacing.xl,
+  backgroundColor: emailColors.accentLight,
+  border: `1px solid ${emailColors.accent}`,
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.xl} 0`,
 };
 
 const reviewTitle = {
-  fontSize: '18px',
+  fontSize: emailFontSizes.lg,
   fontWeight: 'bold',
-  color: '#0c4a6e',
-  margin: '0 0 16px 0',
+  color: emailColors.accentDark,
+  margin: `0 0 ${emailSpacing.lg} 0`,
   textAlign: 'center' as const,
+  fontFamily: emailFonts.primary,
 };
 
 const platformButton = {
-  backgroundColor: '#0ea5e9',
-  borderRadius: '6px',
-  color: '#ffffff',
-  fontSize: '14px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 20px',
-  margin: '8px 8px',
+  ...accentButtonStyle,
+  margin: emailSpacing.sm,
   minWidth: '120px',
 };
 
 const incentiveSection = {
-  padding: '20px',
-  backgroundColor: '#ecfdf5',
-  border: '1px solid #10b981',
-  borderRadius: '8px',
-  margin: '20px 0',
+  padding: emailSpacing.xl,
+  backgroundColor: emailColors.successLight,
+  border: `1px solid ${emailColors.success}`,
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.xl} 0`,
   textAlign: 'center' as const,
 };
 
 const incentiveTitle = {
-  fontSize: '18px',
+  fontSize: emailFontSizes.lg,
   fontWeight: 'bold',
-  color: '#065f46',
-  margin: '0 0 12px 0',
+  color: emailColors.successDark,
+  margin: `0 0 ${emailSpacing.md} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const incentiveText = {
-  fontSize: '14px',
-  color: '#065f46',
-  margin: '8px 0',
-  lineHeight: '20px',
+  fontSize: emailFontSizes.base,
+  color: emailColors.successDark,
+  margin: `${emailSpacing.sm} 0`,
+  lineHeight: emailLineHeights.relaxed,
+  fontFamily: emailFonts.primary,
 };
 
 const feedbackFormSection = {
-  padding: '20px',
-  backgroundColor: '#f8fafc',
-  border: '1px solid #cbd5e1',
-  borderRadius: '8px',
-  margin: '20px 0',
+  ...cardStyle,
+  textAlign: 'center' as const,
 };
 
 const formTitle = {
-  fontSize: '16px',
+  fontSize: emailFontSizes.md,
   fontWeight: 'bold',
-  color: '#334155',
-  margin: '0 0 12px 0',
-  textAlign: 'center' as const,
+  color: emailColors.secondary,
+  margin: `0 0 ${emailSpacing.md} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const formText = {
-  fontSize: '14px',
-  color: '#475569',
-  margin: '8px 0',
-  lineHeight: '20px',
+  fontSize: emailFontSizes.base,
+  color: emailColors.secondaryLight,
+  margin: `${emailSpacing.sm} 0`,
+  lineHeight: emailLineHeights.relaxed,
+  fontFamily: emailFonts.primary,
+};
+
+const orderDetailsSection = {
+  padding: emailSpacing.lg,
+  backgroundColor: emailColors.backgroundAlt,
+  borderRadius: emailBorderRadius.md,
+  margin: `${emailSpacing.lg} 0`,
+};
+
+const contactSection = {
+  padding: emailSpacing.xl,
   textAlign: 'center' as const,
 };
 
-const primaryButton = {
-  backgroundColor: '#dc2626',
-  borderRadius: '6px',
-  color: '#ffffff',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
+const contactText = {
+  fontSize: emailFontSizes.base,
+  color: emailColors.secondaryLight,
+  margin: `${emailSpacing.sm} 0`,
+  fontFamily: emailFonts.primary,
+};
+
+const thankYouSection = {
+  padding: emailSpacing.xl,
   textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '14px 28px',
-  margin: '8px',
+  backgroundColor: emailColors.primaryLight,
+  borderRadius: emailBorderRadius.md,
 };
 
 const formatDateTime = (date: Date | string | null) => {
@@ -213,7 +220,7 @@ const formatFulfillmentType = (type: string) => {
 export const FeedbackRequestEmail = ({
   order,
   shopName = 'Destino SF',
-  supportEmail = 'support@destinosf.com',
+  supportEmail = 'hola@destinosf.com',
   websiteUrl = 'https://destinosf.com',
   reviewPlatforms = {},
   incentive,
@@ -225,26 +232,26 @@ export const FeedbackRequestEmail = ({
     <Html>
       <Head />
       <Preview>{previewText}</Preview>
-      <Body style={main}>
-        <Container style={container}>
+      <Body style={baseBodyStyle}>
+        <Container style={baseContainerStyle}>
           <EmailHeader shopName={shopName} />
 
           {/* Feedback Request Section */}
           <Section style={feedbackSection}>
-            <Text style={feedbackTitle}>💜 How was your experience?</Text>
+            <Text style={feedbackTitle}>How was your experience?</Text>
             <Text style={feedbackText}>
               Hi {order.customerName}! We hope you enjoyed your recent order from {shopName}.
             </Text>
             <Text style={feedbackText}>
-              Your feedback helps us continue serving the best authentic Mexican cuisine in San
+              Your feedback helps us continue serving the best authentic Argentine cuisine in San
               Francisco.
             </Text>
           </Section>
 
           {/* Quick Rating */}
           <Section style={ratingSection}>
-            <Text style={ratingTitle}>⭐ Quick Rating</Text>
-            <Text style={{ fontSize: '14px', color: '#713f12', margin: '0 0 16px 0' }}>
+            <Text style={ratingTitle}>Quick Rating</Text>
+            <Text style={{ fontSize: emailFontSizes.base, color: emailColors.secondaryLight, margin: `0 0 ${emailSpacing.lg} 0`, fontFamily: emailFonts.primary }}>
               How would you rate your overall experience?
             </Text>
             <div style={{ textAlign: 'center' }}>
@@ -254,28 +261,28 @@ export const FeedbackRequestEmail = ({
                   href={`${feedbackUrl}&rating=${rating}`}
                   style={{
                     ...starButton,
-                    backgroundColor: rating <= 3 ? '#fef3c7' : '#dcfce7',
-                    color: rating <= 3 ? '#92400e' : '#166534',
+                    backgroundColor: rating <= 3 ? emailColors.primaryLight : emailColors.successLight,
+                    color: rating <= 3 ? emailColors.warningDark : emailColors.successDark,
                   }}
                 >
-                  {'⭐'.repeat(rating)}
+                  {'★'.repeat(rating)}
                 </Link>
               ))}
             </div>
-            <Text style={{ fontSize: '12px', color: '#713f12', margin: '16px 0 0 0' }}>
+            <Text style={{ fontSize: emailFontSizes.sm, color: emailColors.textMuted, margin: `${emailSpacing.lg} 0 0 0`, fontFamily: emailFonts.primary }}>
               Click the stars above to leave a quick rating
             </Text>
           </Section>
 
           {/* Detailed Feedback Form */}
           <Section style={feedbackFormSection}>
-            <Text style={formTitle}>📝 Share More Details</Text>
+            <Text style={formTitle}>Share More Details</Text>
             <Text style={formText}>
               We&apos;d love to hear more about your experience! Your detailed feedback helps us
               improve.
             </Text>
-            <div style={{ textAlign: 'center', margin: '16px 0' }}>
-              <Button href={feedbackUrl} style={primaryButton}>
+            <div style={{ textAlign: 'center', margin: `${emailSpacing.lg} 0` }}>
+              <Button href={feedbackUrl} style={primaryButtonStyle}>
                 Leave Detailed Feedback
               </Button>
             </div>
@@ -284,33 +291,34 @@ export const FeedbackRequestEmail = ({
           {/* Review Platforms */}
           {(reviewPlatforms.google || reviewPlatforms.yelp || reviewPlatforms.facebook) && (
             <Section style={reviewPlatformSection}>
-              <Text style={reviewTitle}>🌟 Love what you tried? Share it with others!</Text>
+              <Text style={reviewTitle}>Love what you tried? Share it with others!</Text>
               <div style={{ textAlign: 'center' }}>
                 {reviewPlatforms.google && (
                   <Button href={reviewPlatforms.google} style={platformButton}>
-                    📱 Google Review
+                    Google Review
                   </Button>
                 )}
                 {reviewPlatforms.yelp && (
                   <Button href={reviewPlatforms.yelp} style={platformButton}>
-                    🍽️ Yelp Review
+                    Yelp Review
                   </Button>
                 )}
                 {reviewPlatforms.facebook && (
                   <Button href={reviewPlatforms.facebook} style={platformButton}>
-                    👥 Facebook Review
+                    Facebook Review
                   </Button>
                 )}
               </div>
               <Text
                 style={{
-                  fontSize: '12px',
-                  color: '#0c4a6e',
+                  fontSize: emailFontSizes.sm,
+                  color: emailColors.accentDark,
                   textAlign: 'center',
-                  margin: '12px 0 0 0',
+                  margin: `${emailSpacing.md} 0 0 0`,
+                  fontFamily: emailFonts.primary,
                 }}
               >
-                Reviews help other food lovers discover our authentic Mexican cuisine
+                Reviews help other food lovers discover our authentic Argentine cuisine
               </Text>
             </Section>
           )}
@@ -318,37 +326,32 @@ export const FeedbackRequestEmail = ({
           {/* Incentive Offer */}
           {incentive && (
             <Section style={incentiveSection}>
-              <Text style={incentiveTitle}>🎁 {incentive.description}</Text>
+              <Text style={incentiveTitle}>{incentive.description}</Text>
               <Text style={incentiveText}>{incentive.details}</Text>
             </Section>
           )}
 
           {/* Order Details */}
-          <Section
-            style={{
-              padding: '16px',
-              backgroundColor: '#f1f5f9',
-              borderRadius: '6px',
-              margin: '16px 0',
-            }}
-          >
+          <Section style={orderDetailsSection}>
             <Text
               style={{
-                fontSize: '14px',
-                color: '#475569',
-                margin: '0 0 8px 0',
+                fontSize: emailFontSizes.base,
+                color: emailColors.secondaryLight,
+                margin: `0 0 ${emailSpacing.sm} 0`,
                 fontWeight: 'bold',
                 textAlign: 'center' as const,
+                fontFamily: emailFonts.primary,
               }}
             >
               Order Details
             </Text>
             <Text
               style={{
-                fontSize: '12px',
-                color: '#64748b',
-                margin: '4px 0',
+                fontSize: emailFontSizes.sm,
+                color: emailColors.textMuted,
+                margin: `${emailSpacing.xs} 0`,
                 textAlign: 'center' as const,
+                fontFamily: emailFonts.primary,
               }}
             >
               Order #{order.id}
@@ -356,10 +359,11 @@ export const FeedbackRequestEmail = ({
             {order.completedAt && (
               <Text
                 style={{
-                  fontSize: '12px',
-                  color: '#64748b',
-                  margin: '4px 0',
+                  fontSize: emailFontSizes.sm,
+                  color: emailColors.textMuted,
+                  margin: `${emailSpacing.xs} 0`,
                   textAlign: 'center' as const,
+                  fontFamily: emailFonts.primary,
                 }}
               >
                 Completed on {formatDateTime(order.completedAt)}
@@ -367,10 +371,11 @@ export const FeedbackRequestEmail = ({
             )}
             <Text
               style={{
-                fontSize: '12px',
-                color: '#64748b',
-                margin: '4px 0',
+                fontSize: emailFontSizes.sm,
+                color: emailColors.textMuted,
+                margin: `${emailSpacing.xs} 0`,
                 textAlign: 'center' as const,
+                fontFamily: emailFonts.primary,
               }}
             >
               {formatFulfillmentType(order.fulfillmentType || 'pickup')} order
@@ -378,31 +383,22 @@ export const FeedbackRequestEmail = ({
           </Section>
 
           {/* Contact Information */}
-          <Section style={{ padding: '20px', textAlign: 'center' as const }}>
-            <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
-              Questions or concerns about your order?
-            </Text>
-            <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
+          <Section style={contactSection}>
+            <Text style={contactText}>Questions or concerns about your order?</Text>
+            <Text style={contactText}>
               We&apos;re here to help! Email us at{' '}
-              <Link href={`mailto:${supportEmail}`} style={{ color: '#dc2626' }}>
+              <Link href={`mailto:${supportEmail}`} style={linkStyle}>
                 {supportEmail}
               </Link>
             </Text>
           </Section>
 
           {/* Thank You */}
-          <Section
-            style={{
-              padding: '20px',
-              textAlign: 'center' as const,
-              backgroundColor: '#fef7ff',
-              borderRadius: '6px',
-            }}
-          >
-            <Text style={{ fontSize: '16px', color: '#86198f', margin: '0', fontWeight: 'bold' }}>
-              🙏 Thank you for choosing {shopName}!
+          <Section style={thankYouSection}>
+            <Text style={{ fontSize: emailFontSizes.md, color: emailColors.secondary, margin: '0', fontWeight: 'bold', fontFamily: emailFonts.primary }}>
+              Thank you for choosing {shopName}!
             </Text>
-            <Text style={{ fontSize: '14px', color: '#86198f', margin: '8px 0 0 0' }}>
+            <Text style={{ fontSize: emailFontSizes.base, color: emailColors.secondary, margin: `${emailSpacing.sm} 0 0 0`, fontFamily: emailFonts.primary }}>
               We appreciate your business and look forward to serving you again soon.
             </Text>
           </Section>

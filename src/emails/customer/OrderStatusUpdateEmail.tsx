@@ -2,7 +2,6 @@ import {
   Body,
   Container,
   Head,
-  Heading,
   Html,
   Preview,
   Section,
@@ -14,6 +13,19 @@ import * as React from 'react';
 import { EmailHeader } from '../shared/EmailHeader';
 import { EmailFooter } from '../shared/EmailFooter';
 import { OrderSummary } from '../shared/OrderSummary';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailFontSizes,
+  emailBorderRadius,
+  emailLineHeights,
+  baseBodyStyle,
+  baseContainerStyle,
+  primaryButtonStyle,
+  infoBoxStyle,
+  linkStyle,
+} from '../shared/email-styles';
 
 interface OrderItem {
   id: string;
@@ -56,94 +68,97 @@ interface OrderStatusUpdateEmailProps {
   nextSteps?: string;
 }
 
-const main = {
-  backgroundColor: '#ffffff',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
-};
-
-const container = {
-  margin: '0 auto',
-  padding: '0',
-  maxWidth: '600px',
-};
-
 const statusSection = {
-  padding: '32px 24px',
+  padding: emailSpacing['3xl'],
   textAlign: 'center' as const,
-  borderRadius: '8px',
-  margin: '20px 0',
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.xl} 0`,
 };
 
 const statusTitle = {
-  fontSize: '24px',
+  fontSize: emailFontSizes['2xl'],
   fontWeight: 'bold',
-  margin: '0 0 16px 0',
+  margin: `0 0 ${emailSpacing.lg} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const statusText = {
-  fontSize: '16px',
-  margin: '0 0 8px 0',
-  lineHeight: '24px',
+  fontSize: emailFontSizes.md,
+  margin: `0 0 ${emailSpacing.sm} 0`,
+  lineHeight: emailLineHeights.relaxed,
+  fontFamily: emailFonts.primary,
 };
 
 const progressSection = {
-  padding: '24px',
-  backgroundColor: '#f8fafc',
-  border: '1px solid #e2e8f0',
-  borderRadius: '8px',
-  margin: '20px 0',
+  padding: emailSpacing['2xl'],
+  backgroundColor: emailColors.backgroundAlt,
+  border: `1px solid ${emailColors.border}`,
+  borderRadius: emailBorderRadius.lg,
+  margin: `${emailSpacing.xl} 0`,
 };
 
 const progressTitle = {
-  fontSize: '18px',
+  fontSize: emailFontSizes.lg,
   fontWeight: 'bold',
-  color: '#2d3748',
-  margin: '0 0 16px 0',
+  color: emailColors.secondary,
+  margin: `0 0 ${emailSpacing.lg} 0`,
   textAlign: 'center' as const,
+  fontFamily: emailFonts.primary,
 };
 
 const progressStep = {
   display: 'flex',
   alignItems: 'center',
-  margin: '12px 0',
-  padding: '8px',
-  borderRadius: '6px',
+  margin: `${emailSpacing.md} 0`,
+  padding: emailSpacing.sm,
+  borderRadius: emailBorderRadius.md,
 };
 
 const stepIcon = {
-  width: '24px',
-  height: '24px',
+  width: '28px',
+  height: '28px',
   borderRadius: '50%',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  marginRight: '12px',
-  fontSize: '12px',
+  marginRight: emailSpacing.md,
+  fontSize: emailFontSizes.sm,
   fontWeight: 'bold',
 };
 
 const stepText = {
-  fontSize: '14px',
+  fontSize: emailFontSizes.base,
   margin: '0',
+  fontFamily: emailFonts.primary,
+};
+
+const trackingSection = {
+  padding: emailSpacing.lg,
+  backgroundColor: emailColors.primaryLight,
+  borderRadius: emailBorderRadius.md,
+  margin: `${emailSpacing.lg} 0`,
+  border: `1px solid ${emailColors.primary}`,
+};
+
+const nextStepsSection = {
+  ...infoBoxStyle,
 };
 
 const ctaSection = {
   textAlign: 'center' as const,
-  padding: '20px 0',
+  padding: `${emailSpacing.xl} 0`,
 };
 
-const primaryButton = {
-  backgroundColor: '#059669',
-  borderRadius: '6px',
-  color: '#ffffff',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
+const contactSection = {
+  padding: emailSpacing.xl,
   textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 24px',
-  margin: '8px',
+};
+
+const contactText = {
+  fontSize: emailFontSizes.base,
+  color: emailColors.secondaryLight,
+  margin: `${emailSpacing.sm} 0`,
+  fontFamily: emailFonts.primary,
 };
 
 const formatStatus = (status: string): string => {
@@ -162,49 +177,49 @@ const formatStatus = (status: string): string => {
 
 const getStatusColor = (status: string): { backgroundColor: string; color: string } => {
   const colorMap: Record<string, { backgroundColor: string; color: string }> = {
-    PENDING: { backgroundColor: '#fef3c7', color: '#92400e' },
-    PROCESSING: { backgroundColor: '#dbeafe', color: '#1e40af' },
-    READY: { backgroundColor: '#d1fae5', color: '#065f46' },
-    COMPLETED: { backgroundColor: '#d1fae5', color: '#065f46' },
-    CANCELLED: { backgroundColor: '#fee2e2', color: '#991b1b' },
-    SHIPPING: { backgroundColor: '#e0e7ff', color: '#3730a3' },
-    DELIVERED: { backgroundColor: '#d1fae5', color: '#065f46' },
+    PENDING: { backgroundColor: emailColors.primaryLight, color: emailColors.warningDark },
+    PROCESSING: { backgroundColor: emailColors.accentLight, color: emailColors.accentDark },
+    READY: { backgroundColor: emailColors.successLight, color: emailColors.successDark },
+    COMPLETED: { backgroundColor: emailColors.successLight, color: emailColors.successDark },
+    CANCELLED: { backgroundColor: emailColors.errorLight, color: emailColors.errorDark },
+    SHIPPING: { backgroundColor: emailColors.accentLight, color: emailColors.accentDark },
+    DELIVERED: { backgroundColor: emailColors.successLight, color: emailColors.successDark },
   };
-  return colorMap[status] || { backgroundColor: '#f3f4f6', color: '#374151' };
+  return colorMap[status] || { backgroundColor: emailColors.backgroundAlt, color: emailColors.text };
 };
 
 const getStatusIcon = (status: string): string => {
   const iconMap: Record<string, string> = {
-    PENDING: '📝',
-    PROCESSING: '👨‍🍳',
-    READY: '✅',
-    COMPLETED: '🎉',
-    CANCELLED: '❌',
-    SHIPPING: '🚚',
-    DELIVERED: '📦',
+    PENDING: '1',
+    PROCESSING: '2',
+    READY: '3',
+    COMPLETED: '4',
+    CANCELLED: 'X',
+    SHIPPING: '3',
+    DELIVERED: '4',
   };
-  return iconMap[status] || '📋';
+  return iconMap[status] || '?';
 };
 
 const getOrderSteps = (fulfillmentType: string, currentStatus: string) => {
   const steps = {
     pickup: [
-      { status: 'PENDING', label: 'Order Received', icon: '📝' },
-      { status: 'PROCESSING', label: 'Being Prepared', icon: '👨‍🍳' },
-      { status: 'READY', label: 'Ready for Pickup', icon: '✅' },
-      { status: 'COMPLETED', label: 'Picked Up', icon: '🎉' },
+      { status: 'PENDING', label: 'Order Received' },
+      { status: 'PROCESSING', label: 'Being Prepared' },
+      { status: 'READY', label: 'Ready for Pickup' },
+      { status: 'COMPLETED', label: 'Picked Up' },
     ],
     local_delivery: [
-      { status: 'PENDING', label: 'Order Received', icon: '📝' },
-      { status: 'PROCESSING', label: 'Being Prepared', icon: '👨‍🍳' },
-      { status: 'SHIPPING', label: 'Out for Delivery', icon: '🚚' },
-      { status: 'DELIVERED', label: 'Delivered', icon: '📦' },
+      { status: 'PENDING', label: 'Order Received' },
+      { status: 'PROCESSING', label: 'Being Prepared' },
+      { status: 'SHIPPING', label: 'Out for Delivery' },
+      { status: 'DELIVERED', label: 'Delivered' },
     ],
     nationwide_shipping: [
-      { status: 'PENDING', label: 'Order Received', icon: '📝' },
-      { status: 'PROCESSING', label: 'Being Prepared', icon: '👨‍🍳' },
-      { status: 'SHIPPING', label: 'Shipped', icon: '🚚' },
-      { status: 'DELIVERED', label: 'Delivered', icon: '📦' },
+      { status: 'PENDING', label: 'Order Received' },
+      { status: 'PROCESSING', label: 'Being Prepared' },
+      { status: 'SHIPPING', label: 'Shipped' },
+      { status: 'DELIVERED', label: 'Delivered' },
     ],
   };
 
@@ -250,14 +265,13 @@ export const OrderStatusUpdateEmail = ({
   order,
   previousStatus,
   shopName = 'Destino SF',
-  supportEmail = 'support@destinosf.com',
-  supportPhone = '(415) 555-0123',
+  supportEmail = 'hola@destinosf.com',
+  supportPhone = '(415) 872-9372',
   websiteUrl = 'https://destinosf.com',
   statusMessage,
   nextSteps,
 }: OrderStatusUpdateEmailProps) => {
   const statusColors = getStatusColor(order.status);
-  const statusIcon = getStatusIcon(order.status);
   const defaultMessage = getStatusMessage(order.status, order.fulfillmentType || 'pickup');
   const orderSteps = getOrderSteps(order.fulfillmentType || 'pickup', order.status);
 
@@ -273,14 +287,14 @@ export const OrderStatusUpdateEmail = ({
     <Html>
       <Head />
       <Preview>{previewText}</Preview>
-      <Body style={main}>
-        <Container style={container}>
+      <Body style={baseBodyStyle}>
+        <Container style={baseContainerStyle}>
           <EmailHeader shopName={shopName} />
 
           {/* Status Update Section */}
           <Section style={{ ...statusSection, backgroundColor: statusColors.backgroundColor }}>
             <Text style={{ ...statusTitle, color: statusColors.color }}>
-              {statusIcon} Order Update
+              Order Update
             </Text>
             <Text style={{ ...statusText, color: statusColors.color }}>
               Hi {order.customerName}, your order status has been updated to:
@@ -289,8 +303,8 @@ export const OrderStatusUpdateEmail = ({
               style={{
                 ...statusTitle,
                 color: statusColors.color,
-                fontSize: '20px',
-                margin: '16px 0',
+                fontSize: emailFontSizes.xl,
+                margin: `${emailSpacing.lg} 0`,
               }}
             >
               {formatStatus(order.status)}
@@ -318,8 +332,8 @@ export const OrderStatusUpdateEmail = ({
                   <div
                     style={{
                       ...stepIcon,
-                      backgroundColor: isCompleted ? '#059669' : '#e2e8f0',
-                      color: isCompleted ? '#ffffff' : '#9ca3af',
+                      backgroundColor: isCompleted ? emailColors.primary : emailColors.border,
+                      color: isCompleted ? emailColors.secondary : emailColors.textMuted,
                     }}
                   >
                     {isCompleted ? '✓' : index + 1}
@@ -328,7 +342,7 @@ export const OrderStatusUpdateEmail = ({
                     style={{
                       ...stepText,
                       fontWeight: isCurrent ? 'bold' : 'normal',
-                      color: isCurrent ? statusColors.color : isCompleted ? '#059669' : '#9ca3af',
+                      color: isCurrent ? statusColors.color : isCompleted ? emailColors.secondary : emailColors.textMuted,
                     }}
                   >
                     {step.label}
@@ -340,25 +354,19 @@ export const OrderStatusUpdateEmail = ({
 
           {/* Tracking Information */}
           {order.trackingNumber && (
-            <Section
-              style={{
-                padding: '16px',
-                backgroundColor: '#f0f9ff',
-                borderRadius: '6px',
-                margin: '16px 0',
-              }}
-            >
+            <Section style={trackingSection}>
               <Text
                 style={{
-                  fontSize: '14px',
-                  color: '#0c4a6e',
-                  margin: '0 0 8px 0',
+                  fontSize: emailFontSizes.base,
+                  color: emailColors.warningDark,
+                  margin: `0 0 ${emailSpacing.sm} 0`,
                   fontWeight: 'bold',
+                  fontFamily: emailFonts.primary,
                 }}
               >
-                📦 Tracking Information
+                Tracking Information
               </Text>
-              <Text style={{ fontSize: '14px', color: '#0c4a6e', margin: '0' }}>
+              <Text style={{ fontSize: emailFontSizes.base, color: emailColors.warningDark, margin: '0', fontFamily: emailFonts.primary }}>
                 Tracking Number: <strong>{order.trackingNumber}</strong>
               </Text>
             </Section>
@@ -366,18 +374,11 @@ export const OrderStatusUpdateEmail = ({
 
           {/* Next Steps */}
           {nextSteps && (
-            <Section
-              style={{
-                padding: '16px',
-                backgroundColor: '#fefce8',
-                borderRadius: '6px',
-                margin: '16px 0',
-              }}
-            >
-              <Text style={{ fontSize: '14px', color: '#713f12', margin: '0', fontWeight: 'bold' }}>
+            <Section style={nextStepsSection}>
+              <Text style={{ fontSize: emailFontSizes.base, color: emailColors.warningDark, margin: '0', fontWeight: 'bold', fontFamily: emailFonts.primary }}>
                 Next Steps:
               </Text>
-              <Text style={{ fontSize: '14px', color: '#713f12', margin: '8px 0 0 0' }}>
+              <Text style={{ fontSize: emailFontSizes.base, color: emailColors.warningDark, margin: `${emailSpacing.sm} 0 0 0`, fontFamily: emailFonts.primary }}>
                 {nextSteps}
               </Text>
             </Section>
@@ -405,23 +406,21 @@ export const OrderStatusUpdateEmail = ({
 
           {/* Call to Action */}
           <Section style={ctaSection}>
-            <Button href={`${websiteUrl}/orders/${order.id}`} style={primaryButton}>
+            <Button href={`${websiteUrl}/orders/${order.id}`} style={primaryButtonStyle}>
               View Order Details
             </Button>
           </Section>
 
           {/* Contact Information */}
-          <Section style={{ padding: '20px', textAlign: 'center' as const }}>
-            <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
-              Questions about your order?
-            </Text>
-            <Text style={{ fontSize: '14px', color: '#4a5568', margin: '8px 0' }}>
+          <Section style={contactSection}>
+            <Text style={contactText}>Questions about your order?</Text>
+            <Text style={contactText}>
               Call us at{' '}
-              <Link href={`tel:${supportPhone}`} style={{ color: '#059669' }}>
+              <Link href={`tel:${supportPhone.replace(/[^\d+]/g, '')}`} style={linkStyle}>
                 {supportPhone}
               </Link>{' '}
               or email{' '}
-              <Link href={`mailto:${supportEmail}`} style={{ color: '#059669' }}>
+              <Link href={`mailto:${supportEmail}`} style={linkStyle}>
                 {supportEmail}
               </Link>
             </Text>

@@ -12,11 +12,202 @@ import {
   Link,
 } from '@react-email/components';
 import { OrderStatusChangeAlertData } from '@/types/alerts';
-import { env } from '@/env'; // Import the validated environment configuration
+import { env } from '@/env';
+import { EmailHeader } from '../shared/EmailHeader';
+import { EmailFooter } from '../shared/EmailFooter';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailFontSizes,
+  emailBorderRadius,
+  emailLineHeights,
+  baseBodyStyle,
+  baseContainerStyle,
+  primaryButtonStyle,
+  linkStyle,
+} from '../shared/email-styles';
 
 interface OrderStatusChangeAlertProps extends OrderStatusChangeAlertData {
   isCustomer: boolean;
 }
+
+// Status colors using brand palette
+const statusColors: Record<string, { backgroundColor: string; color: string }> = {
+  PENDING: { backgroundColor: emailColors.primaryLight, color: emailColors.warningDark },
+  PROCESSING: { backgroundColor: emailColors.accentLight, color: emailColors.accentDark },
+  READY: { backgroundColor: emailColors.successLight, color: emailColors.successDark },
+  COMPLETED: { backgroundColor: emailColors.successLight, color: emailColors.successDark },
+  CANCELLED: { backgroundColor: emailColors.errorLight, color: emailColors.errorDark },
+  FULFILLMENT_UPDATED: { backgroundColor: emailColors.accentLight, color: emailColors.accentDark },
+  SHIPPING: { backgroundColor: emailColors.accentLight, color: emailColors.accentDark },
+  DELIVERED: { backgroundColor: emailColors.successLight, color: emailColors.successDark },
+};
+
+const statusMessages: Record<string, string> = {
+  PENDING: "We've received your order and are preparing it for you.",
+  PROCESSING: 'Your order is being processed and will be ready soon.',
+  READY: 'Great news! Your order is ready for pickup.',
+  COMPLETED: 'Your order has been completed. Thank you for choosing Destino SF!',
+  CANCELLED: 'Your order has been cancelled. If you have any questions, please contact us.',
+  FULFILLMENT_UPDATED: 'The fulfillment details for your order have been updated.',
+  SHIPPING: "Your order is on its way! You'll receive tracking information soon.",
+  DELIVERED: 'Your order has been delivered. We hope you enjoy your Argentine treats!',
+};
+
+const statusIcons: Record<string, string> = {
+  PENDING: '⏳',
+  PROCESSING: '🔄',
+  READY: '✅',
+  COMPLETED: '🎉',
+  CANCELLED: '❌',
+  FULFILLMENT_UPDATED: '📦',
+  SHIPPING: '🚚',
+  DELIVERED: '📦',
+};
+
+// Styles using design tokens
+const styles = {
+  statusSection: {
+    padding: emailSpacing['3xl'],
+    textAlign: 'center' as const,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.xl} 0`,
+  },
+  statusTitle: {
+    fontSize: emailFontSizes['2xl'],
+    fontWeight: 'bold',
+    margin: `0 0 ${emailSpacing.md} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  statusSubtitle: {
+    fontSize: emailFontSizes.md,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  statusCard: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.backgroundAlt,
+    border: `1px solid ${emailColors.border}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+    textAlign: 'center' as const,
+  },
+  statusFlowTitle: {
+    fontSize: emailFontSizes.md,
+    fontWeight: 'bold',
+    color: emailColors.secondary,
+    margin: `0 0 ${emailSpacing.lg} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  statusBadge: {
+    display: 'inline-block',
+    padding: `${emailSpacing.sm} ${emailSpacing.lg}`,
+    borderRadius: emailBorderRadius.full,
+    fontSize: emailFontSizes.sm,
+    fontWeight: '600',
+    margin: `0 ${emailSpacing.xs}`,
+    fontFamily: emailFonts.primary,
+  },
+  oldStatusBadge: {
+    backgroundColor: emailColors.backgroundAlt,
+    color: emailColors.textMuted,
+    border: `1px solid ${emailColors.border}`,
+  },
+  arrow: {
+    fontSize: emailFontSizes.xl,
+    color: emailColors.textMuted,
+    margin: `0 ${emailSpacing.sm}`,
+    fontFamily: emailFonts.primary,
+  },
+  messageSection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.white,
+    border: `1px solid ${emailColors.border}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  customerGreeting: {
+    fontSize: emailFontSizes.md,
+    fontWeight: '600',
+    color: emailColors.secondary,
+    margin: `0 0 ${emailSpacing.md} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  customerMessage: {
+    fontSize: emailFontSizes.base,
+    color: emailColors.secondaryLight,
+    lineHeight: emailLineHeights.relaxed,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  adminMessage: {
+    fontSize: emailFontSizes.base,
+    color: emailColors.secondary,
+    margin: `0 0 ${emailSpacing.sm} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  customerInfo: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.textMuted,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  orderDetails: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.backgroundAlt,
+    border: `1px solid ${emailColors.border}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  detailsTitle: {
+    fontSize: emailFontSizes.md,
+    fontWeight: 'bold',
+    color: emailColors.secondary,
+    margin: `0 0 ${emailSpacing.md} 0`,
+    borderBottom: `2px solid ${emailColors.primary}`,
+    paddingBottom: emailSpacing.sm,
+    fontFamily: emailFonts.primary,
+  },
+  detailItem: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.secondaryLight,
+    margin: `${emailSpacing.xs} 0`,
+    lineHeight: emailLineHeights.relaxed,
+    fontFamily: emailFonts.primary,
+  },
+  actionSection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.primaryLight,
+    border: `1px solid ${emailColors.primary}`,
+    borderRadius: emailBorderRadius.md,
+    textAlign: 'center' as const,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  actionText: {
+    fontSize: emailFontSizes.base,
+    color: emailColors.warningDark,
+    margin: '0',
+    fontWeight: '500',
+    fontFamily: emailFonts.primary,
+  },
+  adminActionSection: {
+    padding: emailSpacing.xl,
+    textAlign: 'center' as const,
+  },
+  contactSection: {
+    padding: emailSpacing.xl,
+    textAlign: 'center' as const,
+    backgroundColor: emailColors.backgroundAlt,
+    borderRadius: emailBorderRadius.md,
+  },
+  contactText: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.textMuted,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+};
 
 export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
   order,
@@ -25,7 +216,6 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
   timestamp,
   isCustomer,
 }) => {
-  // Clean app URL to prevent double slashes
   const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
 
   const formattedTotal = Number(order.total).toFixed(2);
@@ -38,87 +228,54 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
     minute: '2-digit',
   });
 
-  const statusMessages = {
-    PENDING: "We've received your order and are preparing it for you.",
-    PROCESSING: 'Your order is being processed and will be ready soon.',
-    READY: 'Great news! Your order is ready for pickup.',
-    COMPLETED: 'Your order has been completed. Thank you for choosing Destino SF!',
-    CANCELLED: 'Your order has been cancelled. If you have any questions, please contact us.',
-    FULFILLMENT_UPDATED: 'The fulfillment details for your order have been updated.',
-    SHIPPING: "Your order is on its way! You'll receive tracking information soon.",
-    DELIVERED: 'Your order has been delivered. We hope you enjoy your Argentine treats!',
-  };
+  const currentStatusColors = statusColors[newStatus] || { backgroundColor: emailColors.backgroundAlt, color: emailColors.text };
+  const statusIcon = statusIcons[newStatus] || '📦';
+  const customerMessage = statusMessages[newStatus] || `Your order status has been updated to ${newStatus}.`;
 
-  const statusColors = {
-    PENDING: '#f59e0b',
-    PROCESSING: '#3b82f6',
-    READY: '#10b981',
-    COMPLETED: '#059669',
-    CANCELLED: '#ef4444',
-    FULFILLMENT_UPDATED: '#6366f1',
-    SHIPPING: '#8b5cf6',
-    DELIVERED: '#059669',
-  };
-
-  const getStatusIcon = (status: string) => {
-    const icons = {
-      PENDING: '⏳',
-      PROCESSING: '🔄',
-      READY: '✅',
-      COMPLETED: '🎉',
-      CANCELLED: '❌',
-      FULFILLMENT_UPDATED: '📦',
-      SHIPPING: '🚚',
-      DELIVERED: '📦✨',
-    };
-    return icons[status as keyof typeof icons] || '📦';
-  };
-
-  const customerMessage =
-    statusMessages[newStatus as keyof typeof statusMessages] ||
-    `Your order status has been updated to ${newStatus}.`;
+  const previewText = `Order #${order.id} status updated: ${newStatus}`;
 
   return (
     <Html>
       <Head />
-      <Preview>
-        Order #{order.id} status updated: {newStatus}
-      </Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.header}>
-            <Heading style={styles.title}>{getStatusIcon(newStatus)} Order Status Update</Heading>
-            <Text style={styles.subtitle}>
-              Order #{order.id} • {formattedTimestamp}
+      <Preview>{previewText}</Preview>
+      <Body style={baseBodyStyle}>
+        <Container style={baseContainerStyle}>
+          <EmailHeader
+            shopName="Destino SF"
+            variant={isCustomer ? 'default' : 'admin'}
+            tagline={isCustomer ? 'Order Update' : 'Status Alert'}
+          />
+
+          {/* Status Update Section */}
+          <Section style={{ ...styles.statusSection, backgroundColor: currentStatusColors.backgroundColor }}>
+            <Text style={{ ...styles.statusTitle, color: currentStatusColors.color }}>
+              {statusIcon} Order Status Update
+            </Text>
+            <Text style={{ ...styles.statusSubtitle, color: currentStatusColors.color }}>
+              Order #{order.id} - {formattedTimestamp}
             </Text>
           </Section>
 
-          <Section style={styles.statusSection}>
-            <Section style={styles.statusCard}>
-              <Text style={styles.statusTitle}>Status Changed</Text>
-              <Section style={styles.statusFlow}>
-                <Section style={styles.statusItem}>
-                  <Text style={{ ...styles.statusText, ...styles.oldStatus }}>
-                    {previousStatus}
-                  </Text>
-                </Section>
-                <Text style={styles.arrow}>→</Text>
-                <Section style={styles.statusItem}>
-                  <Text
-                    style={{
-                      ...styles.statusText,
-                      backgroundColor:
-                        statusColors[newStatus as keyof typeof statusColors] || '#6b7280',
-                      color: '#ffffff',
-                    }}
-                  >
-                    {newStatus}
-                  </Text>
-                </Section>
-              </Section>
-            </Section>
+          {/* Status Change Card */}
+          <Section style={styles.statusCard}>
+            <Text style={styles.statusFlowTitle}>Status Changed</Text>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ ...styles.statusBadge, ...styles.oldStatusBadge }}>
+                {previousStatus}
+              </span>
+              <span style={styles.arrow}>→</span>
+              <span style={{
+                ...styles.statusBadge,
+                backgroundColor: currentStatusColors.backgroundColor,
+                color: currentStatusColors.color,
+                border: `1px solid ${currentStatusColors.color}`,
+              }}>
+                {newStatus}
+              </span>
+            </div>
           </Section>
 
+          {/* Message Section */}
           <Section style={styles.messageSection}>
             {isCustomer ? (
               <>
@@ -128,8 +285,7 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
             ) : (
               <>
                 <Text style={styles.adminMessage}>
-                  <strong>Admin Alert:</strong> Order #{order.id} status changed from{' '}
-                  {previousStatus} to {newStatus}
+                  <strong>Admin Alert:</strong> Order #{order.id} status changed from {previousStatus} to {newStatus}
                 </Text>
                 <Text style={styles.customerInfo}>
                   Customer: {order.customerName} ({order.email})
@@ -138,6 +294,7 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
             )}
           </Section>
 
+          {/* Order Details */}
           <Section style={styles.orderDetails}>
             <Heading as="h3" style={styles.detailsTitle}>
               Order Details
@@ -173,11 +330,11 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
             )}
           </Section>
 
+          {/* Customer-specific action sections */}
           {isCustomer && newStatus === 'READY' && (
             <Section style={styles.actionSection}>
               <Text style={styles.actionText}>
-                🏪 Your order is ready! Please visit us at our location to pick up your delicious
-                Argentine treats.
+                Your order is ready! Please visit us at our location to pick up your delicious Argentine treats.
               </Text>
             </Section>
           )}
@@ -185,203 +342,50 @@ export const OrderStatusChangeAlert: React.FC<OrderStatusChangeAlertProps> = ({
           {isCustomer && newStatus === 'SHIPPING' && (
             <Section style={styles.actionSection}>
               <Text style={styles.actionText}>
-                📦 Your order is on its way! Keep an eye out for tracking updates.
+                Your order is on its way! Keep an eye out for tracking updates.
               </Text>
             </Section>
           )}
 
+          {/* Admin Action Button */}
           {!isCustomer && (
             <Section style={styles.adminActionSection}>
-              <Link href={`${cleanAppUrl}/admin/orders/${order.id}`} style={styles.adminButton}>
+              <Link href={`${cleanAppUrl}/admin/orders/${order.id}`} style={primaryButtonStyle}>
                 View Order in Admin
               </Link>
             </Section>
           )}
 
-          <Hr style={styles.hr} />
+          {/* Contact Section (Customer) */}
+          {isCustomer && (
+            <Section style={styles.contactSection}>
+              <Text style={styles.contactText}>
+                Questions about your order? Contact us at{' '}
+                <Link href="mailto:hola@destinosf.com" style={linkStyle}>
+                  hola@destinosf.com
+                </Link>{' '}
+                or{' '}
+                <Link href="tel:+14158729372" style={linkStyle}>
+                  (415) 872-9372
+                </Link>
+              </Text>
+            </Section>
+          )}
 
-          <Section style={styles.footer}>
-            <Text style={styles.footerText}>
-              {isCustomer ? (
-                <>
-                  Questions about your order? Contact us at{' '}
-                  <Link href="mailto:orders@destinosf.com" style={styles.link}>
-                    orders@destinosf.com
-                  </Link>{' '}
-                  or{' '}
-                  <Link href="tel:415-525-4448" style={styles.link}>
-                    (415) 525-4448
-                  </Link>
-                </>
-              ) : (
-                'Automated alert from Destino SF order management system'
-              )}
+          <EmailFooter
+            shopName="Destino SF"
+            variant={isCustomer ? 'default' : 'admin'}
+          />
+
+          <Section style={{ padding: emailSpacing.md, textAlign: 'center' as const }}>
+            <Text style={{ fontSize: emailFontSizes.xs, color: emailColors.textMuted, margin: '0', fontFamily: emailFonts.primary }}>
+              Updated at {formattedTimestamp} PST
             </Text>
-            <Text style={styles.footerText}>Updated at {formattedTimestamp} PST</Text>
           </Section>
         </Container>
       </Body>
     </Html>
   );
-};
-
-// Styles for the email
-const styles = {
-  body: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    backgroundColor: '#f6f9fc',
-    margin: '0',
-    padding: '20px',
-  },
-  container: {
-    maxWidth: '600px',
-    margin: '0 auto',
-    backgroundColor: '#ffffff',
-    borderRadius: '8px',
-    overflow: 'hidden',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-  },
-  header: {
-    backgroundColor: '#1f2937',
-    padding: '20px',
-    textAlign: 'center' as const,
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: '24px',
-    fontWeight: 'bold',
-    margin: '0 0 8px 0',
-  },
-  subtitle: {
-    color: '#d1d5db',
-    fontSize: '14px',
-    margin: '0',
-  },
-  statusSection: {
-    padding: '24px',
-    textAlign: 'center' as const,
-  },
-  statusCard: {
-    backgroundColor: '#f9fafb',
-    padding: '20px',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb',
-  },
-  statusTitle: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#1f2937',
-    margin: '0 0 16px 0',
-  },
-  statusFlow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '16px',
-  },
-  statusItem: {
-    display: 'inline-block',
-  },
-  statusText: {
-    display: 'inline-block',
-    padding: '8px 16px',
-    borderRadius: '20px',
-    fontSize: '14px',
-    fontWeight: '600',
-    margin: '0',
-  },
-  oldStatus: {
-    backgroundColor: '#f3f4f6',
-    color: '#6b7280',
-  },
-  arrow: {
-    fontSize: '20px',
-    color: '#6b7280',
-    margin: '0 8px',
-  },
-  messageSection: {
-    padding: '0 24px 24px 24px',
-  },
-  customerGreeting: {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#1f2937',
-    margin: '0 0 12px 0',
-  },
-  customerMessage: {
-    fontSize: '15px',
-    color: '#4b5563',
-    lineHeight: '1.6',
-    margin: '0',
-  },
-  adminMessage: {
-    fontSize: '15px',
-    color: '#1f2937',
-    margin: '0 0 8px 0',
-  },
-  customerInfo: {
-    fontSize: '14px',
-    color: '#6b7280',
-    margin: '0',
-  },
-  orderDetails: {
-    padding: '0 24px 24px 24px',
-    backgroundColor: '#f9fafb',
-  },
-  detailsTitle: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#1f2937',
-    margin: '0 0 12px 0',
-  },
-  detailItem: {
-    fontSize: '14px',
-    color: '#4b5563',
-    margin: '6px 0',
-  },
-  actionSection: {
-    padding: '20px 24px',
-    backgroundColor: '#eff6ff',
-    textAlign: 'center' as const,
-  },
-  actionText: {
-    fontSize: '15px',
-    color: '#1e40af',
-    margin: '0',
-    fontWeight: '500',
-  },
-  adminActionSection: {
-    padding: '24px',
-    textAlign: 'center' as const,
-  },
-  adminButton: {
-    display: 'inline-block',
-    backgroundColor: '#1f2937',
-    color: '#ffffff',
-    padding: '12px 24px',
-    borderRadius: '6px',
-    textDecoration: 'none',
-    fontWeight: '600',
-    fontSize: '14px',
-  },
-  hr: {
-    borderColor: '#e5e7eb',
-    margin: '0',
-  },
-  footer: {
-    padding: '20px 24px',
-    backgroundColor: '#f9fafb',
-    textAlign: 'center' as const,
-  },
-  footerText: {
-    fontSize: '12px',
-    color: '#6b7280',
-    margin: '4px 0',
-  },
-  link: {
-    color: '#2563eb',
-    textDecoration: 'none',
-  },
 };
 
 export default OrderStatusChangeAlert;

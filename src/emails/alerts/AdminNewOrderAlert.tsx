@@ -10,10 +10,25 @@ import {
   Column,
   Hr,
   Link,
+  Preview,
 } from '@react-email/components';
 import * as React from 'react';
 import { formatOrderNotes } from '@/lib/email-utils';
-import { env } from '@/env'; // Import the validated environment configuration
+import { env } from '@/env';
+import { EmailHeader } from '../shared/EmailHeader';
+import { EmailFooter } from '../shared/EmailFooter';
+import {
+  emailColors,
+  emailFonts,
+  emailSpacing,
+  emailFontSizes,
+  emailBorderRadius,
+  emailLineHeights,
+  baseBodyStyle,
+  baseContainerStyle,
+  primaryButtonStyle,
+  linkStyle,
+} from '../shared/email-styles';
 
 interface OrderItem {
   id: string;
@@ -56,12 +71,188 @@ interface NewOrderAlertData {
 
 interface AdminNewOrderAlertProps extends NewOrderAlertData {}
 
+// Styles using design tokens
+const styles = {
+  alertSection: {
+    padding: emailSpacing['3xl'],
+    textAlign: 'center' as const,
+    backgroundColor: emailColors.successLight,
+    border: `2px solid ${emailColors.success}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.xl} 0`,
+  },
+  alertTitle: {
+    fontSize: emailFontSizes['2xl'],
+    fontWeight: 'bold',
+    color: emailColors.successDark,
+    margin: `0 0 ${emailSpacing.md} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  alertSubtitle: {
+    fontSize: emailFontSizes.lg,
+    color: emailColors.successDark,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  customerSection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.backgroundAlt,
+    border: `1px solid ${emailColors.border}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  sectionTitle: {
+    fontSize: emailFontSizes.lg,
+    fontWeight: 'bold',
+    color: emailColors.secondary,
+    margin: `0 0 ${emailSpacing.lg} 0`,
+    borderBottom: `2px solid ${emailColors.primary}`,
+    paddingBottom: emailSpacing.sm,
+    fontFamily: emailFonts.primary,
+  },
+  labelColumn: {
+    width: '35%',
+    verticalAlign: 'top' as const,
+  },
+  label: {
+    fontSize: emailFontSizes.sm,
+    fontWeight: '600',
+    color: emailColors.textMuted,
+    margin: `${emailSpacing.sm} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  value: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.secondary,
+    margin: `${emailSpacing.sm} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  totalValue: {
+    fontSize: emailFontSizes.md,
+    fontWeight: 'bold',
+    color: emailColors.successDark,
+    margin: `${emailSpacing.sm} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  itemsSection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.white,
+    border: `1px solid ${emailColors.border}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  orderItem: {
+    borderBottom: `1px solid ${emailColors.border}`,
+    paddingBottom: emailSpacing.md,
+    marginBottom: emailSpacing.md,
+  },
+  quantityColumn: {
+    width: '15%',
+  },
+  quantity: {
+    fontSize: emailFontSizes.sm,
+    fontWeight: '600',
+    color: emailColors.textMuted,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  itemNameColumn: {
+    width: '60%',
+  },
+  itemName: {
+    fontSize: emailFontSizes.sm,
+    fontWeight: '500',
+    color: emailColors.secondary,
+    margin: `0 0 ${emailSpacing.xs} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  variantName: {
+    fontSize: emailFontSizes.xs,
+    color: emailColors.textMuted,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  priceColumn: {
+    width: '25%',
+    textAlign: 'right' as const,
+  },
+  itemPrice: {
+    fontSize: emailFontSizes.sm,
+    fontWeight: '600',
+    color: emailColors.secondary,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  summarySection: {
+    padding: emailSpacing.xl,
+    backgroundColor: emailColors.primaryLight,
+    border: `2px solid ${emailColors.primary}`,
+    borderRadius: emailBorderRadius.lg,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  summaryLabelColumn: {
+    width: '70%',
+  },
+  summaryValueColumn: {
+    width: '30%',
+    textAlign: 'right' as const,
+  },
+  summaryLabel: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.warningDark,
+    margin: `${emailSpacing.xs} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  summaryValue: {
+    fontSize: emailFontSizes.sm,
+    fontWeight: '600',
+    color: emailColors.warningDark,
+    margin: `${emailSpacing.xs} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  summaryDivider: {
+    borderColor: emailColors.primary,
+    margin: `${emailSpacing.md} 0`,
+  },
+  summaryTotalLabel: {
+    fontSize: emailFontSizes.md,
+    fontWeight: 'bold',
+    color: emailColors.warningDark,
+    margin: `${emailSpacing.xs} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  summaryTotalValue: {
+    fontSize: emailFontSizes.md,
+    fontWeight: 'bold',
+    color: emailColors.secondary,
+    margin: `${emailSpacing.xs} 0`,
+    fontFamily: emailFonts.primary,
+  },
+  statsSection: {
+    padding: emailSpacing.lg,
+    backgroundColor: emailColors.accentLight,
+    border: `1px solid ${emailColors.accent}`,
+    borderRadius: emailBorderRadius.md,
+    textAlign: 'center' as const,
+    margin: `${emailSpacing.lg} 0`,
+  },
+  statsText: {
+    fontSize: emailFontSizes.sm,
+    color: emailColors.accentDark,
+    margin: '0',
+    fontFamily: emailFonts.primary,
+  },
+  actionSection: {
+    padding: emailSpacing.xl,
+    textAlign: 'center' as const,
+  },
+};
+
 export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
   order,
   timestamp,
   totalOrdersToday,
 }) => {
-  // Clean app URL to prevent double slashes
   const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
 
   const formattedTimestamp = timestamp.toLocaleString('en-US', {
@@ -73,16 +264,13 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
     minute: '2-digit',
   });
 
-  // Format notes to extract shipping address and other information
   const formattedNotes = formatOrderNotes(order.notes || null);
 
-  // Calculate subtotal from items
   const subtotal = order.items.reduce((sum, item) => {
     const itemPrice = typeof item.price === 'number' ? item.price : item.price.toNumber();
     return sum + itemPrice * item.quantity;
   }, 0);
 
-  // Helper function to convert Decimal to number
   const toNumber = (value: number | { toNumber: () => number } | undefined | null): number => {
     if (value === undefined || value === null) return 0;
     return typeof value === 'number' ? value : value.toNumber();
@@ -94,7 +282,6 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
   const gratuityAmount = toNumber(order.gratuityAmount);
   const shippingCost = order.shippingCostCents ? order.shippingCostCents / 100 : 0;
 
-  // Format payment status for display
   const formatPaymentStatus = (status: string) => {
     switch (status) {
       case 'PENDING':
@@ -112,7 +299,6 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
     }
   };
 
-  // Format payment method for display
   const formatPaymentMethod = (method: string) => {
     switch (method) {
       case 'SQUARE':
@@ -126,185 +312,190 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
     }
   };
 
-  // Get payment status styling
   const getPaymentStatusStyle = (status: string) => {
     const baseStyle = {
-      fontSize: '14px',
+      fontSize: emailFontSizes.sm,
       fontWeight: '600',
-      margin: '8px 0',
-      padding: '4px 8px',
-      borderRadius: '4px',
+      margin: `${emailSpacing.sm} 0`,
+      padding: `${emailSpacing.xs} ${emailSpacing.sm}`,
+      borderRadius: emailBorderRadius.sm,
       display: 'inline-block',
+      fontFamily: emailFonts.primary,
     };
 
     switch (status) {
       case 'PAID':
       case 'COMPLETED':
-        return { ...baseStyle, backgroundColor: '#dcfce7', color: '#166534' };
+        return { ...baseStyle, backgroundColor: emailColors.successLight, color: emailColors.successDark };
       case 'PENDING':
-        return { ...baseStyle, backgroundColor: '#fef3c7', color: '#92400e' };
+        return { ...baseStyle, backgroundColor: emailColors.primaryLight, color: emailColors.warningDark };
       case 'FAILED':
-        return { ...baseStyle, backgroundColor: '#fee2e2', color: '#dc2626' };
+        return { ...baseStyle, backgroundColor: emailColors.errorLight, color: emailColors.errorDark };
       case 'REFUNDED':
-        return { ...baseStyle, backgroundColor: '#f3f4f6', color: '#374151' };
+        return { ...baseStyle, backgroundColor: emailColors.backgroundAlt, color: emailColors.textMuted };
       default:
-        return { ...baseStyle, backgroundColor: '#f9fafb', color: '#6b7280' };
+        return { ...baseStyle, backgroundColor: emailColors.backgroundAlt, color: emailColors.textMuted };
     }
   };
+
+  const formatFulfillmentType = (type: string | null | undefined) => {
+    if (!type) return 'Not specified';
+    const typeMap: Record<string, string> = {
+      pickup: 'Pickup',
+      local_delivery: 'Local Delivery',
+      nationwide_shipping: 'Nationwide Shipping',
+    };
+    return typeMap[type] || type;
+  };
+
+  const previewText = `New Order #${order.id} - $${toNumber(order.total).toFixed(2)} from ${order.customerName}`;
 
   return (
     <Html>
       <Head />
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Section style={styles.header}>
-            <Heading as="h1" style={styles.headerTitle}>
-              🎉 New Order Received!
-            </Heading>
-            <Text style={styles.headerSubtitle}>
-              Order #{order.id} - $
-              {(typeof order.total === 'number' ? order.total : order.total.toNumber()).toFixed(2)}
+      <Preview>{previewText}</Preview>
+      <Body style={baseBodyStyle}>
+        <Container style={baseContainerStyle}>
+          <EmailHeader shopName="Destino SF" variant="admin" tagline="Admin Alert" />
+
+          {/* New Order Alert Section */}
+          <Section style={styles.alertSection}>
+            <Text style={styles.alertTitle}>New Order Received!</Text>
+            <Text style={styles.alertSubtitle}>
+              Order #{order.id} - ${toNumber(order.total).toFixed(2)}
             </Text>
           </Section>
 
-          <Section style={styles.content}>
-            <Section style={styles.customerSection}>
-              <Heading as="h2" style={styles.sectionTitle}>
-                Customer Information
-              </Heading>
+          {/* Customer Information */}
+          <Section style={styles.customerSection}>
+            <Heading as="h2" style={styles.sectionTitle}>
+              Customer Information
+            </Heading>
 
+            <Row>
+              <Column style={styles.labelColumn}>
+                <Text style={styles.label}>Customer:</Text>
+              </Column>
+              <Column>
+                <Text style={styles.value}>{order.customerName}</Text>
+              </Column>
+            </Row>
+
+            <Row>
+              <Column style={styles.labelColumn}>
+                <Text style={styles.label}>Email:</Text>
+              </Column>
+              <Column>
+                <Text style={styles.value}>
+                  <Link href={`mailto:${order.email}`} style={linkStyle}>
+                    {order.email}
+                  </Link>
+                </Text>
+              </Column>
+            </Row>
+
+            <Row>
+              <Column style={styles.labelColumn}>
+                <Text style={styles.label}>Phone:</Text>
+              </Column>
+              <Column>
+                <Text style={styles.value}>
+                  <Link href={`tel:${order.phone}`} style={linkStyle}>
+                    {order.phone}
+                  </Link>
+                </Text>
+              </Column>
+            </Row>
+
+            <Row>
+              <Column style={styles.labelColumn}>
+                <Text style={styles.label}>Total:</Text>
+              </Column>
+              <Column>
+                <Text style={styles.totalValue}>${toNumber(order.total).toFixed(2)}</Text>
+              </Column>
+            </Row>
+
+            <Row>
+              <Column style={styles.labelColumn}>
+                <Text style={styles.label}>Payment Status:</Text>
+              </Column>
+              <Column>
+                <Text style={getPaymentStatusStyle(order.paymentStatus)}>
+                  {formatPaymentStatus(order.paymentStatus)}
+                </Text>
+              </Column>
+            </Row>
+
+            <Row>
+              <Column style={styles.labelColumn}>
+                <Text style={styles.label}>Payment Method:</Text>
+              </Column>
+              <Column>
+                <Text style={styles.value}>{formatPaymentMethod(order.paymentMethod)}</Text>
+              </Column>
+            </Row>
+
+            <Row>
+              <Column style={styles.labelColumn}>
+                <Text style={styles.label}>Fulfillment:</Text>
+              </Column>
+              <Column>
+                <Text style={styles.value}>{formatFulfillmentType(order.fulfillmentType)}</Text>
+              </Column>
+            </Row>
+
+            {order.pickupTime && (
               <Row>
                 <Column style={styles.labelColumn}>
-                  <Text style={styles.label}>Customer:</Text>
-                </Column>
-                <Column>
-                  <Text style={styles.value}>{order.customerName}</Text>
-                </Column>
-              </Row>
-
-              <Row>
-                <Column style={styles.labelColumn}>
-                  <Text style={styles.label}>Email:</Text>
+                  <Text style={styles.label}>Pickup Time:</Text>
                 </Column>
                 <Column>
                   <Text style={styles.value}>
-                    <Link href={`mailto:${order.email}`} style={styles.link}>
-                      {order.email}
-                    </Link>
+                    {new Date(order.pickupTime).toLocaleString('en-US', {
+                      timeZone: 'America/Los_Angeles',
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </Text>
                 </Column>
               </Row>
+            )}
 
+            {formattedNotes.hasShippingAddress && (
               <Row>
                 <Column style={styles.labelColumn}>
-                  <Text style={styles.label}>Phone:</Text>
+                  <Text style={styles.label}>Shipping Address:</Text>
                 </Column>
                 <Column>
                   <Text style={styles.value}>
-                    <Link href={`tel:${order.phone}`} style={styles.link}>
-                      {order.phone}
-                    </Link>
+                    {formattedNotes.shippingAddress?.split('\n').map((line, index) => (
+                      <React.Fragment key={index}>
+                        {line}
+                        {index < formattedNotes.shippingAddress!.split('\n').length - 1 && <br />}
+                      </React.Fragment>
+                    ))}
                   </Text>
                 </Column>
               </Row>
+            )}
 
+            {formattedNotes.otherNotes && (
               <Row>
                 <Column style={styles.labelColumn}>
-                  <Text style={styles.label}>Total:</Text>
+                  <Text style={styles.label}>Special Requests:</Text>
                 </Column>
                 <Column>
-                  <Text style={styles.totalValue}>
-                    $
-                    {(typeof order.total === 'number'
-                      ? order.total
-                      : order.total.toNumber()
-                    ).toFixed(2)}
-                  </Text>
+                  <Text style={styles.value}>{formattedNotes.otherNotes}</Text>
                 </Column>
               </Row>
-
-              <Row>
-                <Column style={styles.labelColumn}>
-                  <Text style={styles.label}>Payment Status:</Text>
-                </Column>
-                <Column>
-                  <Text style={getPaymentStatusStyle(order.paymentStatus)}>
-                    {formatPaymentStatus(order.paymentStatus)}
-                  </Text>
-                </Column>
-              </Row>
-
-              <Row>
-                <Column style={styles.labelColumn}>
-                  <Text style={styles.label}>Payment Method:</Text>
-                </Column>
-                <Column>
-                  <Text style={styles.value}>{formatPaymentMethod(order.paymentMethod)}</Text>
-                </Column>
-              </Row>
-
-              <Row>
-                <Column style={styles.labelColumn}>
-                  <Text style={styles.label}>Fulfillment:</Text>
-                </Column>
-                <Column>
-                  <Text style={styles.value}>{order.fulfillmentType || 'Not specified'}</Text>
-                </Column>
-              </Row>
-
-              {order.pickupTime && (
-                <Row>
-                  <Column style={styles.labelColumn}>
-                    <Text style={styles.label}>Pickup Time:</Text>
-                  </Column>
-                  <Column>
-                    <Text style={styles.value}>
-                      {new Date(order.pickupTime).toLocaleString('en-US', {
-                        timeZone: 'America/Los_Angeles',
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Text>
-                  </Column>
-                </Row>
-              )}
-
-              {/* Shipping Address Section */}
-              {formattedNotes.hasShippingAddress && (
-                <Row>
-                  <Column style={styles.labelColumn}>
-                    <Text style={styles.label}>Shipping Address:</Text>
-                  </Column>
-                  <Column>
-                    <Text style={styles.value}>
-                      {formattedNotes.shippingAddress?.split('\n').map((line, index) => (
-                        <React.Fragment key={index}>
-                          {line}
-                          {index < formattedNotes.shippingAddress!.split('\n').length - 1 && <br />}
-                        </React.Fragment>
-                      ))}
-                    </Text>
-                  </Column>
-                </Row>
-              )}
-
-              {/* Special Notes Section */}
-              {formattedNotes.otherNotes && (
-                <Row>
-                  <Column style={styles.labelColumn}>
-                    <Text style={styles.label}>Special Requests:</Text>
-                  </Column>
-                  <Column>
-                    <Text style={styles.value}>{formattedNotes.otherNotes}</Text>
-                  </Column>
-                </Row>
-              )}
-            </Section>
+            )}
           </Section>
 
+          {/* Order Items */}
           <Section style={styles.itemsSection}>
             <Heading as="h2" style={styles.sectionTitle}>
               Order Items
@@ -321,11 +512,7 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
                   </Column>
                   <Column style={styles.priceColumn}>
                     <Text style={styles.itemPrice}>
-                      $
-                      {(typeof item.price === 'number'
-                        ? item.price
-                        : item.price.toNumber()
-                      ).toFixed(2)}
+                      ${(typeof item.price === 'number' ? item.price : item.price.toNumber()).toFixed(2)}
                     </Text>
                   </Column>
                 </Row>
@@ -333,10 +520,10 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
             ))}
           </Section>
 
-          {/* Order Summary / Cost Breakdown */}
+          {/* Order Summary */}
           <Section style={styles.summarySection}>
             <Heading as="h2" style={styles.sectionTitle}>
-              💰 Order Summary
+              Order Summary
             </Heading>
 
             <Row>
@@ -415,221 +602,32 @@ export const AdminNewOrderAlert: React.FC<AdminNewOrderAlertProps> = ({
             </Row>
           </Section>
 
+          {/* Stats */}
           <Section style={styles.statsSection}>
-            <Text style={styles.statsText}>📊 This is order #{totalOrdersToday} today</Text>
+            <Text style={styles.statsText}>This is order #{totalOrdersToday} today</Text>
           </Section>
 
+          {/* Action Button */}
           <Section style={styles.actionSection}>
-            <Link href={`${cleanAppUrl}/admin/orders/${order.id}`} style={styles.actionButton}>
+            <Link href={`${cleanAppUrl}/admin/orders/${order.id}`} style={primaryButtonStyle}>
               View Order in Admin
             </Link>
           </Section>
 
-          <Hr style={styles.hr} />
+          <EmailFooter
+            shopName="Destino SF"
+            variant="admin"
+          />
 
-          <Section style={styles.footer}>
-            <Text style={styles.footerText}>
-              This is an automated alert from your Destino SF order management system.
+          <Section style={{ padding: emailSpacing.md, textAlign: 'center' as const }}>
+            <Text style={{ fontSize: emailFontSizes.xs, color: emailColors.textMuted, margin: '0', fontFamily: emailFonts.primary }}>
+              Received at {formattedTimestamp} PST
             </Text>
-            <Text style={styles.footerText}>Received at {formattedTimestamp} PST</Text>
           </Section>
         </Container>
       </Body>
     </Html>
   );
-};
-
-// Styles for the email
-const styles = {
-  body: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    backgroundColor: '#f6f9fc',
-    margin: '0',
-    padding: '20px',
-  },
-  container: {
-    maxWidth: '600px',
-    margin: '0 auto',
-    backgroundColor: '#ffffff',
-    borderRadius: '8px',
-    overflow: 'hidden',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-  },
-  header: {
-    backgroundColor: '#2563eb',
-    padding: '20px',
-    textAlign: 'center' as const,
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: '24px',
-    fontWeight: 'bold',
-    margin: '0 0 8px 0',
-  },
-  headerSubtitle: {
-    color: '#dbeafe',
-    fontSize: '14px',
-    margin: '0',
-  },
-  content: {
-    padding: '24px',
-  },
-  customerSection: {
-    marginBottom: '24px',
-  },
-  sectionTitle: {
-    fontSize: '18px',
-    fontWeight: 'bold',
-    color: '#1f2937',
-    margin: '0 0 16px 0',
-    borderBottom: '2px solid #e5e7eb',
-    paddingBottom: '8px',
-  },
-  labelColumn: {
-    width: '30%',
-    verticalAlign: 'top',
-  },
-  label: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#6b7280',
-    margin: '8px 0',
-  },
-  value: {
-    fontSize: '14px',
-    color: '#1f2937',
-    margin: '8px 0',
-  },
-  totalValue: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#059669',
-    margin: '8px 0',
-  },
-  link: {
-    color: '#2563eb',
-    textDecoration: 'none',
-  },
-  itemsSection: {
-    padding: '0 24px 24px 24px',
-  },
-  orderItem: {
-    borderBottom: '1px solid #f3f4f6',
-    paddingBottom: '12px',
-    marginBottom: '12px',
-  },
-  quantityColumn: {
-    width: '15%',
-  },
-  quantity: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#6b7280',
-    margin: '0',
-  },
-  itemNameColumn: {
-    width: '65%',
-  },
-  itemName: {
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#1f2937',
-    margin: '0 0 4px 0',
-  },
-  variantName: {
-    fontSize: '12px',
-    color: '#6b7280',
-    margin: '0',
-  },
-  priceColumn: {
-    width: '20%',
-    textAlign: 'right' as const,
-  },
-  itemPrice: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#1f2937',
-    margin: '0',
-  },
-  summarySection: {
-    backgroundColor: '#fefce8',
-    padding: '16px 24px',
-    marginBottom: '16px',
-    border: '1px solid #facc15',
-    borderRadius: '6px',
-  },
-  summaryLabelColumn: {
-    width: '70%',
-  },
-  summaryValueColumn: {
-    width: '30%',
-    textAlign: 'right' as const,
-  },
-  summaryLabel: {
-    fontSize: '14px',
-    color: '#713f12',
-    margin: '4px 0',
-  },
-  summaryValue: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#713f12',
-    margin: '4px 0',
-  },
-  summaryDivider: {
-    borderColor: '#facc15',
-    margin: '8px 0',
-  },
-  summaryTotalLabel: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#713f12',
-    margin: '4px 0',
-  },
-  summaryTotalValue: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#2563eb',
-    margin: '4px 0',
-  },
-  statsSection: {
-    padding: '0 24px 24px 24px',
-    backgroundColor: '#f9fafb',
-    textAlign: 'center' as const,
-  },
-  statsText: {
-    fontSize: '14px',
-    color: '#6b7280',
-    margin: '16px 0',
-  },
-  actionSection: {
-    padding: '24px',
-    textAlign: 'center' as const,
-  },
-  actionButton: {
-    display: 'inline-block',
-    backgroundColor: '#2563eb',
-    color: '#ffffff',
-    padding: '12px 24px',
-    borderRadius: '6px',
-    textDecoration: 'none',
-    fontWeight: '600',
-    fontSize: '14px',
-  },
-  hr: {
-    borderColor: '#e5e7eb',
-    margin: '0',
-  },
-  footer: {
-    padding: '20px 24px',
-    backgroundColor: '#f9fafb',
-    textAlign: 'center' as const,
-  },
-  footerText: {
-    fontSize: '12px',
-    color: '#6b7280',
-    margin: '4px 0',
-  },
 };
 
 export default AdminNewOrderAlert;
