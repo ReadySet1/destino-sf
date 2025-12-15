@@ -145,25 +145,44 @@ EOF
 # Function to run pre-flight checks
 pre_flight_checks() {
     echo -e "${BLUE}Running pre-flight checks...${NC}"
-    
+
     # Check if K6 is installed
     if ! command -v k6 &> /dev/null && ! npx k6 --version &> /dev/null; then
         echo -e "${RED}❌ K6 is not installed${NC}"
         echo -e "${YELLOW}Installing K6...${NC}"
         pnpm add -D k6
     fi
-    
+
     # Check if test files exist
+    local missing_files=0
+
     if [ ! -f "tests/load/health-check.js" ]; then
         echo -e "${RED}❌ Health check test file not found${NC}"
-        return 1
+        missing_files=$((missing_files + 1))
     fi
-    
+
     if [ ! -f "tests/load/webhook-processing.js" ]; then
         echo -e "${RED}❌ Webhook processing test file not found${NC}"
+        missing_files=$((missing_files + 1))
+    fi
+
+    if [ ! -f "tests/load/product-browsing.js" ]; then
+        echo -e "${YELLOW}⚠️  Product browsing test file not found${NC}"
+    fi
+
+    if [ ! -f "tests/load/checkout-flow.js" ]; then
+        echo -e "${YELLOW}⚠️  Checkout flow test file not found${NC}"
+    fi
+
+    if [ ! -f "tests/load/api-stress.js" ]; then
+        echo -e "${YELLOW}⚠️  API stress test file not found${NC}"
+    fi
+
+    if [ $missing_files -gt 0 ]; then
+        echo -e "${RED}❌ $missing_files required test files missing${NC}"
         return 1
     fi
-    
+
     echo -e "${GREEN}✅ Pre-flight checks passed${NC}"
     echo
 }
@@ -176,14 +195,25 @@ show_help() {
     echo "  -h, --help          Show this help message"
     echo "  -u, --url URL       Base URL for testing (default: http://localhost:3000)"
     echo "  -s, --secret SECRET Webhook secret for testing (default: test-webhook-secret-key)"
-    echo "  -t, --test TEST     Run specific test only (health-check, webhook-processing, all)"
+    echo "  -t, --test TEST     Run specific test only (see available tests below)"
     echo "  --skip-warmup       Skip server warmup"
     echo "  --skip-checks       Skip pre-flight checks"
+    echo ""
+    echo "Available tests:"
+    echo "  all                  Run all load tests"
+    echo "  health-check         Health endpoint load testing (100 users)"
+    echo "  webhook-processing   Webhook processing with signatures"
+    echo "  product-browsing     Product catalog browsing (100 users)"
+    echo "  checkout-flow        Checkout flow with concurrency testing (50 users)"
+    echo "  api-stress           API stress test with spike scenarios (200 users)"
     echo ""
     echo "Examples:"
     echo "  $0                                 # Run all tests"
     echo "  $0 -t health-check                # Run only health check tests"
-    echo "  $0 -u https://my-app.vercel.app   # Test against production"
+    echo "  $0 -t product-browsing            # Run product browsing tests"
+    echo "  $0 -t checkout-flow               # Run checkout flow tests"
+    echo "  $0 -t api-stress                  # Run API stress tests"
+    echo "  $0 -u https://staging.example.com # Test against staging"
     echo ""
 }
 
@@ -244,7 +274,7 @@ main() {
     # Run tests
     local tests_run=0
     local tests_failed=0
-    
+
     if [ "$SPECIFIC_TEST" = "" ] || [ "$SPECIFIC_TEST" = "health-check" ] || [ "$SPECIFIC_TEST" = "all" ]; then
         if run_test "health-check" "tests/load/health-check.js"; then
             tests_run=$((tests_run + 1))
@@ -252,12 +282,48 @@ main() {
             tests_failed=$((tests_failed + 1))
         fi
     fi
-    
+
     if [ "$SPECIFIC_TEST" = "" ] || [ "$SPECIFIC_TEST" = "webhook-processing" ] || [ "$SPECIFIC_TEST" = "all" ]; then
         if run_test "webhook-processing" "tests/load/webhook-processing.js"; then
             tests_run=$((tests_run + 1))
         else
             tests_failed=$((tests_failed + 1))
+        fi
+    fi
+
+    if [ "$SPECIFIC_TEST" = "" ] || [ "$SPECIFIC_TEST" = "product-browsing" ] || [ "$SPECIFIC_TEST" = "all" ]; then
+        if [ -f "tests/load/product-browsing.js" ]; then
+            if run_test "product-browsing" "tests/load/product-browsing.js"; then
+                tests_run=$((tests_run + 1))
+            else
+                tests_failed=$((tests_failed + 1))
+            fi
+        else
+            echo -e "${YELLOW}Skipping product-browsing test (file not found)${NC}"
+        fi
+    fi
+
+    if [ "$SPECIFIC_TEST" = "" ] || [ "$SPECIFIC_TEST" = "checkout-flow" ] || [ "$SPECIFIC_TEST" = "all" ]; then
+        if [ -f "tests/load/checkout-flow.js" ]; then
+            if run_test "checkout-flow" "tests/load/checkout-flow.js"; then
+                tests_run=$((tests_run + 1))
+            else
+                tests_failed=$((tests_failed + 1))
+            fi
+        else
+            echo -e "${YELLOW}Skipping checkout-flow test (file not found)${NC}"
+        fi
+    fi
+
+    if [ "$SPECIFIC_TEST" = "" ] || [ "$SPECIFIC_TEST" = "api-stress" ] || [ "$SPECIFIC_TEST" = "all" ]; then
+        if [ -f "tests/load/api-stress.js" ]; then
+            if run_test "api-stress" "tests/load/api-stress.js"; then
+                tests_run=$((tests_run + 1))
+            else
+                tests_failed=$((tests_failed + 1))
+            fi
+        else
+            echo -e "${YELLOW}Skipping api-stress test (file not found)${NC}"
         fi
     fi
     
