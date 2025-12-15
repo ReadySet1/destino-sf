@@ -55,6 +55,35 @@ jobs:
       - name: Generate Prisma client
         run: pnpm prisma generate
 
+      - name: Setup test environment
+        run: |
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql://test:test@localhost:5432/test_db" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://test.supabase.co" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=test-service-role-key" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_APP_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "ADMIN_EMAIL=admin@test.com" >> $GITHUB_ENV
+          echo "FROM_EMAIL=noreply@test.com" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=test-google-maps-key" >> $GITHUB_ENV
+          echo "RESEND_API_KEY=test-resend-key" >> $GITHUB_ENV
+          echo "SQUARE_ENVIRONMENT=sandbox" >> $GITHUB_ENV
+          echo "SQUARE_LOCATION_ID=test-location-id" >> $GITHUB_ENV
+          echo "SQUARE_ACCESS_TOKEN=test-square-token" >> $GITHUB_ENV
+          echo "SQUARE_WEBHOOK_SECRET=test-webhook-secret" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_CITY=San Francisco" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_EMAIL=shipping@test.com" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_NAME=Test Shop" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_PHONE=4155551234" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_STATE=CA" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_STREET1=123 Test St" >> $GITHUB_ENV
+          echo "SHIPPING_ORIGIN_ZIP=94102" >> $GITHUB_ENV
+          echo "SHIPPO_API_KEY=test-shippo-key" >> $GITHUB_ENV
+          echo "SHOP_NAME=Test Shop" >> $GITHUB_ENV
+          echo "UPSTASH_REDIS_REST_TOKEN=test-redis-token" >> $GITHUB_ENV
+          echo "UPSTASH_REDIS_REST_URL=https://test-redis.upstash.io" >> $GITHUB_ENV
+
       - name: Build application
         run: pnpm build
         env:
