@@ -1,0 +1,187 @@
+# Accessibility Tests Workflow
+#
+# Runs WCAG 2.1 AA compliance tests on all pages.
+# Reports issues but does not block deployment.
+
+name: Accessibility Tests
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: 'Filter pages (core, catering, account, admin, or pattern)'
+        required: false
+        default: ''
+
+env:
+  NODE_OPTIONS: '--max-old-space-size=4096'
+
+jobs:
+  a11y-tests:
+    name: Run Accessibility Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
+      - name: Build application
+        run: pnpm build
+        env:
+          SKIP_ENV_VALIDATION: true
+
+      - name: Start application
+        run: |
+          pnpm start &
+          echo "Waiting for server to start..."
+          npx wait-on http://localhost:3000 --timeout 120000
+        env:
+          NODE_ENV: production
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://placeholder:placeholder@localhost:5432/placeholder' }}
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+      - name: Run accessibility tests
+        id: a11y-tests
+        run: |
+          pnpm test:a11y --reporter=json --reporter=html --output-folder=./a11y-results
+        continue-on-error: true
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Generate accessibility report
+        if: always()
+        run: |
+          echo "## Accessibility Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f ./a11y-results/results.json ]; then
+            echo "### Summary" >> $GITHUB_STEP_SUMMARY
+            node -e "
+              const results = require('./a11y-results/results.json');
+              const passed = results.suites?.filter(s => s.specs?.every(sp => sp.ok)).length || 0;
+              const failed = results.suites?.filter(s => s.specs?.some(sp => !sp.ok)).length || 0;
+              console.log('| Status | Count |');
+              console.log('|--------|-------|');
+              console.log('| Passed | ' + passed + ' |');
+              console.log('| Failed | ' + failed + ' |');
+            " >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Results pending..." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No results file found. Tests may have failed to run." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See artifacts for full report." >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report
+          path: |
+            ./a11y-results/
+            ./playwright-report/
+          retention-days: 30
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        env:
+          GH_SERVER_URL: ${{ github.server_url }}
+          GH_REPOSITORY: ${{ github.repository }}
+          GH_RUN_ID: ${{ github.run_id }}
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Try to read test results
+            let summary = '## Accessibility Test Results\n\n';
+            let hasViolations = false;
+
+            try {
+              if (fs.existsSync('./a11y-results/results.json')) {
+                const results = JSON.parse(fs.readFileSync('./a11y-results/results.json', 'utf8'));
+
+                const totalTests = results.suites?.reduce((sum, s) => sum + (s.specs?.length || 0), 0) || 0;
+                const failedTests = results.suites?.reduce((sum, s) =>
+                  sum + (s.specs?.filter(sp => !sp.ok).length || 0), 0) || 0;
+
+                if (failedTests > 0) {
+                  hasViolations = true;
+                  summary += `Found accessibility violations in **${failedTests}** of ${totalTests} tests.\n\n`;
+                  summary += '> **Note:** Accessibility tests are in report-only mode and do not block deployment.\n\n';
+                } else {
+                  summary += `All ${totalTests} accessibility tests passed.\n\n`;
+                }
+              } else {
+                summary += 'Test results not available. Check the workflow run for details.\n\n';
+              }
+            } catch (e) {
+              summary += `Could not parse test results: ${e.message}\n\n`;
+            }
+
+            summary += '### View Full Report\n';
+            summary += `Download the \`a11y-report\` artifact from the [workflow run](${process.env.GH_SERVER_URL}/${process.env.GH_REPOSITORY}/actions/runs/${process.env.GH_RUN_ID}) for detailed results.\n`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Accessibility Test Results')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: summary,
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: summary,
+              });
+            }
+
+      # Note: We intentionally don't fail the workflow on a11y violations
+      # This is report-only mode as specified in the requirements
+      - name: Report status
+        if: always()
+        run: |
+          echo "Accessibility tests completed."
+          echo "Note: This workflow reports issues but does not block deployment."
+          echo "Review the uploaded artifacts for full accessibility report."
