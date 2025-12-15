@@ -196,6 +196,16 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     needs: setup
+    outputs:
+      health_score: ${{ steps.health-check.outputs.health_score }}
+      health_status: ${{ steps.health-check.outputs.health_status }}
+      pass_rate: ${{ steps.health-check.outputs.pass_rate }}
+      coverage_lines: ${{ steps.health-check.outputs.coverage_lines }}
+      failed_tests: ${{ steps.health-check.outputs.failed_tests }}
+      flaky_count: ${{ steps.flaky-tests.outputs.flaky_count }}
+      has_flaky_tests: ${{ steps.flaky-tests.outputs.has_flaky_tests }}
+      coverage_diff: ${{ steps.coverage-compare.outputs.coverage_lines_diff }}
+      has_regression: ${{ steps.coverage-compare.outputs.has_regression }}
 
     services:
       postgres:
@@ -312,7 +322,34 @@ jobs:
         run: pnpm test:components || echo "Tests skipped for DES-57 - infrastructure changes only"
 
       - name: Generate coverage report
-        run: pnpm test:coverage --coverageReporters=text --coverageReporters=lcov --coverageReporters=json
+        run: pnpm test:coverage --coverageReporters=text --coverageReporters=lcov --coverageReporters=json --coverageReporters=json-summary
+        continue-on-error: true
+
+      - name: Download base coverage (for comparison)
+        if: github.event_name == 'pull_request'
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: coverage-report
+          path: coverage-base
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.pull_request.base.sha }}
+
+      - name: Run test health check
+        id: health-check
+        run: npx tsx scripts/test-health-check.ts --coverage ./coverage/coverage-summary.json
+        continue-on-error: true
+
+      - name: Detect flaky tests
+        id: flaky-tests
+        run: npx tsx scripts/detect-flaky-tests.ts
+        continue-on-error: true
+
+      - name: Compare coverage with main branch
+        id: coverage-compare
+        if: github.event_name == 'pull_request'
+        run: npx tsx scripts/compare-coverage.ts --base ./coverage-base/coverage-summary.json --head ./coverage/coverage-summary.json
         continue-on-error: true
 
       - name: Upload coverage reports to Codecov
@@ -368,6 +405,27 @@ jobs:
 
           echo "Checking recent database logs..."
           PGPASSWORD=postgres psql -h localhost -U postgres -d destino_sf_test -c "SELECT * FROM pg_stat_database WHERE datname = 'destino_sf_test';" || echo "⚠️ Could not retrieve database stats"
+
+      - name: Create GitHub issue for critical test failures
+        if: failure() && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: npx tsx scripts/create-test-failure-issue.ts --failures-file ./test-results/results.json
+        continue-on-error: true
+
+      - name: Upload test health reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-health-reports
+          path: |
+            test-reports/
+            test-history.json
+          retention-days: 30
 
   # Job 6: Type checking
   type-check:
@@ -447,11 +505,71 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const healthScore = '${{ needs.test.outputs.health_score }}' || 'N/A';
+            const healthStatus = '${{ needs.test.outputs.health_status }}' || 'unknown';
+            const passRate = '${{ needs.test.outputs.pass_rate }}' || 'N/A';
+            const coverageLines = '${{ needs.test.outputs.coverage_lines }}' || 'N/A';
+            const failedTests = '${{ needs.test.outputs.failed_tests }}' || '0';
+            const flakyCount = '${{ needs.test.outputs.flaky_count }}' || '0';
+            const hasFlakyTests = '${{ needs.test.outputs.has_flaky_tests }}' === 'true';
+            const coverageDiff = '${{ needs.test.outputs.coverage_diff }}' || '0';
+            const hasRegression = '${{ needs.test.outputs.has_regression }}' === 'true';
+
+            // Determine health emoji
+            const healthEmoji = healthStatus === 'excellent' ? '🟢' :
+                               healthStatus === 'good' ? '🟡' :
+                               healthStatus === 'fair' ? '🟠' : '🔴';
+
+            // Determine coverage trend
+            const coverageDiffNum = parseFloat(coverageDiff) || 0;
+            const coverageTrend = coverageDiffNum > 0 ? `↑ +${coverageDiff}%` :
+                                  coverageDiffNum < 0 ? `↓ ${coverageDiff}%` : '→ stable';
+            const coverageEmoji = hasRegression ? '🔴' : coverageDiffNum > 0 ? '✅' : '→';
+
+            let body = `## 🧪 Test Results\n\n`;
+            body += `**Health Status:** ${healthEmoji} ${healthStatus.toUpperCase()} (Score: ${healthScore}/100)\n\n`;
+
+            // Metrics table
+            body += `### Metrics\n\n`;
+            body += `| Metric | Value | Trend |\n`;
+            body += `|--------|-------|-------|\n`;
+            body += `| Pass Rate | ${passRate}% | ${{ needs.test.result == 'success' && '✅' || '❌' }} |\n`;
+            body += `| Coverage (lines) | ${coverageLines}% | ${coverageEmoji} ${coverageTrend} |\n`;
+            body += `| Failed Tests | ${failedTests} | ${parseInt(failedTests) === 0 ? '✅' : '❌'} |\n`;
+            body += `| Flaky Tests | ${flakyCount} detected | ${hasFlakyTests ? '⚠️' : '✅'} |\n\n`;
+
+            // Core checks
+            body += `### Core Checks\n\n`;
+            body += `- ${{ needs.lint.result == 'success' && '✅' || '❌' }} Code linting\n`;
+            body += `- ${{ needs.build.result == 'success' && '✅' || '❌' }} Application build\n`;
+            body += `- ${{ needs.security.result == 'success' && '✅' || '❌' }} Security scan\n`;
+            body += `- ${{ needs.type-check.result == 'success' && '✅' || '❌' }} Type checking\n\n`;
+
+            // Test suites
+            body += `### Test Suites\n\n`;
+            body += `- ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'failure' && '❌' || '⚠️' }} **Critical Path Tests**: Payment processing core functionality\n`;
+            body += `- ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'failure' && '❌' || '⚠️' }} **Unit Tests**: Core business logic\n`;
+            body += `- ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'failure' && '❌' || '⚠️' }} **API Tests**: Server-side functionality\n`;
+            body += `- ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'failure' && '❌' || '⚠️' }} **Component Tests**: UI components\n\n`;
+
+            // Warnings
+            if (hasFlakyTests) {
+              body += `### ⚠️ Flaky Tests Detected\n\n`;
+              body += `${flakyCount} flaky test(s) detected. Check the test health reports artifact for details.\n\n`;
+            }
+
+            if (hasRegression) {
+              body += `### ⚠️ Coverage Regression\n\n`;
+              body += `Coverage has decreased by more than 2%. Please review the changes and add tests if necessary.\n\n`;
+            }
+
+            body += `📊 **Detailed Reports**: Check artifacts for coverage report, test health report, and flaky test analysis.\n`;
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '✅ **Quality Checks Completed**\n\n## Core Checks\n- ✅ Code linting\n- ✅ Application build\n- ✅ Security scan\n- ✅ Type checking\n\n## Test Results\n- ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'failure' && '❌' || '⚠️' }} **Critical Path Tests**: Payment processing core functionality\n- ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'failure' && '❌' || '⚠️' }} **Unit Tests**: Core business logic\n- ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'failure' && '❌' || '⚠️' }} **API Tests**: Server-side functionality\n- ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'failure' && '❌' || '⚠️' }} **Component Tests**: UI components\n\n📊 **Coverage Report**: Check artifacts for detailed coverage information\n\n**Phase 1-2 QA Implementation**: ✅ Complete - Testing infrastructure is now active!'
+              body: body
             })
 
 # Workflow-level settings
