@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma as db, withRetry, ensureConnection } from '@/lib/db-unified';
+import { prisma as db, withRetry, ensureConnection, warmConnection, withServerComponentDb } from '@/lib/db-unified';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 import { syncCustomerToProfile } from '@/lib/profile-sync';
 import {
@@ -51,7 +51,10 @@ export async function getCateringPackages(): Promise<CateringPackage[]> {
 
   return safeBuildTimeOperation(
     async () => {
-      return withRetry(
+      // Pre-warm connection for better cold start performance
+      await warmConnection();
+
+      return withServerComponentDb(
         async () => {
           console.log('🔧 [CATERING] Fetching catering packages via Prisma...');
 
@@ -75,8 +78,11 @@ export async function getCateringPackages(): Promise<CateringPackage[]> {
             })) as CateringPackage[]) || []
           );
         },
-        3,
-        'getCateringPackages'
+        {
+          operationName: 'getCateringPackages',
+          fallback: [], // Use empty array as fallback on connection errors
+          warmup: false, // Already warmed up above
+        }
       );
     },
     [], // Fallback to empty array
