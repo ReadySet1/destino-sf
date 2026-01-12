@@ -30,7 +30,22 @@ jest.mock('@/lib/db-unified', () => ({
   withWebhookRetry: jest.fn(fn => fn()),
   checkConnection: jest.fn().mockResolvedValue(true),
   ensureConnection: jest.fn().mockResolvedValue(undefined),
-  getHealthStatus: jest.fn().mockResolvedValue({ connected: true, latency: 10 }),
+  getHealthStatus: jest.fn().mockResolvedValue({
+    connected: true,
+    latency: 10,
+    version: 'test-version',
+    circuitBreaker: { state: 'CLOSED', failures: 0, totalTrips: 0 },
+    poolMetrics: { successRate: 1, avgLatencyMs: 10, totalAttempts: 1 },
+  }),
   shutdown: jest.fn().mockResolvedValue(undefined),
   forceResetConnection: jest.fn().mockResolvedValue(undefined),
+  warmConnection: jest.fn().mockResolvedValue(true),
+  withServerComponentDb: jest.fn((fn, options) => fn()),
+  getConnectionDiagnostics: jest.fn().mockReturnValue({
+    lastSuccessfulConnection: Date.now(),
+    timeSinceLastSuccess: 0,
+    consecutiveFailures: 0,
+    isStale: false,
+    circuitBreakerState: 'CLOSED',
+  }),
 }));
