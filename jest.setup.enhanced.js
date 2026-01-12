@@ -350,7 +350,7 @@ jest.mock('@/lib/db', () => {
   };
 });
 
-// Mock db-unified module (used by concurrency tests)
+// Mock db-unified module (used by concurrency tests and unit tests)
 jest.mock('@/lib/db-unified', () => {
   const prismaMock = createPrismaMock();
   return {
@@ -362,11 +362,23 @@ jest.mock('@/lib/db-unified', () => {
     withWebhookRetry: jest.fn(async operation => operation()),
     getHealthStatus: jest.fn(async () => ({
       connected: true,
-      latency: 150,
-      version: 'test',
+      latency: 10,
+      version: 'test-version',
+      circuitBreaker: { state: 'CLOSED', failures: 0, totalTrips: 0 },
+      poolMetrics: { successRate: 1, avgLatencyMs: 10, totalAttempts: 1 },
     })),
     shutdown: jest.fn(async () => {}),
     forceResetConnection: jest.fn(async () => {}),
+    // New functions added for connection resilience (DES-80, DES-81)
+    warmConnection: jest.fn(async () => true),
+    withServerComponentDb: jest.fn(async (fn, options) => fn()),
+    getConnectionDiagnostics: jest.fn(() => ({
+      lastSuccessfulConnection: Date.now(),
+      timeSinceLastSuccess: 0,
+      consecutiveFailures: 0,
+      isStale: false,
+      circuitBreakerState: 'CLOSED',
+    })),
   };
 });
 
