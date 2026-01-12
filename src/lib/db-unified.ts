@@ -22,7 +22,13 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Version identifier for cache busting
-const CURRENT_PRISMA_VERSION = '2025-09-09-unified-connection-fix';
+const CURRENT_PRISMA_VERSION = '2026-01-12-connection-resilience-fix';
+
+// Track connection state
+let lastSuccessfulConnection: number = 0;
+let consecutiveFailures: number = 0;
+const MAX_CONSECUTIVE_FAILURES = 5;
+const CONNECTION_STALE_MS = 60000; // Consider connection stale after 1 minute
 
 /**
  * Get the best database URL with fallback strategy
@@ -190,42 +196,68 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
   // CRITICAL: Explicitly connect the client to start the engine with enhanced timeout handling
   try {
     if (process.env.DB_DEBUG === 'true') {
-      console.log(`🔌 Connecting Prisma client... (attempt ${retryAttempt + 1})`);
+      console.log(`🔌 Connecting Prisma client... (attempt ${retryAttempt + 1}/${MAX_CONNECTION_RETRIES})`);
     }
 
-    // Progressive timeout: Start with 30s, increase for retries, max 60s
-    const baseTimeout = 30000;
-    const maxTimeout = 60000;
+    // Progressive timeout: Start with 15s for faster failure detection, increase for retries, max 45s
+    const baseTimeout = 15000;
+    const maxTimeout = 45000;
     const timeoutMs = Math.min(baseTimeout + retryAttempt * 10000, maxTimeout);
 
+    // Wrap $connect in a try-catch to handle synchronous errors
+    let connectPromise: Promise<void>;
+    try {
+      connectPromise = client.$connect();
+    } catch (syncError) {
+      // Handle synchronous errors from $connect (like invalid config)
+      console.error(`❌ Prisma client threw synchronous error:`, (syncError as Error).message);
+      throw syncError;
+    }
+
     const connectTimeout = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         reject(new Error(`Prisma client connection timeout after ${timeoutMs / 1000} seconds`));
       }, timeoutMs);
+      // Ensure timeout is cleared if connection succeeds
+      connectPromise.finally(() => clearTimeout(timeoutId));
     });
 
-    await Promise.race([client.$connect(), connectTimeout]);
+    await Promise.race([connectPromise, connectTimeout]);
 
     if (process.env.DB_DEBUG === 'true') {
       console.log('✅ Prisma client connected successfully');
     }
 
     // Verify connection with a simple query (also with progressive timeout)
-    const queryTimeoutMs = Math.min(20000 + retryAttempt * 5000, 30000);
+    const queryTimeoutMs = Math.min(10000 + retryAttempt * 5000, 20000);
+
+    let queryPromise: Promise<unknown>;
+    try {
+      queryPromise = client.$queryRaw`SELECT 1 as connection_test`;
+    } catch (syncError) {
+      console.error(`❌ Query verification threw synchronous error:`, (syncError as Error).message);
+      throw syncError;
+    }
+
     const queryTimeout = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         reject(
           new Error(`Prisma connection verification timeout after ${queryTimeoutMs / 1000} seconds`)
         );
       }, queryTimeoutMs);
+      queryPromise.finally(() => clearTimeout(timeoutId));
     });
 
-    await Promise.race([client.$queryRaw`SELECT 1 as connection_test`, queryTimeout]);
+    await Promise.race([queryPromise, queryTimeout]);
 
     // Record successful connection in metrics and circuit breaker
     const latencyMs = Date.now() - startTime;
     dbPoolMetrics.recordSuccess(latencyMs, retryAttempt, isColdStart);
     dbCircuitBreaker.recordSuccess();
+
+    // Update connection tracking
+    lastSuccessfulConnection = Date.now();
+    consecutiveFailures = 0;
 
     if (process.env.DB_DEBUG === 'true') {
       console.log(`✅ Prisma connection verified (${latencyMs}ms, attempt ${retryAttempt + 1})`);
@@ -264,30 +296,54 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
       errorMessage.includes('ECONNRESET') ||
       errorMessage.includes('ENOTFOUND');
 
+    // Track consecutive failures
+    consecutiveFailures++;
+
     // Record failure in metrics (isColdStart defined at function top)
-    dbPoolMetrics.recordFailure(Date.now() - startTime, error as Error, retryAttempt, isColdStart);
+    const elapsedMs = Date.now() - startTime;
+    dbPoolMetrics.recordFailure(elapsedMs, error as Error, retryAttempt, isColdStart);
 
     // Record failure in circuit breaker (only for connection errors)
     if (isRetryableError) {
       dbCircuitBreaker.recordFailure(error as Error);
     }
 
-    if (isRetryableError && retryAttempt < MAX_CONNECTION_RETRIES - 1) {
-      // Progressive backoff: 3s, 6s, 12s, 24s (45s total retry window)
-      const delayMs = 3000 * Math.pow(2, retryAttempt);
+    // Check if we've had too many consecutive failures
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      console.error('[DB_CONNECTION_MAX_FAILURES]', {
+        consecutiveFailures,
+        maxAllowed: MAX_CONSECUTIVE_FAILURES,
+        action: 'Refusing to retry - too many consecutive failures',
+      });
+      throw error;
+    }
 
-      // Structured logging for timeout debugging
+    if (isRetryableError && retryAttempt < MAX_CONNECTION_RETRIES - 1) {
+      // Progressive backoff: 2s, 4s, 8s, 16s (30s total retry window)
+      const baseDelayMs = 2000;
+      const delayMs = baseDelayMs * Math.pow(2, retryAttempt);
+      const jitter = Math.floor(Math.random() * 500); // Add 0-500ms jitter
+      const totalDelayMs = delayMs + jitter;
+
+      // Structured logging for timeout debugging with actual timestamps
+      const now = new Date().toISOString();
       console.error('[DB_CONNECTION_RETRY]', {
+        timestamp: now,
         attempt: retryAttempt + 1,
         maxRetries: MAX_CONNECTION_RETRIES,
-        timeoutMs: CONNECTION_TIMEOUT_SECONDS * 1000,
+        elapsedMs,
         isColdStart,
         circuitState: dbCircuitBreaker.getState(),
-        nextDelayMs: delayMs,
-        error: errorMessage,
+        consecutiveFailures,
+        delayMs: totalDelayMs,
+        error: errorMessage.substring(0, 100), // Truncate long errors
       });
 
-      await new Promise(resolve => setTimeout(resolve, delayMs));
+      // Actually wait the delay before retrying
+      console.log(`[DB_CONNECTION] Waiting ${totalDelayMs}ms before retry ${retryAttempt + 2}...`);
+      await new Promise(resolve => setTimeout(resolve, totalDelayMs));
+      console.log(`[DB_CONNECTION] Delay complete, starting retry ${retryAttempt + 2}`);
+
       return createPrismaClient(retryAttempt + 1);
     }
 
@@ -419,11 +475,26 @@ function createBasicPrismaClient(): PrismaClient {
 }
 
 /**
+ * Check if the connection is considered stale
+ */
+function isConnectionStale(): boolean {
+  if (lastSuccessfulConnection === 0) return false; // Never connected, not stale
+  const timeSinceLastSuccess = Date.now() - lastSuccessfulConnection;
+  return timeSinceLastSuccess > CONNECTION_STALE_MS;
+}
+
+/**
  * Get the current Prisma client, creating one if needed
  */
 function getCurrentPrismaClient(): PrismaClient {
-  // Check if we have a valid global client
+  // Check if we have a valid global client that's not stale
   if (globalForPrisma.prisma && globalForPrisma.prismaVersion === CURRENT_PRISMA_VERSION) {
+    // Check for stale connection after too many failures
+    if (consecutiveFailures >= 3 && isConnectionStale()) {
+      if (process.env.DB_DEBUG === 'true') {
+        console.warn('[DB_CLIENT] Connection appears stale, will be refreshed on next operation');
+      }
+    }
     prismaClient = globalForPrisma.prisma;
     return prismaClient;
   }
@@ -695,6 +766,12 @@ export async function withRetry<T>(
 
       const result = await operation();
 
+      // Update connection tracking on success
+      lastSuccessfulConnection = Date.now();
+      if (consecutiveFailures > 0) {
+        consecutiveFailures = 0;
+      }
+
       // Log successful recoveries
       if (attempt > 1 && process.env.DB_DEBUG === 'true') {
         console.log(`✅ ${operationName} succeeded on attempt ${attempt}`);
@@ -716,13 +793,19 @@ export async function withRetry<T>(
         throw authError;
       }
 
+      // Track consecutive failures for connection health monitoring
+      consecutiveFailures++;
+
       if (isConnectionError(lastError) && attempt < maxRetries) {
-        if (process.env.DB_DEBUG === 'true') {
-          console.warn(
-            `${operationName} failed (attempt ${attempt}/${maxRetries}):`,
-            lastError.message
-          );
-        }
+        // Log connection errors with structured data
+        console.warn('[DB_OPERATION_RETRY]', {
+          operation: operationName,
+          attempt,
+          maxRetries,
+          consecutiveFailures,
+          error: lastError.message.substring(0, 100),
+          errorCode: (lastError as any).code,
+        });
 
         // For connection errors, force client reinitialization
         try {
@@ -806,6 +889,7 @@ export async function withWebhookRetry<T>(
  * Call this early in request lifecycle to minimize latency
  */
 export async function warmConnection(): Promise<boolean> {
+  const startTime = Date.now();
   try {
     // Check circuit breaker first
     if (!dbCircuitBreaker.canExecute()) {
@@ -816,14 +900,81 @@ export async function warmConnection(): Promise<boolean> {
     const client = await getPrismaClient();
     await client.$queryRaw`SELECT 1`;
 
-    if (process.env.DB_DEBUG === 'true') {
-      console.log('[DB_WARM] Connection pre-warmed successfully');
+    // Update connection tracking
+    lastSuccessfulConnection = Date.now();
+    consecutiveFailures = 0;
+
+    const latency = Date.now() - startTime;
+    if (process.env.DB_DEBUG === 'true' || latency > 1000) {
+      console.log(`[DB_WARM] Connection pre-warmed successfully (${latency}ms)`);
     }
     return true;
   } catch (error) {
-    console.warn('[DB_WARM] Failed to warm connection:', (error as Error).message);
+    const latency = Date.now() - startTime;
+    console.warn(`[DB_WARM] Failed to warm connection (${latency}ms):`, (error as Error).message);
     return false;
   }
+}
+
+/**
+ * Wrapper for server component database operations with automatic connection management
+ * Use this in server components to ensure robust database access
+ */
+export async function withServerComponentDb<T>(
+  operation: () => Promise<T>,
+  options: {
+    operationName?: string;
+    fallback?: T;
+    warmup?: boolean;
+  } = {}
+): Promise<T> {
+  const { operationName = 'server-component-operation', fallback, warmup = true } = options;
+
+  try {
+    // Optionally warm up the connection first
+    if (warmup && isConnectionStale()) {
+      await warmConnection();
+    }
+
+    // Execute the operation with retry logic
+    return await withRetry(operation, 3, operationName);
+  } catch (error) {
+    // Log the error with context
+    console.error(`[SERVER_COMPONENT_DB] ${operationName} failed:`, {
+      error: (error as Error).message,
+      errorCode: (error as any).code,
+      consecutiveFailures,
+      isAuthError: isAuthenticationError(error as Error),
+    });
+
+    // If a fallback is provided and this is a connection error (not auth), use it
+    if (fallback !== undefined && isConnectionError(error as Error)) {
+      console.warn(`[SERVER_COMPONENT_DB] Using fallback for ${operationName}`);
+      return fallback;
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Get current connection health status for diagnostics
+ */
+export function getConnectionDiagnostics(): {
+  lastSuccessfulConnection: number;
+  timeSinceLastSuccess: number;
+  consecutiveFailures: number;
+  isStale: boolean;
+  circuitBreakerState: string;
+} {
+  const circuitStatus = getCircuitBreakerStatus();
+  return {
+    lastSuccessfulConnection,
+    timeSinceLastSuccess: lastSuccessfulConnection > 0 ? Date.now() - lastSuccessfulConnection : -1,
+    consecutiveFailures,
+    isStale: isConnectionStale(),
+    circuitBreakerState: circuitStatus.state,
+  };
 }
 
 /**

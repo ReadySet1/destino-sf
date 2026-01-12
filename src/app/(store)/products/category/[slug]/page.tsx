@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { CategoryHeader } from '@/components/products/CategoryHeader';
 import MenuFaqSection from '@/components/FAQ/MenuFaqSection';
-import { prisma, withRetry } from '@/lib/db-unified'; // Import unified Prisma client
+import { prisma, withRetry, withServerComponentDb, warmConnection } from '@/lib/db-unified'; // Import unified Prisma client
 import { withDatabaseConnection } from '@/lib/db-utils';
 import { Category, Product as GridProduct } from '@/types/product'; // Use a shared Product type if available
 import { preparePrismaData } from '@/utils/server/serialize-server-data';
@@ -192,20 +192,30 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   // Await searchParams if provided
   if (searchParams) await searchParams;
 
+  // Pre-warm the database connection early for cold start optimization
+  // This runs in parallel with other initialization
+  const warmupPromise = warmConnection();
+
   // Check if the slug is a UUID
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     slug
   );
 
+  // Wait for warmup to complete before querying
+  await warmupPromise;
+
   // Fetch the category from the database using the slug or ID
-  const category = await withDatabaseConnection(async () => {
-    return await prisma.category.findFirst({
-      where: {
-        OR: [{ slug: slug }, ...(isUUID ? [{ id: slug }] : [])],
-        active: true,
-      },
-    });
-  });
+  const category = await withServerComponentDb(
+    async () => {
+      return await prisma.category.findFirst({
+        where: {
+          OR: [{ slug: slug }, ...(isUUID ? [{ id: slug }] : [])],
+          active: true,
+        },
+      });
+    },
+    { operationName: 'category-page-fetch', warmup: false } // Already warmed up
+  );
 
   // If the category doesn't exist in the database, return 404
   if (!category) {
