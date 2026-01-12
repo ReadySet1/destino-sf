@@ -754,7 +754,8 @@ export class AlertService {
    */
   async sendContactFormReceived(data: ContactFormReceivedData): Promise<AlertResult> {
     try {
-      const shopName = env.SHOP_NAME || 'Destino SF';
+      // Sanitize shop name to prevent newlines in subjects (from env variables)
+      const shopName = (env.SHOP_NAME || 'Destino SF').replace(/[\r\n]+/g, ' ').trim();
 
       // Sanitize inputs to prevent email sending issues (newlines not allowed in subjects)
       const sanitizedSubject = this.sanitizeEmailSubject(data.subject);

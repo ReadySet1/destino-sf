@@ -651,22 +651,43 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
 }
 
 /**
- * Check if error is an authentication/authorization error (non-retryable)
+ * Check if error is a PERMANENT authentication/authorization error (non-retryable)
  * These errors indicate credential or configuration issues that won't be fixed by retrying.
+ *
+ * NOTE: "Tenant or user not found" is NOT included here because it can be transient
+ * in Supabase when the pooler is under load or during cold starts.
  */
 function isAuthenticationError(error: Error): boolean {
-  const authErrors = [
-    'Tenant or user not found',
+  const permanentAuthErrors = [
     'password authentication failed',
     'FATAL: password authentication failed',
-    'FATAL: Tenant or user not found',
     'authentication failed',
     'role "postgres" does not exist',
     'FATAL: role',
   ];
 
   const message = error.message;
-  return authErrors.some(msg => message.toLowerCase().includes(msg.toLowerCase()));
+
+  // "Tenant or user not found" is handled separately as it can be transient
+  // Only return true for permanent auth failures
+  return permanentAuthErrors.some(msg => message.toLowerCase().includes(msg.toLowerCase()));
+}
+
+/**
+ * Check if error is a transient Supabase pooler error that may resolve with retries
+ * "Tenant or user not found" can occur transiently when:
+ * - Supabase pooler is under load
+ * - Cold start scenarios
+ * - Temporary connection pool exhaustion
+ */
+function isTransientPoolerError(error: Error): boolean {
+  const transientErrors = [
+    'Tenant or user not found',
+    'FATAL: Tenant or user not found',
+  ];
+
+  const message = error.message;
+  return transientErrors.some(msg => message.toLowerCase().includes(msg.toLowerCase()));
 }
 
 /**
@@ -674,29 +695,6 @@ function isAuthenticationError(error: Error): boolean {
  */
 function getAuthenticationErrorMessage(error: Error): string {
   const message = error.message;
-
-  if (message.includes('Tenant or user not found')) {
-    return `
-DATABASE AUTHENTICATION FAILED: "Tenant or user not found"
-
-This error indicates the DATABASE_URL has an incorrect username format.
-
-REQUIRED FORMAT for Supabase Pooler:
-  postgresql://postgres.PROJECT_ID:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
-
-CURRENT PROJECT IDs:
-  - Development: drrejylrcjbeldnzodjd
-  - Production: ocusztulyiegeawqptrs
-
-TO FIX:
-1. Check Vercel environment variables: vercel env ls production
-2. Ensure DATABASE_URL username is "postgres.PROJECT_ID" (not just "postgres")
-3. Redeploy: vercel --prod
-
-Example correct format:
-  postgresql://postgres.PROJECT_ID:PASSWORD@aws-X-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&prepared_statements=false&statement_cache_size=0
-`.trim();
-  }
 
   if (message.includes('password authentication failed')) {
     return `
@@ -715,12 +713,48 @@ TO FIX:
 }
 
 /**
- * Check if error is connection-related
+ * Get actionable error message for transient pooler errors after retries exhausted
+ */
+function getTransientPoolerErrorMessage(error: Error, retryAttempts: number): string {
+  const message = error.message;
+
+  if (message.includes('Tenant or user not found')) {
+    return `
+DATABASE CONNECTION FAILED: "Tenant or user not found" (after ${retryAttempts} retry attempts)
+
+This error can occur due to:
+1. Supabase pooler temporarily under load (usually resolves in seconds)
+2. Cold start connection issues (serverless function initialization)
+3. Temporary connection pool exhaustion
+
+The system attempted ${retryAttempts} retries but the error persisted.
+
+IF THIS PERSISTS, check:
+1. DATABASE_URL username format: postgresql://postgres.PROJECT_ID:PASSWORD@...
+2. Supabase dashboard for any service incidents: https://status.supabase.com
+3. Database connection limits in Supabase dashboard
+
+CURRENT PROJECT IDs:
+  - Development: drrejylrcjbeldnzodjd
+  - Production: ocusztulyiegeawqptrs
+`.trim();
+  }
+
+  return `Database transient error (after ${retryAttempts} retries): ${message}`;
+}
+
+/**
+ * Check if error is connection-related (including transient pooler errors)
  */
 function isConnectionError(error: Error): boolean {
-  // Auth errors are NOT connection errors - they should not be retried
+  // Permanent auth errors are NOT connection errors - they should not be retried
   if (isAuthenticationError(error)) {
     return false;
+  }
+
+  // Transient pooler errors SHOULD be retried
+  if (isTransientPoolerError(error)) {
+    return true;
   }
 
   const connectionErrors = [
@@ -831,8 +865,30 @@ export async function withRetry<T>(
       }
 
       // Don't retry non-connection errors or if max retries reached
+      // For transient pooler errors that exhausted retries, provide actionable message
+      if (isTransientPoolerError(lastError)) {
+        const actionableMessage = getTransientPoolerErrorMessage(lastError, maxRetries);
+        console.error(`${operationName} failed with transient pooler error after ${maxRetries} retries:`);
+        console.error(actionableMessage);
+
+        const poolerError = new Error(actionableMessage);
+        (poolerError as any).code = 'TRANSIENT_POOLER_ERROR';
+        (poolerError as any).originalError = error;
+        (poolerError as any).retryAttempts = maxRetries;
+        throw poolerError;
+      }
       throw error;
     }
+  }
+
+  // Final error handling for exhausted retries
+  if (lastError && isTransientPoolerError(lastError)) {
+    const actionableMessage = getTransientPoolerErrorMessage(lastError, maxRetries);
+    const poolerError = new Error(actionableMessage);
+    (poolerError as any).code = 'TRANSIENT_POOLER_ERROR';
+    (poolerError as any).originalError = lastError;
+    (poolerError as any).retryAttempts = maxRetries;
+    throw poolerError;
   }
 
   throw lastError || new Error(`${operationName} failed after ${maxRetries} attempts`);
