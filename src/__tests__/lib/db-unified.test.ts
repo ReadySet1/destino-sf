@@ -171,25 +171,43 @@ describe('db-unified.ts - Authentication Error Detection Logic', () => {
   // These tests verify the behavior expectations, not the actual implementation
   // The actual implementation is tested via the mocked functions
 
-  describe('Authentication Errors (should fail fast)', () => {
-    const authErrorMessages = [
-      'Tenant or user not found',
+  describe('Permanent Authentication Errors (should fail fast)', () => {
+    // NOTE: "Tenant or user not found" is now classified as a transient error
+    // because it can occur due to Supabase pooler load, not just bad credentials
+    const permanentAuthErrorMessages = [
       'password authentication failed',
       'FATAL: password authentication failed',
-      'FATAL: Tenant or user not found',
       'authentication failed',
       'role "postgres" does not exist',
       'FATAL: role',
     ];
 
-    authErrorMessages.forEach(errorMessage => {
-      it(`should recognize "${errorMessage}" as an authentication error`, () => {
+    permanentAuthErrorMessages.forEach(errorMessage => {
+      it(`should recognize "${errorMessage}" as a permanent authentication error`, () => {
         const error = new Error(errorMessage);
         // Auth errors should be detected by checking if the message contains known auth error strings
-        const isAuthError = authErrorMessages.some(msg =>
+        const isAuthError = permanentAuthErrorMessages.some(msg =>
           error.message.toLowerCase().includes(msg.toLowerCase())
         );
         expect(isAuthError).toBe(true);
+      });
+    });
+  });
+
+  describe('Transient Pooler Errors (should retry)', () => {
+    // These errors can occur transiently with Supabase pooler under load
+    const transientPoolerErrors = [
+      'Tenant or user not found',
+      'FATAL: Tenant or user not found',
+    ];
+
+    transientPoolerErrors.forEach(errorMessage => {
+      it(`should recognize "${errorMessage}" as a transient pooler error (retryable)`, () => {
+        const error = new Error(errorMessage);
+        const isTransientError = transientPoolerErrors.some(msg =>
+          error.message.toLowerCase().includes(msg.toLowerCase())
+        );
+        expect(isTransientError).toBe(true);
       });
     });
   });

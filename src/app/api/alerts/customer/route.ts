@@ -230,10 +230,19 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        // Sanitize name and subject to prevent newlines in email subjects
+        // This prevents Resend API validation errors: "The `\n` is not allowed in the `subject` field"
+        const sanitizedName = (data.name || '').replace(/[\r\n]+/g, ' ').trim();
+        const sanitizedInputSubject = data.subject
+          ? data.subject.replace(/[\r\n]+/g, ' ').trim()
+          : null;
+
         const contactData: ContactFormReceivedData = {
-          name: data.name,
+          name: sanitizedName,
           email: data.email,
-          subject: data.subject || `${data.contactType || 'general'} inquiry from ${data.name}`,
+          subject:
+            sanitizedInputSubject ||
+            `${data.contactType || 'general'} inquiry from ${sanitizedName}`,
           message: data.message,
           type: data.contactType || 'general',
           timestamp: new Date(),

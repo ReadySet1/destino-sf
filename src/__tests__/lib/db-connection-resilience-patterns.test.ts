@@ -254,51 +254,70 @@ describe('Connection Resilience Patterns', () => {
   });
 
   describe('Fail-Fast Pattern for Auth Errors', () => {
-    it('should identify non-retryable auth errors', () => {
-      const authErrorPatterns = [
-        'Tenant or user not found',
+    it('should identify non-retryable permanent auth errors', () => {
+      // NOTE: "Tenant or user not found" is now a transient error (retryable)
+      // because it can occur due to Supabase pooler load, not just bad credentials
+      const permanentAuthErrorPatterns = [
         'password authentication failed',
         'authentication failed',
         'role "postgres" does not exist',
       ];
 
-      const isAuthError = (message: string) =>
-        authErrorPatterns.some(pattern =>
+      const isPermanentAuthError = (message: string) =>
+        permanentAuthErrorPatterns.some(pattern =>
           message.toLowerCase().includes(pattern.toLowerCase())
         );
 
-      expect(isAuthError('FATAL: Tenant or user not found')).toBe(true);
-      expect(isAuthError('password authentication failed for user')).toBe(true);
-      expect(isAuthError('Connection timeout')).toBe(false);
-      expect(isAuthError('ECONNREFUSED')).toBe(false);
+      // Permanent auth errors - should fail fast
+      expect(isPermanentAuthError('password authentication failed for user')).toBe(true);
+      expect(isPermanentAuthError('authentication failed')).toBe(true);
+
+      // Connection errors - should retry
+      expect(isPermanentAuthError('Connection timeout')).toBe(false);
+      expect(isPermanentAuthError('ECONNREFUSED')).toBe(false);
+
+      // Transient pooler error - should retry (NOT a permanent auth error)
+      expect(isPermanentAuthError('FATAL: Tenant or user not found')).toBe(false);
     });
 
-    it('should not retry on auth errors', () => {
+    it('should not retry on permanent auth errors but retry on transient errors', () => {
       let retryCount = 0;
       const maxRetries = 3;
 
       const executeWithRetry = (error: Error) => {
-        const authErrors = ['Tenant or user not found', 'password authentication failed'];
-        const isAuthError = authErrors.some(e =>
+        // Only these are permanent auth errors (fail fast)
+        const permanentAuthErrors = ['password authentication failed', 'authentication failed'];
+        // Transient errors should be retried
+        const transientErrors = ['Tenant or user not found'];
+
+        const isPermanentAuthError = permanentAuthErrors.some(e =>
           error.message.toLowerCase().includes(e.toLowerCase())
         );
 
-        if (isAuthError) {
-          // Fail fast
+        const isTransientError = transientErrors.some(e =>
+          error.message.toLowerCase().includes(e.toLowerCase())
+        );
+
+        if (isPermanentAuthError) {
+          // Fail fast for permanent auth errors
           return false;
         }
 
-        // Would normally retry
-        while (retryCount < maxRetries) {
-          retryCount++;
+        if (isTransientError) {
+          // Retry transient errors
+          while (retryCount < maxRetries) {
+            retryCount++;
+          }
+          return true;
         }
-        return true;
+
+        return false;
       };
 
-      const authError = new Error('FATAL: Tenant or user not found');
-      executeWithRetry(authError);
-
-      expect(retryCount).toBe(0); // No retries for auth errors
+      // Transient error should be retried
+      const transientError = new Error('FATAL: Tenant or user not found');
+      executeWithRetry(transientError);
+      expect(retryCount).toBe(maxRetries); // Transient errors get retried
     });
   });
 
