@@ -309,6 +309,9 @@ jobs:
 
           echo "✅ Database schema setup complete"
 
+      - name: Create test results directory
+        run: mkdir -p test-results
+
       - name: Run critical path tests
         run: pnpm test:critical || echo "Tests skipped for DES-57 - infrastructure changes only"
 
@@ -321,8 +324,15 @@ jobs:
       - name: Run component tests
         run: pnpm test:components || echo "Tests skipped for DES-57 - infrastructure changes only"
 
-      - name: Generate coverage report
-        run: pnpm test:coverage --coverageReporters=text --coverageReporters=lcov --coverageReporters=json --coverageReporters=json-summary
+      - name: Generate coverage report with JSON results
+        run: |
+          pnpm test:coverage \
+            --coverageReporters=text \
+            --coverageReporters=lcov \
+            --coverageReporters=json \
+            --coverageReporters=json-summary \
+            --json \
+            --outputFile=./test-results/results.json
         continue-on-error: true
 
       - name: Download base coverage (for comparison)
@@ -338,7 +348,7 @@ jobs:
 
       - name: Run test health check
         id: health-check
-        run: npx tsx scripts/test-health-check.ts --coverage ./coverage/coverage-summary.json
+        run: npx tsx scripts/test-health-check.ts --json ./test-results/results.json --coverage ./coverage/coverage-summary.json
         continue-on-error: true
 
       - name: Detect flaky tests
@@ -366,7 +376,6 @@ jobs:
           name: coverage-report
           path: |
             coverage/
-            test-results.json
           retention-days: 30
 
       - name: Upload test results
@@ -375,6 +384,7 @@ jobs:
         with:
           name: test-results
           path: |
+            test-results/
             junit.xml
             test-report.json
           retention-days: 30
