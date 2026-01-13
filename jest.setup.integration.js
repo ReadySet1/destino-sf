@@ -157,23 +157,42 @@ global.fetch = jest.fn(() =>
   })
 );
 
+// Database availability flag
+let databaseAvailable = false;
+
 // Database setup and cleanup hooks
 beforeAll(async () => {
-  // Setup test database connection
-  await setupTestDatabase();
-  console.log('✅ Test database connected');
+  // Try to setup test database connection
+  try {
+    await setupTestDatabase();
+    databaseAvailable = true;
+    console.log('✅ Test database connected');
+  } catch (error) {
+    console.warn('⚠️ Test database not available - integration tests will be skipped');
+    console.warn('To run integration tests, ensure PostgreSQL is running and DATABASE_URL is set correctly.');
+    databaseAvailable = false;
+  }
 });
 
 afterAll(async () => {
-  // Disconnect from test database
-  await disconnectTestDatabase();
-  console.log('✅ Test database disconnected');
+  // Disconnect from test database if it was connected
+  if (databaseAvailable) {
+    await disconnectTestDatabase();
+    console.log('✅ Test database disconnected');
+  }
 });
 
 // Clean database before each test to ensure isolation
 beforeEach(async () => {
+  if (!databaseAvailable) {
+    // Skip the test if database is not available
+    return;
+  }
   await cleanDatabase();
 });
+
+// Export database availability for tests to check
+global.__DATABASE_AVAILABLE__ = () => databaseAvailable;
 
 // Suppress non-critical console output in tests
 const originalError = console.error;
