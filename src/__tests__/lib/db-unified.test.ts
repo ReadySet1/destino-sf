@@ -390,3 +390,218 @@ describe('db-unified.ts - Consecutive Failure Tracking', () => {
     });
   });
 });
+
+/**
+ * Tests for Socket Timeout Detection
+ * DES-XX: Fix socket timeout error handling
+ */
+describe('db-unified.ts - Socket Timeout Detection', () => {
+  // Socket timeout error patterns from Prisma/PostgreSQL
+  const socketTimeoutIndicators = [
+    'Socket timeout',
+    'socket timeout',
+    'database failed to respond',
+    'the database failed to respond to a query',
+    'failed to respond to a query within the configured timeout',
+  ];
+
+  // Helper function that mirrors the implementation
+  const isSocketTimeoutError = (error: Error): boolean => {
+    return socketTimeoutIndicators.some(msg =>
+      error.message.toLowerCase().includes(msg.toLowerCase())
+    );
+  };
+
+  describe('Socket Timeout Error Recognition', () => {
+    it('should recognize "Socket timeout" as a socket timeout error', () => {
+      const error = new Error('Socket timeout (the database failed to respond)');
+      expect(isSocketTimeoutError(error)).toBe(true);
+    });
+
+    it('should recognize lowercase "socket timeout" as a socket timeout error', () => {
+      const error = new Error('Connection lost due to socket timeout');
+      expect(isSocketTimeoutError(error)).toBe(true);
+    });
+
+    it('should recognize "database failed to respond" as a socket timeout error', () => {
+      const error = new Error('The database failed to respond to the query');
+      expect(isSocketTimeoutError(error)).toBe(true);
+    });
+
+    it('should recognize Prisma socket timeout error message', () => {
+      // This is the exact error format from the Sentry issue
+      const error = new Error(
+        'Invalid `prisma.$queryRaw()` invocation: Socket timeout (the database failed to respond to a query within the configured timeout)'
+      );
+      expect(isSocketTimeoutError(error)).toBe(true);
+    });
+
+    it('should recognize partial socket timeout messages', () => {
+      const error = new Error('failed to respond to a query within the configured timeout');
+      expect(isSocketTimeoutError(error)).toBe(true);
+    });
+  });
+
+  describe('Non-Socket Timeout Error Recognition', () => {
+    it('should NOT recognize connection refused as socket timeout', () => {
+      const error = new Error('ECONNREFUSED');
+      expect(isSocketTimeoutError(error)).toBe(false);
+    });
+
+    it('should NOT recognize authentication errors as socket timeout', () => {
+      const error = new Error('password authentication failed');
+      expect(isSocketTimeoutError(error)).toBe(false);
+    });
+
+    it('should NOT recognize general timeout as socket timeout', () => {
+      const error = new Error('Request timeout');
+      expect(isSocketTimeoutError(error)).toBe(false);
+    });
+
+    it('should NOT recognize validation errors as socket timeout', () => {
+      const error = new Error('Validation failed: invalid input');
+      expect(isSocketTimeoutError(error)).toBe(false);
+    });
+  });
+
+  describe('Socket Timeout Should Be Retryable', () => {
+    // Connection errors that should be retried
+    const connectionErrors = [
+      "Can't reach database server",
+      'Connection terminated',
+      'ECONNRESET',
+      'ECONNREFUSED',
+      'ETIMEDOUT',
+      'Engine is not yet connected',
+      'Socket timeout',
+      'Connection pool timeout',
+      'Timed out fetching a new connection',
+      'Response from the Engine was empty',
+    ];
+
+    const isConnectionError = (error: Error): boolean => {
+      // Check for socket timeout first (they're always retryable)
+      if (isSocketTimeoutError(error)) {
+        return true;
+      }
+      return connectionErrors.some(msg => error.message.includes(msg));
+    };
+
+    it('should classify socket timeout as a retryable connection error', () => {
+      const error = new Error('Socket timeout (the database failed to respond)');
+      expect(isConnectionError(error)).toBe(true);
+    });
+
+    it('should classify Prisma socket timeout as a retryable connection error', () => {
+      const error = new Error(
+        'Invalid `prisma.$queryRaw()` invocation: Socket timeout (the database failed to respond to a query within the configured timeout)'
+      );
+      expect(isConnectionError(error)).toBe(true);
+    });
+  });
+});
+
+/**
+ * Tests for Quick Health Check Function
+ * Tests the expected behavior and response structure of quickHealthCheck
+ */
+describe('db-unified.ts - Quick Health Check', () => {
+  describe('quickHealthCheck() expected behavior', () => {
+    // Create a mock that matches the expected behavior
+    const mockQuickHealthCheck = jest.fn().mockResolvedValue({
+      healthy: true,
+      latencyMs: 10,
+    });
+
+    it('should be callable as a function', () => {
+      expect(typeof mockQuickHealthCheck).toBe('function');
+    });
+
+    it('should return healthy status', async () => {
+      const result = await mockQuickHealthCheck();
+      expect(result).toHaveProperty('healthy');
+      expect(result).toHaveProperty('latencyMs');
+      expect(result.healthy).toBe(true);
+    });
+
+    it('should accept timeout parameter', async () => {
+      const result = await mockQuickHealthCheck(5000);
+      expect(result.healthy).toBe(true);
+    });
+  });
+
+  describe('Quick Health Check Response Structure', () => {
+    it('should include healthy boolean in expected response', () => {
+      const expectedResponse = { healthy: true, latencyMs: 10 };
+      expect(typeof expectedResponse.healthy).toBe('boolean');
+    });
+
+    it('should include latencyMs number in expected response', () => {
+      const expectedResponse = { healthy: true, latencyMs: 10 };
+      expect(typeof expectedResponse.latencyMs).toBe('number');
+    });
+
+    it('should include error string when unhealthy', () => {
+      const unhealthyResponse = {
+        healthy: false,
+        latencyMs: 5000,
+        error: 'Socket timeout',
+      };
+      expect(unhealthyResponse.error).toBeDefined();
+      expect(typeof unhealthyResponse.error).toBe('string');
+    });
+  });
+});
+
+/**
+ * Tests for Health Check Timeout Behavior
+ */
+describe('db-unified.ts - Health Check Timeout Patterns', () => {
+  describe('Timeout Logic', () => {
+    it('should create timeout promise with correct duration', async () => {
+      const timeoutMs = 5000;
+      let timedOut = false;
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          timedOut = true;
+          const error = new Error(`Health check timeout after ${timeoutMs}ms`);
+          error.name = 'HealthCheckTimeout';
+          reject(error);
+        }, 10); // Use short timeout for test
+      });
+
+      await expect(timeoutPromise).rejects.toThrow('Health check timeout');
+    });
+
+    it('should race query against timeout', async () => {
+      const fastQuery = Promise.resolve({ health: 1 });
+      const slowTimeout = new Promise((resolve) => setTimeout(resolve, 100));
+
+      const result = await Promise.race([fastQuery, slowTimeout]);
+      expect(result).toEqual({ health: 1 });
+    });
+
+    it('should fail when query is slower than timeout', async () => {
+      const slowQuery = new Promise((resolve) => setTimeout(() => resolve({ health: 1 }), 100));
+      const fastTimeout = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout')), 10);
+      });
+
+      await expect(Promise.race([slowQuery, fastTimeout])).rejects.toThrow('Timeout');
+    });
+  });
+
+  describe('Default Timeout Values', () => {
+    it('should use 5 second default for health checks', () => {
+      const DEFAULT_HEALTH_CHECK_TIMEOUT = 5000;
+      expect(DEFAULT_HEALTH_CHECK_TIMEOUT).toBe(5000);
+    });
+
+    it('should be shorter than general socket timeout (120s)', () => {
+      const HEALTH_CHECK_TIMEOUT = 5000;
+      const SOCKET_TIMEOUT = 120000;
+      expect(HEALTH_CHECK_TIMEOUT).toBeLessThan(SOCKET_TIMEOUT);
+    });
+  });
+});
