@@ -10,6 +10,9 @@
  * Simulates real-world scenarios with multiple concurrent users.
  *
  * @project DES-60 Phase 4: Concurrent Operations & Race Conditions
+ *
+ * NOTE: These tests require a real PostgreSQL database.
+ * They will be skipped if no database is available.
  */
 
 import { NextRequest } from 'next/server';
@@ -18,6 +21,26 @@ import { POST as paymentHandler } from '@/app/api/checkout/payment/route';
 import { getTestPrismaClient } from '../utils/database-test-utils';
 import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
 import { CartItem } from '@/types/cart';
+
+// Extend global type for database availability check
+declare global {
+  // eslint-disable-next-line no-var
+  var __DATABASE_AVAILABLE__: (() => boolean) | undefined;
+}
+
+// Check if database is available (set by jest.setup.integration.js)
+const isDatabaseAvailable = (): boolean => {
+  return typeof global.__DATABASE_AVAILABLE__ === 'function' && global.__DATABASE_AVAILABLE__();
+};
+
+// Skip helper for tests that require database
+const skipIfNoDatabase = () => {
+  if (!isDatabaseAvailable()) {
+    console.log('⚠️ Skipping test: Database not available');
+    return true;
+  }
+  return false;
+};
 
 // Helper to get prisma client - calls getTestPrismaClient() each time
 // This ensures we get the properly initialized client after beforeAll runs
@@ -77,7 +100,10 @@ jest.mock('@/lib/profile-sync', () => ({
   syncCustomerToProfile: jest.fn().mockResolvedValue(undefined),
 }));
 
-describe('Checkout Flow Concurrency Integration Test', () => {
+// Use describe.skip if database is not available
+const describeWithDb = isDatabaseAvailable() ? describe : describe.skip;
+
+describeWithDb('Checkout Flow Concurrency Integration Test', () => {
   const testCartItems: CartItem[] = [
     {
       id: 'product-alfajor',
@@ -102,6 +128,8 @@ describe('Checkout Flow Concurrency Integration Test', () => {
   };
 
   beforeEach(async () => {
+    if (skipIfNoDatabase()) return;
+
     jest.clearAllMocks();
     globalDeduplicator.clearAll();
 
@@ -132,6 +160,8 @@ describe('Checkout Flow Concurrency Integration Test', () => {
   });
 
   afterEach(async () => {
+    if (!isDatabaseAvailable()) return;
+
     // Clean up after each test
     await getPrisma().order.deleteMany({
       where: {
@@ -141,7 +171,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
   });
 
   afterAll(async () => {
-    await getPrisma().$disconnect();
+    // Database disconnection handled by jest.setup.integration.js
   });
 
   describe('Complete Checkout Flow', () => {
@@ -362,7 +392,7 @@ describe('Checkout Flow Concurrency Integration Test', () => {
 
       const orders = await Promise.all(
         users.map(user =>
-          prisma.order.create({
+          getPrisma().order.create({
             data: {
               status: 'PENDING',
               paymentStatus: 'PENDING',

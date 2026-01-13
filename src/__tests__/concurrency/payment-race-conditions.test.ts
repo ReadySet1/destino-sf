@@ -9,6 +9,9 @@
  * 5. Order state remains consistent
  *
  * @project DES-60 Phase 4: Concurrent Operations & Race Conditions
+ *
+ * NOTE: These tests require a real PostgreSQL database.
+ * They will be skipped if no database is available.
  */
 
 import { NextRequest } from 'next/server';
@@ -16,6 +19,26 @@ import { POST as paymentHandler } from '@/app/api/checkout/payment/route';
 import { getTestPrismaClient } from '../utils/database-test-utils';
 import { withRowLock, LockAcquisitionError } from '@/lib/concurrency/pessimistic-lock';
 import { Order } from '@prisma/client';
+
+// Extend global type for database availability check
+declare global {
+  // eslint-disable-next-line no-var
+  var __DATABASE_AVAILABLE__: (() => boolean) | undefined;
+}
+
+// Check if database is available (set by jest.setup.integration.js)
+const isDatabaseAvailable = (): boolean => {
+  return typeof global.__DATABASE_AVAILABLE__ === 'function' && global.__DATABASE_AVAILABLE__();
+};
+
+// Skip helper for tests that require database
+const skipIfNoDatabase = () => {
+  if (!isDatabaseAvailable()) {
+    console.log('⚠️ Skipping test: Database not available');
+    return true;
+  }
+  return false;
+};
 
 // Helper to get prisma client - calls getTestPrismaClient() each time
 // This ensures we get the properly initialized client after beforeAll runs
@@ -45,10 +68,14 @@ jest.mock('@/middleware/api-validator', () => ({
   withValidation: (handler: any) => handler,
 }));
 
-describe('Payment Race Conditions', () => {
+// Use describe.skip if database is not available
+const describeWithDb = isDatabaseAvailable() ? describe : describe.skip;
+
+describeWithDb('Payment Race Conditions', () => {
   let testOrder: Order;
 
   beforeEach(async () => {
+    if (skipIfNoDatabase()) return;
     jest.clearAllMocks();
 
     // Reset mocks to success by default
