@@ -48,4 +48,9 @@ jest.mock('@/lib/db-unified', () => ({
     isStale: false,
     circuitBreakerState: 'CLOSED',
   }),
+  // quickHealthCheck mock for health check endpoint tests
+  quickHealthCheck: jest.fn().mockResolvedValue({
+    healthy: true,
+    latencyMs: 10,
+  }),
 }));
