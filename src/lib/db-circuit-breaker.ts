@@ -262,17 +262,22 @@ function isCircuitBreakerTriggerError(error: Error): boolean {
     'ETIMEDOUT',
     'connection timeout',
     'Socket timeout',
+    'socket timeout',
     'Connection pool timeout',
     'Timed out fetching a new connection',
+    // Database failed to respond errors (Prisma socket timeouts)
+    'database failed to respond',
+    'the database failed to respond to a query',
+    'failed to respond to a query within the configured timeout',
   ];
 
   const triggerCodes = ['P1001', 'P1008', 'P2024'];
 
-  const message = error.message;
+  const message = error.message.toLowerCase();
   const code = (error as any).code;
 
   return (
-    triggerErrors.some(msg => message.includes(msg)) ||
+    triggerErrors.some(msg => message.includes(msg.toLowerCase())) ||
     (code && triggerCodes.includes(code))
   );
 }

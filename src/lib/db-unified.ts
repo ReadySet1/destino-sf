@@ -744,6 +744,22 @@ CURRENT PROJECT IDs:
 }
 
 /**
+ * Check if error is a socket timeout (database didn't respond)
+ */
+function isSocketTimeoutError(error: Error): boolean {
+  const socketTimeoutIndicators = [
+    'Socket timeout',
+    'socket timeout',
+    'database failed to respond',
+    'the database failed to respond to a query',
+  ];
+
+  return socketTimeoutIndicators.some(msg =>
+    error.message.toLowerCase().includes(msg.toLowerCase())
+  );
+}
+
+/**
  * Check if error is connection-related (including transient pooler errors)
  */
 function isConnectionError(error: Error): boolean {
@@ -754,6 +770,11 @@ function isConnectionError(error: Error): boolean {
 
   // Transient pooler errors SHOULD be retried
   if (isTransientPoolerError(error)) {
+    return true;
+  }
+
+  // Socket timeout errors SHOULD be retried
+  if (isSocketTimeoutError(error)) {
     return true;
   }
 
@@ -938,6 +959,80 @@ export async function withWebhookRetry<T>(
     3, // Max 3 retries for webhooks
     `webhook-${operationName}`
   );
+}
+
+/**
+ * Execute a quick health check query with aggressive timeout
+ * Used for health check endpoints where fast failure is preferred over retries
+ */
+export async function quickHealthCheck(timeoutMs: number = 5000): Promise<{
+  healthy: boolean;
+  latencyMs: number;
+  error?: string;
+}> {
+  const startTime = Date.now();
+
+  // Check circuit breaker first - fail fast if circuit is open
+  if (!dbCircuitBreaker.canExecute()) {
+    return {
+      healthy: false,
+      latencyMs: Date.now() - startTime,
+      error: 'Circuit breaker open - database temporarily unavailable',
+    };
+  }
+
+  try {
+    const client = getCurrentPrismaClient();
+
+    // Create a timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        const error = new Error(`Health check timeout after ${timeoutMs}ms`);
+        error.name = 'HealthCheckTimeout';
+        reject(error);
+      }, timeoutMs);
+    });
+
+    // Race the query against the timeout
+    await Promise.race([client.$queryRaw`SELECT 1 as health`, timeoutPromise]);
+
+    const latencyMs = Date.now() - startTime;
+
+    // Update connection tracking on success
+    lastSuccessfulConnection = Date.now();
+    if (consecutiveFailures > 0) {
+      consecutiveFailures = 0;
+    }
+    dbCircuitBreaker.recordSuccess();
+
+    return { healthy: true, latencyMs };
+  } catch (error) {
+    const latencyMs = Date.now() - startTime;
+    const errorMessage = (error as Error).message;
+
+    // Record failure for connection-related errors
+    if (isConnectionError(error as Error) || isSocketTimeoutError(error as Error)) {
+      dbCircuitBreaker.recordFailure(error as Error);
+      consecutiveFailures++;
+    }
+
+    // Log socket timeout errors with extra context for debugging
+    if (isSocketTimeoutError(error as Error)) {
+      console.error('[DB_HEALTH_CHECK] Socket timeout detected', {
+        timestamp: new Date().toISOString(),
+        latencyMs,
+        consecutiveFailures,
+        circuitState: dbCircuitBreaker.getState(),
+        error: errorMessage.substring(0, 200),
+      });
+    }
+
+    return {
+      healthy: false,
+      latencyMs,
+      error: errorMessage.substring(0, 200),
+    };
+  }
 }
 
 /**
