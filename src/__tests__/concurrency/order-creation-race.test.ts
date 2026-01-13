@@ -8,6 +8,9 @@
  * 4. State remains consistent under concurrent load
  *
  * @project DES-60 Phase 4: Concurrent Operations & Race Conditions
+ *
+ * NOTE: These tests require a real PostgreSQL database.
+ * They will be skipped if no database is available.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,6 +19,26 @@ import { checkForDuplicateOrder } from '@/lib/duplicate-order-prevention';
 import { globalDeduplicator } from '@/lib/concurrency/request-deduplicator';
 import { getTestPrismaClient } from '../utils/database-test-utils';
 import { CartItem } from '@/types/cart';
+
+// Extend global type for database availability check
+declare global {
+  // eslint-disable-next-line no-var
+  var __DATABASE_AVAILABLE__: (() => boolean) | undefined;
+}
+
+// Check if database is available (set by jest.setup.integration.js)
+const isDatabaseAvailable = (): boolean => {
+  return typeof global.__DATABASE_AVAILABLE__ === 'function' && global.__DATABASE_AVAILABLE__();
+};
+
+// Skip helper for tests that require database
+const skipIfNoDatabase = () => {
+  if (!isDatabaseAvailable()) {
+    console.log('⚠️ Skipping test: Database not available');
+    return true;
+  }
+  return false;
+};
 
 // Helper to get prisma client - calls getTestPrismaClient() each time
 // This ensures we get the properly initialized client after beforeAll runs
@@ -57,7 +80,10 @@ jest.mock('@/middleware/rate-limit', () => ({
   applyStrictRateLimit: jest.fn().mockResolvedValue(null),
 }));
 
-describe('Order Creation Race Conditions', () => {
+// Use describe.skip if database is not available
+const describeWithDb = isDatabaseAvailable() ? describe : describe.skip;
+
+describeWithDb('Order Creation Race Conditions', () => {
   const testCartItems: CartItem[] = [
     {
       id: 'product-1',
@@ -82,6 +108,8 @@ describe('Order Creation Race Conditions', () => {
   };
 
   beforeEach(async () => {
+    if (skipIfNoDatabase()) return;
+
     // Clear any pending orders and deduplicator cache
     globalDeduplicator.clearAll();
 
@@ -96,13 +124,14 @@ describe('Order Creation Race Conditions', () => {
   });
 
   afterAll(async () => {
+    if (!isDatabaseAvailable()) return;
+
     // Clean up after all tests
     await getPrisma().order.deleteMany({
       where: {
         email: testCustomerInfo.email,
       },
     });
-    await getPrisma().$disconnect();
   });
 
   describe('Concurrent Order Creation Prevention', () => {

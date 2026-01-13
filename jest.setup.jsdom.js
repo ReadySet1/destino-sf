@@ -110,3 +110,26 @@ global.console = {
   error: jest.fn(),
   log: jest.fn(),
 };
+
+// Mock localStorage for Zustand persist middleware
+const localStorageMock = {
+  getItem: jest.fn(() => null),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+  length: 0,
+  key: jest.fn(() => null),
+};
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+});
+
+// Reset Zustand stores before each test to ensure clean state
+beforeEach(() => {
+  // Clear localStorage mock
+  localStorageMock.getItem.mockReturnValue(null);
+  localStorageMock.setItem.mockClear();
+  localStorageMock.removeItem.mockClear();
+  localStorageMock.clear.mockClear();
+});
