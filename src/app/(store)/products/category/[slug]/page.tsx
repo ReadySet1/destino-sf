@@ -15,6 +15,15 @@ import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
 import { safeBuildTimeStaticParams, isBuildTime } from '@/lib/build-time-utils';
 import { Breadcrumbs } from '@/components/seo/Breadcrumbs';
+import {
+  CATEGORY_DESCRIPTIONS,
+  FALLBACK_CATEGORIES,
+  FallbackCategory,
+  isFallbackCategory,
+  getFallbackCategory,
+  getFallbackUserMessage,
+  getEmptyStateMessage,
+} from '@/lib/category-fallback';
 
 // Helper function to convert category name to URL-friendly slug
 function slugify(text: string): string {
@@ -69,12 +78,7 @@ interface CategoryPageProps {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  alfajores:
-    "Our alfajores are buttery shortbread cookies filled with rich, velvety dulce de leche — a beloved Latin American treat made the DESTINO way. We offer a variety of flavors including classic, chocolate, gluten-free, lemon, and seasonal specialties. Each cookie is handcrafted in small batches using a family-honored recipe and premium ingredients for that perfect melt-in-your-mouth texture. Whether you're gifting, sharing, or treating yourself, our alfajores bring comfort, flavor, and a touch of tradition to every bite.",
-  empanadas:
-    'Wholesome, bold, and rooted in Latin American tradition — our empanadas deliver handcrafted comfort in every bite. From our Argentine beef, Caribbean pork, Lomo Saltado, and Salmon, each flavor is inspired by regional flavors and made with carefully selected ingredients. With up to 17 grams of protein, our empanadas are truly protein-packed, making them as healthy as they are delicious. Crafted in small batches, our empanadas are a portable, satisfying option for any time you crave something bold and delicious.',
-};
+// Category descriptions and fallback data are imported from @/lib/category-fallback
 
 // Generate dynamic metadata for category pages
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
@@ -204,8 +208,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   // Wait for warmup to complete before querying
   await warmupPromise;
 
+  // Track if we're using fallback data
+  let usingFallback = false;
+
   // Fetch the category from the database using the slug or ID
-  const category = await withServerComponentDb(
+  let category = await withServerComponentDb(
     async () => {
       return await prisma.category.findFirst({
         where: {
@@ -215,11 +222,37 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       });
     },
     { operationName: 'category-page-fetch', warmup: false } // Already warmed up
-  );
+  ).catch(error => {
+    // Log the error for monitoring
+    console.error('[CategoryPage] Database error, checking fallback:', {
+      slug,
+      error: (error as Error).message,
+      timestamp: new Date().toISOString(),
+    });
 
-  // If the category doesn't exist in the database, return 404
+    // Check if we have fallback data for this category
+    const fallbackCategory = FALLBACK_CATEGORIES[slug.toLowerCase()];
+    if (fallbackCategory) {
+      console.warn(`[CategoryPage] Using fallback data for category: ${slug}`);
+      usingFallback = true;
+      return fallbackCategory;
+    }
+
+    // Re-throw for unknown categories
+    throw error;
+  });
+
+  // If the category doesn't exist in the database and no fallback, return 404
   if (!category) {
-    notFound();
+    // Try fallback one more time for slug-based lookup
+    const fallbackCategory = FALLBACK_CATEGORIES[slug.toLowerCase()];
+    if (fallbackCategory) {
+      console.warn(`[CategoryPage] Category not found in DB, using fallback: ${slug}`);
+      category = fallbackCategory;
+      usingFallback = true;
+    } else {
+      notFound();
+    }
   }
 
   // Redirect to SEO-friendly slug if accessed by ID
@@ -231,67 +264,71 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   }
 
   // Fetch products associated with this category using ProductVisibilityService
+  // Skip product fetching if using fallback category data (DB is unavailable)
   let products: GridProduct[] = [];
-  try {
-    const result = await ProductVisibilityService.getProductsByCategory(category.id, {
-      onlyActive: true, // Only fetch active products for customer-facing view
-      excludeCatering: true, // Exclude catering from category pages
-      includeAvailabilityEvaluation: true, // Include availability evaluation
-      includeVariants: true, // Include variants for product display
-      orderBy: 'ordinal', // Order by admin-controlled ordinal
-      orderDirection: 'asc',
-    });
+  if (!usingFallback && !isFallbackCategory(category)) {
+    try {
+      const result = await ProductVisibilityService.getProductsByCategory(category.id, {
+        onlyActive: true, // Only fetch active products for customer-facing view
+        excludeCatering: true, // Exclude catering from category pages
+        includeAvailabilityEvaluation: true, // Include availability evaluation
+        includeVariants: true, // Include variants for product display
+        orderBy: 'ordinal', // Order by admin-controlled ordinal
+        orderDirection: 'asc',
+      });
 
-    // Map ProductVisibilityService results to GridProduct interface
-    products = await Promise.all(
-      result.products.map(async (p): Promise<GridProduct> => {
-        // Parse the images JSON string or handle array
-        const imageArray = normalizeImages(p.images);
+      // Map ProductVisibilityService results to GridProduct interface
+      products = await Promise.all(
+        result.products.map(async (p): Promise<GridProduct> => {
+          // Parse the images JSON string or handle array
+          const imageArray = normalizeImages(p.images);
 
-        return {
-          id: p.id,
-          squareId: p.squareId || '',
-          name: p.name,
-          description: p.description,
-          price: p.price || 0,
-          images: imageArray.length > 0 ? imageArray : ['/images/menu/empanadas.png'], // Provide default
-          categoryId: p.categoryId || '',
-          category: await preparePrismaData(category), // Serialize the category object
-          slug: p.slug || p.id, // Use product slug or ID if slug is missing
-          featured: p.featured || false,
-          active: p.active,
-          createdAt: new Date(), // Will be set by the service
-          updatedAt: new Date(), // Will be set by the service
-          variants:
-            p.variants?.map(v => ({
-              id: v.id,
-              name: v.name,
-              price: v.price || null,
-              squareVariantId: v.squareVariantId,
-              productId: p.id,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            })) || [],
+          return {
+            id: p.id,
+            squareId: p.squareId || '',
+            name: p.name,
+            description: p.description,
+            price: p.price || 0,
+            images: imageArray.length > 0 ? imageArray : ['/images/menu/empanadas.png'], // Provide default
+            categoryId: p.categoryId || '',
+            category: await preparePrismaData(category), // Serialize the category object
+            slug: p.slug || p.id, // Use product slug or ID if slug is missing
+            featured: p.featured || false,
+            active: p.active,
+            createdAt: new Date(), // Will be set by the service
+            updatedAt: new Date(), // Will be set by the service
+            variants:
+              p.variants?.map(v => ({
+                id: v.id,
+                name: v.name,
+                price: v.price || null,
+                squareVariantId: v.squareVariantId,
+                productId: p.id,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })) || [],
 
-          // Add availability fields from the service
-          isAvailable: p.isAvailable,
-          isPreorder: p.isPreorder,
-          visibility: p.visibility,
-          itemState: p.itemState,
-          // Add evaluated availability if present
-          ...(p.evaluatedAvailability && {
-            evaluatedAvailability: p.evaluatedAvailability,
-          }),
-        };
-      })
-    );
-  } catch (error) {
-    console.error(
-      `Failed to fetch products for category ${category.name} (ID: ${category.id}) via ProductVisibilityService:`,
-      error
-    );
-    // Optionally display an error message on the page or return 500
-    // For now, we'll proceed with an empty products array
+            // Add availability fields from the service
+            isAvailable: p.isAvailable,
+            isPreorder: p.isPreorder,
+            visibility: p.visibility,
+            itemState: p.itemState,
+            // Add evaluated availability if present
+            ...(p.evaluatedAvailability && {
+              evaluatedAvailability: p.evaluatedAvailability,
+            }),
+          };
+        })
+      );
+    } catch (error) {
+      console.error(
+        `Failed to fetch products for category ${category.name} (ID: ${category.id}) via ProductVisibilityService:`,
+        error
+      );
+      // Proceed with empty products array - page will show "No Products Available"
+    }
+  } else if (usingFallback) {
+    console.warn(`[CategoryPage] Skipping product fetch - using fallback data for ${slug}`);
   }
 
   return (
@@ -335,6 +372,14 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
               </div>
             }
           >
+            {/* Show notice when using fallback data */}
+            {usingFallback && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                <p className="text-amber-800 text-sm text-center">
+                  {getFallbackUserMessage()}
+                </p>
+              </div>
+            )}
             {products.length > 0 ? (
               <div className="py-6 lg:py-10">
                 <ProductGrid
@@ -344,18 +389,25 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                 />
               </div>
             ) : (
-              <div className="text-center py-16 my-12 bg-gray-50 rounded-2xl">
-                <h2 className="text-2xl font-medium mb-3">No Products Available</h2>
-                <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                  We don&apos;t have any products in the {category.name} category yet.
-                </p>
-                <Link
-                  href="/products"
-                  className="inline-block px-8 py-3 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  View All Products
-                </Link>
-              </div>
+              (() => {
+                const emptyState = getEmptyStateMessage(category.name, usingFallback);
+                return (
+                  <div className="text-center py-16 my-12 bg-gray-50 rounded-2xl">
+                    <h2 className="text-2xl font-medium mb-3">
+                      {emptyState.title}
+                    </h2>
+                    <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                      {emptyState.description}
+                    </p>
+                    <Link
+                      href="/products"
+                      className="inline-block px-8 py-3 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    >
+                      View All Products
+                    </Link>
+                  </div>
+                );
+              })()
             )}
           </Suspense>
         </div>
