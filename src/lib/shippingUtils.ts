@@ -45,19 +45,31 @@ const DEFAULT_GLOBAL_CONFIG: ShippingGlobalConfigData = {
 /**
  * Default weight configurations for products
  * These will be used as fallbacks if no database configuration exists
+ *
+ * NOTE: Using flat per-unit weights (simple multiplication):
+ * Total weight = quantity × weightPerUnitLb
+ *
+ * baseWeightLb is set to 0 for flat per-unit calculation
  */
 const DEFAULT_WEIGHT_CONFIGS: Record<string, ShippingWeightConfig> = {
   alfajores: {
     productName: 'alfajores',
-    baseWeightLb: 0.5, // Base weight for first unit (packaging + 1 alfajor pack)
-    weightPerUnitLb: 0.4, // Additional weight per extra pack
+    baseWeightLb: 0, // No base weight - use flat per unit
+    weightPerUnitLb: 1.8, // Each alfajor pack = 1.8 lbs
     isActive: true,
     applicableForNationwideOnly: true,
   },
   empanadas: {
     productName: 'empanadas',
-    baseWeightLb: 1.0, // Base weight for first unit (packaging + 1 empanada pack)
-    weightPerUnitLb: 0.8, // Additional weight per extra pack
+    baseWeightLb: 0, // No base weight - use flat per unit
+    weightPerUnitLb: 1.6, // Each empanada pack = 1.6 lbs
+    isActive: true,
+    applicableForNationwideOnly: true,
+  },
+  sauces: {
+    productName: 'sauces',
+    baseWeightLb: 0, // No base weight - use flat per unit
+    weightPerUnitLb: 0.9, // Each sauce = 0.9 lbs
     isActive: true,
     applicableForNationwideOnly: true,
   },
@@ -85,6 +97,17 @@ function getProductType(productName: string): string {
   if (name.includes('empanada')) {
     logger.debug('[Shipping] Matched: empanadas');
     return 'empanadas';
+  }
+
+  // Match sauces (chimichurri, salsa criolla, etc.)
+  if (
+    name.includes('sauce') ||
+    name.includes('chimichurri') ||
+    name.includes('salsa') ||
+    name.includes('criolla')
+  ) {
+    logger.debug('[Shipping] Matched: sauces');
+    return 'sauces';
   }
 
   logger.warn(`[Shipping] No specific match found, using default weight for: ${productName}`);
@@ -256,13 +279,25 @@ export async function calculateShippingWeight(
 
       // Use configured weight calculation
       if (totalQuantity > 0) {
-        // Base weight for first unit + additional weight for extra units
-        const additionalUnits = Math.max(0, totalQuantity - 1);
-        const productWeight =
-          weightConfig.baseWeightLb + additionalUnits * weightConfig.weightPerUnitLb;
-        console.log(
-          `⚖️ ${productType}: Configured weight calculation (${weightConfig.baseWeightLb} + ${additionalUnits} × ${weightConfig.weightPerUnitLb} = ${productWeight}lb)`
-        );
+        // Flat per-unit calculation: quantity × weightPerUnit
+        // If baseWeightLb is 0, use simple multiplication
+        // If baseWeightLb > 0, use legacy formula for backward compatibility
+        let productWeight: number;
+        if (weightConfig.baseWeightLb === 0) {
+          // Simple flat per-unit calculation (recommended)
+          productWeight = totalQuantity * weightConfig.weightPerUnitLb;
+          console.log(
+            `⚖️ ${productType}: Flat per-unit weight (${totalQuantity} × ${weightConfig.weightPerUnitLb} = ${productWeight}lb)`
+          );
+        } else {
+          // Legacy formula: base weight + additional units × per-unit weight
+          const additionalUnits = Math.max(0, totalQuantity - 1);
+          productWeight =
+            weightConfig.baseWeightLb + additionalUnits * weightConfig.weightPerUnitLb;
+          console.log(
+            `⚖️ ${productType}: Legacy weight calculation (${weightConfig.baseWeightLb} + ${additionalUnits} × ${weightConfig.weightPerUnitLb} = ${productWeight}lb)`
+          );
+        }
         totalWeight += productWeight;
       }
     } else {
