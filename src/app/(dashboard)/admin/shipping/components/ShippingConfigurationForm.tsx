@@ -5,13 +5,14 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Trash2, Plus, Save, Package } from 'lucide-react';
+import { Trash2, Plus, Save, Package, Box } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { type ShippingWeightConfig, type ShippingGlobalConfigData } from '@/lib/shippingUtils';
+import { type BoxConfig } from '@/lib/shipping/box-selection';
 import { FormContainer } from '@/components/ui/form/FormContainer';
 import { FormHeader } from '@/components/ui/form/FormHeader';
 import { FormSection } from '@/components/ui/form/FormSection';
@@ -27,6 +28,7 @@ import { FormIcons } from '@/components/ui/form/FormIcons';
 interface ShippingConfigurationFormProps {
   configurations: ShippingWeightConfig[];
   globalConfig?: ShippingGlobalConfigData;
+  boxConfigs?: BoxConfig[];
 }
 
 // Schema for per-product configuration
@@ -57,18 +59,49 @@ const globalConfigSchema = z.object({
   isActive: z.boolean(),
 });
 
+// Schema for box configuration
+const boxConfigSchema = z.object({
+  boxSize: z.string().min(1, 'Box size is required'),
+  template: z.string().min(1, 'Template is required'),
+  maxWeightLb: z
+    .number()
+    .min(0.1, 'Max weight must be at least 0.1 lbs')
+    .max(70, 'Max weight cannot exceed 70 lbs (USPS limit)'),
+  maxItemCount: z.number().min(1, 'Max item count must be at least 1').max(100, 'Max item count cannot exceed 100'),
+  isActive: z.boolean(),
+  sortOrder: z.number().min(0, 'Sort order cannot be negative'),
+});
+
 const formSchema = z.object({
   configurations: z.array(configurationSchema),
   globalConfig: globalConfigSchema,
+  boxConfigs: z.array(boxConfigSchema).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
+// USPS flat rate box templates
+const USPS_TEMPLATES = [
+  { value: 'USPS_SmallFlatRateBox', label: 'Small Flat Rate Box' },
+  { value: 'USPS_MediumFlatRateBox1', label: 'Medium Flat Rate Box' },
+  { value: 'USPS_MediumFlatRateBox2', label: 'Medium Flat Rate Box (Side-Loading)' },
+  { value: 'USPS_LargeFlatRateBox', label: 'Large Flat Rate Box' },
+  { value: 'USPS_LargeFlatRateBoardGameBox', label: 'Large Flat Rate Board Game Box' },
+];
+
 export default function ShippingConfigurationForm({
   configurations,
   globalConfig,
+  boxConfigs,
 }: ShippingConfigurationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Default box configs if none provided
+  const defaultBoxConfigs: BoxConfig[] = [
+    { boxSize: 'small', template: 'USPS_SmallFlatRateBox', maxWeightLb: 3.0, maxItemCount: 2, isActive: true, sortOrder: 1 },
+    { boxSize: 'medium', template: 'USPS_MediumFlatRateBox1', maxWeightLb: 10.0, maxItemCount: 6, isActive: true, sortOrder: 2 },
+    { boxSize: 'large', template: 'USPS_LargeFlatRateBox', maxWeightLb: 20.0, maxItemCount: 12, isActive: true, sortOrder: 3 },
+  ];
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -79,12 +112,18 @@ export default function ShippingConfigurationForm({
         minimumTotalWeightLb: 1.0,
         isActive: true,
       },
+      boxConfigs: boxConfigs && boxConfigs.length > 0 ? boxConfigs : defaultBoxConfigs,
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'configurations',
+  });
+
+  const { fields: boxFields, append: appendBox, remove: removeBox } = useFieldArray({
+    control: form.control,
+    name: 'boxConfigs',
   });
 
   const onSubmit = async (data: FormData) => {
@@ -124,6 +163,22 @@ export default function ShippingConfigurationForm({
       weightPerUnitLb: 0.4,
       isActive: true,
       applicableForNationwideOnly: true,
+    });
+  };
+
+  const addNewBoxConfig = () => {
+    const currentBoxes = form.getValues('boxConfigs') || [];
+    const nextSortOrder = currentBoxes.length > 0
+      ? Math.max(...currentBoxes.map(b => b.sortOrder)) + 1
+      : 1;
+
+    appendBox({
+      boxSize: '',
+      template: 'USPS_MediumFlatRateBox1',
+      maxWeightLb: 10.0,
+      maxItemCount: 6,
+      isActive: true,
+      sortOrder: nextSortOrder,
     });
   };
 
@@ -265,7 +320,7 @@ export default function ShippingConfigurationForm({
                   <Input
                     type="number"
                     step="0.1"
-                    min="0.1"
+                    min="0"
                     max="50"
                     {...form.register(`configurations.${index}.baseWeightLb`, {
                       valueAsNumber: true,
@@ -278,7 +333,7 @@ export default function ShippingConfigurationForm({
                     </p>
                   )}
                   <p className="text-xs text-gray-500 mt-1">
-                    Weight of the first unit including packaging
+                    Set to 0 for flat per-unit calculation (recommended)
                   </p>
                 </div>
 
@@ -302,7 +357,7 @@ export default function ShippingConfigurationForm({
                     </p>
                   )}
                   <p className="text-xs text-gray-500 mt-1">
-                    Additional weight for each extra unit
+                    Weight per unit (if base=0, total = qty × per-unit)
                   </p>
                 </div>
 
@@ -346,8 +401,21 @@ export default function ShippingConfigurationForm({
                     const baseWeight = form.watch(`configurations.${index}.baseWeightLb`) || 0;
                     const perUnitWeight =
                       form.watch(`configurations.${index}.weightPerUnitLb`) || 0;
+                    // Use flat calculation if baseWeight is 0
+                    if (baseWeight === 0) {
+                      return (
+                        <>
+                          <p className="text-green-700 font-medium">Flat per-unit calculation:</p>
+                          <p>• 1 unit: {(1 * perUnitWeight).toFixed(1)} lbs</p>
+                          <p>• 3 units: {(3 * perUnitWeight).toFixed(1)} lbs</p>
+                          <p>• 5 units: {(5 * perUnitWeight).toFixed(1)} lbs</p>
+                          <p>• 10 units: {(10 * perUnitWeight).toFixed(1)} lbs</p>
+                        </>
+                      );
+                    }
                     return (
                       <>
+                        <p className="text-amber-700">Legacy calculation (base + extra × per-unit):</p>
                         <p>• 1 unit: {baseWeight.toFixed(1)} lbs</p>
                         <p>• 3 units: {(baseWeight + 2 * perUnitWeight).toFixed(1)} lbs</p>
                         <p>• 5 units: {(baseWeight + 4 * perUnitWeight).toFixed(1)} lbs</p>
@@ -361,6 +429,148 @@ export default function ShippingConfigurationForm({
           </Card>
         ))}
       </div>
+
+      {/* USPS Flat Rate Box Configuration */}
+      <Card className="border-2 border-blue-200 bg-blue-50/50">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Box className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg text-blue-900">USPS Flat Rate Box Selection</CardTitle>
+          </div>
+          <CardDescription className="text-blue-700">
+            Configure which USPS flat rate box to use based on weight and item count thresholds.
+            Boxes are evaluated in order (smallest to largest).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {boxFields.map((field, index) => (
+            <div key={field.id} className="bg-white p-4 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-medium text-blue-900 capitalize">
+                  {form.watch(`boxConfigs.${index}.boxSize`) || `Box ${index + 1}`}
+                </h4>
+                {boxFields.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeBox(index)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor={`boxConfigs.${index}.boxSize`}>Box Size Name</Label>
+                  <Input
+                    {...form.register(`boxConfigs.${index}.boxSize`)}
+                    placeholder="e.g., small, medium, large"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`boxConfigs.${index}.template`}>USPS Template</Label>
+                  <select
+                    {...form.register(`boxConfigs.${index}.template`)}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    {USPS_TEMPLATES.map(template => (
+                      <option key={template.value} value={template.value}>
+                        {template.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label htmlFor={`boxConfigs.${index}.sortOrder`}>Sort Order</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    {...form.register(`boxConfigs.${index}.sortOrder`, {
+                      valueAsNumber: true,
+                    })}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`boxConfigs.${index}.maxWeightLb`}>Max Weight (lbs)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    max="70"
+                    {...form.register(`boxConfigs.${index}.maxWeightLb`, {
+                      valueAsNumber: true,
+                    })}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-blue-600 mt-1">Max weight for this box size</p>
+                </div>
+
+                <div>
+                  <Label htmlFor={`boxConfigs.${index}.maxItemCount`}>Max Item Count</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="100"
+                    {...form.register(`boxConfigs.${index}.maxItemCount`, {
+                      valueAsNumber: true,
+                    })}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-blue-600 mt-1">Max items for this box size</p>
+                </div>
+
+                <div className="flex items-center space-x-2 pt-6">
+                  <Switch
+                    checked={form.watch(`boxConfigs.${index}.isActive`)}
+                    onCheckedChange={checked =>
+                      form.setValue(`boxConfigs.${index}.isActive`, checked)
+                    }
+                  />
+                  <Label>Active</Label>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addNewBoxConfig}
+            className="flex items-center gap-2 border-blue-300 text-blue-700 hover:bg-blue-100"
+          >
+            <Plus className="h-4 w-4" />
+            Add Box Size
+          </Button>
+
+          {/* Box Selection Preview */}
+          <div className="bg-white p-3 rounded-md border border-blue-200">
+            <p className="text-sm font-medium text-blue-900 mb-2">
+              Box Selection Logic:
+            </p>
+            <div className="text-xs text-blue-700 space-y-1">
+              <p>Orders are matched to the smallest box that fits both weight AND item count limits.</p>
+              <p>If no box fits, the largest box is used with a warning.</p>
+              <p className="mt-2 font-medium">Current thresholds:</p>
+              {(form.watch('boxConfigs') || [])
+                .filter(b => b.isActive)
+                .sort((a, b) => a.sortOrder - b.sortOrder)
+                .map((box, i) => (
+                  <p key={i}>
+                    • {box.boxSize}: ≤{box.maxWeightLb}lb AND ≤{box.maxItemCount} items
+                  </p>
+                ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex items-center justify-between pt-4">
         <Button

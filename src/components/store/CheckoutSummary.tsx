@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Package, AlertCircle } from 'lucide-react';
+import { Truck, Package, AlertCircle, Box } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { calculateTaxForItems } from '@/utils/tax-exemption';
 
@@ -18,7 +18,19 @@ interface CheckoutSummaryProps {
     zone?: string;
     minOrderForFreeDelivery?: number;
   } | null;
-  shippingRate?: { amount: number; carrier: string; name: string; estimatedDays?: number } | null;
+  shippingRate?: {
+    amount: number;
+    carrier: string;
+    name: string;
+    estimatedDays?: number;
+    /** Selected box information */
+    selectedBox?: {
+      displayName: string;
+      boxSize: string;
+    };
+    /** Calculated weight in pounds */
+    calculatedWeight?: number;
+  } | null;
   fulfillmentMethod?: 'pickup' | 'local_delivery' | 'nationwide_shipping';
   taxRate?: number; // Allow custom tax rate, default to 8.25%
 }
@@ -123,10 +135,22 @@ export function CheckoutSummary({
                     </span>
                     <div className="text-xs text-destino-charcoal/70">
                       {shippingRate.name}
-                      {shippingRate.estimatedDays && (
+                      {shippingRate.estimatedDays != null && shippingRate.estimatedDays > 0 && (
                         <span> • {shippingRate.estimatedDays} days</span>
                       )}
                     </div>
+                    {/* Box info display */}
+                    {shippingRate.selectedBox && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-blue-600">
+                        <Box className="h-3 w-3" />
+                        <span>{shippingRate.selectedBox.displayName}</span>
+                        {shippingRate.calculatedWeight && (
+                          <span className="text-destino-charcoal/60">
+                            ({shippingRate.calculatedWeight.toFixed(1)} lb)
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <span className="font-bold text-destino-charcoal">${shippingCost.toFixed(2)}</span>

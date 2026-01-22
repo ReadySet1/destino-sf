@@ -5,6 +5,7 @@ import {
   getAllShippingConfigurations,
 } from '@/lib/shippingUtils';
 import { isBuildTime } from '@/lib/build-time-utils';
+import { selectBoxTemplateSync, getAllBoxConfigs } from '@/lib/shipping/box-selection';
 
 /**
  * Debug endpoint to verify shipping weight calculation
@@ -30,9 +31,16 @@ export async function GET(request: NextRequest) {
     // Calculate weight
     const calculatedWeight = await calculateShippingWeight(normalizedItems, 'nationwide_shipping');
 
+    // Calculate total item count
+    const totalItemCount = normalizedItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
+
+    // Get box selection
+    const boxSelection = selectBoxTemplateSync(calculatedWeight, totalItemCount);
+
     // Get configs
     const globalConfig = await getShippingGlobalConfig();
     const productConfigs = await getAllShippingConfigurations();
+    const boxConfigs = await getAllBoxConfigs();
 
     // Check build time status
     const buildTimeStatus = isBuildTime();
@@ -51,17 +59,25 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       input: {
         items: normalizedItems,
+        totalItemCount,
         fulfillmentMethod: 'nationwide_shipping',
       },
       result: {
         calculatedWeight,
+        boxSelection: {
+          template: boxSelection.template,
+          boxSize: boxSelection.boxSize,
+          reason: boxSelection.reason,
+        },
         expectedBreakdown: {
-          note: 'For 3 alfajores: base 1.0 + (2 × 0.8) = 2.6 lbs product + 4.0 lbs packaging = 6.6 lbs',
+          note: 'Flat per-unit: quantity × weightPerUnitLb + packaging weight',
+          formula: `Weight = (items × perUnitWeight) + packagingWeight`,
         },
       },
       config: {
         globalConfig,
         productConfigs,
+        boxConfigs,
       },
       debug: {
         isBuildTime: buildTimeStatus,
