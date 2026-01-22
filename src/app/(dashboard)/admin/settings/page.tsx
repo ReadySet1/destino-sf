@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import AdminSettingsWithDesignSystem from '@/components/admin/AdminSettingsWithDesignSystem';
 import DeliveryZoneDebugger from '@/components/admin/DeliveryZoneDebugger';
 import { getAllShippingConfigurations, getShippingGlobalConfig } from '@/lib/shippingUtils';
+import { getAllBoxConfigs } from '@/lib/shipping/box-selection';
 
 export const metadata = {
   title: 'Store Settings | Admin',
@@ -24,9 +25,11 @@ export default async function SettingsPage() {
   // Fetch store settings, delivery zones, and shipping configurations
   let shippingConfigurations: Awaited<ReturnType<typeof getAllShippingConfigurations>> = [];
   let shippingGlobalConfig: Awaited<ReturnType<typeof getShippingGlobalConfig>> | undefined;
+  let boxConfigs: Awaited<ReturnType<typeof getAllBoxConfigs>> = [];
   try {
     shippingConfigurations = await getAllShippingConfigurations();
     shippingGlobalConfig = await getShippingGlobalConfig();
+    boxConfigs = await getAllBoxConfigs();
   } catch (error) {
     console.error('Error fetching shipping configurations:', error);
   }
@@ -64,6 +67,7 @@ export default async function SettingsPage() {
         deliveryZones={processedDeliveryZones}
         shippingConfigurations={shippingConfigurations}
         shippingGlobalConfig={shippingGlobalConfig}
+        boxConfigs={boxConfigs}
       />
 
       {/* Debugger for development */}

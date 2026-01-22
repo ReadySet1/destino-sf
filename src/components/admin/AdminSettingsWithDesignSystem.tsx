@@ -15,12 +15,14 @@ import RegularDeliveryZoneManager from '@/components/admin/RegularDeliveryZoneMa
 import EnhancedStoreSettingsForm from '@/components/admin/EnhancedStoreSettingsForm';
 import ShippingConfigurationForm from '@/app/(dashboard)/admin/shipping/components/ShippingConfigurationForm';
 import type { ShippingWeightConfig, ShippingGlobalConfigData } from '@/lib/shippingUtils';
+import type { BoxConfig } from '@/lib/shipping/box-selection';
 
 interface AdminSettingsProps {
   storeSettings?: any;
   deliveryZones?: any[];
   shippingConfigurations?: ShippingWeightConfig[];
   shippingGlobalConfig?: ShippingGlobalConfigData;
+  boxConfigs?: BoxConfig[];
 }
 
 export default function AdminSettingsWithDesignSystem({
@@ -28,6 +30,7 @@ export default function AdminSettingsWithDesignSystem({
   deliveryZones,
   shippingConfigurations = [],
   shippingGlobalConfig,
+  boxConfigs = [],
 }: AdminSettingsProps) {
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
@@ -147,24 +150,20 @@ export default function AdminSettingsWithDesignSystem({
                     </div>
                     <div className="ml-3">
                       <h4 className="text-sm font-semibold text-indigo-900 mb-2">
-                        How Weight Calculation Works
+                        How Shipping Calculation Works
                       </h4>
                       <ul className="text-sm text-indigo-800 space-y-1">
                         <li>
-                          • <strong>Base Weight:</strong> Weight of the first unit including
-                          packaging
+                          • <strong>Flat Per-Unit (Recommended):</strong> Set Base Weight to 0. Total = Qty × Per-Unit Weight
                         </li>
                         <li>
-                          • <strong>Per-Unit Weight:</strong> Additional weight for each extra unit
+                          • <strong>Legacy Mode:</strong> If Base Weight &gt; 0: Total = Base + (Extra Units × Per-Unit)
                         </li>
                         <li>
-                          •{' '}
-                          <strong>
-                            Total Weight = Base Weight + (Additional Units × Per-Unit Weight)
-                          </strong>
+                          • <strong>USPS Flat Rate Boxes:</strong> System auto-selects the best box based on weight &amp; item count
                         </li>
-                        <li>• These settings only apply to nationwide shipping via Shippo</li>
-                        <li>• Separate from local delivery zones (catering & regular)</li>
+                        <li>• Packaging weight is added to all shipments automatically</li>
+                        <li>• Box selection thresholds can be configured below</li>
                       </ul>
                     </div>
                   </div>
@@ -173,6 +172,7 @@ export default function AdminSettingsWithDesignSystem({
                 <ShippingConfigurationForm
                   configurations={shippingConfigurations}
                   globalConfig={shippingGlobalConfig}
+                  boxConfigs={boxConfigs}
                 />
               </FormSection>
             </TabsContent>

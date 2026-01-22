@@ -66,6 +66,14 @@ export interface ShippingRate {
   attributes?: string[]; // Service attributes (e.g., "CHEAPEST", "FASTEST")
   zone?: string; // Shipping zone
   arrives_by?: string; // Expected delivery date
+  /** Selected USPS flat rate box information */
+  selectedBox?: {
+    template: string;
+    displayName: string;
+    boxSize: string;
+  };
+  /** Calculated weight in pounds */
+  calculatedWeight?: number;
 }
 
 export interface ShippoShipmentMetadata {
@@ -89,6 +97,7 @@ export async function getShippingRates(request: any) {
   }
 
   // Transform the rates from lib interface to actions interface
+  // Include selectedBox and calculatedWeight from response for display in checkout
   const transformedRates: ShippingRate[] = response.rates.map(
     (rate: LibShippingRate, index: number) => ({
       id: rate.id || `rate_${index}_${Date.now()}`, // Ensure unique ID with fallback
@@ -98,14 +107,17 @@ export async function getShippingRates(request: any) {
       serviceLevelToken: rate.serviceLevel, // Map serviceLevel to serviceLevelToken
       estimatedDays: rate.estimatedDays,
       currency: rate.currency,
+      // Include box selection info from response for checkout display
+      selectedBox: response.selectedBox,
+      calculatedWeight: response.calculatedWeight,
     })
   );
 
-  // Debug log to verify unique IDs
-  console.log(
-    'Transformed shipping rates with IDs:',
-    transformedRates.map(r => ({ id: r.id, name: r.name }))
-  );
+  // Debug log to verify unique IDs and box info
+  console.log('Transformed shipping rates with IDs:', transformedRates.map(r => ({ id: r.id, name: r.name })));
+  if (response.selectedBox) {
+    console.log('📦 Selected box for all rates:', response.selectedBox.displayName, `(${response.calculatedWeight}lb)`);
+  }
 
   return {
     ...response,

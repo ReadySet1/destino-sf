@@ -57,6 +57,15 @@ export interface ShippingRateResponse {
   errorType?: string;
   addressValidation?: AddressValidation;
   requiresCustomsDeclaration?: boolean;
+  /** Selected box information for display in checkout */
+  selectedBox?: {
+    template: string;
+    displayName: string;
+    boxSize: string;
+    reason: string;
+  };
+  /** Calculated weight used for the rate request */
+  calculatedWeight?: number;
 }
 
 export interface ShippingLabelResponse {
@@ -99,6 +108,7 @@ export interface TrackingResponse {
 }
 
 import { ShippoClientManager } from './shippo/client';
+import { selectBoxTemplate, getBoxDisplayName } from './shipping/box-selection';
 
 /**
  * Configure mock Shippo client for testing
@@ -224,22 +234,35 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
       };
     }
 
+    // Calculate total item count for box selection
+    const totalItemCount = cartItems.reduce(
+      (count: number, item: any) => count + (item.quantity || 1),
+      0
+    );
+
     console.log('📦 Shipping calculation details:', {
       cartItems: cartItems.map((item: any) => ({ name: item.name, quantity: item.quantity })),
       calculatedWeight: weightLbs,
+      totalItemCount,
       fulfillmentMethod: 'nationwide_shipping',
     });
 
-    // Build parcel dimensions with required units (Shippo expects camelCase field names)
+    // Select appropriate USPS flat rate box based on weight and item count
+    const boxSelection = await selectBoxTemplate(weightLbs, totalItemCount);
+
+    console.log('📦 Box selection result:', {
+      template: boxSelection.template,
+      boxSize: boxSelection.boxSize,
+      reason: boxSelection.reason,
+    });
+
+    // Build parcel using USPS flat rate template
+    // When using a template, Shippo ignores length/width/height and uses box dimensions
     const parcel = {
-      length: String(request.estimatedLengthIn ?? 10),
-      width: String(request.estimatedWidthIn ?? 8),
-      height: String(request.estimatedHeightIn ?? 6),
-      distanceUnit: 'in',
+      template: boxSelection.template, // Use USPS flat rate box template
       weight: String(Number(weightLbs.toFixed(2))), // Ensure clean weight format for Shippo
       massUnit: 'lb',
-      // Don't include template when using custom dimensions
-      metadata: `Destino SF shipment - ${cartItems.length} items`,
+      metadata: `Destino SF shipment - ${totalItemCount} items in ${boxSelection.boxSize} flat rate box`,
     };
 
     console.log('📦 Parcel being sent to Shippo:', parcel);
@@ -365,11 +388,20 @@ export async function getShippingRates(request: any): Promise<ShippingRateRespon
         messages: validationResults?.messages ?? [],
       },
       requiresCustomsDeclaration: (shippingAddress.country ?? 'US') !== 'US',
+      selectedBox: {
+        template: boxSelection.template,
+        displayName: getBoxDisplayName(boxSelection.template),
+        boxSize: boxSelection.boxSize,
+        reason: boxSelection.reason,
+      },
+      calculatedWeight: weightLbs,
     };
 
     if (isValidAddress) {
       rateCache.set(cacheKey, { rates, timestamp: Date.now() });
-      console.log(`📦 Cache STORED for weight ${weightLbs}lb - ${rates.length} rates cached`);
+      console.log(
+        `📦 Cache STORED for weight ${weightLbs}lb, box ${boxSelection.boxSize} - ${rates.length} rates cached`
+      );
     }
 
     return response;
