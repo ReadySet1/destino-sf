@@ -9,6 +9,14 @@ import { purchaseShippingLabel } from '@/app/actions/labels';
 import { SquareClient, SquareEnvironment } from 'square';
 import { sendOrderConfirmationEmail } from '@/lib/email';
 import { RequestDeduplicator, resourceKey } from '@/lib/concurrency/request-deduplicator';
+import {
+  MerchantMismatchError,
+  UnauthorizedError,
+  BadRequestError,
+  ResourceNotFoundError,
+  RateLimitError,
+  ServerError,
+} from '@/lib/errors/webhook-errors';
 
 // Deduplicator for payment webhook processing - prevents concurrent processing of same payment
 // Uses longer TTL (2 minutes) to match the label purchase retry window
@@ -150,13 +158,49 @@ async function fetchAndCreateOrderFromSquare(squareOrderId: string): Promise<str
 
     return createdOrder.id;
   } catch (error: any) {
+    const statusCode = error.statusCode || error.status || error.response?.status;
+
     console.error(`❌ [ORDER-SYNC] Failed to fetch/create order ${squareOrderId} from Square:`, {
       error: error.message,
       code: error.code,
-      statusCode: error.statusCode,
+      statusCode,
     });
 
-    // Don't throw - we'll retry via webhook queue
+    // Throw specific errors for non-retryable cases to prevent infinite retry loops
+    if (statusCode === 403) {
+      // 403 Forbidden - merchant mismatch or wrong environment
+      throw new MerchantMismatchError(squareOrderId, error.message);
+    }
+
+    if (statusCode === 401) {
+      // 401 Unauthorized - invalid credentials
+      throw new UnauthorizedError('Square API', error.message);
+    }
+
+    if (statusCode === 400) {
+      // 400 Bad Request - malformed request
+      throw new BadRequestError('fetchOrder', error.message);
+    }
+
+    if (statusCode === 404) {
+      // 404 Not Found - order doesn't exist
+      throw new ResourceNotFoundError('Order', squareOrderId, error.message);
+    }
+
+    if (statusCode === 429) {
+      // 429 Rate Limited - should retry with backoff
+      const retryAfter = error.headers?.['retry-after'];
+      const retryMs = retryAfter ? parseInt(retryAfter) * 1000 : undefined;
+      throw new RateLimitError(retryMs);
+    }
+
+    if (statusCode >= 500) {
+      // 5xx Server Error - should retry
+      throw new ServerError(statusCode, error.message);
+    }
+
+    // For network errors or unknown issues, return null to allow retry via webhook queue
+    // The queue's determineShouldRetry will evaluate if the error is retryable
     return null;
   }
 }
