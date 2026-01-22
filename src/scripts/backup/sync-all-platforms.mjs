@@ -240,11 +240,43 @@ async function syncProduct(squareProduct, defaultCategoryId) {
   }
 }
 
+// Safety configuration
+const REQUIRE_CONFIRMATION_FLAG = '--confirm-sync';
+const MIN_SQUARE_PRODUCTS_REQUIRED = 1; // Refuse to sync if Square returns fewer products
+
 // Función principal
 async function main() {
   try {
     logger.info('=== INICIANDO SINCRONIZACIÓN COMPLETA ===');
-    
+
+    // SAFETY CHECK 1: Require explicit confirmation flag
+    const args = process.argv.slice(2);
+    if (!args.includes(REQUIRE_CONFIRMATION_FLAG)) {
+      logger.error('');
+      logger.error('=== SAFETY CHECK FAILED ===');
+      logger.error('This script will DELETE ALL products from the database before syncing.');
+      logger.error('To proceed, you must run with the confirmation flag:');
+      logger.error('');
+      logger.error(`  node sync-all-platforms.mjs ${REQUIRE_CONFIRMATION_FLAG}`);
+      logger.error('');
+      logger.error('WARNING: If Square Sandbox is empty, ALL products will be PERMANENTLY DELETED!');
+      logger.error('');
+      await prisma.$disconnect();
+      process.exit(1);
+    }
+
+    // SAFETY CHECK 2: Warn about environment
+    const databaseUrl = process.env.DATABASE_URL || '';
+    if (databaseUrl.includes('production') || databaseUrl.includes('prod')) {
+      logger.error('');
+      logger.error('=== PRODUCTION ENVIRONMENT DETECTED ===');
+      logger.error('This script should NOT be run against a production database!');
+      logger.error('Aborting to prevent data loss.');
+      logger.error('');
+      await prisma.$disconnect();
+      process.exit(1);
+    }
+
     // PASO 1: Copiar productos de producción a sandbox (si es necesario)
     if (process.env.SQUARE_PRODUCTION_TOKEN) {
       logger.info('Copiando productos de producción a sandbox...');
@@ -256,7 +288,32 @@ async function main() {
     } else {
       logger.warn('SQUARE_PRODUCTION_TOKEN no definido. Omitiendo la copia de producción a sandbox.');
     }
-    
+
+    // SAFETY CHECK 3: Pre-fetch Square products BEFORE deleting
+    logger.info('Verificando productos en Square Sandbox ANTES de eliminar...');
+    const squareProductsPreCheck = await getSquareProducts();
+
+    if (squareProductsPreCheck.length < MIN_SQUARE_PRODUCTS_REQUIRED) {
+      logger.error('');
+      logger.error('=== SAFETY CHECK FAILED ===');
+      logger.error(`Square Sandbox returned only ${squareProductsPreCheck.length} products.`);
+      logger.error(`Minimum required: ${MIN_SQUARE_PRODUCTS_REQUIRED}`);
+      logger.error('');
+      logger.error('This likely indicates:');
+      logger.error('  - Square Sandbox is empty');
+      logger.error('  - Square API token is invalid');
+      logger.error('  - Network/API error');
+      logger.error('');
+      logger.error('Refusing to delete existing products. Aborting.');
+      logger.error('');
+      await prisma.$disconnect();
+      process.exit(1);
+    }
+
+    // Get current product count for logging
+    const currentProductCount = await prisma.product.count();
+    logger.warn(`About to delete ${currentProductCount} existing products and replace with ${squareProductsPreCheck.length} from Square Sandbox.`);
+
     // PASO 2: Limpiar productos existentes en la base de datos
     logger.info('Limpiando productos existentes en la base de datos...');
     await prisma.variant.deleteMany({});
@@ -266,14 +323,9 @@ async function main() {
     // PASO 3: Asegurar categoría por defecto
     const defaultCategoryId = await ensureDefaultCategory();
     
-    // PASO 4: Obtener productos de Square Sandbox
-    const squareProducts = await getSquareProducts();
-    
-    if (squareProducts.length === 0) {
-      logger.warn('No se encontraron productos en Square Sandbox. Sincronización completada.');
-      await prisma.$disconnect();
-      return;
-    }
+    // PASO 4: Use pre-fetched Square products (already validated above)
+    const squareProducts = squareProductsPreCheck;
+    logger.info(`Usando ${squareProducts.length} productos previamente verificados de Square Sandbox`);
     
     // PASO 5: Sincronizar cada producto con la base de datos y Sanity
     logger.info('Sincronizando productos con la base de datos y Sanity...');
