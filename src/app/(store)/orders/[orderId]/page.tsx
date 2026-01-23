@@ -3,6 +3,10 @@ import { prisma } from '@/lib/db-unified';
 import { redirect, notFound } from 'next/navigation';
 import { OrderDetailsView } from '@/components/Orders/OrderDetailsView';
 
+// UUID validation regex
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function OrderDetailsPage({
   params,
   searchParams,
@@ -12,6 +16,12 @@ export default async function OrderDetailsPage({
 }) {
   const { orderId } = await params;
   const { email } = await searchParams;
+
+  // Validate orderId is a valid UUID before querying database
+  // Fixes DESTINO-SF-6: Invalid UUID characters cause Prisma errors
+  if (!orderId || !UUID_REGEX.test(orderId)) {
+    notFound();
+  }
 
   const supabase = await createClient();
   const {
