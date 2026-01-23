@@ -143,8 +143,6 @@ export async function initWebVitals(): Promise<void> {
     onINP(metric => reportWebVital(convertMetric(metric)));
     onLCP(metric => reportWebVital(convertMetric(metric)));
     onTTFB(metric => reportWebVital(convertMetric(metric)));
-
-    console.log('[WebVitals] Initialized');
   } catch (error) {
     console.error('[WebVitals] Failed to initialize:', error);
   }
