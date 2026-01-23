@@ -4,6 +4,8 @@
  * This file replaces the deprecated sentry.client.config.ts approach.
  * It's automatically loaded by Next.js for client-side instrumentation.
  *
+ * Enhanced with Web Vitals integration and user behavior tracking (DES-59)
+ *
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client
  * @see https://docs.sentry.io/platforms/javascript/guides/nextjs/
  */
@@ -53,6 +55,13 @@ Sentry.init({
   },
 
   integrations: [
+    // Browser tracing for performance monitoring
+    Sentry.browserTracingIntegration({
+      // Enable automatic instrumentation for routing
+      enableInp: true,
+    }),
+
+    // Session replay for error debugging
     Sentry.replayIntegration({
       // Privacy settings
       maskAllText: true,
@@ -109,6 +118,19 @@ Sentry.init({
     /node_modules/,
   ],
 });
+
+/**
+ * Initialize client error tracker after Sentry is ready
+ * This import is dynamic to avoid issues with SSR
+ */
+if (typeof window !== 'undefined') {
+  // Defer initialization to avoid blocking the main thread
+  setTimeout(() => {
+    import('@/lib/monitoring/client-error-tracker').then(({ clientErrorTracker }) => {
+      clientErrorTracker.initialize();
+    });
+  }, 0);
+}
 
 /**
  * Export the router transition hook for navigation instrumentation.
