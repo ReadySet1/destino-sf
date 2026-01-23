@@ -81,8 +81,6 @@ class ClientErrorTracker {
     this.initializeSession();
     this.setupEventListeners();
     this.setupSentryIntegration();
-
-    console.log('[ClientErrorTracker] Initialized');
   }
 
   /**
