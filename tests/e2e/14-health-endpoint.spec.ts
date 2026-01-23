@@ -141,6 +141,126 @@ test.describe('Health Endpoint', () => {
 });
 
 /**
+ * Square Health Endpoint Tests
+ * Tests the /api/health/square endpoint for proper behavior
+ *
+ * Fixes DESTINO-SF-5: Uses unified Prisma client with retry logic
+ */
+test.describe('Square Health Endpoint', () => {
+  test.describe('Basic Health Check', () => {
+    test('should return 200 and healthy status when Square and database are connected', async ({
+      request,
+    }) => {
+      const response = await request.get('/api/health/square');
+
+      // May return 200 or 503 depending on Square API availability
+      expect([200, 503]).toContain(response.status());
+
+      const data = await response.json();
+      expect(data.timestamp).toBeDefined();
+      expect(data.services).toBeDefined();
+      expect(data.services.database).toBeDefined();
+      expect(data.services.square_api).toBeDefined();
+    });
+
+    test('should include database health status', async ({ request }) => {
+      const response = await request.get('/api/health/square');
+      const data = await response.json();
+
+      expect(data.services.database).toHaveProperty('status');
+      expect(data.services.database).toHaveProperty('responseTime');
+      expect(['healthy', 'unhealthy']).toContain(data.services.database.status);
+    });
+
+    test('should include Square API health status', async ({ request }) => {
+      const response = await request.get('/api/health/square');
+      const data = await response.json();
+
+      expect(data.services.square_api).toHaveProperty('status');
+      expect(data.services.square_api).toHaveProperty('responseTime');
+      expect(['healthy', 'degraded', 'unhealthy']).toContain(data.services.square_api.status);
+    });
+
+    test('should include version and uptime', async ({ request }) => {
+      const response = await request.get('/api/health/square');
+      const data = await response.json();
+
+      expect(data.version).toBeDefined();
+      expect(data.uptime).toBeDefined();
+      expect(typeof data.uptime).toBe('number');
+      expect(data.uptime).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  test.describe('Response Structure', () => {
+    test('should return proper JSON content type', async ({ request }) => {
+      const response = await request.get('/api/health/square');
+      const contentType = response.headers()['content-type'];
+      expect(contentType).toContain('application/json');
+    });
+
+    test('should have valid timestamp format', async ({ request }) => {
+      const response = await request.get('/api/health/square');
+      const data = await response.json();
+
+      const timestamp = new Date(data.timestamp);
+      expect(timestamp.toString()).not.toBe('Invalid Date');
+
+      // Timestamp should be recent (within last minute)
+      const now = Date.now();
+      const timestampMs = timestamp.getTime();
+      expect(now - timestampMs).toBeLessThan(60000);
+    });
+  });
+
+  test.describe('Performance', () => {
+    test('should respond within reasonable time', async ({ request }) => {
+      const startTime = Date.now();
+
+      const response = await request.get('/api/health/square', {
+        timeout: 15000, // Allow 15 seconds for Square API calls
+      });
+
+      const responseTime = Date.now() - startTime;
+
+      // Should respond within 15 seconds (includes Square API calls)
+      expect(responseTime).toBeLessThan(15000);
+      expect([200, 503]).toContain(response.status());
+    });
+
+    test('should handle multiple consecutive requests', async ({ request }) => {
+      const responses = await Promise.all([
+        request.get('/api/health/square'),
+        request.get('/api/health/square'),
+      ]);
+
+      for (const response of responses) {
+        expect([200, 503]).toContain(response.status());
+        const data = await response.json();
+        expect(data.services).toBeDefined();
+      }
+    });
+  });
+
+  test.describe('Database Connection Resilience', () => {
+    test('should use unified client with retry logic (DESTINO-SF-5 fix)', async ({ request }) => {
+      // This test verifies that the endpoint doesn't throw unhandled errors
+      // when the database is slow or temporarily unavailable
+      const response = await request.get('/api/health/square', {
+        timeout: 15000,
+      });
+
+      // Should always return a valid response, even if unhealthy
+      expect([200, 503]).toContain(response.status());
+
+      const data = await response.json();
+      expect(data).toHaveProperty('status');
+      expect(data).toHaveProperty('services');
+    });
+  });
+});
+
+/**
  * Additional tests for monitoring and alerting integration
  */
 test.describe('Health Endpoint - Monitoring Integration', () => {

@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { getSquareService } from '@/lib/square/service';
+import { quickHealthCheck } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
 
 interface HealthCheckResult {
@@ -44,18 +45,20 @@ export async function GET(): Promise<NextResponse> {
       uptime: process.uptime(),
     };
 
-    // Test database connection
-    const dbStartTime = Date.now();
+    // Test database connection using unified client with built-in retry logic
+    // Fixes DESTINO-SF-5: PrismaClientInitializationError on cold starts
     try {
-      const { PrismaClient } = require('@prisma/client');
-      const prisma = new PrismaClient();
-      await prisma.$queryRaw`SELECT 1`;
-      await prisma.$disconnect();
+      const dbHealth = await quickHealthCheck(5000);
+      healthCheck.services.database.responseTime = dbHealth.latencyMs;
 
-      healthCheck.services.database.responseTime = Date.now() - dbStartTime;
+      if (!dbHealth.healthy) {
+        healthCheck.services.database.status = 'unhealthy';
+        healthCheck.status = 'unhealthy';
+        logger.error('Database health check failed:', dbHealth.error);
+      }
     } catch (error: any) {
       healthCheck.services.database.status = 'unhealthy';
-      healthCheck.services.database.responseTime = Date.now() - dbStartTime;
+      healthCheck.services.database.responseTime = 0;
       healthCheck.status = 'unhealthy';
       logger.error('Database health check failed:', error);
     }

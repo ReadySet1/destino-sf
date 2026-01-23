@@ -1,21 +1,7 @@
 import { MetadataRoute } from 'next';
-import { PrismaClient } from '@prisma/client';
-import { withRetry } from '@/lib/db-unified';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { isBuildTime } from '@/lib/build-time-utils';
 import { logger } from '@/utils/logger';
-
-// Create isolated Prisma client for sitemap generation
-const createSitemapPrismaClient = () => {
-  return new PrismaClient({
-    log: ['error'],
-    errorFormat: 'minimal',
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
-  });
-};
 
 /**
  * Sitemap for catering products only
@@ -82,15 +68,13 @@ export default async function cateringSitemap(): Promise<MetadataRoute.Sitemap> 
     return staticCateringPages;
   }
 
-  let prismaClient: PrismaClient | null = null;
-
+  // Use unified Prisma client with built-in retry logic and connection management
+  // Fixes DESTINO-SF-5: PrismaClientInitializationError on cold starts
   try {
-    prismaClient = createSitemapPrismaClient();
-
     // Get catering product pages (categories that start with "CATERING-")
     const cateringProducts = await withRetry(
       () =>
-        prismaClient!.product.findMany({
+        prisma.product.findMany({
           where: {
             active: true,
             category: {
@@ -125,16 +109,5 @@ export default async function cateringSitemap(): Promise<MetadataRoute.Sitemap> 
   } catch (error) {
     logger.error('❌ Error generating catering sitemap:', error);
     return staticCateringPages;
-  } finally {
-    if (prismaClient) {
-      try {
-        await prismaClient.$disconnect();
-        if (process.env.BUILD_DEBUG === 'true') {
-          logger.info('✅ Catering sitemap Prisma client disconnected');
-        }
-      } catch (disconnectError) {
-        logger.warn('⚠️ Error disconnecting catering sitemap Prisma client:', disconnectError);
-      }
-    }
   }
 }

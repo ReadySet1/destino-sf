@@ -8,9 +8,12 @@
  * - Alert generation for stuck orders
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/db-unified';
 import { getSquareService } from '../square/service';
 import { logger } from '../../utils/logger';
+
+// Type alias for the unified prisma client
+type PrismaClientType = typeof prisma;
 
 export interface MonitoringAlert {
   id: string;
@@ -40,12 +43,14 @@ export interface OrderMonitoringResult {
 }
 
 export class SquareMonitor {
-  private prisma: PrismaClient;
+  private prisma: PrismaClientType;
   private squareService: any;
   private alerts: MonitoringAlert[] = [];
 
   constructor() {
-    this.prisma = new PrismaClient();
+    // Use unified prisma client with built-in retry logic and connection management
+    // Fixes DESTINO-SF-5: PrismaClientInitializationError on cold starts
+    this.prisma = prisma;
     this.squareService = getSquareService();
   }
 
@@ -374,9 +379,12 @@ export class SquareMonitor {
 
   /**
    * Cleanup resources
+   * Note: We don't disconnect the shared prisma client - it's managed by db-unified
    */
   async cleanup(): Promise<void> {
-    await this.prisma.$disconnect();
+    // Clear alerts array
+    this.alerts = [];
+    // Don't disconnect prisma - it's the shared unified client
   }
 }
 
