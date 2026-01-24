@@ -10,7 +10,10 @@
 
 import { logger } from '../../utils/logger';
 import { MonitoringAlert } from './square-monitor';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/db-unified';
+
+// Type alias for the unified prisma client
+type PrismaClientType = typeof prisma;
 
 export interface AlertChannel {
   name: string;
@@ -27,11 +30,13 @@ export interface NotificationResult {
 }
 
 export class AlertSystem {
-  private prisma: PrismaClient;
+  private prisma: PrismaClientType;
   private channels: AlertChannel[] = [];
 
   constructor() {
-    this.prisma = new PrismaClient();
+    // Use unified prisma client with built-in retry logic and connection management
+    // Fixes DESTINO-SF-5: PrismaClientInitializationError on cold starts
+    this.prisma = prisma;
     this.initializeChannels();
   }
 
@@ -428,9 +433,12 @@ export class AlertSystem {
 
   /**
    * Cleanup resources
+   * Note: We don't disconnect the shared prisma client - it's managed by db-unified
    */
   async cleanup(): Promise<void> {
-    await this.prisma.$disconnect();
+    // Clear channels array
+    this.channels = [];
+    // Don't disconnect prisma - it's the shared unified client
   }
 }
 

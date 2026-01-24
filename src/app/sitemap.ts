@@ -1,21 +1,7 @@
 import { MetadataRoute } from 'next';
-import { PrismaClient } from '@prisma/client';
-import { withRetry } from '@/lib/db-unified';
+import { prisma, withRetry } from '@/lib/db-unified';
 import { isBuildTime } from '@/lib/build-time-utils';
 import { logger } from '@/utils/logger';
-
-// Create isolated Prisma client for sitemap generation to avoid prepared statement conflicts
-const createSitemapPrismaClient = () => {
-  return new PrismaClient({
-    log: ['error'],
-    errorFormat: 'minimal',
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
-  });
-};
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
@@ -115,17 +101,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return staticPages;
   }
 
-  // Use isolated Prisma client to avoid prepared statement conflicts during build
-  let prismaClient: PrismaClient | null = null;
-
+  // Use unified Prisma client with built-in retry logic and connection management
+  // Fixes DESTINO-SF-5: PrismaClientInitializationError on cold starts
   try {
-    prismaClient = createSitemapPrismaClient();
-
     // Dynamic product pages - ONLY include regular products (not catering)
     // Catering products should not appear in general search results
     const products = await withRetry(
       () =>
-        prismaClient!.product.findMany({
+        prisma.product.findMany({
           where: {
             active: true,
             category: {
@@ -161,18 +144,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     logger.error('❌ Error generating sitemap:', error);
     // Return static pages if database query fails
     return staticPages;
-  } finally {
-    // Always disconnect the isolated client
-    if (prismaClient) {
-      try {
-        await prismaClient.$disconnect();
-        // Only log disconnect in debug mode
-        if (process.env.BUILD_DEBUG === 'true') {
-          logger.info('✅ Sitemap Prisma client disconnected gracefully');
-        }
-      } catch (disconnectError) {
-        logger.warn('⚠️ Error disconnecting sitemap Prisma client:', disconnectError);
-      }
-    }
   }
 }
