@@ -424,7 +424,6 @@ export enum SaladOption {
 
 export enum AddOnOption {
   BAMBOO_CUTLERY = 'BAMBOO_CUTLERY', // $1.50 - Individually wrapped bamboo cutlery w/ napkin
-  INDIVIDUAL_SETUP = 'INDIVIDUAL_SETUP', // $2.00 - Bamboo cutlery w/ napkin, compostable plate
 }
 
 // Protein Configuration
@@ -559,13 +558,6 @@ export const BOXED_LUNCH_ADD_ONS: Record<AddOnOption, BoxedLunchAddOn> = {
     name: 'Bamboo Cutlery Set',
     price: 1.5,
     description: 'Individually wrapped bamboo cutlery with napkin',
-  },
-  [AddOnOption.INDIVIDUAL_SETUP]: {
-    id: 'individual-setup',
-    type: AddOnOption.INDIVIDUAL_SETUP,
-    name: 'Individual Place Setting',
-    price: 2.0,
-    description: 'Bamboo cutlery with napkin and compostable plate',
   },
 };
 
