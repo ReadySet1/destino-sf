@@ -76,7 +76,7 @@ export function SpotlightPickCard({
       setLoadingProducts(true);
       try {
         const [productsResponse, categoriesResponse] = await Promise.all([
-          fetch('/api/products'),
+          fetch('/api/products?onlyActive=false&includePrivate=true'),
           fetch('/api/categories'),
         ]);
 
