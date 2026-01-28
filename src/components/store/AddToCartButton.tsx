@@ -4,10 +4,13 @@ import { ShoppingCart, Check, Eye, Calendar, AlertTriangle } from 'lucide-react'
 import { useState } from 'react';
 import { Product as ProductType } from '@/types/product';
 import { serializeDecimal } from '@/utils/serialization';
-import { useAvailability } from '@/hooks/useAvailability';
 import { PreOrderButton } from './PreOrderButton';
 import { AvailabilityState } from '@/types/availability';
 import { toast } from 'sonner';
+import {
+  getEffectiveAvailabilityState,
+  getViewOnlyMessage,
+} from '@/lib/availability/utils';
 
 interface AddToCartButtonProps {
   product: ProductType;
@@ -30,18 +33,23 @@ export function AddToCartButton({
   const [isAdded, setIsAdded] = useState(false);
   const alreadyInCart = isInAnyCart(product.id, product.variants?.[0]?.id);
 
-  // Get availability state for this product
-  const {
-    currentState,
-    isAvailable,
-    isPreOrder,
-    isViewOnly,
-    isHidden,
-    preOrderSettings,
-    viewOnlySettings,
-    isLoading: availabilityLoading,
-    error: availabilityError,
-  } = useAvailability(product.id);
+  // Use server-side evaluated availability from product data (no API call needed!)
+  // This uses the evaluatedAvailability from ProductVisibilityService or falls back to DB fields
+  const currentState = getEffectiveAvailabilityState(product) as AvailabilityState;
+
+  // Get view-only message from utilities
+  const viewOnlyMessage = getViewOnlyMessage(product);
+
+  // Pre-order settings from product data if available
+  const preOrderSettings = product.isPreorder
+    ? {
+        message: 'Pre-order available',
+        expectedDeliveryDate: product.preorderEndDate || new Date(),
+        maxQuantity: null,
+        depositRequired: false,
+        depositAmount: null,
+      }
+    : null;
 
   const handleAddToCart = async (
     productId: string,
@@ -85,41 +93,6 @@ export function AddToCartButton({
     handleAddToCart(product.id, quantity, false);
   };
 
-  // Handle loading state
-  if (availabilityLoading) {
-    return (
-      <Button variant="outline" size={size} className={className} disabled>
-        <div className="h-4 w-4 mr-2 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
-        Loading...
-      </Button>
-    );
-  }
-
-  // Handle error state (fallback to basic add to cart)
-  if (availabilityError) {
-    return (
-      <Button
-        variant={variant}
-        size={size}
-        className={className}
-        onClick={handleRegularAddToCart}
-        disabled={isAdded}
-      >
-        {isAdded || alreadyInCart ? (
-          <>
-            <Check className="h-4 w-4 mr-2" />
-            {alreadyInCart ? 'In Cart' : 'Added'}
-          </>
-        ) : (
-          <>
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Add to Cart
-          </>
-        )}
-      </Button>
-    );
-  }
-
   // Handle different availability states
   switch (currentState) {
     case AvailabilityState.HIDDEN:
@@ -159,8 +132,8 @@ export function AddToCartButton({
             <Eye className="h-4 w-4 mr-2" />
             View Only
           </Button>
-          {showAvailabilityMessages && viewOnlySettings?.message && (
-            <p className="text-xs text-muted-foreground">{viewOnlySettings.message}</p>
+          {showAvailabilityMessages && viewOnlyMessage && (
+            <p className="text-xs text-muted-foreground">{viewOnlyMessage}</p>
           )}
         </div>
       );
