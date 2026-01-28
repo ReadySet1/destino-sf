@@ -1122,7 +1122,7 @@ async function processSquareItem(
   const existingProduct = await withDatabaseRetry(async () => {
     return await prisma.product.findUnique({
       where: { squareId: item.id },
-      select: { id: true, slug: true, images: true, name: true },
+      select: { id: true, slug: true, images: true, name: true, active: true },
     });
   });
 
@@ -1143,18 +1143,34 @@ async function processSquareItem(
   const presentAtAllLocations = itemData.present_at_all_locations ?? true;
   const isNotDeleted = !item.is_deleted;
 
-  // Product should be active if it's not deleted, available online, and present at locations
-  const shouldBeActive =
+  // Check if we're running in sandbox/dev mode
+  const isDevMode =
+    process.env.NODE_ENV === 'development' || process.env.USE_SQUARE_SANDBOX === 'true';
+
+  // Calculate what Square settings would indicate for active status
+  const squareIndicatesActive =
     isNotDeleted && availableOnline && presentAtAllLocations && visibility !== 'PRIVATE';
 
+  // In dev/sandbox mode, preserve existing product active state unless explicitly deleted in Square
+  // This prevents products from being silently deactivated due to sandbox-specific field defaults
+  const shouldBeActive =
+    isDevMode && existingProduct ? existingProduct.active && isNotDeleted : squareIndicatesActive;
+
   // Log visibility status for debugging
-  if (!shouldBeActive) {
+  if (!squareIndicatesActive) {
     const reasons = [];
     if (item.is_deleted) reasons.push('deleted in Square');
     if (!availableOnline) reasons.push('not available online');
     if (!presentAtAllLocations) reasons.push('not present at all locations');
     if (visibility === 'PRIVATE') reasons.push('visibility set to private');
-    logger.info(`🔒 Setting product "${itemName}" as inactive: ${reasons.join(', ')}`);
+
+    if (isDevMode && existingProduct?.active && shouldBeActive) {
+      logger.warn(
+        `⚠️ [DEV MODE] Preserving active state for "${itemName}" despite sandbox settings: ${reasons.join(', ')}`
+      );
+    } else {
+      logger.info(`🔒 Setting product "${itemName}" as inactive: ${reasons.join(', ')}`);
+    }
   }
 
   if (existingProduct) {

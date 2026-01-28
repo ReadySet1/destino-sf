@@ -42,7 +42,7 @@ const isSharePlatterItem = (item: CateringItem): boolean => {
 };
 
 // Service Add-ons data
-const SERVICE_ADD_ONS = [
+export const SERVICE_ADD_ONS = [
   {
     id: 'bamboo-cutlery',
     name: 'Individually Wrapped Bamboo Cutlery w/ Napkin',
@@ -62,7 +62,7 @@ const SERVICE_ADD_ONS = [
     name: 'Compostable Serving Spoon',
     price: 1.5,
     description: 'Compostable serving spoon for family style',
-    categories: ['buffet'], // Only available for buffet (makes sense for family style)
+    categories: ['buffet', 'lunch'], // Available for both buffet and lunch
   },
 ];
 
