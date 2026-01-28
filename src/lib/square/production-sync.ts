@@ -320,6 +320,7 @@ export class ProductionSyncManager {
         images: true,
         name: true,
         updatedAt: true,
+        active: true, // Include active state for dev-mode preservation
         // Visibility fields to check for manual overrides
         visibility: true,
         isAvailable: true,
@@ -388,6 +389,22 @@ export class ProductionSyncManager {
     const archivedReason = isArchived ? 'square_archived' : null;
     const archivedAt = isArchived ? new Date() : null;
 
+    // Check if we're running in sandbox/dev mode
+    const isDevMode =
+      process.env.NODE_ENV === 'development' || process.env.USE_SQUARE_SANDBOX === 'true';
+
+    // In dev/sandbox mode, preserve existing product active state unless explicitly archived
+    // This prevents products from being silently deactivated due to sandbox-specific metadata
+    const shouldBeActive =
+      isDevMode && existingProduct ? existingProduct.active && !isArchived : !isArchived;
+
+    // Log when dev-mode preservation is active
+    if (isDevMode && existingProduct?.active && isArchived) {
+      logger.warn(
+        `⚠️ [DEV MODE] Product "${productName}" marked as archived in sandbox - deactivating`
+      );
+    }
+
     // Upsert product with transaction safety
     const productData = {
       squareId,
@@ -398,7 +415,7 @@ export class ProductionSyncManager {
       images: imageResult.validUrls,
       categoryId,
       featured: false,
-      active: !isArchived, // Product is active if not archived
+      active: shouldBeActive, // Dev mode preserves existing state unless explicitly archived
       updatedAt: new Date(),
 
       // Availability fields
