@@ -4,7 +4,7 @@ import {
   SpotlightPicksManagerProps,
 } from '@/types/spotlight';
 
-describe.skip('Spotlight Types', () => {
+describe('Spotlight Types', () => {
   describe('SpotlightPick Interface', () => {
     it('should accept valid spotlight pick with product', () => {
       const validPick: SpotlightPick = {
