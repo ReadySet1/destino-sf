@@ -13,12 +13,38 @@ import { cookies } from 'next/headers';
 import type { Database } from '@/types/supabase';
 import { validateOrderMinimums } from '@/lib/cart-helpers'; // Import the validation helper
 import { createDeliveryOrderTipSettings, createNoTipSettings } from '@/lib/square/tip-settings';
-import { safeSquareOrderPayload } from '@/lib/square/order-validation';
+import { safeSquareOrderPayload, type SquareOrderPayload } from '@/lib/square/order-validation';
 import { AlertService } from '@/lib/alerts'; // Import the alert service
 import { errorMonitor } from '@/lib/error-monitoring'; // Import error monitoring
 import { env } from '@/env'; // Import the validated environment configuration
 import { getTaxRate, isStoreOpen } from '@/lib/store-settings'; // Import store settings service
 import { calculateTaxForItems } from '@/utils/tax-exemption'; // Import tax exemption utilities
+// Square REST API types (snake_case — matches raw API payloads, not SDK camelCase types)
+interface SquareLineItem {
+  quantity: string;
+  base_price_money: { amount: number; currency: string };
+  name: string;
+}
+
+interface SquareServiceCharge {
+  name: string;
+  amount_money: { amount: number; currency: string };
+  calculation_phase: string;
+  taxable: boolean;
+}
+
+interface SquareOrderTax {
+  name: string;
+  percentage: string;
+  scope: string;
+}
+
+interface SquareOrderFulfillment {
+  type: string;
+  pickup_details?: Record<string, unknown>;
+  delivery_details?: Record<string, unknown>;
+  shipment_details?: Record<string, unknown>;
+}
 
 // Re-add BigInt patch if needed directly in actions, or ensure it runs globally
 (BigInt.prototype as any).toJSON = function () {
@@ -882,7 +908,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
 
   try {
     // --- Prepare Square Line Items ---
-    const squareLineItems: any[] = items.map(item => ({
+    const squareLineItems: SquareLineItem[] = items.map(item => ({
       quantity: item.quantity.toString(),
       base_price_money: {
         amount: Math.round(item.price * 100), // Price in cents
@@ -916,7 +942,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     }
 
     // --- Prepare Square Service Charges ---
-    const squareServiceCharges: any[] = [];
+    const squareServiceCharges: SquareServiceCharge[] = [];
     if (serviceFeeAmount.greaterThan(0)) {
       squareServiceCharges.push({
         name: 'Convenience Fee',
@@ -927,7 +953,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     }
 
     // --- Prepare Square Taxes ---
-    const squareTaxes: any[] = [];
+    const squareTaxes: SquareOrderTax[] = [];
     if (taxAmount.greaterThan(0)) {
       squareTaxes.push({
         // uid: randomUUID().substring(0, 6), // Optional: helps Square UI
@@ -938,7 +964,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     }
 
     // --- Prepare Square Fulfillment ---
-    let squareFulfillment: any = null; // Initialize as null
+    let squareFulfillment: SquareOrderFulfillment | null = null;
     const squareRecipient = {
       // Define recipient once
       display_name: customerInfo.name,
@@ -1073,7 +1099,7 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
     };
 
     // --- Build Full Square Request Body ---
-    const squareRequestBody: any = {
+    const squareRequestBody: SquareOrderPayload = {
       idempotency_key: randomUUID(),
       order: {
         location_id: locationId,

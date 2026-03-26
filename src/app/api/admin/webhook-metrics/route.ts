@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withConnection, webhookQueries } from '@/lib/db-optimized';
 import { WebhookMonitor } from '@/lib/webhook-monitoring';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 
 /**
  * Webhook metrics dashboard endpoint
@@ -8,6 +9,11 @@ import { WebhookMonitor } from '@/lib/webhook-monitoring';
  */
 export async function GET(request: NextRequest) {
   try {
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
+    }
+
     // Get queue metrics from database
     const queueMetrics = await withConnection(async prisma => {
       const [totalWebhooks, byStatus, recentActivity] = await Promise.all([

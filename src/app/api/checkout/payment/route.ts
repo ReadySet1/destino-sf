@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createPayment } from '@/lib/square/orders';
 import { prisma } from '@/lib/db-unified';
 import { applyStrictRateLimit } from '@/middleware/rate-limit';
@@ -18,7 +18,7 @@ export const maxDuration = 60;
 
 async function postPaymentHandler(request: Request) {
   // Apply strict rate limiting for payment endpoint (5 requests per minute per IP)
-  const rateLimitResponse = await applyStrictRateLimit(request as any, 5);
+  const rateLimitResponse = await applyStrictRateLimit(request as NextRequest, 5);
   if (rateLimitResponse) {
     console.warn('Payment rate limit exceeded');
     return rateLimitResponse;

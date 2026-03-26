@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { UserSyncManager } from '@/lib/square/user-sync-manager';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { logger } from '@/utils/logger';
 import { z } from 'zod';
 
@@ -13,25 +13,22 @@ const cancelRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Authenticate user
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Authenticate user and check admin access
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
-    // 2. Check admin access
+    const user = adminCheck.user!;
+
+    // Fetch profile for name/email used downstream (guaranteed to exist since admin check passed)
     const profile = await prisma.profile.findUnique({
       where: { id: user.id },
       select: { role: true, name: true, email: true },
     });
 
-    if (!profile || profile.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
     // 3. Parse and validate request body

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/utils/supabase/server';
 import { prisma, withRetry } from '@/lib/db-unified';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 
 // Schema for a single business hour
 const businessHourSchema = z.object({
@@ -47,38 +47,11 @@ const hoursPayloadSchema = z.object({
 
 type BusinessHour = z.infer<typeof businessHourSchema>;
 
-// Check if user is admin
-async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return false;
-  }
-
-  const adminProfile = await withRetry(
-    () =>
-      prisma.profile.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      }),
-    3,
-    'check admin profile'
-  );
-
-  return adminProfile?.role === 'ADMIN';
-}
-
 export async function POST(request: NextRequest) {
   try {
-    // Get Supabase client
-    const supabase = await createClient();
-
-    // Check if user is admin
-    if (!(await isUserAdmin(supabase))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
     // Parse and validate request body

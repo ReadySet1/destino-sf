@@ -7,8 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { syncFilteredProducts, previewFilteredSync } from '@/lib/square/filtered-sync';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { logger } from '@/utils/logger';
-import { createClient } from '@/utils/supabase/server';
 import { z } from 'zod';
 
 // Validation schema for sync requests
@@ -35,22 +35,12 @@ const SyncRequestSchema = z
 export async function POST(request: NextRequest) {
   try {
     // Check authentication and admin role
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
-    // TODO: Add proper admin role check once role system is implemented
-    // For now, we'll log the user but allow all authenticated users
-    logger.info(`🔐 Filtered sync requested by user: ${user.email}`);
+    logger.info(`🔐 Filtered sync requested by user: ${adminCheck.user!.email}`);
 
     // Parse and validate request body
     let requestData;
@@ -73,12 +63,12 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting check (simple in-memory implementation)
     // TODO: Replace with proper rate limiting service
-    const rateLimitKey = `sync_${user.id}`;
+    const rateLimitKey = `sync_${adminCheck.user!.id}`;
     const now = Date.now();
 
     logger.info(`🚀 Starting ${preview ? 'preview' : 'sync'} request`, {
-      userId: user.id,
-      userEmail: user.email,
+      userId: adminCheck.user!.id,
+      userEmail: adminCheck.user!.email,
       options,
       timestamp: new Date().toISOString(),
     });
@@ -159,18 +149,9 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
     const { searchParams } = new URL(request.url);

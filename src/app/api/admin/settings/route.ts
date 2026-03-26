@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/utils/supabase/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { getStoreSettings, updateStoreSettings } from '@/lib/store-settings';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 
 // Schema for validation
 const settingsSchema = z.object({
@@ -25,38 +25,11 @@ const settingsSchema = z.object({
 
 type SettingsData = z.infer<typeof settingsSchema>;
 
-// Check if user is admin
-async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return false;
-  }
-
-  // Wrap the database call with retry logic to handle connection issues
-  const adminProfile = await withRetry(
-    () =>
-      prisma.profile.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      }),
-    3,
-    'isUserAdmin profile lookup'
-  );
-
-  return adminProfile?.role === 'ADMIN';
-}
-
 export async function GET(request: NextRequest) {
   try {
-    // Get Supabase client
-    const supabase = await createClient();
-
-    // Check if user is admin
-    if (!(await isUserAdmin(supabase))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
     // Fetch store settings and delivery zones using the service
@@ -90,12 +63,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get Supabase client
-    const supabase = await createClient();
-
-    // Check if user is admin
-    if (!(await isUserAdmin(supabase))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
     // Parse and validate request body

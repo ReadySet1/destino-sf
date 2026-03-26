@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { DashboardAlertService } from '@/lib/notifications/dashboard-alert-service';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { logger } from '@/utils/logger';
 
 type Props = {
@@ -13,6 +14,11 @@ type Props = {
  */
 export async function PATCH(request: NextRequest, { params }: Props) {
   try {
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
+    }
+
     const { alertId } = await params;
     const body = await request.json();
 
@@ -47,6 +53,11 @@ export async function PATCH(request: NextRequest, { params }: Props) {
  */
 export async function DELETE(request: NextRequest, { params }: Props) {
   try {
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
+    }
+
     const { alertId } = await params;
 
     const alertService = new DashboardAlertService();
