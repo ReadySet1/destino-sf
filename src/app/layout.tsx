@@ -149,12 +149,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-                navigator.serviceWorker.register('/service-worker.js', { 
+                navigator.serviceWorker.register('/service-worker.js', {
                   scope: '/',
                   updateViaCache: 'none'
-                })
-                  .then(() => console.log('Service Worker registered'))
-                  .catch((error) => console.log('Service Worker registration failed:', error));
+                }).catch(function() {});
               }
             `,
           }}

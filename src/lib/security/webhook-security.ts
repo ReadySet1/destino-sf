@@ -6,7 +6,7 @@
  */
 
 import { NextRequest } from 'next/server';
-import { environmentRateLimiter } from './rate-limiter';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { checkDuplicateWebhook } from '@/lib/db/queries/webhooks';
 import { sendWebhookAlert } from '@/lib/monitoring/webhook-metrics';
 import { type SquareEnvironment, WEBHOOK_CONSTANTS } from '@/types/webhook';
@@ -154,10 +154,10 @@ export async function validateWebhookSecurity(
 
     console.log(`🔒 Security validation for ${environment} webhook from IP: ${clientIp}`);
 
-    // 1. Rate limiting check
-    const rateLimitResult = await environmentRateLimiter.check(clientIp, environment);
-    if (!rateLimitResult.allowed) {
-      console.warn(`🚫 Rate limit exceeded for IP: ${clientIp}`);
+    // 1. Rate limiting check (distributed via Upstash Redis)
+    const rateLimitResult = await checkRateLimit(request, 'webhooks');
+    if (!rateLimitResult.success) {
+      console.warn(`Rate limit exceeded for IP: ${clientIp}`);
 
       await sendWebhookAlert({
         severity: 'medium',
@@ -172,7 +172,7 @@ export async function validateWebhookSecurity(
 
       return {
         valid: false,
-        error: rateLimitResult.message,
+        error: 'Too many webhook requests',
         metadata: {
           clientIp,
           userAgent,
@@ -369,7 +369,7 @@ export class SecurityMonitor {
 
     return {
       suspiciousIps: suspiciousIps.sort((a, b) => b.count - a.count),
-      rateLimitStats: environmentRateLimiter.getStats(),
+      rateLimitStats: { note: 'See Upstash Redis dashboard for rate limit analytics' },
     };
   }
 

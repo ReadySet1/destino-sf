@@ -33,11 +33,10 @@ jest.mock('@/lib/db-unified', () => ({
   withRetry: jest.fn((fn) => fn()),
 }));
 
-// Mock rate limiter
-jest.mock('@/lib/security/rate-limiter', () => ({
-  contactFormRateLimiter: {
-    check: jest.fn().mockResolvedValue({ allowed: true, remaining: 10 }),
-  },
+// Mock rate limiter (Redis-based)
+jest.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: jest.fn().mockResolvedValue({ success: true, remaining: 10, limit: 5, reset: new Date(), count: 0 }),
+  getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
 }));
 
 // Import the route handler AFTER all mocks are set up
