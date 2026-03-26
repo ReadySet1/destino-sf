@@ -1,9 +1,10 @@
-import withBundleAnalyzer from '@next/bundle-analyzer';
 import { withSentryConfig } from '@sentry/nextjs';
 
-const analyzeBundles = withBundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-});
+// Bundle analyzer — only loaded when ANALYZE=true (dev dependency)
+const analyzeBundles =
+  process.env.ANALYZE === 'true'
+    ? (await import('@next/bundle-analyzer')).default({ enabled: true })
+    : (config) => config;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
