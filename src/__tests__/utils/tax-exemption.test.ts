@@ -4,7 +4,7 @@ import {
   calculateTaxForItems,
 } from '@/utils/tax-exemption';
 
-describe.skip('Tax Exemption Logic', () => {
+describe('Tax Exemption Logic', () => {
   const TAX_RATE = 0.0825; // 8.25%
 
   describe('isProductTaxExempt', () => {

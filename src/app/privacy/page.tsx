@@ -1,5 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
+
+export const revalidate = 604800; // 7 days
 import { twMerge } from 'tailwind-merge';
 import Link from 'next/link';
 

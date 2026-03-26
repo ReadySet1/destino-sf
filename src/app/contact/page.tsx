@@ -1,5 +1,7 @@
 import React from 'react';
 import { ContactForm, ContactInfo } from '@/components/ContactForm';
+
+export const revalidate = 86400; // 24 hours
 import { generatePageSEO } from '@/lib/seo';
 import { StructuredData } from '@/components/seo/StructuredData';
 

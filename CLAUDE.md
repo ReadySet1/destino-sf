@@ -593,9 +593,44 @@ pnpm test:components
 - Document breaking changes and migrations
 - Add tests for new functionality
 
+## Q2 2026 Audit Changes
+
+The following architectural changes were made during the Q2 2026 audit (see `docs/ROADMAP_2026_Q2.md` for full details):
+
+### Rate Limiting
+- **In-memory rate limiter deleted** (`src/lib/security/rate-limiter.ts` no longer exists)
+- All rate limiting now uses the distributed Redis-based implementation in `src/lib/rate-limit.ts` (Upstash)
+- Contact form and webhook rate limiting both use `checkRateLimit()` from `src/lib/rate-limit.ts`
+
+### Admin Route Security
+- **All admin API routes require `verifyAdminAccess()`** from `src/lib/auth/admin-guard.ts`
+- When adding new admin routes, always include the guard at the top of every handler:
+  ```typescript
+  const adminCheck = await verifyAdminAccess();
+  if (adminCheck.error) {
+    return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status });
+  }
+  ```
+
+### Test/Debug Routes
+- All `/api/debug/*`, `/api/test-*`, `/test-*` routes have been deleted from production
+- Do NOT create test routes in the app directory — use Jest tests instead
+
+### ESLint Rules
+- `@typescript-eslint/no-explicit-any`: warn (avoid `any` types)
+- `no-console`: warn (use `console.error`/`console.warn` only, not `console.log`)
+- `@typescript-eslint/no-unused-vars`: warn
+
+### Performance Patterns
+- New routes should include a `loading.tsx` skeleton for better perceived performance
+- Use `animate-pulse` Tailwind class for skeleton placeholders
+- Static pages should export `revalidate` for ISR (e.g., `export const revalidate = 86400`)
+- Bundle analysis available via `pnpm analyze`
+
 ## Additional Resources
 
 - Comprehensive documentation in `docs/` directory
+- **Q2 2026 Audit & Roadmap**: `docs/AUDIT_REPORT_2026_03_25.md`, `docs/ROADMAP_2026_Q2.md`
 - Test infrastructure details: `docs/PHASE_5_TEST_INFRASTRUCTURE_SUMMARY.md`
 - Catering system: `docs/README_CATERING.md`
 - Square setup: `docs/SQUARE_TOKEN_SETUP.md`

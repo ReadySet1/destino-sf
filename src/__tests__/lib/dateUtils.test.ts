@@ -9,7 +9,7 @@ import {
   isValidDeliveryDateTime,
 } from '../../lib/dateUtils';
 
-describe.skip('DateUtils', () => {
+describe('DateUtils', () => {
   describe('Time Slot Generation', () => {
     describe('getPickupTimeSlots', () => {
       test('should return pickup time slots from 10:00 AM to 4:00 PM', () => {

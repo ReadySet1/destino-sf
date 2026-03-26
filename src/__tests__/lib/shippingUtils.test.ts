@@ -6,7 +6,7 @@ import {
   CartItemForShipping,
   ShippingWeightConfig,
 } from '@/lib/shippingUtils';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db-unified';
 
 // Import our new test utilities
 import { mockConsole, restoreConsole } from '@/__tests__/setup/test-utils';

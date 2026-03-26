@@ -33,7 +33,7 @@ jest.mock('@/components/ui/button', () => ({
   Button,
 }));
 
-describe.skip('Button Component', () => {
+describe('Button Component', () => {
   it('renders correctly', () => {
     render(<Button>Click me</Button>);
     expect(screen.getByRole('button', { name: /click me/i })).toBeInTheDocument();

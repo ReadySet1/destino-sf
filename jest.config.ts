@@ -248,7 +248,7 @@ const config: Config = {
     },
   },
   collectCoverage: false, // Enable only when running coverage explicitly
-  passWithNoTests: true,
+  passWithNoTests: false,
   verbose: true,
   maxWorkers: 1, // Run tests serially to avoid DB conflicts
   testTimeout: process.env.CI ? 60000 : 30000, // 60s in CI, 30s locally
