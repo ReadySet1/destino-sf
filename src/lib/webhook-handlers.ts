@@ -6,17 +6,8 @@ import type { Prisma } from '@prisma/client';
 import { AlertService } from '@/lib/alerts';
 import { errorMonitor } from '@/lib/error-monitoring';
 import { purchaseShippingLabel } from '@/app/actions/labels';
-import { SquareClient, SquareEnvironment } from 'square';
 import { sendOrderConfirmationEmail } from '@/lib/email';
 import { RequestDeduplicator, resourceKey } from '@/lib/concurrency/request-deduplicator';
-import {
-  MerchantMismatchError,
-  UnauthorizedError,
-  BadRequestError,
-  ResourceNotFoundError,
-  RateLimitError,
-  ServerError,
-} from '@/lib/errors/webhook-errors';
 
 // Deduplicator for payment webhook processing - prevents concurrent processing of same payment
 // Uses longer TTL (2 minutes) to match the label purchase retry window
@@ -51,157 +42,6 @@ function mapSquareStateToOrderStatus(state: string): OrderStatus {
       return OrderStatus.PENDING;
     default:
       return OrderStatus.PENDING; // FIXED: Default to PENDING instead of PROCESSING
-  }
-}
-
-/**
- * Helper function to get Square client instance
- * Respects sandbox/production configuration from environment variables
- */
-function getSquareClient(): SquareClient {
-  // Check if we're using sandbox mode
-  const useSandbox =
-    process.env.USE_SQUARE_SANDBOX === 'true' || process.env.SQUARE_ENVIRONMENT === 'sandbox';
-
-  // Select the appropriate token and environment
-  const accessToken = useSandbox
-    ? process.env.SQUARE_SANDBOX_TOKEN
-    : process.env.SQUARE_PRODUCTION_TOKEN || process.env.SQUARE_ACCESS_TOKEN;
-
-  const environment = useSandbox ? SquareEnvironment.Sandbox : SquareEnvironment.Production;
-
-  if (!accessToken) {
-    const tokenName = useSandbox ? 'SQUARE_SANDBOX_TOKEN' : 'SQUARE_PRODUCTION_TOKEN';
-    throw new Error(
-      `Square access token not configured. Set ${tokenName} for ${environment} environment.`
-    );
-  }
-
-  console.log(`🔧 [SQUARE-CLIENT] Creating Square client for ${environment} environment`);
-
-  return new SquareClient({
-    token: accessToken,
-    environment: environment,
-  });
-}
-
-/**
- * Fetch order from Square API and create it in our database
- * This handles orders created through Square POS or other external sources
- */
-async function fetchAndCreateOrderFromSquare(squareOrderId: string): Promise<string | null> {
-  try {
-    console.log(`🔍 [ORDER-SYNC] Fetching order ${squareOrderId} from Square API...`);
-
-    const squareClient = getSquareClient();
-    const response = await squareClient.orders.get({ orderId: squareOrderId });
-
-    if (!response.order) {
-      console.error(`❌ [ORDER-SYNC] Order ${squareOrderId} not found in Square`);
-      return null;
-    }
-
-    const squareOrder = response.order;
-    console.log(`✅ [ORDER-SYNC] Retrieved order ${squareOrderId} from Square`, {
-      state: squareOrder.state,
-      totalMoney: squareOrder.totalMoney?.amount,
-      source: squareOrder.source?.name || 'Unknown',
-    });
-
-    // Extract order details from Square order
-    const orderStatus = mapSquareStateToOrderStatus(squareOrder.state || 'OPEN');
-    const totalAmount = squareOrder.totalMoney?.amount
-      ? Number(squareOrder.totalMoney.amount) / 100
-      : 0;
-
-    // Extract customer information
-    const customerId = squareOrder.customerId || null;
-    const customerName = squareOrder.source?.name || 'Square POS Customer';
-    const customerEmail = 'pos-order@destinosf.com'; // Placeholder for POS orders
-    const customerPhone = 'N/A'; // POS orders don't always have phone
-
-    // Determine fulfillment type from order
-    const fulfillmentType = squareOrder.fulfillments?.[0]?.type?.toLowerCase() || 'pickup';
-
-    console.log(`📝 [ORDER-SYNC] Creating order in database...`, {
-      squareOrderId,
-      orderStatus,
-      totalAmount,
-      fulfillmentType,
-      source: squareOrder.source?.name,
-    });
-
-    // Create the order in our database
-    const createdOrder = await prisma.order.create({
-      data: {
-        squareOrderId: squareOrderId,
-        status: orderStatus,
-        total: totalAmount,
-        customerName: customerName,
-        email: customerEmail,
-        phone: customerPhone,
-        fulfillmentType: fulfillmentType,
-        paymentStatus:
-          squareOrder.state === 'COMPLETED' ? PaymentStatus.PAID : PaymentStatus.PENDING,
-        paymentMethod: 'SQUARE',
-        rawData: {
-          order: squareOrder,
-          source: 'square_api',
-          syncedAt: new Date().toISOString(),
-          syncReason: 'order_not_found_in_webhook',
-        } as unknown as Prisma.InputJsonValue,
-      },
-    });
-
-    console.log(`✅ [ORDER-SYNC] Successfully created order ${createdOrder.id} from Square API`);
-    console.log(`📊 [ORDER-SYNC] Order source: ${squareOrder.source?.name || 'Unknown'}`);
-
-    return createdOrder.id;
-  } catch (error: any) {
-    const statusCode = error.statusCode || error.status || error.response?.status;
-
-    console.error(`❌ [ORDER-SYNC] Failed to fetch/create order ${squareOrderId} from Square:`, {
-      error: error.message,
-      code: error.code,
-      statusCode,
-    });
-
-    // Throw specific errors for non-retryable cases to prevent infinite retry loops
-    if (statusCode === 403) {
-      // 403 Forbidden - merchant mismatch or wrong environment
-      throw new MerchantMismatchError(squareOrderId, error.message);
-    }
-
-    if (statusCode === 401) {
-      // 401 Unauthorized - invalid credentials
-      throw new UnauthorizedError('Square API', error.message);
-    }
-
-    if (statusCode === 400) {
-      // 400 Bad Request - malformed request
-      throw new BadRequestError('fetchOrder', error.message);
-    }
-
-    if (statusCode === 404) {
-      // 404 Not Found - order doesn't exist
-      throw new ResourceNotFoundError('Order', squareOrderId, error.message);
-    }
-
-    if (statusCode === 429) {
-      // 429 Rate Limited - should retry with backoff
-      const retryAfter = error.headers?.['retry-after'];
-      const retryMs = retryAfter ? parseInt(retryAfter) * 1000 : undefined;
-      throw new RateLimitError(retryMs);
-    }
-
-    if (statusCode >= 500) {
-      // 5xx Server Error - should retry
-      throw new ServerError(statusCode, error.message);
-    }
-
-    // For network errors or unknown issues, return null to allow retry via webhook queue
-    // The queue's determineShouldRetry will evaluate if the error is retryable
-    return null;
   }
 }
 
@@ -482,43 +322,12 @@ export async function handleOrderFulfillmentUpdated(payload: SquareWebhookPayloa
       console.log(`✅ Successfully updated order ${squareOrderId} with fulfillment update.`);
     } catch (error: any) {
       if (error.code === 'P2025') {
-        // Order not found - this is likely a POS order or order from external source
-        console.warn(`⚠️ [UPSERT-FIX] Order ${squareOrderId} not found in database.`);
-        console.log(`🔄 [UPSERT-FIX] Attempting to fetch order from Square API and create it...`);
-
-        // Fetch the order from Square API and create it in our database
-        const createdOrderId = await fetchAndCreateOrderFromSquare(squareOrderId);
-
-        if (createdOrderId) {
-          // Successfully created the order, now apply the fulfillment update
-          console.log(`✅ [UPSERT-FIX] Order created successfully. Applying fulfillment update...`);
-          try {
-            await prisma.order.update({
-              where: { id: createdOrderId },
-              data: updatePayload,
-            });
-            console.log(
-              `✅ [UPSERT-FIX] Fulfillment update applied to newly created order ${createdOrderId}`
-            );
-          } catch (retryError: any) {
-            console.error(
-              `❌ [UPSERT-FIX] Failed to apply fulfillment update to created order:`,
-              retryError
-            );
-            // Don't throw - at least we created the order
-          }
-        } else {
-          console.error(
-            `❌ [UPSERT-FIX] Failed to fetch/create order ${squareOrderId} from Square.`
-          );
-          console.error(
-            `⚠️ [UPSERT-FIX] This fulfillment update will be retried via webhook queue.`
-          );
-          // Re-throw to trigger webhook retry
-          throw new Error(
-            `Order ${squareOrderId} not found and could not be fetched from Square API`
-          );
-        }
+        // Order not found — likely a Square POS/Online order, not from our website.
+        // Only orders created through our checkout flow should exist in our database.
+        console.log(
+          `[WEBHOOK] Order ${squareOrderId} not found in database — likely a Square POS/Online order. Skipping fulfillment update.`
+        );
+        return;
       } else {
         console.error(`❌ Error updating order ${squareOrderId}:`, error);
         throw error;

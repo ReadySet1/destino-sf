@@ -255,7 +255,7 @@ describe('determineShouldRetry', () => {
       expect(determineShouldRetry(error, 'payment.created')).toBe(false);
     });
 
-    it('should NOT retry MerchantMismatchError thrown by fetchAndCreateOrderFromSquare', () => {
+    it('should NOT retry MerchantMismatchError from Square API calls', () => {
       const error = new MerchantMismatchError(
         'sq_order_abc123',
         'Cannot fetch orders for a different merchant'

@@ -63,7 +63,7 @@ describe('Webhook 403 Merchant Mismatch Integration', () => {
      * 4. The system should NOT queue this for retry
      */
     it('should not queue 403 errors for retry', () => {
-      // Create the error that would be thrown by fetchAndCreateOrderFromSquare
+      // Create the error that would be thrown by a Square API call with wrong credentials
       const error = new MerchantMismatchError(
         'sq_production_order_123',
         'Cannot fetch orders for a different merchant'
