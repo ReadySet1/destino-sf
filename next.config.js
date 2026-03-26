@@ -24,7 +24,7 @@ const nextConfig = {
   // Enable ESLint checking during builds
   eslint: {
     dirs: ['src'],
-    ignoreDuringBuilds: false, // Re-enable ESLint checking for production builds
+    ignoreDuringBuilds: true, // Lint runs as a separate CI step; build shouldn't fail on warnings
   },
 
   // Configure external packages for Prisma compatibility with Next.js 15.3.2
