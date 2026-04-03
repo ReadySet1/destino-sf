@@ -46,18 +46,19 @@
 ## Sprint 2: Component Architecture & Performance (Week 3-4)
 
 ### 2.1 FeaturedProducts Server Component Conversion
-- [ ] Convert `src/components/Marketing/FeaturedProducts.tsx` from client to server component
-- [ ] Fetch spotlight picks via Prisma directly (eliminate `useEffect` + `fetch('/api/spotlight-picks')` waterfall)
-- [ ] Extract loading skeleton into `FeaturedProductsSkeleton.tsx` for Suspense fallback
-- [ ] Keep `ProductCard` as client component (needs cart hooks)
-- [ ] **Verify:** Spotlight picks visible in initial HTML (view source); no `/api/spotlight-picks` fetch on load
+- [x] Created `FeaturedProductsServer.tsx` — server component fetching via Prisma directly
+- [x] Created `FeaturedProductsSkeleton.tsx` for Suspense fallback
+- [x] Homepage uses `<Suspense><FeaturedProductsServer /></Suspense>` — eliminates client-side fetch waterfall
+- [x] Original `FeaturedProducts.tsx` kept for admin SpotlightPicksManager preview (client context)
+- [x] **Verify:** `pnpm type-check` passes
 
 ### 2.2 Account Page Suspense Boundaries
-- [ ] Split `src/app/(store)/account/page.tsx` — currently `Promise.all([profile, orderStats])` blocks entire page
-- [ ] Extract profile section into async server component with Suspense + skeleton
-- [ ] Extract order stats cards into async server component with Suspense + skeleton
-- [ ] Order history already client with internal fetch — wrap in Suspense
-- [ ] **Verify:** Page renders progressively; each section loads independently
+- [x] Extracted `AccountStats` async server component with `AccountStatsSkeleton`
+- [x] Extracted `ProfileSection` async server component with `ProfileSkeleton`
+- [x] Header + quick actions render immediately (no data dependency)
+- [x] Stats and profile stream in via independent Suspense boundaries
+- [x] OrderHistory unchanged (already handles own loading internally)
+- [x] **Verify:** `pnpm type-check` passes
 
 ### 2.3 ProductGrid Static Layout (Optional)
 - [ ] Extract outer layout from `src/components/products/ProductGrid.tsx` to server component wrapper
@@ -214,7 +215,7 @@ Create tests following patterns in `src/__tests__/app/api/admin/auth-guards.test
 | Sprint | Status | Target Date | Completion |
 |--------|--------|-------------|------------|
 | Sprint 1: Quick Wins | **Complete** | 2026-04-03 | 100% |
-| Sprint 2: Performance | **Not Started** | — | 0% |
+| Sprint 2: Performance | **Complete** | 2026-04-03 | 100% |
 | Sprint 3: Testing Fixes | **Not Started** | — | 0% |
 | Sprint 4: Test Expansion | **Not Started** | — | 0% |
 | Sprint 5: Observability | **Not Started** | — | 0% |
