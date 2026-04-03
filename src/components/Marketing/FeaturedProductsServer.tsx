@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Dancing_Script } from 'next/font/google';
 import { prisma, withRetry } from '@/lib/db-unified';
+import { isBuildTime } from '@/lib/build-time-utils';
 import { truncateHtmlDescription } from '@/lib/utils/product-description';
 import type { SpotlightPick } from '@/types/spotlight';
 
@@ -12,6 +13,11 @@ const dancingScript = Dancing_Script({
 });
 
 async function getSpotlightPicks(): Promise<SpotlightPick[]> {
+  // Skip database fetch during build time (no DB available in CI)
+  if (isBuildTime()) {
+    return [];
+  }
+
   const rawPicks = await withRetry(
     async () => {
       return await prisma.spotlightPick.findMany({

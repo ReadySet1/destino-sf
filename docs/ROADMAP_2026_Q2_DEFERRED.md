@@ -16,10 +16,9 @@
 - [x] `src/app/(store)/products/category/[slug]/page.tsx` — add `export const revalidate = 3600`
 
 ### 1.2 `generateStaticParams` for Product Detail Pages
-- [x] Add `generateStaticParams()` to `src/app/(store)/products/[slug]/page.tsx`
-- [x] Follow existing pattern from category pages using `safeBuildTimeStaticParams()` (`src/lib/build-time-utils.ts`)
-- [x] Query active products with slugs, include hardcoded fallback array
-- [x] **Verify:** `pnpm build` generates `.html` files for known product slugs — confirmed `●` (SSG) in build output
+- [x] ~~Added `generateStaticParams()` — reverted: page body hits DB directly, causes CI build failure~~
+- [x] ISR via `revalidate = 1800` still active — pages rendered on demand then cached 30min
+- [ ] **Deferred:** Requires wrapping full page data fetch with `safeBuildTimeOperation` first
 
 ### 1.3 Wire Redis Cache into Product Visibility Service
 - [x] Integrate `cacheService` + `CacheKeys` from `src/lib/cache-service.ts` into `src/lib/services/product-visibility-service.ts`
