@@ -1,3 +1,5 @@
+export const revalidate = 1800; // ISR: revalidate every 30 minutes
+
 import { prisma } from '@/lib/db';
 import ProductDetails from '@/components/products/ProductDetails';
 import CategoryHeader from '@/components/products/CategoryHeader';
@@ -14,6 +16,7 @@ import {
   getProductCategoryPath,
 } from '@/lib/seo/product-helpers';
 import { Breadcrumbs } from '@/components/seo/Breadcrumbs';
+import { safeBuildTimeStaticParams } from '@/lib/build-time-utils';
 
 // Helper function to convert product name to URL-friendly slug
 function slugify(text: string): string {
@@ -322,5 +325,42 @@ export default async function ProductPage({ params }: PageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Pre-generate static pages for known product slugs.
+ * Uses fallback data during build time when database is not accessible.
+ */
+export async function generateStaticParams() {
+  const fallbackProducts = [
+    { slug: 'empanadas-argentinas' },
+    { slug: 'alfajores-de-maicena' },
+    { slug: 'alfajores-de-chocolate' },
+    { slug: 'empanadas-party-box' },
+  ];
+
+  return await safeBuildTimeStaticParams(
+    async () => {
+      const products = await prisma.product.findMany({
+        select: {
+          slug: true,
+        },
+        where: {
+          slug: { not: null },
+          active: true,
+        },
+      });
+
+      const validProducts = products
+        .filter(product => product.slug)
+        .map(product => ({
+          slug: product.slug!,
+        }));
+
+      return validProducts.length > 0 ? validProducts : fallbackProducts;
+    },
+    fallbackProducts,
+    'product generateStaticParams'
   );
 }

@@ -9,6 +9,7 @@ import { AvailabilityQueries } from '@/lib/db/availability-queries';
 import { AvailabilityEngine } from '@/lib/availability/engine';
 import { logger } from '@/utils/logger';
 import { isBuildTime } from '@/lib/build-time-utils';
+import { cacheService, CacheKeys, CacheInvalidation, getCacheTTL } from '@/lib/cache-service';
 import type { AvailabilityEvaluation } from '@/types/availability';
 
 export interface ProductVisibilityOptions {
@@ -164,6 +165,20 @@ export class ProductVisibilityService {
         };
       }
 
+      // Use cache for simple, non-dynamic queries (no search, no availability evaluation)
+      const isCacheable = !search && !includeAvailabilityEvaluation;
+      const cacheKey = isCacheable
+        ? CacheKeys.products(resolvedCategoryId, page, limit || 20)
+        : null;
+
+      if (cacheKey) {
+        const cached = await cacheService.get<ProductQueryResult>(cacheKey);
+        if (cached) {
+          logger.info('Product cache hit', { cacheKey });
+          return cached;
+        }
+      }
+
       // Calculate pagination
       const itemsPerPage = limit || (includePagination ? 10 : undefined);
       const skip = includePagination && itemsPerPage ? (page - 1) * itemsPerPage : undefined;
@@ -287,10 +302,19 @@ export class ProductVisibilityService {
             }
           : undefined;
 
-      return {
+      const result: ProductQueryResult = {
         products: serializedProducts,
         ...(paginationData && { pagination: paginationData }),
       };
+
+      // Cache the result for non-dynamic queries
+      if (cacheKey) {
+        await cacheService.set(cacheKey, result, getCacheTTL('products')).catch(err => {
+          logger.error('Failed to cache product query result', { cacheKey, error: err });
+        });
+      }
+
+      return result;
     } catch (error) {
       logger.error('Error in ProductVisibilityService.getProducts:', error);
       throw error;
@@ -498,19 +522,27 @@ export class ProductVisibilityService {
   }
 
   /**
-   * Clear cache for specific category (placeholder for future caching implementation)
+   * Clear cache for specific category
    */
   static async clearCategoryCache(categoryId: string): Promise<void> {
-    // TODO: Implement caching layer and cache invalidation
-    logger.info('Category cache cleared', { categoryId });
+    try {
+      await CacheInvalidation.invalidateCategory(categoryId);
+      logger.info('Category cache cleared', { categoryId });
+    } catch (error) {
+      logger.error('Failed to clear category cache', { categoryId, error });
+    }
   }
 
   /**
-   * Clear cache for specific product (placeholder for future caching implementation)
+   * Clear cache for specific product
    */
   static async clearProductCache(productId: string): Promise<void> {
-    // TODO: Implement caching layer and cache invalidation
-    logger.info('Product cache cleared', { productId });
+    try {
+      await CacheInvalidation.invalidateProduct(productId);
+      logger.info('Product cache cleared', { productId });
+    } catch (error) {
+      logger.error('Failed to clear product cache', { productId, error });
+    }
   }
 }
 

@@ -1,0 +1,36 @@
+{
+  "date": "2026-04-03",
+  "nextVersion": "15.x",
+  "buildTool": "@next/bundle-analyzer",
+  "sharedJS": {
+    "total": "218 kB",
+    "chunks": {
+      "4bd1b696": "54.4 kB",
+      "52774a7f": "36.6 kB",
+      "6400": "123 kB"
+    }
+  },
+  "middleware": "152 kB",
+  "keyPages": {
+    "/": { "size": "2.3 kB", "firstLoadJS": "236 kB" },
+    "/products": { "size": "2.54 kB", "firstLoadJS": "275 kB", "revalidate": "1h" },
+    "/products/[slug]": { "size": "9.96 kB", "firstLoadJS": "322 kB", "revalidate": "30m", "type": "SSG" },
+    "/products/category/[slug]": { "size": "5.83 kB", "firstLoadJS": "328 kB", "type": "SSG" },
+    "/menu": { "size": "2.54 kB", "firstLoadJS": "275 kB", "revalidate": "1h" },
+    "/checkout": { "size": "6.73 kB", "firstLoadJS": "312 kB" },
+    "/cart": { "size": "4.09 kB", "firstLoadJS": "276 kB" },
+    "/account": { "size": "6.36 kB", "firstLoadJS": "286 kB" },
+    "/admin/products": { "size": "19.3 kB", "firstLoadJS": "325 kB" },
+    "/admin/orders": { "size": "8.89 kB", "firstLoadJS": "304 kB" },
+    "/admin/products/availability": { "size": "19.4 kB", "firstLoadJS": "356 kB" }
+  },
+  "largestPages": [
+    { "route": "/admin/products/availability", "firstLoadJS": "356 kB" },
+    { "route": "/admin/products/availability/bulk", "firstLoadJS": "335 kB" },
+    { "route": "/products/category/[slug]", "firstLoadJS": "328 kB" },
+    { "route": "/admin/products", "firstLoadJS": "325 kB" },
+    { "route": "/products/[slug]", "firstLoadJS": "322 kB" },
+    { "route": "/admin/settings", "firstLoadJS": "320 kB" }
+  ],
+  "notes": "First baseline. Shared JS (218 kB) is the minimum loaded on every page. Admin pages are the heaviest due to complex forms and data grids."
+}
