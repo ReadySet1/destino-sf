@@ -1,8 +1,10 @@
 // src/app/page.tsx
 
+import { Suspense } from 'react';
 import Hero from '@/components/Landing';
 import { CustomerTestimonials } from '@/components/Marketing/CustomerTestimonials';
-import { FeaturedProducts } from '@/components/Marketing/FeaturedProducts';
+import { FeaturedProductsServer } from '@/components/Marketing/FeaturedProductsServer';
+import { FeaturedProductsSkeleton } from '@/components/Marketing/FeaturedProductsSkeleton';
 import { PromotionBanner } from '@/components/Marketing/PromotionBanner';
 import { ShopByCategory } from '@/components/Marketing/ShopByCategory';
 import { CateringSection } from '@/components/Marketing/CateringSection';
@@ -23,7 +25,9 @@ export default async function Home() {
       <main>
         <Hero />
         <ShopByCategory />
-        <FeaturedProducts />
+        <Suspense fallback={<FeaturedProductsSkeleton />}>
+          <FeaturedProductsServer />
+        </Suspense>
 
         <CateringSection />
         <PromotionBanner />

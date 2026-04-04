@@ -1,3 +1,5 @@
+export const revalidate = 3600; // ISR: revalidate every 1 hour
+
 import React from 'react';
 import MenuBanner from '@/components/Menu';
 import ProductList from '@/components/products/ProductList';

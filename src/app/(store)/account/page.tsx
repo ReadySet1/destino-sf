@@ -1,14 +1,50 @@
+import { Suspense } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db';
 import { AccountProfile, AccountProfileProps } from '@/components/store/AccountProfile';
 import { OrderHistory, OrderHistoryProps } from '@/components/store/OrderHistory';
+import { AccountStats, AccountStatsSkeleton } from '@/components/store/AccountStats';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Profile } from '@prisma/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { handleSignOut } from './actions';
-import { User, Package, Clock, Settings, ShoppingBag, Calendar } from 'lucide-react';
+import { User, Package, Settings, ShoppingBag, Calendar } from 'lucide-react';
+
+async function ProfileSection({ user }: { user: SupabaseUser }) {
+  let profile: Profile | null = null;
+
+  try {
+    profile = await prisma.profile.findUnique({
+      where: { id: user.id },
+    });
+  } catch (error) {
+    console.error('Failed to fetch profile:', error);
+  }
+
+  return (
+    <AccountProfile
+      {...({
+        user: user,
+        profile: profile,
+        onSignOut: handleSignOut,
+      } as AccountProfileProps)}
+    />
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="space-y-4 p-4 animate-pulse">
+      <div className="h-5 w-32 bg-gray-200 rounded" />
+      <div className="h-4 w-48 bg-gray-200 rounded" />
+      <div className="h-4 w-40 bg-gray-200 rounded" />
+      <div className="h-10 w-full bg-gray-200 rounded mt-4" />
+    </div>
+  );
+}
 
 export default async function AccountPage() {
   const supabase = await createClient();
@@ -21,54 +57,16 @@ export default async function AccountPage() {
     redirect('/sign-in?returnUrl=/account');
   }
 
-  let profile: Profile | null = null;
-  let orderCount = 0;
-  let recentOrders = 0;
-
-  try {
-    // Get user data from middleware headers to avoid extra auth call
-    const userId = user.id;
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-    // Single optimized query using raw SQL for better performance
-    const [profileResult, orderStats] = await Promise.all([
-      prisma.profile.findUnique({
-        where: { id: userId },
-      }),
-      // Use raw SQL for faster aggregation with proper UUID casting
-      prisma.$queryRaw<Array<{ totalCount: bigint; recentCount: bigint }>>`
-        SELECT 
-          (SELECT COUNT(*) FROM "orders" WHERE "userId" = ${userId}::uuid) +
-          (SELECT COUNT(*) FROM "catering_orders" WHERE "customerId" = ${userId}::uuid) as "totalCount",
-          (SELECT COUNT(*) FROM "orders" WHERE "userId" = ${userId}::uuid AND "createdAt" >= ${thirtyDaysAgo}) +
-          (SELECT COUNT(*) FROM "catering_orders" WHERE "customerId" = ${userId}::uuid AND "createdAt" >= ${thirtyDaysAgo}) as "recentCount"
-      `,
-    ]);
-
-    profile = profileResult;
-
-    if (orderStats && orderStats.length > 0) {
-      orderCount = Number(orderStats[0].totalCount);
-      recentOrders = Number(orderStats[0].recentCount);
-    }
-  } catch (error) {
-    console.error('Failed to fetch profile or order data:', error);
-    // Set safe defaults if queries fail
-    profile = null;
-    orderCount = 0;
-    recentOrders = 0;
-  }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-destino-cream via-white to-gray-50">
       <div className="container mx-auto py-8 px-4">
-        {/* Header Section */}
+        {/* Header Section — renders immediately with user email */}
         <div className="mb-8 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-destino-charcoal">My Account</h1>
               <p className="text-gray-600 mt-1">
-                Welcome back, {profile?.name || user.email?.split('@')[0] || 'Guest'}!
+                Welcome back, {user.email?.split('@')[0] || 'Guest'}!
               </p>
             </div>
             <Button
@@ -82,51 +80,12 @@ export default async function AccountPage() {
           </div>
         </div>
 
-        {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-white/95 backdrop-blur-sm border-destino-yellow/30 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-destino-charcoal">
-                Total Orders
-              </CardTitle>
-              <Package className="h-4 w-4 text-destino-orange" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destino-charcoal">{orderCount}</div>
-              <p className="text-xs text-gray-600 mt-1">All time</p>
-            </CardContent>
-          </Card>
+        {/* Quick Stats — streams in via Suspense */}
+        <Suspense fallback={<AccountStatsSkeleton />}>
+          <AccountStats userId={user.id} userCreatedAt={user.created_at} />
+        </Suspense>
 
-          <Card className="bg-white/95 backdrop-blur-sm border-destino-orange/30 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-destino-charcoal">
-                Recent Orders
-              </CardTitle>
-              <Clock className="h-4 w-4 text-destino-orange" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destino-charcoal">{recentOrders}</div>
-              <p className="text-xs text-gray-600 mt-1">Last 30 days</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/95 backdrop-blur-sm border-green-300/30 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-destino-charcoal">
-                Account Status
-              </CardTitle>
-              <User className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">Active</div>
-              <p className="text-xs text-gray-600 mt-1">
-                Since {new Date(user.created_at).getFullYear()}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
+        {/* Quick Actions — renders immediately (static links) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Button
             asChild
@@ -179,7 +138,7 @@ export default async function AccountPage() {
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Section */}
+          {/* Profile Section — streams in via Suspense */}
           <div className="lg:col-span-1">
             <Card className="bg-white/95 backdrop-blur-sm border-destino-yellow/30 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-destino-cream/30 to-white border-b border-destino-yellow/20">
@@ -192,13 +151,9 @@ export default async function AccountPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <AccountProfile
-                  {...({
-                    user: user,
-                    profile: profile,
-                    onSignOut: handleSignOut,
-                  } as AccountProfileProps)}
-                />
+                <Suspense fallback={<ProfileSkeleton />}>
+                  <ProfileSection user={user} />
+                </Suspense>
               </CardContent>
             </Card>
           </div>

@@ -82,23 +82,26 @@ const DEFAULT_CONFIG: Required<ValidationConfig> = {
  * );
  * ```
  */
-export function withValidation<T extends (...args: any[]) => Promise<NextResponse>>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for generic handler signature compatibility
+type RouteHandler = (...args: any[]) => Promise<NextResponse>;
+
+export function withValidation<T extends RouteHandler>(
   handler: T,
   schemas: {
     request?: {
-      body?: z.ZodType<any, any, any>;
-      query?: z.ZodType<any, any, any>;
-      params?: z.ZodType<any, any, any>;
+      body?: z.ZodType;
+      query?: z.ZodType;
+      params?: z.ZodType;
     };
     response?: {
-      [statusCode: number]: z.ZodType<any, any, any>;
+      [statusCode: number]: z.ZodType;
     };
   },
   config: ValidationConfig = {}
 ): T {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
-  return (async (request: NextRequest, ...args: any[]) => {
+  return (async (request: NextRequest, ...args: unknown[]) => {
     const context: ValidationContext = {
       path: new URL(request.url).pathname,
       method: request.method.toLowerCase(),
@@ -171,7 +174,8 @@ export function withValidation<T extends (...args: any[]) => Promise<NextRespons
 
         // Validate path parameters
         if (schemas.request.params && args.length > 0) {
-          const params = args[0]?.params || {};
+          const firstArg = args[0] as Record<string, unknown> | undefined;
+          const params = (firstArg?.params as Record<string, unknown>) || {};
           const result = validateRequest(schemas.request.params, params, context);
 
           if (!result.valid) {
