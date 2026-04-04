@@ -80,12 +80,14 @@ jest.mock('@/lib/square/service', () => ({
 // === Helpers ===
 
 function createRequest(path: string, method = 'GET', body?: unknown): NextRequest {
-  const init: RequestInit = { method };
   if (body) {
-    init.body = JSON.stringify(body);
-    init.headers = { 'Content-Type': 'application/json' };
+    return new NextRequest(`http://localhost:3000${path}`, {
+      method,
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
-  return new NextRequest(`http://localhost:3000${path}`, init);
+  return new NextRequest(`http://localhost:3000${path}`, { method });
 }
 
 // === Tests ===
