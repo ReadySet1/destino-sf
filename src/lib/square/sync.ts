@@ -828,23 +828,36 @@ export async function syncSquareProducts(): Promise<SyncResult> {
         });
 
         if (productsToArchive.length > 0) {
-          logger.info(`Found ${productsToArchive.length} products to archive`);
-
-          // Bulk archive operation - much faster than individual updates
-          const archiveResult = await prisma.product.updateMany({
-            where: {
-              id: {
-                in: productsToArchive.map(p => p.id),
-              },
-            },
-            data: {
-              active: false,
-              updatedAt: new Date(),
-              syncStatus: 'ARCHIVED',
-            },
+          // Circuit breaker: refuse to archive more than 20% of the catalog
+          const totalActive = await prisma.product.count({
+            where: { active: true, squareId: { not: '' } },
           });
+          const archiveRatio = totalActive > 0 ? productsToArchive.length / totalActive : 0;
 
-          logger.info(`Successfully archived ${archiveResult.count} products`);
+          if (archiveRatio > 0.20) {
+            logger.error(
+              `CIRCUIT BREAKER: Would archive ${productsToArchive.length}/${totalActive} products ` +
+              `(${(archiveRatio * 100).toFixed(1)}%). Skipping - likely Square API issue.`
+            );
+          } else {
+            logger.info(`Found ${productsToArchive.length} products to archive`);
+
+            // Bulk archive operation - much faster than individual updates
+            const archiveResult = await prisma.product.updateMany({
+              where: {
+                id: {
+                  in: productsToArchive.map(p => p.id),
+                },
+              },
+              data: {
+                active: false,
+                updatedAt: new Date(),
+                syncStatus: 'ARCHIVED',
+              },
+            });
+
+            logger.info(`Successfully archived ${archiveResult.count} products`);
+          }
         } else {
           logger.info('No products need to be archived');
         }

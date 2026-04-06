@@ -13,6 +13,9 @@
  * Related: DES-76 - Fix Critical Path Test Failures
  */
 
+// Load test-specific environment variables (overrides .env for test isolation)
+require('dotenv').config({ path: '.env.test' });
+
 const { TextEncoder, TextDecoder } = require('util');
 const {
   cleanDatabase,
