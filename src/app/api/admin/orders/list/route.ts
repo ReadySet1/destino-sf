@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db-unified';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { logger } from '@/utils/logger';
 import { OrderStatus, CateringStatus, PaymentStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -115,6 +116,11 @@ function getOrderByClause(
  */
 export async function GET(request: NextRequest) {
   try {
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
+    }
+
     const { searchParams } = new URL(request.url);
 
     // Parse search params with validation

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { UserSyncManager } from '@/lib/square/user-sync-manager';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { logger } from '@/utils/logger';
 
 export async function GET(
@@ -12,18 +12,15 @@ export async function GET(
   const { syncId } = await params;
 
   try {
-    // 1. Authenticate user
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Authenticate user and check admin access
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
-    // 2. Check admin access
+    const user = adminCheck.user!;
+
+    // Fetch profile for name/email used downstream (guaranteed to exist since admin check passed)
     const profile = await withRetry(
       () =>
         prisma.profile.findUnique({
@@ -31,11 +28,11 @@ export async function GET(
           select: { role: true, name: true, email: true },
         }),
       3,
-      'check admin access'
+      'fetch admin profile'
     );
 
-    if (!profile || profile.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
     // 3. Validate syncId parameter
@@ -196,19 +193,15 @@ export async function HEAD(
   const { syncId } = await params;
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return new Response(null, { status: 401 });
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return new Response(null, { status: adminCheck.statusCode });
     }
 
     const syncExists = await prisma.userSyncLog.findUnique({
       where: {
         syncId: syncId,
-        userId: user.id,
+        userId: adminCheck.user!.id,
       },
       select: { id: true },
     });

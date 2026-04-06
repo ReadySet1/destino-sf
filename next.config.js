@@ -1,5 +1,11 @@
 import { withSentryConfig } from '@sentry/nextjs';
 
+// Bundle analyzer — only loaded when ANALYZE=true (dev dependency)
+const analyzeBundles =
+  process.env.ANALYZE === 'true'
+    ? (await import('@next/bundle-analyzer')).default({ enabled: true })
+    : (config) => config;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {
@@ -18,7 +24,7 @@ const nextConfig = {
   // Enable ESLint checking during builds
   eslint: {
     dirs: ['src'],
-    ignoreDuringBuilds: false, // Re-enable ESLint checking for production builds
+    ignoreDuringBuilds: true, // Lint runs as a separate CI step; build shouldn't fail on warnings
   },
 
   // Configure external packages for Prisma compatibility with Next.js 15.3.2
@@ -285,7 +291,7 @@ const nextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+export default withSentryConfig(analyzeBundles(nextConfig), {
   // Sentry organization and project slugs
   org: 'ready-set-llc',
   project: 'destino-sf',

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { logger } from '@/utils/logger';
 import { env } from '@/env'; // Import the validated environment configuration
 
@@ -24,6 +25,11 @@ interface ValidationReport {
 
 export async function GET() {
   try {
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
+    }
+
     logger.info('🔍 Starting comprehensive route validation...');
 
     const validations: RouteValidation[] = [];

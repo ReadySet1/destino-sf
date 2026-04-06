@@ -1,6 +1,6 @@
 import { serializeDecimal, serializeObject } from '../../utils/serialization';
 
-describe.skip('Serialization', () => {
+describe('Serialization', () => {
   beforeEach(() => {
     // Mock console methods to suppress expected warnings/errors during tests
     jest.spyOn(console, 'warn').mockImplementation(() => {});

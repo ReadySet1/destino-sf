@@ -1,3 +1,5 @@
+export const revalidate = 1800; // ISR: revalidate every 30 minutes
+
 import { prisma } from '@/lib/db';
 import ProductDetails from '@/components/products/ProductDetails';
 import CategoryHeader from '@/components/products/CategoryHeader';

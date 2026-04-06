@@ -1,5 +1,7 @@
 // src/app/(store)/products/category/[slug]/page.tsx
 
+export const revalidate = 3600; // ISR: revalidate every 1 hour
+
 import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';

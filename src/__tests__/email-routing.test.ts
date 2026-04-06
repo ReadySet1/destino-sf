@@ -12,7 +12,7 @@ jest.mock('@/env', () => ({
 // Import the helper function from the email routing utility
 import { getRecipientEmail } from '../lib/email-routing';
 
-describe.skip('Email Routing Logic', () => {
+describe('Email Routing Logic', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

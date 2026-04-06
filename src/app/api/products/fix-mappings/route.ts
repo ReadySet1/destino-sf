@@ -1,7 +1,7 @@
 // src/app/api/products/fix-mappings/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { ProductMappingService } from '@/lib/products/mapping-service';
-import { createClient } from '@/utils/supabase/server';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { logger } from '@/utils/logger';
 import { z } from 'zod';
 
@@ -20,22 +20,12 @@ const FixMappingsSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
-    logger.info(`🔧 Product mapping fix requested by user: ${user.email}`);
-    // TODO: Add admin role check when role system is fully implemented
+    logger.info(`🔧 Product mapping fix requested by user: ${adminCheck.user!.email}`);
 
     const body = await request.json();
     const { auditResult, dryRun } = FixMappingsSchema.parse(body);

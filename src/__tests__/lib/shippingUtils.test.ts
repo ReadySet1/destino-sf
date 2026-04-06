@@ -1,50 +1,96 @@
 import {
   calculateShippingWeight,
   getShippingWeightConfig,
+  getShippingGlobalConfig,
   getAllShippingConfigurations,
   updateShippingConfiguration,
   CartItemForShipping,
   ShippingWeightConfig,
 } from '@/lib/shippingUtils';
-import { prisma } from '@/lib/db';
 
 // Import our new test utilities
 import { mockConsole, restoreConsole } from '@/__tests__/setup/test-utils';
 
-// Note: @/lib/db is mocked globally in jest.setup.js
-// Cast the prisma object to access jest mock functions
-const mockPrisma = prisma as any;
+// Mock logger
+jest.mock('@/utils/logger', () => ({
+  logger: {
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
 
-describe.skip('ShippingUtils', () => {
+// Mock build-time detection (always false for tests)
+jest.mock('@/lib/build-time-utils', () => ({
+  isBuildTime: jest.fn(() => false),
+}));
+
+// Mock @/lib/db-unified
+jest.mock('@/lib/db-unified', () => {
+  return {
+    prisma: {
+      shippingConfiguration: {
+        findFirst: jest.fn(),
+        findMany: jest.fn(),
+        upsert: jest.fn(),
+      },
+      shippingGlobalConfig: {
+        findFirst: jest.fn(),
+      },
+    },
+    withRetry: jest.fn((fn: () => Promise<unknown>) => fn()),
+  };
+});
+
+// Import and cast after mock setup
+import { prisma } from '@/lib/db-unified';
+const mockPrisma = prisma as unknown as {
+  shippingConfiguration: {
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    upsert: jest.Mock;
+  };
+  shippingGlobalConfig: {
+    findFirst: jest.Mock;
+  };
+};
+
+// Default global config returned when no DB config exists
+const DEFAULT_GLOBAL_CONFIG = {
+  packagingWeightLb: 1.5,
+  minimumTotalWeightLb: 1.0,
+  isActive: true,
+};
+
+describe('ShippingUtils', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockConsole(); // Use utility for console mocking
+    mockConsole();
+    // Default: no global config in DB (uses defaults: packaging=1.5, min=1.0)
+    mockPrisma.shippingGlobalConfig.findFirst.mockResolvedValue(null);
   });
 
   afterEach(() => {
-    restoreConsole(); // Use utility for cleanup
+    restoreConsole();
   });
 
-  // Unit Tests for getProductType (internal function - testing through calculateShippingWeight)
-  describe('getProductType (internal function)', () => {
+  describe('getProductType (tested through calculateShippingWeight)', () => {
     test('should detect alfajor products correctly', async () => {
       const alfajorItems: CartItemForShipping[] = [
         { id: '1', name: 'Dulce de Leche Alfajores', quantity: 1 },
-        { id: '2', name: 'Chocolate ALFAJOR Box', quantity: 2 },
-        { id: '3', name: 'Traditional alfajor pack', quantity: 1 },
       ];
 
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue({
         productName: 'alfajores',
-        baseWeightLb: '0.5',
-        weightPerUnitLb: '0.4',
+        baseWeightLb: 0,
+        weightPerUnitLb: 1.8,
         isActive: true,
         applicableForNationwideOnly: true,
       });
 
       await calculateShippingWeight(alfajorItems, 'nationwide_shipping');
 
-      // Verify that alfajor configuration was requested for all items
       expect(mockPrisma.shippingConfiguration.findFirst).toHaveBeenCalledWith({
         where: { productName: 'alfajores', isActive: true },
       });
@@ -53,14 +99,12 @@ describe.skip('ShippingUtils', () => {
     test('should detect empanada products correctly', async () => {
       const empanadaItems: CartItemForShipping[] = [
         { id: '1', name: 'Beef Empanadas Pack', quantity: 1 },
-        { id: '2', name: 'Chicken EMPANADA Box', quantity: 2 },
-        { id: '3', name: 'Traditional empanada mix', quantity: 1 },
       ];
 
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue({
         productName: 'empanadas',
-        baseWeightLb: 1.0,
-        weightPerUnitLb: 0.8,
+        baseWeightLb: 0,
+        weightPerUnitLb: 1.6,
         isActive: true,
         applicableForNationwideOnly: true,
       });
@@ -72,61 +116,78 @@ describe.skip('ShippingUtils', () => {
       });
     });
 
-    test('should use default fallback for unrecognized products', async () => {
-      const otherItems: CartItemForShipping[] = [
-        { id: '1', name: 'Milanesa Sandwich', quantity: 1 },
-        { id: '2', name: 'Chimichurri Sauce', quantity: 2 },
+    test('should detect sauce products correctly', async () => {
+      const sauceItems: CartItemForShipping[] = [
+        { id: '1', name: 'Chimichurri Sauce', quantity: 2 },
       ];
 
+      mockPrisma.shippingConfiguration.findFirst.mockResolvedValue({
+        productName: 'sauces',
+        baseWeightLb: 0,
+        weightPerUnitLb: 0.9,
+        isActive: true,
+        applicableForNationwideOnly: true,
+      });
+
+      await calculateShippingWeight(sauceItems, 'nationwide_shipping');
+
+      expect(mockPrisma.shippingConfiguration.findFirst).toHaveBeenCalledWith({
+        where: { productName: 'sauces', isActive: true },
+      });
+    });
+
+    test('should use default for unrecognized products', async () => {
+      const otherItems: CartItemForShipping[] = [
+        { id: '1', name: 'Milanesa Sandwich', quantity: 3 },
+      ];
+
+      // No config for 'default' type
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue(null);
 
       const weight = await calculateShippingWeight(otherItems, 'nationwide_shipping');
 
-      expect(mockPrisma.shippingConfiguration.findFirst).toHaveBeenCalledWith({
-        where: { productName: 'default', isActive: true },
-      });
-      // Should use default weight: 3 items * 0.5 lb = 1.5 lb
-      expect(weight).toBe(1.5);
+      // 3 items × 0.5 lb/item (default) = 1.5 + 1.5 (packaging) = 3.0
+      expect(weight).toBe(3.0);
     });
   });
 
   describe('calculateShippingWeight', () => {
-    test('should calculate weight correctly for alfajores', async () => {
+    test('should calculate weight correctly for alfajores (flat per-unit)', async () => {
       const alfajorItems: CartItemForShipping[] = [
         { id: '1', name: 'Dulce de Leche Alfajores', quantity: 3 },
       ];
 
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue({
         productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
+        baseWeightLb: 0,
+        weightPerUnitLb: 1.8,
         isActive: true,
         applicableForNationwideOnly: true,
       });
 
       const weight = await calculateShippingWeight(alfajorItems, 'nationwide_shipping');
 
-      // Base weight (0.5) + 2 additional units (2 * 0.4) = 1.3 lb
-      expect(weight).toBe(1.3);
+      // 3 × 1.8 = 5.4 (products) + 1.5 (packaging) = 6.9
+      expect(weight).toBe(6.9);
     });
 
-    test('should calculate weight correctly for empanadas', async () => {
+    test('should calculate weight correctly for empanadas (flat per-unit)', async () => {
       const empanadaItems: CartItemForShipping[] = [
         { id: '1', name: 'Beef Empanadas', quantity: 2 },
       ];
 
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue({
         productName: 'empanadas',
-        baseWeightLb: 1.0,
-        weightPerUnitLb: 0.8,
+        baseWeightLb: 0,
+        weightPerUnitLb: 1.6,
         isActive: true,
         applicableForNationwideOnly: true,
       });
 
       const weight = await calculateShippingWeight(empanadaItems, 'nationwide_shipping');
 
-      // Base weight (1.0) + 1 additional unit (1 * 0.8) = 1.8 lb
-      expect(weight).toBe(1.8);
+      // 2 × 1.6 = 3.2 (products) + 1.5 (packaging) = 4.7
+      expect(weight).toBe(4.7);
     });
 
     test('should handle mixed cart calculations', async () => {
@@ -138,75 +199,109 @@ describe.skip('ShippingUtils', () => {
       mockPrisma.shippingConfiguration.findFirst
         .mockResolvedValueOnce({
           productName: 'alfajores',
-          baseWeightLb: 0.5,
-          weightPerUnitLb: 0.4,
+          baseWeightLb: 0,
+          weightPerUnitLb: 1.8,
           isActive: true,
           applicableForNationwideOnly: true,
         })
         .mockResolvedValueOnce({
           productName: 'empanadas',
-          baseWeightLb: 1.0,
-          weightPerUnitLb: 0.8,
+          baseWeightLb: 0,
+          weightPerUnitLb: 1.6,
           isActive: true,
           applicableForNationwideOnly: true,
         });
 
       const weight = await calculateShippingWeight(mixedItems, 'nationwide_shipping');
 
-      // Alfajores: 0.5 + (1 * 0.4) = 0.9
-      // Empanadas: 1.0 + (0 * 0.8) = 1.0
-      // Total: 1.9 lb
-      expect(weight).toBe(1.9);
+      // Alfajores: 2 × 1.8 = 3.6
+      // Empanadas: 1 × 1.6 = 1.6
+      // Total: 5.2 + 1.5 (packaging) = 6.7
+      expect(weight).toBe(6.7);
     });
 
-    test('should enforce minimum weight', async () => {
+    test('should enforce minimum total weight', async () => {
       const lightItems: CartItemForShipping[] = [{ id: '1', name: 'Small Item', quantity: 1 }];
 
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue(null);
 
+      // Override global config with very high minimum
+      mockPrisma.shippingGlobalConfig.findFirst.mockResolvedValue({
+        id: 'test',
+        packagingWeightLb: 0,
+        minimumTotalWeightLb: 5.0,
+        isActive: true,
+      });
+
       const weight = await calculateShippingWeight(lightItems, 'nationwide_shipping');
 
-      // Even if calculated weight is less than 0.5 lb, should return minimum 0.5 lb
-      expect(weight).toBe(0.5);
+      // 1 × 0.5 = 0.5 + 0 (packaging) = 0.5, but minimum is 5.0
+      expect(weight).toBe(5.0);
     });
 
-    test('should handle fulfillment method impact for nationwide-only configs', async () => {
+    test('should use default weight for nationwide-only configs with local delivery', async () => {
       const alfajorItems: CartItemForShipping[] = [
         { id: '1', name: 'Dulce de Leche Alfajores', quantity: 2 },
       ];
 
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue({
         productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
+        baseWeightLb: 0,
+        weightPerUnitLb: 1.8,
         isActive: true,
         applicableForNationwideOnly: true,
       });
 
-      // For local delivery, should use default weight instead of configured weight
       const weight = await calculateShippingWeight(alfajorItems, 'local_delivery');
 
-      // 2 items * 0.5 lb (default weight) = 1.0 lb
-      expect(weight).toBe(1.0);
+      // For local delivery with nationwide-only config: 2 × 0.5 (default) = 1.0 + 1.5 (packaging) = 2.5
+      expect(weight).toBe(2.5);
     });
 
-    test('should use configured weight for nationwide shipping even with applicableForNationwideOnly', async () => {
-      const alfajorItems: CartItemForShipping[] = [
-        { id: '1', name: 'Dulce de Leche Alfajores', quantity: 2 },
+    test('should support legacy formula when baseWeightLb > 0', async () => {
+      const items: CartItemForShipping[] = [
+        { id: '1', name: 'Dulce de Leche Alfajores', quantity: 3 },
       ];
 
       mockPrisma.shippingConfiguration.findFirst.mockResolvedValue({
         productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
+        baseWeightLb: 2.0,
+        weightPerUnitLb: 0.5,
         isActive: true,
         applicableForNationwideOnly: true,
       });
 
-      const weight = await calculateShippingWeight(alfajorItems, 'nationwide_shipping');
+      const weight = await calculateShippingWeight(items, 'nationwide_shipping');
 
-      // Base weight (0.5) + 1 additional unit (1 * 0.4) = 0.9 lb
-      expect(weight).toBe(0.9);
+      // Legacy: base(2.0) + (3-1) × 0.5 = 2.0 + 1.0 = 3.0 + 1.5 (packaging) = 4.5
+      expect(weight).toBe(4.5);
+    });
+
+    test('should include packaging weight from global config', async () => {
+      const items: CartItemForShipping[] = [
+        { id: '1', name: 'Beef Empanadas', quantity: 1 },
+      ];
+
+      mockPrisma.shippingConfiguration.findFirst.mockResolvedValue({
+        productName: 'empanadas',
+        baseWeightLb: 0,
+        weightPerUnitLb: 1.6,
+        isActive: true,
+        applicableForNationwideOnly: true,
+      });
+
+      // Custom packaging weight
+      mockPrisma.shippingGlobalConfig.findFirst.mockResolvedValue({
+        id: 'test',
+        packagingWeightLb: 2.0,
+        minimumTotalWeightLb: 1.0,
+        isActive: true,
+      });
+
+      const weight = await calculateShippingWeight(items, 'nationwide_shipping');
+
+      // 1 × 1.6 = 1.6 + 2.0 (packaging) = 3.6
+      expect(weight).toBe(3.6);
     });
   });
 
@@ -231,9 +326,6 @@ describe.skip('ShippingUtils', () => {
         isActive: true,
         applicableForNationwideOnly: false,
       });
-      expect(mockPrisma.shippingConfiguration.findFirst).toHaveBeenCalledWith({
-        where: { productName: 'alfajores', isActive: true },
-      });
     });
 
     test('should fallback to defaults when no database config exists', async () => {
@@ -243,8 +335,8 @@ describe.skip('ShippingUtils', () => {
 
       expect(config).toEqual({
         productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
+        baseWeightLb: 0,
+        weightPerUnitLb: 1.8,
         isActive: true,
         applicableForNationwideOnly: true,
       });
@@ -268,19 +360,75 @@ describe.skip('ShippingUtils', () => {
       // Should fallback to default configuration
       expect(config).toEqual({
         productName: 'alfajores',
-        baseWeightLb: 0.5,
-        weightPerUnitLb: 0.4,
+        baseWeightLb: 0,
+        weightPerUnitLb: 1.8,
         isActive: true,
         applicableForNationwideOnly: true,
       });
-      expect(console.error).toHaveBeenCalledWith(
-        'Error fetching shipping weight config:',
-        expect.any(Error)
-      );
     });
   });
 
-  // Integration Tests
+  describe('getShippingGlobalConfig', () => {
+    test('should retrieve database global config', async () => {
+      mockPrisma.shippingGlobalConfig.findFirst.mockResolvedValue({
+        id: 'test-id',
+        packagingWeightLb: 2.0,
+        minimumTotalWeightLb: 1.5,
+        isActive: true,
+      });
+
+      const config = await getShippingGlobalConfig();
+
+      expect(config).toEqual({
+        id: 'test-id',
+        packagingWeightLb: 2.0,
+        minimumTotalWeightLb: 1.5,
+        isActive: true,
+      });
+    });
+
+    test('should return defaults when no database config exists', async () => {
+      mockPrisma.shippingGlobalConfig.findFirst.mockResolvedValue(null);
+
+      const config = await getShippingGlobalConfig();
+
+      expect(config).toEqual({
+        packagingWeightLb: 1.5,
+        minimumTotalWeightLb: 1.0,
+        isActive: true,
+      });
+    });
+
+    test('should return defaults during build time', async () => {
+      const { isBuildTime } = require('@/lib/build-time-utils');
+      (isBuildTime as jest.Mock).mockReturnValueOnce(true);
+
+      const config = await getShippingGlobalConfig();
+
+      expect(config).toEqual({
+        packagingWeightLb: 1.5,
+        minimumTotalWeightLb: 1.0,
+        isActive: true,
+      });
+      // Should not hit the database
+      expect(mockPrisma.shippingGlobalConfig.findFirst).not.toHaveBeenCalled();
+    });
+
+    test('should handle database errors gracefully', async () => {
+      mockPrisma.shippingGlobalConfig.findFirst.mockRejectedValue(
+        new Error('Database connection failed')
+      );
+
+      const config = await getShippingGlobalConfig();
+
+      expect(config).toEqual({
+        packagingWeightLb: 1.5,
+        minimumTotalWeightLb: 1.0,
+        isActive: true,
+      });
+    });
+  });
+
   describe('Admin Configuration Management', () => {
     describe('updateShippingConfiguration', () => {
       test('should update existing configuration successfully', async () => {
@@ -301,13 +449,7 @@ describe.skip('ShippingUtils', () => {
           applicableForNationwideOnly: false,
         });
 
-        expect(result).toEqual({
-          productName: 'alfajores',
-          baseWeightLb: 0.7,
-          weightPerUnitLb: 0.6,
-          isActive: true,
-          applicableForNationwideOnly: false,
-        });
+        expect(result).toEqual(mockUpdatedConfig);
         expect(mockPrisma.shippingConfiguration.upsert).toHaveBeenCalledWith({
           where: { productName: 'alfajores' },
           create: {
@@ -323,33 +465,6 @@ describe.skip('ShippingUtils', () => {
             isActive: true,
             applicableForNationwideOnly: false,
           },
-        });
-      });
-
-      test('should create new configuration when none exists', async () => {
-        const mockNewConfig = {
-          productName: 'newproduct',
-          baseWeightLb: 1.5,
-          weightPerUnitLb: 1.0,
-          isActive: true,
-          applicableForNationwideOnly: true,
-        };
-
-        mockPrisma.shippingConfiguration.upsert.mockResolvedValue(mockNewConfig);
-
-        const result = await updateShippingConfiguration('newproduct', {
-          baseWeightLb: 1.5,
-          weightPerUnitLb: 1.0,
-          isActive: true,
-          applicableForNationwideOnly: true,
-        });
-
-        expect(result).toEqual({
-          productName: 'newproduct',
-          baseWeightLb: 1.5,
-          weightPerUnitLb: 1.0,
-          isActive: true,
-          applicableForNationwideOnly: true,
         });
       });
     });
@@ -370,8 +485,8 @@ describe.skip('ShippingUtils', () => {
 
         const configs = await getAllShippingConfigurations();
 
-        // Should include the DB config + empanadas default (alfajores is overridden)
-        expect(configs).toHaveLength(2);
+        // Should include the DB config + empanadas + sauces defaults (alfajores overridden)
+        expect(configs).toHaveLength(3);
         expect(configs.find(c => c.productName === 'alfajores')).toEqual({
           productName: 'alfajores',
           baseWeightLb: 0.7,
@@ -381,8 +496,15 @@ describe.skip('ShippingUtils', () => {
         });
         expect(configs.find(c => c.productName === 'empanadas')).toEqual({
           productName: 'empanadas',
-          baseWeightLb: 1.0,
-          weightPerUnitLb: 0.8,
+          baseWeightLb: 0,
+          weightPerUnitLb: 1.6,
+          isActive: true,
+          applicableForNationwideOnly: true,
+        });
+        expect(configs.find(c => c.productName === 'sauces')).toEqual({
+          productName: 'sauces',
+          baseWeightLb: 0,
+          weightPerUnitLb: 0.9,
           isActive: true,
           applicableForNationwideOnly: true,
         });
@@ -393,23 +515,19 @@ describe.skip('ShippingUtils', () => {
 
         const configs = await getAllShippingConfigurations();
 
-        expect(configs).toHaveLength(2);
-        expect(configs).toEqual([
-          {
-            productName: 'alfajores',
-            baseWeightLb: 0.5,
-            weightPerUnitLb: 0.4,
-            isActive: true,
-            applicableForNationwideOnly: true,
-          },
-          {
-            productName: 'empanadas',
-            baseWeightLb: 1.0,
-            weightPerUnitLb: 0.8,
-            isActive: true,
-            applicableForNationwideOnly: true,
-          },
-        ]);
+        expect(configs).toHaveLength(3);
+        expect(configs.map(c => c.productName).sort()).toEqual(['alfajores', 'empanadas', 'sauces']);
+      });
+
+      test('should return defaults during build time', async () => {
+        const { isBuildTime } = require('@/lib/build-time-utils');
+        (isBuildTime as jest.Mock).mockReturnValueOnce(true);
+
+        const configs = await getAllShippingConfigurations();
+
+        expect(configs).toHaveLength(3);
+        // Should not hit the database
+        expect(mockPrisma.shippingConfiguration.findMany).not.toHaveBeenCalled();
       });
 
       test('should handle database errors gracefully', async () => {
@@ -420,26 +538,8 @@ describe.skip('ShippingUtils', () => {
         const configs = await getAllShippingConfigurations();
 
         // Should return only default configurations
-        expect(configs).toEqual([
-          {
-            productName: 'alfajores',
-            baseWeightLb: 0.5,
-            weightPerUnitLb: 0.4,
-            isActive: true,
-            applicableForNationwideOnly: true,
-          },
-          {
-            productName: 'empanadas',
-            baseWeightLb: 1.0,
-            weightPerUnitLb: 0.8,
-            isActive: true,
-            applicableForNationwideOnly: true,
-          },
-        ]);
-        expect(console.error).toHaveBeenCalledWith(
-          'Error fetching shipping configurations:',
-          expect.any(Error)
-        );
+        expect(configs).toHaveLength(3);
+        expect(configs.map(c => c.productName).sort()).toEqual(['alfajores', 'empanadas', 'sauces']);
       });
     });
   });

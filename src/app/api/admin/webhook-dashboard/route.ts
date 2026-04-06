@@ -18,6 +18,7 @@ import {
 } from '@/lib/db/queries/webhooks';
 import { getPaymentSyncHistory, getPaymentSyncMetrics } from '@/lib/db/queries/payments';
 import { type SquareEnvironment } from '@/types/webhook';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 
 /**
  * GET handler - Main dashboard data
@@ -27,15 +28,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     console.log('📊 Admin webhook dashboard data requested');
 
     // 1. Validate admin authorization
-    const authResult = await validateAdminAuth(request);
-    if (!authResult.valid) {
-      return NextResponse.json(
-        {
-          error: 'Unauthorized',
-          message: authResult.error,
-        },
-        { status: 401 }
-      );
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
     // 2. Get time range from query params
@@ -170,15 +165,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log('⚡ Admin webhook dashboard action requested');
 
     // 1. Validate admin authorization
-    const authResult = await validateAdminAuth(request);
-    if (!authResult.valid) {
-      return NextResponse.json(
-        {
-          error: 'Unauthorized',
-          message: authResult.error,
-        },
-        { status: 401 }
-      );
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
     // 2. Parse action request
@@ -368,27 +357,3 @@ function generateInsights(data: {
   return { insights, recommendations, warnings };
 }
 
-/**
- * Validate admin authentication
- */
-async function validateAdminAuth(request: NextRequest): Promise<{
-  valid: boolean;
-  error?: string;
-  userId?: string;
-}> {
-  // Check for API key
-  const apiKey = request.headers.get('x-api-key');
-  if (apiKey === process.env.ADMIN_API_KEY && process.env.ADMIN_API_KEY) {
-    return { valid: true, userId: 'api_admin' };
-  }
-
-  // Allow in development
-  if (process.env.NODE_ENV === 'development') {
-    return { valid: true, userId: 'dev_admin' };
-  }
-
-  return {
-    valid: false,
-    error: 'Admin access required. Use x-api-key header.',
-  };
-}

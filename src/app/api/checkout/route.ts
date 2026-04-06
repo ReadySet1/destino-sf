@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createOrder } from '@/lib/square/orders';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
@@ -56,7 +56,7 @@ interface CheckoutRequestBody {
 
 export async function POST(request: Request) {
   // Apply strict rate limiting for checkout endpoint (10 requests per minute per IP)
-  const rateLimitResponse = await applyStrictRateLimit(request as any, 10);
+  const rateLimitResponse = await applyStrictRateLimit(request as NextRequest, 10);
   if (rateLimitResponse) {
     console.warn('Checkout rate limit exceeded');
     return rateLimitResponse;
@@ -152,9 +152,10 @@ export async function POST(request: Request) {
             },
           })
         );
-      } catch (createError: any) {
+      } catch (createError: unknown) {
         // Handle unique constraint violation on idempotencyKey (P2002)
-        if (createError?.code === 'P2002' && idempotencyKey) {
+        const prismaError = createError as { code?: string };
+        if (prismaError?.code === 'P2002' && idempotencyKey) {
           console.log('[Checkout] Idempotency key collision, returning existing order', {
             idempotencyKey,
             email: customerInfo.email,

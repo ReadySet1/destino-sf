@@ -10,7 +10,7 @@ jest.mock('../../utils/logger', () => ({
 
 import { logger } from '../../utils/logger';
 
-describe.skip('Formatting', () => {
+describe('Formatting', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

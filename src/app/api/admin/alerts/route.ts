@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { DashboardAlertService } from '@/lib/notifications/dashboard-alert-service';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 import { logger } from '@/utils/logger';
 
 /**
@@ -9,6 +10,11 @@ import { logger } from '@/utils/logger';
  */
 export async function GET(request: NextRequest) {
   try {
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
+    }
+
     const { searchParams } = new URL(request.url);
 
     const options = {
@@ -45,6 +51,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
+    }
+
     const body = await request.json();
 
     const { type, title, message, priority, data } = body;

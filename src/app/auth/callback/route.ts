@@ -13,52 +13,27 @@ export async function GET(request: Request) {
   const origin = requestUrl.origin;
   const redirectTo = requestUrl.searchParams.get('redirect_to')?.toString();
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔗 Auth callback received:', {
-      code: code ? 'present' : 'missing',
-      token_hash: token_hash ? 'present' : 'missing',
-      type,
-      redirectTo,
-      origin,
-      fullUrl: requestUrl.toString(),
-    });
-  }
-
   const supabase = await createClient();
 
   // Handle magic link / email verification (OTP) - Check this first
   if (token_hash && type) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🪄 Processing magic link OTP verification...');
-    }
     const { error } = await supabase.auth.verifyOtp({
       type,
       token_hash,
     });
     if (error) {
-      console.error('❌ Error verifying OTP:', error);
+      console.error('Error verifying OTP:', error);
       return NextResponse.redirect(`${origin}/auth/auth-code-error`);
-    }
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Magic link OTP verification successful');
     }
   }
   // Handle PKCE flow (authorization code) - Only if no OTP tokens
   else if (code) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔄 Processing PKCE code exchange...');
-    }
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      console.error('❌ Error exchanging code for session:', error);
+      console.error('Error exchanging code for session:', error);
 
       // Check if this might be a magic link incorrectly sent as PKCE
       if (error.message?.includes('code challenge') || error.message?.includes('code verifier')) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 PKCE error detected - this might be a magic link sent as PKCE flow');
-          console.log('🔧 Attempting to handle as magic link...');
-        }
-
         // Try to extract potential magic link parameters from the URL
         const urlFragment = requestUrl.hash;
         if (urlFragment) {
@@ -67,20 +42,13 @@ export async function GET(request: Request) {
           const refreshToken = hashParams.get('refresh_token');
 
           if (accessToken && refreshToken) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('🔄 Found tokens in URL fragment, attempting to set session...');
-            }
             const { error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
 
-            if (!sessionError) {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('✅ Successfully set session from URL fragment tokens');
-              }
-            } else {
-              console.error('❌ Failed to set session from URL fragment:', sessionError);
+            if (sessionError) {
+              console.error('Failed to set session from URL fragment:', sessionError);
               return NextResponse.redirect(`${origin}/auth/auth-code-error`);
             }
           } else {
@@ -92,10 +60,6 @@ export async function GET(request: Request) {
       } else {
         return NextResponse.redirect(`${origin}/auth/auth-code-error`);
       }
-    } else {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ PKCE code exchange successful');
-      }
     }
   }
 
@@ -105,25 +69,15 @@ export async function GET(request: Request) {
     error: userError,
   } = await supabase.auth.getUser();
   if (userError || !user) {
-    console.error('❌ User verification error:', userError);
+    console.error('User verification error:', userError);
     return NextResponse.redirect(`${origin}/sign-in?error=User verification failed`);
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log('✅ User authenticated successfully');
   }
 
   // If we have a redirect_to parameter, use it
   if (redirectTo) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🎯 Redirecting to specified URL:', redirectTo);
-    }
     return NextResponse.redirect(`${origin}${redirectTo}`);
   }
 
   // Default redirect after successful authentication
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🎯 Redirecting to default protected page');
-  }
   return NextResponse.redirect(`${origin}/protected`);
 }

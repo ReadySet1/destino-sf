@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { alertService } from '@/lib/alerts';
 import { prisma, withRetry } from '@/lib/db-unified';
-import { contactFormRateLimiter } from '@/lib/security/rate-limiter';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 import type {
   CustomerOrderConfirmationData,
   CustomerOrderStatusData,
@@ -15,12 +15,8 @@ const MAX_MESSAGE_LENGTH = 5000;
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('POST request received to /api/alerts/customer');
-
     const body = await request.json();
     const { type, orderId, ...data } = body;
-
-    console.log('Request body:', { type, orderId, ...data });
 
     let result;
 
@@ -163,43 +159,24 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'contact_form':
-        console.log('Processing contact form submission:', data);
-
         // Honeypot check - if filled, it's a bot
         if (data.website) {
-          console.log('[SPAM] Honeypot triggered:', {
-            email: data.email,
-            name: data.name,
-            honeypotValue: data.website,
-            timestamp: new Date().toISOString(),
-          });
-          // Return success to not alert bots, but don't process
           return NextResponse.json({ success: true, messageId: 'filtered' });
         }
 
-        // Rate limiting check
-        const clientIp =
-          request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-          request.headers.get('x-real-ip') ||
-          'unknown';
-        const rateLimitResult = await contactFormRateLimiter.check(clientIp);
-        if (!rateLimitResult.allowed) {
-          console.log('[RATE_LIMIT] Contact form rate limit exceeded:', {
-            ip: clientIp,
-            remaining: rateLimitResult.remaining,
-          });
+        // Rate limiting check (distributed via Upstash Redis)
+        const rateLimitResult = await checkRateLimit(request, 'api', {
+          identifier: getClientIp(request),
+          config: { id: 'contact', limit: 5, window: 3600000, prefix: 'contact_rl' },
+        });
+        if (!rateLimitResult.success) {
           return NextResponse.json(
-            { error: rateLimitResult.message },
+            { error: 'Too many contact form submissions. Please try again later.' },
             { status: 429 }
           );
         }
 
         if (!data.name || !data.email || !data.message) {
-          console.log('Missing required fields:', {
-            name: !!data.name,
-            email: !!data.email,
-            message: !!data.message,
-          });
           return NextResponse.json(
             {
               error: 'name, email, and message required for contact form',
@@ -210,24 +187,10 @@ export async function POST(request: NextRequest) {
 
         // Message length validation
         if (data.message.length > MAX_MESSAGE_LENGTH) {
-          console.log('[VALIDATION] Message too long:', {
-            length: data.message.length,
-            maxLength: MAX_MESSAGE_LENGTH,
-          });
           return NextResponse.json(
             { error: `Message must be less than ${MAX_MESSAGE_LENGTH} characters` },
             { status: 400 }
           );
-        }
-
-        // Monitor for undefined subjects (as per production fix plan)
-        if (!data.subject) {
-          console.warn('Contact form submitted without subject', {
-            name: data.name,
-            email: data.email,
-            contactType: data.contactType,
-            timestamp: new Date().toISOString(),
-          });
         }
 
         // Sanitize name and subject to prevent newlines in email subjects
@@ -248,18 +211,14 @@ export async function POST(request: NextRequest) {
           timestamp: new Date(),
         };
 
-        console.log('Sending contact form data:', contactData);
         result = await alertService.sendContactFormReceived(contactData);
-        console.log('Contact form result:', result);
         break;
 
       default:
-        console.log('Invalid alert type:', type);
         return NextResponse.json({ error: 'Invalid alert type' }, { status: 400 });
     }
 
     if (result.success) {
-      console.log('Alert sent successfully:', { type, messageId: result.messageId });
       return NextResponse.json({
         success: true,
         messageId: result.messageId,
@@ -292,7 +251,7 @@ export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || 'https://www.destinosf.com',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
       'Access-Control-Max-Age': '86400',

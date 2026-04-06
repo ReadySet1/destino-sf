@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadCateringImage } from '@/lib/storage/supabase-storage';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 
 export async function POST(request: NextRequest) {
   try {
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const itemId = formData.get('itemId') as string;

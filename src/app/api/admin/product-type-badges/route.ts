@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/utils/supabase/server';
 import { prisma, withRetry } from '@/lib/db-unified';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 
 // Schema for validation
 const updateBadgesSchema = z.object({
@@ -35,35 +35,11 @@ const updateBadgesSchema = z.object({
   trust_signal3_bg_color: z.string().max(20).optional(),
 });
 
-// Check if user is admin
-async function isUserAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return false;
-  }
-
-  const adminProfile = await withRetry(
-    () =>
-      prisma.profile.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      }),
-    3,
-    'isUserAdmin profile lookup'
-  );
-
-  return adminProfile?.role === 'ADMIN';
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    if (!(await isUserAdmin(supabase))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
     const badges = await withRetry(
@@ -84,10 +60,9 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    if (!(await isUserAdmin(supabase))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
     }
 
     const body = await request.json();

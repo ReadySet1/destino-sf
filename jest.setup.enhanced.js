@@ -1,4 +1,5 @@
 // Enhanced Jest setup with comprehensive mocks
+require('@testing-library/jest-dom');
 const { TextEncoder, TextDecoder } = require('util');
 
 // Fix TextEncoder/TextDecoder
@@ -318,6 +319,7 @@ const createPrismaMock = () => {
     payment: createBaseMethods('Payment'),
     customer: createBaseMethods('Customer'),
     profile: createBaseMethods('Profile'),
+    shippingConfiguration: createBaseMethods('ShippingConfiguration'),
   };
 
   // $transaction must pass the full prismaMock to callback functions

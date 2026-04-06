@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeStorage } from '@/scripts/init-supabase-storage';
+import { verifyAdminAccess } from '@/lib/auth/admin-guard';
 
 export async function POST(request: NextRequest) {
   try {
+    const adminCheck = await verifyAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.statusCode });
+    }
+
     console.log('🚀 Starting storage initialization...');
 
     await initializeStorage();
