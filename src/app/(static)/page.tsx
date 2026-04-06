@@ -17,6 +17,10 @@ import {
 
 export const metadata = generatePageSEO('home');
 
+// Revalidate every 5 minutes so spotlight picks (and other dynamic content)
+// are fetched at runtime, not only at build time
+export const revalidate = 300;
+
 export default async function Home() {
   return (
     <>

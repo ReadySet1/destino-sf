@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { unstable_noStore as noStore } from 'next/cache';
 import { Dancing_Script } from 'next/font/google';
 import { prisma, withRetry } from '@/lib/db-unified';
-import { isBuildTime } from '@/lib/build-time-utils';
 import { truncateHtmlDescription } from '@/lib/utils/product-description';
 import type { SpotlightPick } from '@/types/spotlight';
 
@@ -13,10 +13,9 @@ const dancingScript = Dancing_Script({
 });
 
 async function getSpotlightPicks(): Promise<SpotlightPick[]> {
-  // Skip database fetch during build time (no DB available in CI)
-  if (isBuildTime()) {
-    return [];
-  }
+  // Opt out of static rendering — always fetch fresh data at request time.
+  // The Suspense boundary in the parent page shows a skeleton while this loads.
+  noStore();
 
   const rawPicks = await withRetry(
     async () => {
