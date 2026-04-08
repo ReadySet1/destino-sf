@@ -9,6 +9,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { assertTestDatabaseUrl } from './database-guard';
 
 // Use a singleton pattern to ensure we only have one Prisma client
 let testPrisma: PrismaClient | null = null;
@@ -36,6 +37,7 @@ export function getTestPrismaClient(): PrismaClient {
  * WARNING: This will delete ALL data - only use in test environment!
  */
 export async function cleanDatabase(): Promise<void> {
+  assertTestDatabaseUrl(process.env.DATABASE_URL);
   const prisma = getTestPrismaClient();
 
   // Disable foreign key constraints temporarily
@@ -65,6 +67,7 @@ export async function cleanDatabase(): Promise<void> {
  * More efficient than cleaning all tables if you know what you need
  */
 export async function cleanTables(tableNames: string[]): Promise<void> {
+  assertTestDatabaseUrl(process.env.DATABASE_URL);
   const prisma = getTestPrismaClient();
 
   await prisma.$executeRawUnsafe('SET session_replication_role = replica;');

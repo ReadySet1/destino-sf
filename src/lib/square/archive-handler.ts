@@ -60,6 +60,24 @@ export async function archiveRemovedSquareProducts(
       return result;
     }
 
+    // Circuit breaker: refuse to archive more than 20% of the catalog in one run
+    const totalActiveWithSquareId = await prisma.product.count({
+      where: { active: true, NOT: [{ squareId: '' }] },
+    });
+
+    if (totalActiveWithSquareId > 0) {
+      const archiveRatio = removedProducts.length / totalActiveWithSquareId;
+      if (archiveRatio > 0.20) {
+        logger.error(
+          `CIRCUIT BREAKER: Would archive ${removedProducts.length} of ${totalActiveWithSquareId} ` +
+          `products (${(archiveRatio * 100).toFixed(1)}%), exceeding 20% threshold. ` +
+          `This likely indicates a Square API issue. Skipping archive.`
+        );
+        result.errors = 1;
+        return result;
+      }
+    }
+
     logger.info(`📦 Found ${removedProducts.length} products removed from Square`);
 
     // Batch archive all removed products for better performance

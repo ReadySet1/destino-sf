@@ -1562,7 +1562,7 @@ async function performUnifiedSync(
           const suspiciousCategories = await detectSuspiciousCategories(allValidSquareIds);
           if (suspiciousCategories.length > 0) {
             syncLogger.logInfo(
-              `⚠️ ENHANCED SAFETY CHECK: Found ${suspiciousCategories.length} suspicious categories with potential API issues`
+              `⚠️ CIRCUIT BREAKER: Found ${suspiciousCategories.length} suspicious categories with potential API issues`
             );
             for (const cat of suspiciousCategories) {
               syncLogger.logInfo(
@@ -1570,13 +1570,18 @@ async function performUnifiedSync(
               );
             }
 
-            // Still proceed with archive but with extra logging
+            // Block archive entirely when categories return 0 results — likely Square API issue
             syncLogger.logInfo(
-              '🔍 Proceeding with archive but monitoring suspicious categories...'
+              '🛑 Blocking archive to prevent data loss. Suspicious categories indicate Square API returned incomplete results.'
             );
+            archiveResult = {
+              archived: 0,
+              errors: 0,
+              skipped: `Blocked by circuit breaker: ${suspiciousCategories.length} categories returned 0 products from Square API`,
+            };
+          } else {
+            archiveResult = await archiveRemovedSquareProducts(allValidSquareIds);
           }
-
-          archiveResult = await archiveRemovedSquareProducts(allValidSquareIds);
         }
         const archiveTime = Date.now() - archiveStartTime;
         timings.archiveCheck = archiveTime;

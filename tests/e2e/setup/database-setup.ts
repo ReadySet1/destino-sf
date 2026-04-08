@@ -1,16 +1,20 @@
 import { PrismaClient } from '@prisma/client';
 import { seedTestDatabase, cleanTestDatabase } from './database-seeder';
+import { assertTestDatabaseUrl } from '../../../src/__tests__/utils/database-guard';
 
 let testPrisma: PrismaClient | null = null;
 
 export async function setupTestDatabase() {
   console.log('🔧 Setting up test database...');
 
+  const dbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+  assertTestDatabaseUrl(dbUrl);
+
   // Create a test-specific Prisma client with connection pooling disabled
   testPrisma = new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL || process.env.TEST_DATABASE_URL,
+        url: dbUrl,
       },
     },
     log: ['error'], // Only log errors during testing

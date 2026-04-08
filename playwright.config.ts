@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Load test-specific environment variables (overrides .env for test isolation)
+dotenv.config({ path: '.env.test' });
 
 /**
  * @see https://playwright.dev/docs/test-configuration

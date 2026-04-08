@@ -5,6 +5,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import { assertTestDatabaseUrl } from '../../../src/__tests__/utils/database-guard';
 import {
   buildDestinoCategories,
   buildEmpanada,
@@ -667,6 +668,7 @@ export class DatabaseSeeder {
    * Clean all test data from the database
    */
   async clean(): Promise<void> {
+    assertTestDatabaseUrl(process.env.TEST_DATABASE_URL || process.env.DATABASE_URL);
     console.log('🧹 Cleaning test data...');
 
     try {
