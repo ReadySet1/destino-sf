@@ -117,6 +117,7 @@ jobs:
           echo "NODE_ENV=production" >> $GITHUB_ENV
           # Database
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test_db" >> $GITHUB_ENV
+          echo "DIRECT_URL=postgresql://test:test@localhost:5432/test_db" >> $GITHUB_ENV
           # Supabase
           echo "NEXT_PUBLIC_SUPABASE_URL=https://test.supabase.co" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key" >> $GITHUB_ENV
@@ -250,6 +251,7 @@ jobs:
           echo "NODE_ENV=test" >> $GITHUB_ENV
           # Database
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/destino_sf_test" >> $GITHUB_ENV
+          echo "DIRECT_URL=postgresql://postgres:postgres@localhost:5432/destino_sf_test" >> $GITHUB_ENV
           # Supabase
           echo "NEXT_PUBLIC_SUPABASE_URL=https://test.supabase.co" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key" >> $GITHUB_ENV
