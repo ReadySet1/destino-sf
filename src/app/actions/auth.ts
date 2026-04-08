@@ -134,7 +134,17 @@ export const signUpAction = async (formData: FormData) => {
       console.log(`Profile ensured for ${email} using database function`);
     }
   } catch (profileError: any) {
-    console.error('Prisma profile creation/update error during sign up:', profileError);
+    const isConnectionError =
+      profileError.message?.includes('Timed out') ||
+      profileError.message?.includes('ECONNRESET') ||
+      profileError.message?.includes('Connection') ||
+      profileError.code === 'P1001' ||
+      profileError.code === 'P1008' ||
+      profileError.code === 'P2024';
+    console.error(
+      `Prisma profile ${isConnectionError ? 'connection' : 'creation/update'} error during sign up:`,
+      { code: profileError.code, message: profileError.message }
+    );
 
     // If it's a unique constraint error on email, try to handle it
     if (profileError.code === 'P2002' && profileError.meta?.target?.includes('email')) {

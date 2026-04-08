@@ -22,7 +22,6 @@ async function getSpotlightPicks(): Promise<SpotlightPick[]> {
       return await prisma.spotlightPick.findMany({
         where: {
           isActive: true,
-          productId: { not: undefined },
         },
         include: {
           product: {

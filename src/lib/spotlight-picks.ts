@@ -1,13 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
+import { SpotlightPick } from '@/types/spotlight';
 import { prisma, withRetry } from '@/lib/db-unified';
-import { safeCateringApiOperation } from '@/lib/catering-api-utils';
 
-// DES-81: Increase function timeout for database connection resilience
-export const maxDuration = 60;
-
-async function getSpotlightPicks(): Promise<SpotlightPick[]> {
-  // Fetch spotlight picks with product data using Prisma
+export async function getSpotlightPicks(): Promise<SpotlightPick[]> {
   const rawSpotlightPicks = await withRetry(
     async () => {
       return await prisma.spotlightPick.findMany({
@@ -35,9 +29,8 @@ async function getSpotlightPicks(): Promise<SpotlightPick[]> {
     'spotlight-picks-fetch'
   );
 
-  // Transform the data to match our interface
   return rawSpotlightPicks
-    .filter(pick => pick.product && pick.productId) // Extra safety filter
+    .filter(pick => pick.product && pick.productId)
     .map(pick => ({
       id: pick.id,
       position: pick.position as 1 | 2 | 3 | 4,
@@ -65,28 +58,4 @@ async function getSpotlightPicks(): Promise<SpotlightPick[]> {
           : undefined,
       },
     }));
-}
-
-// GET: Fetch active spotlight picks for public display
-export async function GET(
-  request: NextRequest
-): Promise<NextResponse<SpotlightAPIResponse<SpotlightPick[]>>> {
-  try {
-    const spotlightPicks = await getSpotlightPicks();
-
-    return NextResponse.json({
-      success: true,
-      data: spotlightPicks,
-    });
-  } catch (error) {
-    console.error('Failed to fetch spotlight picks:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch spotlight picks',
-      },
-      { status: 500 }
-    );
-  }
 }

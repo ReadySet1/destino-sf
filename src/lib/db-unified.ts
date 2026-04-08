@@ -12,7 +12,7 @@ import { dbPoolMetrics } from './db-pool-metrics';
  */
 
 // Configurable connection timeout (default 45s for Vercel cold starts)
-const CONNECTION_TIMEOUT_SECONDS = parseInt(process.env.DB_CONNECTION_TIMEOUT || '45');
+const CONNECTION_TIMEOUT_SECONDS = parseInt(process.env.DB_CONNECTION_TIMEOUT || '20');
 const MAX_CONNECTION_RETRIES = parseInt(process.env.DB_MAX_RETRIES || '4');
 
 // Global singleton storage
@@ -118,8 +118,8 @@ function buildOptimizedPoolerUrl(baseUrl: string): string {
         }
       }
 
-      // Remove connection_limit to let Supabase handle pooling
-      url.searchParams.delete('connection_limit');
+      // Limit connections per serverless instance to avoid exhausting the Supabase pool
+      url.searchParams.set('connection_limit', '5');
     } else {
       // Non-Supabase database configuration
       if (isProduction) {
