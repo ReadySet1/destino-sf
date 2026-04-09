@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { unstable_noStore as noStore } from 'next/cache';
 import { Dancing_Script } from 'next/font/google';
-import { prisma, withRetry } from '@/lib/db-unified';
+import { prisma } from '@/lib/db-unified';
 import { truncateHtmlDescription } from '@/lib/utils/product-description';
 import type { SpotlightPick } from '@/types/spotlight';
 
@@ -17,27 +17,22 @@ async function getSpotlightPicks(): Promise<SpotlightPick[]> {
   // The Suspense boundary in the parent page shows a skeleton while this loads.
   noStore();
 
-  const rawPicks = await withRetry(
-    async () => {
-      return await prisma.spotlightPick.findMany({
-        where: {
-          isActive: true,
-        },
+  // The prisma proxy already wraps every query in withRetry, so no need for an extra layer
+  const rawPicks = await prisma.spotlightPick.findMany({
+    where: {
+      isActive: true,
+    },
+    include: {
+      product: {
         include: {
-          product: {
-            include: {
-              category: {
-                select: { name: true, slug: true },
-              },
-            },
+          category: {
+            select: { name: true, slug: true },
           },
         },
-        orderBy: { position: 'asc' },
-      });
+      },
     },
-    3,
-    'spotlight-picks-server-fetch'
-  );
+    orderBy: { position: 'asc' },
+  });
 
   return rawPicks
     .filter(pick => pick.product && pick.productId)

@@ -186,10 +186,14 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
     },
   });
 
-  // Add error handling for production
+  // Add error handling for production — log as warning since transient
+  // engine errors are handled by withRetry and don't affect query results
   if (isProduction) {
     client.$on('error' as never, (e: any) => {
-      console.error('Prisma error:', e);
+      console.warn('[PRISMA_ENGINE_EVENT]', {
+        message: typeof e?.message === 'string' ? e.message.substring(0, 200) : 'unknown',
+        timestamp: new Date().toISOString(),
+      });
     });
   }
 
