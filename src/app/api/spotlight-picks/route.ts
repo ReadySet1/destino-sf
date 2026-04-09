@@ -1,39 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SpotlightAPIResponse, SpotlightPick } from '@/types/spotlight';
-import { prisma, withRetry } from '@/lib/db-unified';
-import { safeCateringApiOperation } from '@/lib/catering-api-utils';
+import { prisma } from '@/lib/db-unified';
 
 // DES-81: Increase function timeout for database connection resilience
 export const maxDuration = 60;
 
 async function getSpotlightPicks(): Promise<SpotlightPick[]> {
-  // Fetch spotlight picks with product data using Prisma
-  const rawSpotlightPicks = await withRetry(
-    async () => {
-      return await prisma.spotlightPick.findMany({
-        where: {
-          isActive: true,
-        },
+  // The prisma proxy already wraps every query in withRetry, so no need for an extra layer
+  const rawSpotlightPicks = await prisma.spotlightPick.findMany({
+    where: {
+      isActive: true,
+    },
+    include: {
+      product: {
         include: {
-          product: {
-            include: {
-              category: {
-                select: {
-                  name: true,
-                  slug: true,
-                },
-              },
+          category: {
+            select: {
+              name: true,
+              slug: true,
             },
           },
         },
-        orderBy: {
-          position: 'asc',
-        },
-      });
+      },
     },
-    3,
-    'spotlight-picks-fetch'
-  );
+    orderBy: {
+      position: 'asc',
+    },
+  });
 
   // Transform the data to match our interface
   return rawSpotlightPicks

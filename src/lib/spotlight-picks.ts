@@ -1,33 +1,28 @@
 import { SpotlightPick } from '@/types/spotlight';
-import { prisma, withRetry } from '@/lib/db-unified';
+import { prisma } from '@/lib/db-unified';
 
 export async function getSpotlightPicks(): Promise<SpotlightPick[]> {
-  const rawSpotlightPicks = await withRetry(
-    async () => {
-      return await prisma.spotlightPick.findMany({
-        where: {
-          isActive: true,
-        },
+  // The prisma proxy already wraps every query in withRetry, so no need for an extra layer
+  const rawSpotlightPicks = await prisma.spotlightPick.findMany({
+    where: {
+      isActive: true,
+    },
+    include: {
+      product: {
         include: {
-          product: {
-            include: {
-              category: {
-                select: {
-                  name: true,
-                  slug: true,
-                },
-              },
+          category: {
+            select: {
+              name: true,
+              slug: true,
             },
           },
         },
-        orderBy: {
-          position: 'asc',
-        },
-      });
+      },
     },
-    3,
-    'spotlight-picks-fetch'
-  );
+    orderBy: {
+      position: 'asc',
+    },
+  });
 
   return rawSpotlightPicks
     .filter(pick => pick.product && pick.productId)
