@@ -11,10 +11,20 @@ permissions:
   contents: read
   pull-requests: write
 
+# Cancel an in-progress review if a new commit lands on the same PR.
+concurrency:
+  group: claude-code-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   review:
     name: Automated Code Review
     runs-on: ubuntu-latest
+    # Defensive guard: this job references PR-only context (context.issue.number,
+    # steps.pr-info.outputs.result) that is null outside pull_request events. Without
+    # this guard, GitHub dispatches empty, instantly-failed runs on push events,
+    # producing cosmetic failures unrelated to code quality.
+    if: github.event_name == 'pull_request' && github.event.pull_request != null
 
     steps:
       - name: Checkout code
@@ -67,81 +77,49 @@ jobs:
         id: review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_TITLE: ${{ fromJson(steps.pr-info.outputs.result).title }}
+          PR_BODY: ${{ fromJson(steps.pr-info.outputs.result).body }}
         run: |
-          # Write PR info to files to avoid shell escaping issues
-          echo "${{ fromJson(steps.pr-info.outputs.result).title }}" > pr_title.txt
-          echo "${{ fromJson(steps.pr-info.outputs.result).body }}" > pr_body.txt
+          # Persist PR metadata to files (env vars avoid shell-escaping pitfalls).
+          printf '%s\n' "$PR_TITLE" > pr_title.txt
+          printf '%s\n' "$PR_BODY" > pr_body.txt
 
-          # Build the review prompt
-          PROMPT="You are an expert code reviewer for a Next.js 15 TypeScript project called Destino SF (Argentine food e-commerce platform).
+          # Assemble the full prompt by appending dynamic sections to the template.
+          {
+            cat .github/workflows/claude-code-review.prompt.md
+            printf '\n**PR Title:** %s\n\n' "$PR_TITLE"
+            printf '**PR Description:**\n'
+            cat pr_body.txt
+            printf '\n**Files Changed:**\n'
+            cat changed_files.txt
+            printf '\n**Diff:**\n'
+            printf '```diff\n'
+            cat pr_diff.txt
+            printf '\n```\n'
+          } > prompt.txt
 
-Please review this pull request and provide:
-
-1. **Summary**: Brief overview of the changes
-2. **Code Quality**: Assessment of code quality, patterns, and best practices
-3. **Potential Issues**: Any bugs, security concerns, or performance issues
-4. **Testing**: Whether tests are adequate and any missing test cases
-5. **Suggestions**: Specific improvements with code examples if applicable
-6. **Security**: Any security concerns (SQL injection, XSS, auth issues, etc.)
-7. **Performance**: Any performance concerns or optimizations
-8. **Overall Rating**: Approve, Needs Minor Changes, or Needs Major Changes
-
-Be constructive and specific. Focus on:
-- Next.js 15 best practices (Server Components, App Router)
-- TypeScript type safety
-- React patterns and performance
-- Database operations (Prisma)
-- Security (authentication, authorization, input validation)
-- Test coverage
-
-**PR Title:** $(cat pr_title.txt)
-
-**PR Description:**
-$(cat pr_body.txt)
-
-**Files Changed:**
-$(cat changed_files.txt)
-
-**Diff:**
-\`\`\`diff
-$(cat pr_diff.txt)
-\`\`\`
-
-Provide your review in markdown format."
-
-          # Create JSON request using jq to properly escape everything
+          # Build JSON via jq so the prompt is safely string-escaped.
           jq -n \
             --arg model "claude-sonnet-4-20250514" \
-            --arg prompt "$PROMPT" \
+            --rawfile prompt prompt.txt \
             '{
-              "model": $model,
-              "max_tokens": 4096,
-              "messages": [
-                {
-                  "role": "user",
-                  "content": $prompt
-                }
-              ]
+              model: $model,
+              max_tokens: 4096,
+              messages: [{role: "user", content: $prompt}]
             }' > review_request.json
 
-          # Call Claude API
           RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
             -H "content-type: application/json" \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
             -H "anthropic-version: 2023-06-01" \
             -d @review_request.json)
 
-          # Extract the review text
-          REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text // "Error: No review generated"')
+          echo "$RESPONSE" | jq -r '.content[0].text // "Error: No review generated"' > review.txt
 
-          # Save to file
-          echo "$REVIEW" > review.txt
-
-          # Set output (escape for GitHub Actions)
           {
-            echo 'review<<EOF'
+            echo 'review<<CLAUDE_REVIEW_EOF'
             cat review.txt
-            echo EOF
+            echo CLAUDE_REVIEW_EOF
           } >> "$GITHUB_OUTPUT"
 
       - name: Post review comment

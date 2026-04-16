@@ -1030,9 +1030,43 @@ model AvailabilitySchedule {
   processed       Boolean     @default(false)
   processedAt     DateTime?   @map("processed_at")
   errorMessage    String?     @map("error_message")
-  
+
   rule            AvailabilityRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-  
+
   @@index([scheduledAt, processed])
   @@map("availability_schedule")
+}
+
+/// Durable queue for Destino → Square writeback jobs (create/update/archive).
+/// Populated by admin mutations, drained by the /api/cron/square-write-queue worker.
+model SquareWriteJob {
+  id             String    @id @default(uuid()) @db.Uuid
+  productId      String    @map("product_id") @db.Uuid
+  operation      String    @db.VarChar(30)
+  payload        Json
+  idempotencyKey String    @unique @map("idempotency_key") @db.VarChar(255)
+  status         String    @default("PENDING") @db.VarChar(20)
+  attempts       Int       @default(0)
+  lastError      String?   @map("last_error")
+  nextAttemptAt  DateTime  @default(now()) @map("next_attempt_at")
+  succeededAt    DateTime? @map("succeeded_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, nextAttemptAt], map: "idx_square_write_jobs_drain")
+  @@index([productId], map: "idx_square_write_jobs_product")
+  @@map("square_write_jobs")
+}
+
+/// Short-lived record of (squareId, version) pairs we just wrote, used by the
+/// Square webhook handler to suppress echo events for our own writes.
+model RecentSquareWrite {
+  id        String   @id @default(uuid()) @db.Uuid
+  squareId  String   @map("square_id") @db.VarChar(255)
+  version   BigInt
+  writtenAt DateTime @default(now()) @map("written_at")
+
+  @@unique([squareId, version], map: "uniq_recent_square_write")
+  @@index([writtenAt], map: "idx_recent_square_write_ttl")
+  @@map("recent_square_writes")
 }
