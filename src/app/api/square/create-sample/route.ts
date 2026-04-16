@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
-import { createSquareProduct } from '@/lib/square/catalog';
+import { randomUUID } from 'crypto';
+import { createSquareItem, SquareWriteError } from '@/lib/square/catalog-write';
+import { isWritebackEnabled } from '@/lib/square/write-queue';
 import { logger } from '@/utils/logger';
 
 export async function POST(request: Request) {
+  if (!isWritebackEnabled()) {
+    return NextResponse.json(
+      { success: false, error: 'Square writeback is disabled (set ENABLE_SQUARE_WRITEBACK=true)' },
+      { status: 409 }
+    );
+  }
+
   try {
     const {
       name = 'Sample Product',
@@ -12,41 +21,30 @@ export async function POST(request: Request) {
 
     logger.info(`Creating sample Square product: ${name}`);
 
-    const productId = await createSquareProduct({
+    const result = await createSquareItem({
+      idempotencyKey: randomUUID(),
       name,
       description,
-      price,
-      variations: [
-        { name: 'Small', price: price - 5 },
-        { name: 'Medium', price: price },
-        { name: 'Large', price: price + 5 },
-      ],
+      priceDollars: price,
     });
 
     return NextResponse.json({
       success: true,
       message: 'Sample product created in Square',
-      productId,
-      details: {
-        name,
-        description,
-        price,
-        variations: [
-          { name: 'Small', price: price - 5 },
-          { name: 'Medium', price: price },
-          { name: 'Large', price: price + 5 },
-        ],
-      },
+      squareId: result.squareId,
+      squareVariationId: result.squareVariationId,
+      version: result.version.toString(),
     });
   } catch (error) {
     logger.error('Error creating sample Square product:', error);
+    const status = error instanceof SquareWriteError && error.status ? error.status : 500;
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to create sample product in Square',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status }
     );
   }
 }

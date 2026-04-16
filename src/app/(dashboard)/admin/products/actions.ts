@@ -1,12 +1,12 @@
 'use server';
 
 import { prisma } from '@/lib/db';
-import { createSquareProduct } from '@/lib/square/catalog';
 import { logger } from '@/utils/logger';
 import { revalidatePath } from 'next/cache';
 import { slugify } from '@/lib/slug';
 import { redirect } from 'next/navigation';
 import { syncSquareProducts } from '@/lib/square/sync';
+import { enqueueSquareWrite, isWritebackEnabled } from '@/lib/square/write-queue';
 
 export async function createProductAction(formData: FormData) {
   const name = formData.get('name') as string;
@@ -42,27 +42,15 @@ export async function createProductAction(formData: FormData) {
   }
 
   try {
-    // Step 1: Create the product in Square (or get temporary ID in development)
+    // Step 1: Reserve a placeholder squareId for the local row. When writeback is
+    // enabled, the write-queue worker replaces this with the real Square ID on
+    // first successful CREATE; until then the product exists only locally.
     if (!squareId) {
-      try {
-        squareId = await createSquareProduct({
-          name,
-          description,
-          price,
-          categoryId,
-          variations: [],
-        });
-      } catch (squareError) {
-        logger.error('Failed to create product in Square:', squareError);
-        return {
-          success: false,
-          error: 'Failed to create product in payment system. Please try again.',
-        };
-      }
+      squareId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     }
 
     // Step 2: Create the product in the database
-    await prisma.product.create({
+    const created = await prisma.product.create({
       data: {
         name,
         description,
@@ -73,11 +61,35 @@ export async function createProductAction(formData: FormData) {
         active,
         squareId,
         slug: potentialSlug,
+        syncStatus: isWritebackEnabled() ? 'PENDING' : 'SYNCED',
+        syncSource: 'LOCAL',
       },
+      select: { id: true },
     });
 
+    // Step 3: Queue Square create (only if writeback enabled + no external squareId supplied)
+    if (isWritebackEnabled() && squareId.startsWith('pending-')) {
+      const category = categoryId
+        ? await prisma.category.findUnique({
+            where: { id: categoryId },
+            select: { squareId: true },
+          })
+        : null;
+      await enqueueSquareWrite({
+        productId: created.id,
+        operation: 'CREATE',
+        payload: {
+          name,
+          description,
+          priceDollars: price,
+          squareCategoryId: category?.squareId ?? null,
+          imageIds: [],
+        },
+      });
+    }
+
     logger.info(
-      `Product "${name}" created successfully in database and Square with slug "${potentialSlug}"`
+      `Product "${name}" created locally with slug "${potentialSlug}" (writeback=${isWritebackEnabled()})`
     );
 
     // Revalidate the products path after creation

@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/db-unified';
 import { logger } from '@/utils/logger';
+import { enqueueSquareWrite, isWritebackEnabled } from '@/lib/square/write-queue';
 
 // Force Node.js runtime (required for Prisma and proper HTTP method handling)
 export const runtime = 'nodejs';
@@ -55,8 +56,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         id: true,
         name: true,
         squareId: true,
+        squareVersion: true,
+        price: true,
         isArchived: true,
         active: true,
+        variants: {
+          orderBy: { price: 'asc' },
+          take: 1,
+          select: { squareVariantId: true },
+        },
       },
     });
 
@@ -97,6 +105,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       productId: product.id,
       productName: product.name,
     });
+
+    // Propagate archive to Square when writeback is enabled.
+    if (
+      isWritebackEnabled() &&
+      product.squareId &&
+      !product.squareId.startsWith('pending-') &&
+      !product.squareId.startsWith('temp_')
+    ) {
+      await enqueueSquareWrite({
+        productId: product.id,
+        operation: 'ARCHIVE',
+        payload: {
+          squareId: product.squareId,
+          squareVariationId: product.variants[0]?.squareVariantId ?? undefined,
+          currentVersion: product.squareVersion?.toString(),
+          name: product.name,
+          priceDollars: Number(product.price),
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -165,9 +193,18 @@ export async function DELETE(
       select: {
         id: true,
         name: true,
+        description: true,
+        price: true,
+        categoryId: true,
         squareId: true,
+        squareVersion: true,
         isArchived: true,
         active: true,
+        variants: {
+          orderBy: { price: 'asc' },
+          take: 1,
+          select: { squareVariantId: true },
+        },
       },
     });
 
@@ -208,6 +245,39 @@ export async function DELETE(
       productId: product.id,
       productName: product.name,
     });
+
+    // Propagate restore to Square when writeback is enabled (UNARCHIVE reuses the UPDATE path
+    // with present_at_all_locations=true — that's the default in catalogItemPayload).
+    if (
+      isWritebackEnabled() &&
+      product.squareId &&
+      !product.squareId.startsWith('pending-') &&
+      !product.squareId.startsWith('temp_') &&
+      product.squareVersion !== null &&
+      product.squareVersion !== undefined &&
+      product.variants[0]?.squareVariantId
+    ) {
+      const category = product.categoryId
+        ? await prisma.category.findUnique({
+            where: { id: product.categoryId },
+            select: { squareId: true },
+          })
+        : null;
+      await enqueueSquareWrite({
+        productId: product.id,
+        operation: 'UNARCHIVE',
+        payload: {
+          squareId: product.squareId,
+          squareVariationId: product.variants[0].squareVariantId,
+          currentVersion: product.squareVersion.toString(),
+          name: product.name,
+          description: product.description,
+          priceDollars: Number(product.price),
+          squareCategoryId: category?.squareId ?? null,
+          imageIds: [],
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,

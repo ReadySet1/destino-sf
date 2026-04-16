@@ -8,6 +8,7 @@ import { Category } from '@/types/product';
 import { logger } from '@/utils/logger';
 import { ProductImageSection } from '@/components/admin/products/ProductImageSection';
 import { ProductEditActions } from './components/ProductEditActions';
+import { enqueueSquareWrite, isWritebackEnabled } from '@/lib/square/write-queue';
 
 // Disable page caching to always fetch fresh data
 export const revalidate = 0;
@@ -156,7 +157,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
     try {
       // Update the product in the database
       logger.debug('Updating product in database with images:', prismaImageUrls);
-      const _updatedProduct = await prisma.product.update({
+      const updatedProduct = await prisma.product.update({
         where: { id: productId },
         data: {
           name,
@@ -167,8 +168,46 @@ export default async function EditProductPage({ params, searchParams }: PageProp
           squareId,
           ...(productType && { productType }),
         },
+        include: { variants: { orderBy: { price: 'asc' }, take: 1 } },
       });
       logger.info('Database update successful');
+
+      // Enqueue Square update when writeback is enabled and we have a real Square link.
+      if (
+        isWritebackEnabled() &&
+        updatedProduct.squareId &&
+        !updatedProduct.squareId.startsWith('pending-') &&
+        !updatedProduct.squareId.startsWith('temp_') &&
+        updatedProduct.squareVersion !== null &&
+        updatedProduct.squareVersion !== undefined
+      ) {
+        const variation = updatedProduct.variants[0];
+        if (variation?.squareVariantId) {
+          const category = await prisma.category.findUnique({
+            where: { id: categoryId },
+            select: { squareId: true },
+          });
+          await enqueueSquareWrite({
+            productId: updatedProduct.id,
+            operation: 'UPDATE',
+            payload: {
+              squareId: updatedProduct.squareId,
+              squareVariationId: variation.squareVariantId,
+              currentVersion: updatedProduct.squareVersion.toString(),
+              name,
+              description,
+              priceDollars: price,
+              squareCategoryId: category?.squareId ?? null,
+              imageIds: [],
+            },
+          });
+        } else {
+          logger.warn(
+            'Skipping Square writeback: product has no variant.squareVariantId to update',
+            { productId: updatedProduct.id }
+          );
+        }
+      }
 
       // Clean app URL to prevent double slashes
       const cleanAppUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
