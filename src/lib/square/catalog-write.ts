@@ -13,7 +13,10 @@ import { logger } from '@/utils/logger';
 
 const SQUARE_API_TIMEOUT_MS = 45_000;
 const SQUARE_SOCKET_TIMEOUT_MS = 50_000;
-const SQUARE_VERSION_HEADER = '2024-10-17';
+// Match the version used by the rest of the codebase (orders, payments, labor,
+// checkout-links, client-adapter). Square deprecates API versions ~1 year after
+// release, so keep this in sync with the other Square integration modules.
+const SQUARE_VERSION_HEADER = '2025-05-21';
 
 export type WriteErrorCode =
   | 'NETWORK'
@@ -299,6 +302,25 @@ export async function updateSquareItem(input: UpdateItemInput): Promise<UpdateIt
   return { version: BigInt(res.catalog_object.version ?? 0) };
 }
 
+/**
+ * How an archive propagates to Square. Note that "archive" here means the
+ * admin-visible action in the Destino dashboard; Square itself doesn't have
+ * an "archive" concept — we either delete the object or hide it at all
+ * locations.
+ *
+ * - `'hide'` (default) — upserts the object with `present_at_all_locations=false`,
+ *   removing it from every location without deleting. The object stays in
+ *   Square's catalog with the same ID/version, so the admin's "restore"
+ *   action can just UPDATE it back to `present_at_all_locations=true`. This
+ *   preserves the round-trip archive/restore semantics the admin UI expects.
+ * - `'delete'` — true soft-delete via `DELETE /v2/catalog/object/{id}`. Square
+ *   sets `is_deleted=true` server-side; the object is retained for history
+ *   but becomes un-updateable via the API. Unarchiving a delete-archived
+ *   product would require recreating it as a new Square object (NOT supported
+ *   by the current UNARCHIVE path). Use this only for permanent removal.
+ *
+ * Override via `SQUARE_ARCHIVE_MODE=delete` or by passing `mode` explicitly.
+ */
 export type ArchiveMode = 'delete' | 'hide';
 
 export interface ArchiveItemInput {
