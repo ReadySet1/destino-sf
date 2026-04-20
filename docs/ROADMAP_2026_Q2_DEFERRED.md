@@ -18,6 +18,7 @@
 | Sprint 4 — Test Expansion | 🔴 Not started | E2E specs 17/18 not created; `collectCoverage` still `false`; `todo-triage.md` missing. |
 | Sprint 5 — Observability | 🟡 Partial | **Weekly DB backup shipped (PR #148)** — new. Prisma slow-query logging + `check-bundle-size.ts` still pending. |
 | Sprint 6 — Finalization | 🔴 Not started | No Lighthouse thresholds, no `MAINTENANCE_AUDIT_PLAN.md`. |
+| Sprint 7 — Security & Dep Hygiene | 🔴 Not started | **Newly added 2026-04-20.** 52 prod vulns (26 high) + 78 outdated deps uncovered; scripts/ inventory pending. |
 
 **Next quick wins (≤2h each):**
 1. Flip `collectCoverage` to `process.env.CI === 'true'` (Sprint 4.2)
@@ -167,6 +168,39 @@ Tests live in `src/__tests__/app/api/admin/admin-crud.test.ts`:
 
 ---
 
+## Sprint 7: Security & Dependency Hygiene (NEW — 2026-04-20)
+
+Discovered during 2026-04-20 audit. **Not in original plan.**
+
+### 7.1 Production Security Vulnerabilities — 🔴 Urgent
+Baseline from `pnpm audit --prod` on 2026-04-20: **52 vulns (26 high, 22 moderate, 4 low)**.
+- [ ] Triage all 26 high-severity advisories; file one tracking issue per advisory or per transitive dep
+- [ ] Patch direct deps where newer versions resolve advisories (e.g. `qs` via `square` SDK)
+- [ ] For transitive vulns with no upstream fix, document accepted risk in `docs/security/accepted-risks.md`
+- [ ] Add `.github/workflows/security-audit.yml` — run `pnpm audit --prod` weekly, open issue on new highs
+- [ ] **Verify:** `pnpm audit --prod` reports 0 high severity
+
+### 7.2 Dependency Freshness — 🔴 Not started
+Baseline: **78 outdated packages** on 2026-04-20. Notable majors pending: `zustand`, `@tanstack/react-query`, `@supabase/supabase-js`, `framer-motion`, `@playwright/test`.
+- [ ] Set up Dependabot or Renovate (config in `.github/dependabot.yml` or `renovate.json`)
+- [ ] Group minor/patch updates weekly, majors individually
+- [ ] Add weekly CI job that posts `pnpm outdated` summary (non-blocking)
+- [ ] Plan major-version upgrades separately (each needs manual smoke + E2E pass)
+
+### 7.3 `scripts/` Directory Inventory — 🟡 Low urgency
+Current count: **131 files** — heavy concentration of one-off `fix-*`, `debug-*`, `test-webhook-*` scripts.
+- [ ] Create `scripts/README.md` categorizing scripts: active ops / historical / candidate for deletion
+- [ ] Move historical one-offs to `scripts/archive/` or delete
+- [ ] Document retention policy: deletion after N days or after incident closeout
+
+### 7.4 Automation Coverage
+Currently only 1 scheduled workflow (`weekly-backup.yml`). Candidates:
+- [ ] `weekly-security-audit.yml` — see 7.1
+- [ ] `weekly-dep-report.yml` — see 7.2
+- [ ] `stale-branch-cleanup.yml` — delete merged remote branches older than 30 days
+
+---
+
 ## Master Maintenance Audit Template
 
 ### Weekly (Automated via CI)
@@ -241,5 +275,6 @@ Tests live in `src/__tests__/app/api/admin/admin-crud.test.ts`:
 | Sprint 4: Test Expansion | **Not Started** | — | 0% |
 | Sprint 5: Observability | **In Progress** | — | ~25% (5.0 weekly backup done; 5.1/5.2 pending; 5.3 partial) |
 | Sprint 6: Maintenance | **Not Started** | — | 0% |
+| Sprint 7: Security & Dep Hygiene | **Not Started** | — | 0% (added 2026-04-20) |
 
 _Last updated: 2026-04-20_
