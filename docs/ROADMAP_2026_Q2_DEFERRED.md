@@ -1,9 +1,28 @@
 # Destino SF — Q2 2026 Deferred Items + Master Maintenance Audit Plan
 
 **Created:** 2026-04-03
+**Last reviewed:** 2026-04-20
 **Based on:** [Q2 2026 Roadmap](./ROADMAP_2026_Q2.md) (deferred items)
 **Goal:** Complete all deferred items from the Q2 audit and establish a recurring maintenance framework.
 **Timeline:** ~12 weeks (6 sprints of 1-2 weeks each)
+
+---
+
+## Status Snapshot (2026-04-20)
+
+| Area | State | Notes |
+|------|-------|-------|
+| Sprint 1 — Quick Wins | ✅ Complete | ISR, Redis cache, `any` cleanup, bundle baseline all shipped. |
+| Sprint 2 — Performance | ✅ Complete | FeaturedProducts + Account page Server Components shipped. |
+| Sprint 3 — Testing Fixes | 🟡 Partial | `shippingUtils.test.ts` fixed; admin CRUD partial (4 of 5 routes, missing `sync-conflicts/rollback`); auth flow tests still skipped. |
+| Sprint 4 — Test Expansion | 🔴 Not started | E2E specs 17/18 not created; `collectCoverage` still `false`; `todo-triage.md` missing. |
+| Sprint 5 — Observability | 🟡 Partial | **Weekly DB backup shipped (PR #148)** — new. Prisma slow-query logging + `check-bundle-size.ts` still pending. |
+| Sprint 6 — Finalization | 🔴 Not started | No Lighthouse thresholds, no `MAINTENANCE_AUDIT_PLAN.md`. |
+
+**Next quick wins (≤2h each):**
+1. Flip `collectCoverage` to `process.env.CI === 'true'` (Sprint 4.2)
+2. Create `scripts/check-bundle-size.ts` with 10%/20% thresholds (Sprint 5.2)
+3. Add Prisma `query`-event slow-query logging → Sentry (Sprint 5.1)
 
 ---
 
@@ -67,28 +86,23 @@
 
 ## Sprint 3: Fix Broken Tests & Critical Test Gaps (Week 5-6)
 
-### 3.1 Fix shippingUtils.test.ts
-- [ ] Remove `describe.skip` from `src/__tests__/lib/shippingUtils.test.ts` (line 18)
-- [ ] Update mock weight values to match current implementation:
-  - Alfajores: `baseWeightLb: 0, weightPerUnitLb: 1.8` (was 0.5/0.4)
-  - Empanadas: `baseWeightLb: 0, weightPerUnitLb: 1.6` (was 1.0/0.8)
-  - Add sauces: `baseWeightLb: 0, weightPerUnitLb: 0.9`
-- [ ] Update expected weight calculations throughout the test
-- [ ] Add tests for global config (`getShippingGlobalConfig`)
-- [ ] Add tests for build-time scenarios (`isBuildTime()` path)
-- [ ] **Verify:** `pnpm test -- shippingUtils` passes
+### 3.1 Fix shippingUtils.test.ts — ✅ Complete (verified 2026-04-20)
+- [x] `describe.skip` removed from `src/__tests__/lib/shippingUtils.test.ts`
+- [x] Mock weight values updated (alfajores 1.8, empanadas 1.6, sauces 0.9)
+- [x] Tests for `getShippingGlobalConfig` present (line 371+)
+- [x] `isBuildTime` mock in place (line 26)
 
-### 3.2 Admin CRUD Tests (Critical Routes)
-Create tests following patterns in `src/__tests__/app/api/admin/auth-guards.test.ts`:
-- [ ] `/api/admin/orders` — core admin CRUD
-- [ ] `/api/admin/fix-production-orders` — data mutation
-- [ ] `/api/admin/sync-conflicts/rollback` — data integrity
-- [ ] `/api/admin/promote-admin` — privilege escalation
-- [ ] `/api/admin/db-reset` — destructive operation
-- [ ] Each test verifies: 401 (unauth), 403 (non-admin), 200 (happy path), error handling
+### 3.2 Admin CRUD Tests (Critical Routes) — 🟡 Partial
+Tests live in `src/__tests__/app/api/admin/admin-crud.test.ts`:
+- [x] `/api/admin/orders` — covered
+- [x] `/api/admin/fix-production-orders` — covered
+- [ ] `/api/admin/sync-conflicts/rollback` — **not yet covered** (only remaining route)
+- [x] `/api/admin/promote-admin` — covered
+- [x] `/api/admin/db-reset` — covered
+- [x] Auth guard consistency verified (401 / 403 / 200 paths)
 
-### 3.3 Auth Flow Tests
-- [ ] Unskip login test in `tests/e2e/03-authentication.spec.ts`
+### 3.3 Auth Flow Tests — 🔴 Not started
+- [ ] Unskip login test in `tests/e2e/03-authentication.spec.ts` (5 `test.skip` blocks still present: lines 35, 79, 96, 102, 121)
 - [ ] Add unit tests for session handling (`src/__tests__/lib/auth-session.test.ts`)
 - [ ] Add unit tests for role-based access (`src/__tests__/middleware/auth-guards.test.ts`)
 - [ ] **Verify:** `pnpm test:e2e -- --grep "authentication"` passes
@@ -97,18 +111,19 @@ Create tests following patterns in `src/__tests__/app/api/admin/auth-guards.test
 
 ## Sprint 4: Test Expansion & CI Enforcement (Week 7-8)
 
-### 4.1 E2E Expansion
-- [ ] Unskip catering cart/checkout tests in `tests/e2e/11-catering-complete-flow.spec.ts`
+### 4.1 E2E Expansion — 🔴 Not started
+- [ ] Unskip catering cart/checkout tests in `tests/e2e/11-catering-complete-flow.spec.ts` (`test.describe.skip` at line 291)
 - [ ] Add admin editing/bulk operations E2E test (`tests/e2e/17-admin-editing.spec.ts`)
-- [ ] Add dedicated login flow E2E test (`tests/e2e/18-login-flow.spec.ts`)
+- [ ] Add dedicated login flow E2E test — note: slot `18-` is now taken by `18-square-writeback.spec.ts`; use `19-login-flow.spec.ts` instead
 
-### 4.2 Coverage Enforcement in CI
-- [ ] `jest.config.ts` line 250 — change `collectCoverage: false` to `collectCoverage: process.env.CI === 'true'`
+### 4.2 Coverage Enforcement in CI — 🔴 Not started
+- [ ] `jest.config.ts` line 250 — still reads `collectCoverage: false`. Change to `collectCoverage: process.env.CI === 'true'`
 - [ ] `.github/workflows/test-suite.yml` — ensure coverage step uses `--coverage` and thresholds block the build
 - [ ] Start with `continue-on-error: true` for 2 weeks to baseline, then make blocking
 
-### 4.3 TODO Triage
-- [ ] Document all 51 TODOs in `docs/todo-triage.md` with categories, priority, and recommendations
+### 4.3 TODO Triage — 🔴 Not started
+- [ ] `docs/todo-triage.md` does not exist yet
+- [ ] Document all TODOs with categories, priority, and recommendations
 - [ ] Key clusters: dashboard alerts (11), catering features (7+), notification services (6), cache (2, done in Sprint 1)
 - [ ] Create trackable issues for top 10 by priority
 
@@ -116,31 +131,38 @@ Create tests following patterns in `src/__tests__/app/api/admin/auth-guards.test
 
 ## Sprint 5: Observability & Budgets (Week 9-10)
 
-### 5.1 Prisma Query Logging
-- [ ] Add Prisma `log` config for slow queries (>500ms) in `src/lib/db-unified.ts`
+### 5.0 Weekly Database Backup — ✅ Complete (PR #148, 2026-04-20)
+- [x] `.github/workflows/weekly-backup.yml` — Sundays 09:00 UTC
+- [x] `scripts/rotate-supabase-backups.mjs` — 8-week retention
+- [x] `.gitignore` excludes local `.context/` snapshots
+
+### 5.1 Prisma Query Logging — 🔴 Not started
+- [ ] `src/lib/db-unified.ts` currently logs only `error` + `warn` events (lines 177–182, 468). No `query`-level logging configured.
+- [ ] Add Prisma `log` config for slow queries (>500ms)
 - [ ] Route slow query events to Sentry breadcrumbs (Sentry already configured)
 - [ ] **Verify:** Slow queries appear in Sentry on error events
 
-### 5.2 Bundle Budget Enforcement in CI
+### 5.2 Bundle Budget Enforcement in CI — 🔴 Not started
+- [ ] `scripts/check-bundle-size.ts` does not exist yet
 - [ ] Add bundle size check step in `.github/workflows/test-suite.yml` after build
-- [ ] Create `scripts/check-bundle-size.ts` to compare `.next` output against `performance-budgets.json`
+- [ ] Compare `.next` output against `performance-budgets.json`
 - [ ] Warn at 10% over budget, fail at 20%
 
-### 5.3 API Documentation Expansion
-- [ ] Tier 1: Complete docs for all customer-facing routes (products, checkout, orders, catering)
-- [ ] Tier 2: Admin API routes
-- [ ] Expand `openapi.json` (currently 292 lines, partial coverage) to match
-- [ ] Update existing docs in `docs/api/rest-api/` (6 files, ~50% coverage)
+### 5.3 API Documentation Expansion — 🟡 Partial
+- [x] `docs/api/rest-api/` has 6 files: `admin.md`, `authentication.md`, `catering.md`, `orders.md`, `products.md`, `README.md`
+- [ ] Tier 1: Finish customer-facing coverage gaps (products, checkout, orders, catering)
+- [ ] Tier 2: Expand admin API docs
+- [ ] Expand `openapi.json` (still 292 lines, partial coverage) to match all 60+ live routes
 
 ---
 
 ## Sprint 6: Finalization & Maintenance Framework (Week 11-12)
 
-### 6.1 Remaining Work
+### 6.1 Remaining Work — 🔴 Not started
 - [ ] Complete any spillover from Sprints 4-5
-- [ ] Add Lighthouse pass/fail thresholds to `.github/workflows/lighthouse.yml`
+- [ ] Add Lighthouse pass/fail thresholds to `.github/workflows/lighthouse.yml` (currently advisory only)
 
-### 6.2 Master Maintenance Audit Document
+### 6.2 Master Maintenance Audit Document — 🔴 Not started
 - [ ] Create `docs/MAINTENANCE_AUDIT_PLAN.md` as a living document (see template below)
 
 ---
@@ -215,7 +237,9 @@ Create tests following patterns in `src/__tests__/app/api/admin/auth-guards.test
 |--------|--------|-------------|------------|
 | Sprint 1: Quick Wins | **Complete** | 2026-04-03 | 100% |
 | Sprint 2: Performance | **Complete** | 2026-04-03 | 100% |
-| Sprint 3: Testing Fixes | **Not Started** | — | 0% |
+| Sprint 3: Testing Fixes | **In Progress** | — | ~60% (3.1 done; 3.2 4/5 routes; 3.3 pending) |
 | Sprint 4: Test Expansion | **Not Started** | — | 0% |
-| Sprint 5: Observability | **Not Started** | — | 0% |
+| Sprint 5: Observability | **In Progress** | — | ~25% (5.0 weekly backup done; 5.1/5.2 pending; 5.3 partial) |
 | Sprint 6: Maintenance | **Not Started** | — | 0% |
+
+_Last updated: 2026-04-20_
