@@ -43,8 +43,8 @@
 #### Production Database Connection
 
 ```bash
-# Get production database URL from environment
-export DATABASE_URL="postgresql://postgres.drrejylrcjbeldnzodjd:5qpIoVheBSgkq5f9@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
+# Get production database URL from environment (set in your local shell / .env — never commit)
+export DATABASE_URL="${DATABASE_URL:?Set DATABASE_URL before running migrations}"
 
 # Connect to production database
 psql $DATABASE_URL

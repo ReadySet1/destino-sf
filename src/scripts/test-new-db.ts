@@ -1,8 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 
-// Your test database URL
-const TEST_DATABASE_URL =
-  'postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require';
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
+if (!TEST_DATABASE_URL) {
+  throw new Error('TEST_DATABASE_URL env var is required');
+}
 
 interface DatabaseInfo {
   current_time: Date;

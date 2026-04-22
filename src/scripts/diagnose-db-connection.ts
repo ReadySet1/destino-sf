@@ -2,8 +2,11 @@ import { execSync } from 'child_process';
 import * as net from 'net';
 import { promisify } from 'util';
 
-const TEST_DATABASE_URL =
-  'postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require';
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
+if (!TEST_DATABASE_URL) {
+  console.error('❌ TEST_DATABASE_URL env var is required');
+  process.exit(1);
+}
 
 console.log('🔍 Database Connection Diagnostics');
 console.log('================================');

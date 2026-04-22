@@ -22,8 +22,8 @@
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | `NEXT_PUBLIC_SANITY_PROJECT_ID` | `xdajqttf`                                                                                                                                                                             | Production  |
 | `NEXT_PUBLIC_SANITY_DATASET`    | `production`                                                                                                                                                                           | Production  |
-| `NEXT_PUBLIC_SANITY_API_TOKEN`  | `sknvEeWowz9OKxxmiP0KlV6hcIbJQEYKPGvYIhygUXVQQgMusKBumaSx8HdR6Bl3rnAY87I418e56InlohRuarRhapaGQ1kePtaB280jlhoSElAD5BAOgwEZC61d9XY2PtW5aHQSDcWy4deRxaf4BTgtLs0r4GUTRcQwgtos7vrgwgMUOhhu` | Production  |
-| `SANITY_API_TOKEN`              | `sknvEeWowz9OKxxmiP0KlV6hcIbJQEYKPGvYIhygUXVQQgMusKBumaSx8HdR6Bl3rnAY87I418e56InlohRuarRhapaGQ1kePtaB280jlhoSElAD5BAOgwEZC61d9XY2PtW5aHQSDcWy4deRxaf4BTgtLs0r4GUTRcQwgtos7vrgwgMUOhhu` | Production  |
+| `NEXT_PUBLIC_SANITY_API_TOKEN`  | `<SANITY_API_TOKEN>` | Production  |
+| `SANITY_API_TOKEN`              | `<SANITY_API_TOKEN>` | Production  |
 
 ---
 
@@ -31,9 +31,9 @@
 
 | Variable                        | Value                                                                                                                                                                                                                         | Environment |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | `https://avfiuivgvkgaovkqjnup.supabase.co`                                                                                                                                                                                    | Production  |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2Zml1aXZndmtnYW92a3FqbnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5MDcxNTUsImV4cCI6MjA2MDQ4MzE1NX0.-EOnFNeNUhbHq5aPjD6n9ND1_DfGAia6r2B8BQik_XU`            | Production  |
-| `SUPABASE_SERVICE_ROLE_KEY`     | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2Zml1aXZndmtnYW92a3FqbnVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwNzE1NSwiZXhwIjoyMDYwNDgzMTU1fQ.OIpMWAL3cNInEbaKDURbjvaD83JwHPV-PymcjBcG0D8` | Production  |
+| `NEXT_PUBLIC_SUPABASE_URL`      | `https://<PROJECT_REF>.supabase.co`                                                                                                                                                                                           | Production  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `<SUPABASE_ANON_KEY>`                                                                                                                                                                                                         | Production  |
+| `SUPABASE_SERVICE_ROLE_KEY`     | `<SUPABASE_SERVICE_ROLE_KEY>`                                                                                                                                                                                                 | Production  |
 
 ---
 
@@ -41,8 +41,8 @@
 
 | Variable       | Value                                                                                      | Environment |
 | -------------- | ------------------------------------------------------------------------------------------ | ----------- |
-| `DATABASE_URL` | `postgresql://postgres:83Ny4skXhAPxp3jL@db.avfiuivgvkgaovkqjnup.supabase.co:5432/postgres` | Production  |
-| `DIRECT_URL`   | `postgresql://postgres:83Ny4skXhAPxp3jL@db.avfiuivgvkgaovkqjnup.supabase.co:5432/postgres` | Production  |
+| `DATABASE_URL` | `postgresql://postgres:<PASSWORD>@db.<PROJECT_REF>.supabase.co:5432/postgres` | Production  |
+| `DIRECT_URL`   | `postgresql://postgres:<PASSWORD>@db.<PROJECT_REF>.supabase.co:5432/postgres` | Production  |
 
 ---
 
@@ -54,13 +54,13 @@
 | `SQUARE_CATALOG_USE_PRODUCTION`   | `true`                                                             | Production  |
 | `SQUARE_TRANSACTIONS_USE_SANDBOX` | `true`                                                             | Production  |
 | `USE_SQUARE_SANDBOX`              | `true`                                                             | Production  |
-| `SQUARE_PRODUCTION_TOKEN`         | `EAAAl1cr9vZhERNNLJXpZ1iNxBRnW-sL9vtvkBShEoolqsZG69tnmnlptGhl4BXj` | Production  |
-| `SQUARE_LOCATION_ID`              | `LMV06M1ER6HCC`                                                    | Production  |
-| `SQUARE_SANDBOX_TOKEN`            | `EAAAl-uQi9jcs2DbsPElJqTceFFKlfoyvZWsQbyMMHqhlnmX7dJzk9_UfMAs8rZW` | Production  |
-| `SQUARE_SANDBOX_APPLICATION_ID`   | `sandbox-sq0idb-kSJsJFl3McesRc_oqx-pHQ`                            | Production  |
-| `SQUARE_ACCESS_TOKEN`             | `EAAAl1cr9vZhERNNLJXpZ1iNxBRnW-sL9vtvkBShEoolqsZG69tnmnlptGhl4BXj` | Production  |
-| `SQUARE_WEBHOOK_SECRET`           | `xysLcWwihbVWY2OWBv-EXQ`                                           | Production  |
-| `SQUARE_WEBHOOK_SECRET_SANDBOX`   | `xysLcWwihbVWY2OWBv-EXQ`                                           | Production  |
+| `SQUARE_PRODUCTION_TOKEN`         | `<SQUARE_PRODUCTION_TOKEN>`                                        | Production  |
+| `SQUARE_LOCATION_ID`              | `<SQUARE_LOCATION_ID>`                                             | Production  |
+| `SQUARE_SANDBOX_TOKEN`            | `<SQUARE_SANDBOX_TOKEN>`                                           | Production  |
+| `SQUARE_SANDBOX_APPLICATION_ID`   | `<SQUARE_SANDBOX_APPLICATION_ID>`                                  | Production  |
+| `SQUARE_ACCESS_TOKEN`             | `<SQUARE_PRODUCTION_TOKEN>`                                        | Production  |
+| `SQUARE_WEBHOOK_SECRET`           | `<SQUARE_WEBHOOK_SECRET>`                                          | Production  |
+| `SQUARE_WEBHOOK_SECRET_SANDBOX`   | `<SQUARE_WEBHOOK_SECRET>`                                          | Production  |
 
 ---
 
@@ -68,7 +68,7 @@
 
 | Variable                  | Value                                                  | Environment |
 | ------------------------- | ------------------------------------------------------ | ----------- |
-| `SHIPPO_API_KEY`          | `shippo_test_f48af1270bac0e03515781c1b20e301454dc95bc` | Production  |
+| `SHIPPO_API_KEY`          | `<SHIPPO_API_KEY>`                                     | Production  |
 | `SHIPPING_ORIGIN_EMAIL`   | `james@destinosf.com`                                  | Production  |
 | `SHIPPING_ORIGIN_NAME`    | `Destino SF`                                           | Production  |
 | `SHIPPING_ORIGIN_STREET1` | `103 Horne Ave`                                        | Production  |
