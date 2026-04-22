@@ -1,11 +1,12 @@
 import { execSync } from 'child_process';
 import { PrismaClient } from '@prisma/client';
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-if (!TEST_DATABASE_URL) {
-  console.error('❌ TEST_DATABASE_URL env var is required');
-  process.exit(1);
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} env var is required`);
+  return value;
 }
+const TEST_DATABASE_URL = requireEnv('TEST_DATABASE_URL');
 
 console.log('🔧 Setting up test database...');
 console.log('Database: 5.78.141.250:5433/postgres');

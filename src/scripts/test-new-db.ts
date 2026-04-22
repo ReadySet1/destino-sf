@@ -1,9 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-if (!TEST_DATABASE_URL) {
-  throw new Error('TEST_DATABASE_URL env var is required');
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} env var is required`);
+  return value;
 }
+const TEST_DATABASE_URL = requireEnv('TEST_DATABASE_URL');
 
 interface DatabaseInfo {
   current_time: Date;

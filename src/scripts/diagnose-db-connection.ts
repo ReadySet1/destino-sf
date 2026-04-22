@@ -2,11 +2,12 @@ import { execSync } from 'child_process';
 import * as net from 'net';
 import { promisify } from 'util';
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-if (!TEST_DATABASE_URL) {
-  console.error('❌ TEST_DATABASE_URL env var is required');
-  process.exit(1);
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} env var is required`);
+  return value;
 }
+const TEST_DATABASE_URL = requireEnv('TEST_DATABASE_URL');
 
 console.log('🔍 Database Connection Diagnostics');
 console.log('================================');
