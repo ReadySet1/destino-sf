@@ -15,7 +15,7 @@ This guide helps you test and set up your new test database connection.
 **Connection String:**
 
 ```
-postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require
+postgresql://destino_test:${TEST_DB_PASSWORD}@${TEST_DB_HOST}:5433/postgres?sslmode=require
 ```
 
 ## Available Testing Scripts
@@ -100,7 +100,7 @@ To use this database for your test suite:
 1. **Set environment variable:**
 
    ```bash
-   export DATABASE_URL="postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require"
+   export DATABASE_URL="postgresql://destino_test:${TEST_DB_PASSWORD}@${TEST_DB_HOST}:5433/postgres?sslmode=require"
    ```
 
 2. **Run your existing tests:**
@@ -230,7 +230,7 @@ If you need to run Prisma commands manually against this database:
 
 ```bash
 # Set the database URL for the session
-export DATABASE_URL="postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require"
+export DATABASE_URL="postgresql://destino_test:${TEST_DB_PASSWORD}@${TEST_DB_HOST}:5433/postgres?sslmode=require"
 
 # Generate Prisma client
 npx prisma generate
@@ -273,7 +273,7 @@ To use this database with your existing test suite, you can:
    ```yaml
    # In your CI configuration
    env:
-     DATABASE_URL: postgresql://destino_test:E7toVQos1QZuUi0KlgriErg1hRI9vkTE1esIUaZjqcNOb54pXhB79av2qkQ4wOOb@5.78.141.250:5433/postgres?sslmode=require
+     DATABASE_URL: postgresql://destino_test:${TEST_DB_PASSWORD}@${TEST_DB_HOST}:5433/postgres?sslmode=require
    ```
 
 ## Security Notes
