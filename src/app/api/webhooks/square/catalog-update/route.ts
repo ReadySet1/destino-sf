@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma, withRetry } from '@/lib/db-unified';
 import { z } from 'zod';
+import { wasRecentlyWrittenByUs } from '@/lib/square/echo-suppression';
 
 const WebhookSchema = z.object({
   merchant_id: z.string(),
@@ -52,6 +53,16 @@ export async function POST(request: NextRequest) {
 
     if (!isRelevant) {
       return NextResponse.json({ message: 'Item not in target categories' });
+    }
+
+    // Echo suppression: if this webhook reflects a write we just made, skip the pull.
+    const incomingVersion = catalogObject.version;
+    if (catalogObject.id && incomingVersion !== undefined && incomingVersion !== null) {
+      const ours = await wasRecentlyWrittenByUs(catalogObject.id, incomingVersion).catch(() => false);
+      if (ours) {
+        console.log(`[echo-suppression] Skipping webhook echo for ${catalogObject.id}@v${incomingVersion}`);
+        return NextResponse.json({ suppressed: true, reason: 'echo', objectId: catalogObject.id });
+      }
     }
 
     // Trigger a partial sync for just this item

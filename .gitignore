@@ -82,3 +82,6 @@ production-monitoring-*.log
 # Claude
 .mcp.json
 .claude
+
+# gstack local artifacts (retros, checkpoints, etc.)
+.context/
