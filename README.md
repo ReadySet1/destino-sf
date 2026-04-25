@@ -1,75 +1,4 @@
-# 🥟 Destino SF - Premium Argentine Cuisine & Catering Platform
-
-## 🎯 Quality Assurance & Testing
-
-### Test Coverage
-
-![Coverage](./coverage/badges/overall.svg)
-![Lines](./coverage/badges/lines.svg)
-![Functions](./coverage/badges/functions.svg)
-![Branches](./coverage/badges/branches.svg)
-
-### QA Implementation Status
-
-![QA Phase 1-4](./coverage/badges/qa-phases.svg)
-![Tests](./coverage/badges/tests.svg)
-
-**Phase 1-5 QA Implementation Complete!** ✅
-
-- ✅ **Phase 1**: Core Testing Infrastructure - Fixed mock configuration, dual Jest configs
-- ✅ **Phase 2**: Critical Path Testing - Payment processing fully tested (7/7 tests passing)
-- ✅ **Phase 3**: CI/CD Testing Setup - GitHub Actions with PostgreSQL, coverage reporting
-- ✅ **Phase 4**: Test Data Management - Comprehensive factories, seeding, dashboard
-- ✅ **Phase 5**: Monitoring & Reporting - Live monitoring, HTML reports, pre-commit hooks
-
-### Test Commands
-
-```bash
-# Run critical path tests (most important)
-pnpm test:critical
-
-# Run all tests with coverage
-pnpm test:coverage
-
-# Generate test dashboard
-pnpm test:dashboard:generate
-
-# Seed test database
-pnpm test:seed
-
-# Reset test database
-pnpm test:reset
-
-# Run specific test suites
-pnpm test:unit       # Unit tests
-pnpm test:api        # API tests
-pnpm test:components # Component tests
-pnpm test:contracts  # API contract validation (NEW)
-pnpm test:e2e        # End-to-end tests (Playwright)
-pnpm test:e2e:critical # Critical E2E flows (NEW)
-
-# Phase 5: Monitoring & Reporting
-pnpm test:report    # Generate HTML test report
-pnpm test:monitor   # Live test monitoring dashboard
-pnpm test:fix       # Run diagnostic script
-pnpm test:quick     # Fast test execution
-
-# API Documentation
-pnpm generate-api-docs    # Generate OpenAPI documentation (NEW)
-pnpm validate-api-schema  # Validate API schemas (NEW)
-```
-
-### Test Infrastructure
-
-- **Jest Configuration**: Dual configs for Node.js (API) and jsdom (components)
-- **Test Factories**: Comprehensive data factories using Faker.js
-- **Database Testing**: PostgreSQL test containers with seeding utilities
-- **Coverage Reporting**: Automated badges and dashboard generation
-- **CI/CD Integration**: GitHub Actions with PostgreSQL service
-- **Monitoring & Reporting**: HTML test reports, live monitoring, pre-commit hooks
-- **API Contract Testing**: Zod-based schema validation with OpenAPI documentation (NEW)
-- **E2E Testing**: Playwright test suites for critical user flows (NEW)
-- **Concurrency Testing**: Race condition prevention and lock testing (NEW)
+# 🥟 Destino SF — Premium Argentine Cuisine & Catering Platform
 
 **San Francisco's premier destination for authentic Argentine empanadas, alfajores, and professional catering services.**
 
@@ -103,15 +32,23 @@ pnpm validate-api-schema  # Validate API schemas (NEW)
 - **Hybrid Mode**: Production catalog with sandbox payment testing
 - **Error Handling**: Comprehensive gift card and payment validation
 - **Webhooks**: Real-time order status updates
+- **Two-way Catalog Writeback**: Selected admin edits push back to Square via `/api/admin/square/writeback/*`
+
+### 🛡️ **Operational Resilience**
+
+- **Concurrency Primitives**: Pessimistic locks, optimistic locks, request deduplication, duplicate-order prevention (`src/lib/concurrency/`)
+- **Admin Auth Guards**: Every `/api/admin/*` route gated by `verifyAdminAccess()` (`src/lib/auth/admin-guard.ts`)
+- **Distributed Rate Limiting**: Upstash Redis-backed limiter (`src/lib/rate-limit.ts`) used by contact forms and webhooks
+- **Weekly Database Backups**: Automated Supabase dumps via GitHub Actions
+- **Cross-admin Sync History**: All admins share visibility into Square sync activity
 
 ### 📱 **Modern User Experience**
 
 - **Responsive Design**: Optimized for mobile, tablet, and desktop
-- **Performance**: 90%+ Lighthouse scores, optimized image delivery
-- **Accessibility**: WCAG-compliant design patterns with image alt text guidelines (NEW)
-- **Progressive Enhancement**: Works offline with service worker
-- **SEO Optimization**: Breadcrumb navigation, FAQ schema, sitemap index (NEW)
-- **Structured Data**: Schema.org markup for rich search results (NEW)
+- **Performance**: Lighthouse budgets enforced in CI, optimized image delivery
+- **Accessibility**: WCAG 2.1 AA design patterns with image alt-text guidelines
+- **SEO Optimization**: Breadcrumb navigation, FAQ schema, sitemap index
+- **Structured Data**: Schema.org markup for rich search results
 - **Error Boundaries**: Graceful error handling and recovery
 
 ## 🏗️ Technology Stack
@@ -141,18 +78,18 @@ pnpm validate-api-schema  # Validate API schemas (NEW)
 
 ### **Developer Experience**
 
-- **pnpm** - Fast, disk space efficient package manager
+- **pnpm** - Fast, disk-space-efficient package manager (pinned via `packageManager` field)
 - **ESLint & Prettier** - Code quality and formatting
-- **Husky & lint-staged** - Pre-commit hooks
-- **Jest & Playwright** - Comprehensive testing suite (86%+ coverage)
+- **Husky & lint-staged** - Pre-commit hooks (`scripts/install-git-hooks.sh`)
+- **Jest & Playwright** - Unit, integration, component, and E2E coverage
 
 ## 🚀 Quick Start
 
 ### **Prerequisites**
 
 ```bash
-Node.js 18.17+
-pnpm 8.0+
+Node.js 20+
+pnpm 10.17+   # see `packageManager` in package.json
 PostgreSQL 14+
 ```
 
@@ -210,12 +147,7 @@ destino-sf/
 
 ## 🧪 Testing & Quality Assurance
 
-### **Test Coverage: 86.3%** ✅
-
-- **505+ Tests** across unit, integration, and E2E
-- **99.4% Success Rate** with automated flaky test detection
-- **Cross-browser Testing** (Chromium, Firefox, WebKit)
-- **Mobile Testing** with device emulation
+Tests live in `src/__tests__/` (Jest) and `tests/e2e/` (Playwright). Jest runs in two projects (`node` and `jsdom`) — see `jest.config.ts`.
 
 ### **Running Tests**
 
@@ -223,25 +155,32 @@ destino-sf/
 # Critical pre-deployment tests
 pnpm test:e2e:critical
 
-# Full test suite
+# Full test suite with coverage
 pnpm test:coverage
 
-# Component and unit tests
-pnpm test
+# Targeted suites
+pnpm test:unit         # lib + utils
+pnpm test:components   # jsdom
+pnpm test:api          # API routes
+pnpm test:integration  # cross-module integration
+pnpm test:contracts    # Zod schema contracts
+pnpm test:critical     # checkout, orders, square, concurrency
 
-# Mobile responsiveness
+# Mobile and accessibility
 pnpm test:e2e:mobile
+pnpm test:a11y
 
-# Performance testing
-pnpm test:lighthouse
+# Performance (Lighthouse CI)
+pnpm test:performance:lighthouse
+pnpm test:performance:lighthouse:mobile
 ```
 
 ### **Quality Gates**
 
-- ✅ **Performance**: Lighthouse score ≥90%
-- ✅ **Accessibility**: WCAG 2.1 AA compliance
-- ✅ **Security**: Zero critical vulnerabilities
-- ✅ **Type Safety**: 100% TypeScript coverage
+- ✅ **Performance**: Lighthouse budgets enforced via `lighthouserc.json` / `lighthouserc.mobile.json`
+- ✅ **Accessibility**: WCAG 2.1 AA, audited via `tests/e2e/accessibility/`
+- ✅ **Security**: Admin routes guarded, secrets out of repo, distributed rate limiting
+- ✅ **Type Safety**: TypeScript strict mode with `pnpm type-check`
 
 ## 🔧 Development Workflow
 
@@ -253,9 +192,8 @@ pnpm dev                # Start development server
 pnpm dev:turbo         # Start with Turbopack (faster)
 
 # Building & Production
-pnpm build             # Build for production
+pnpm build             # Build for production (runs prisma generate)
 pnpm start             # Start production server
-pnpm preview           # Preview production build
 
 # Code Quality
 pnpm lint              # ESLint checking
@@ -271,9 +209,12 @@ pnpm prisma studio     # Database browser
 pnpm prisma migrate    # Run migrations
 
 # Specialized Tasks
-pnpm sync:square       # Sync products from Square
-pnpm test:health       # System health check
-pnpm check:images      # Validate product images
+pnpm square-sync       # Sync products from Square (CLI)
+pnpm square-sync-api   # Trigger sync via local API endpoint
+pnpm backup-db         # Snapshot the configured database
+pnpm diagnose-db       # Diagnose DB connection issues
+pnpm clean-orders:preview  # Preview test-order cleanup (dry-run)
+pnpm analyze           # Bundle analysis (ANALYZE=true next build)
 ```
 
 ## 🍽️ Key Features Deep Dive
@@ -310,36 +251,32 @@ pnpm check:images      # Validate product images
 
 ### **Setup & Configuration**
 
-- 📋 [Environment Setup](./docs/ENV_TEMPLATE_SQUARE.md)
-- 🔑 [Square API Configuration](./docs/SQUARE_TOKEN_SETUP.md)
-- 🔐 [User Management](./docs/PASSWORD_SETUP.md)
-- 🧪 [Test Database Setup](./docs/TEST_DATABASE_GUIDE.md)
+- 🚀 [Quick Start](./docs/getting-started/quick-start.md)
+- 🛠️ [Development Setup](./docs/getting-started/development-setup.md)
+- 📋 [Environment Setup](./docs/getting-started/environment-setup.md)
+- 🧪 [Test Database Setup](./docs/getting-started/test-database-setup.md)
+- 🔐 [Authentication](./docs/security/authentication.md)
 
 ### **Feature Documentation**
 
-- 🍽️ [Catering System](./docs/README_CATERING.md)
-- 🚚 [Shipping Integration](./docs/ENHANCED_SHIPPO_INTEGRATION.md)
-- 🖼️ [Image Management](./docs/DESSERT_IMAGES_FINAL_STATUS.md)
-- 🔄 [Product Sync Process](./docs/PRODUCTION_SYNC_AUDIT_REPORT.md)
+- 🍽️ [Catering System](./docs/features/catering/README.md)
+- 🚚 [Shipping](./docs/features/shipping/)
+- 💳 [Square Integration](./docs/features/payments/square-integration.md)
+- 🔄 [Square Sync Operations](./docs/operations/product-sync/square-sync.md)
+- 🔁 [Concurrency Patterns](./docs/CONCURRENCY_PATTERNS.md)
 
 ### **Testing & Quality**
 
-- 🧪 [Testing Strategy](./docs/TESTING_STRATEGY.md)
-- 📊 [Test Infrastructure](./docs/PHASE_5_TEST_INFRASTRUCTURE_SUMMARY.md)
-- 🎭 [Playwright Setup](./docs/testing/playwright-setup.md)
-- ✅ [Production Testing Plan](./docs/testing/PRODUCTION_TESTING_PLAN.md)
+- 🧪 [Testing Strategy](./docs/testing/testing-strategy.md)
+- 🎭 [Playwright (E2E) Setup](./docs/testing/e2e-testing/playwright-setup.md)
+- 🔬 [Integration Testing](./docs/testing/integration-testing.md)
+- 🧱 [Unit Testing](./docs/testing/unit-testing.md)
 
-### **Performance & Optimization**
+### **Audit & Roadmap**
 
-- ⚡ [Performance Optimizations](./docs/PERFORMANCE_OPTIMIZATIONS_SUMMARY.md)
-- 🔄 [Sync Improvements](./docs/SYNC_IMPROVEMENTS.md)
-- 🏗️ [Project Cleanup](./docs/PROJECT_CLEANUP_SUMMARY.md)
-
-### **Implementation Guides**
-
-- 📦 [Box Lunch Features](./docs/IMPLEMENTATION_SUMMARY.md)
-- 🍰 [Catering Restoration](./docs/CATERING_RESTORATION_SUMMARY.md)
-- 🛠️ [Database Fixes](./docs/CATERING_DATABASE_FIX.md)
+- 🛡️ [Q2 2026 Audit Report](./docs/AUDIT_REPORT_2026_03_25.md)
+- 🗺️ [Q2 2026 Roadmap](./docs/ROADMAP_2026_Q2.md)
+- ⚡ [Performance Guidelines](./docs/PERFORMANCE_GUIDELINES.md)
 
 ## 🚀 Deployment
 
@@ -356,11 +293,13 @@ pnpm type-check
 pnpm build
 
 # 4. Performance audit
-pnpm test:lighthouse
+pnpm test:performance:lighthouse
 
 # 5. Security scan
 pnpm audit
 ```
+
+CI mirrors this via the **Pre-Deployment Checklist** workflow on PRs to `main`. PRs to `development` run the **Essential Quality Checks** workflow (type-check, lint, test, build, security scan).
 
 ### **Environment Configuration**
 
@@ -399,11 +338,16 @@ pnpm prisma generate
 #### Square API Issues
 
 ```bash
-# Test configuration
-curl http://localhost:3000/api/debug/square-config
+# Verify the local catalog sync runs end-to-end
+pnpm square-sync
+
+# Inspect Square writeback health (admin auth required)
+curl -b cookies.txt http://localhost:3000/api/admin/square/writeback/health
 
 # Update tokens (see docs/SQUARE_TOKEN_SETUP.md)
 ```
+
+> ⚠️ Production debug routes (`/api/debug/*`, `/api/test-*`, `/test-*`) were removed in the Q2 2026 audit. Use Jest tests, the admin dashboard, or the writeback health endpoint instead.
 
 #### Test Failures
 
@@ -423,46 +367,36 @@ pnpm test:e2e:report
 
 ## 📈 Project Status
 
-### **Current Metrics**
+### **Recent Work (Q2 2026)**
 
-- ✅ **Test Coverage**: 86.3% (Target: 85%+)
-- ✅ **Performance**: 90%+ Lighthouse scores
-- ✅ **TypeScript**: 100% type coverage
-- ✅ **Security**: Zero critical vulnerabilities
-- ✅ **Accessibility**: WCAG 2.1 AA compliant
+- 🛡️ **Security audit follow-ups**: secrets purge, admin auth guards on every `/api/admin/*` route, in-memory rate limiter retired in favor of Upstash Redis
+- 🔁 **Square writeback**: two-way Destino → Square catalog updates with health endpoint
+- 💾 **Weekly Supabase backup**: automated DB dumps via GitHub Actions
+- 🔒 **Concurrency primitives**: pessimistic + optimistic locks, request deduplication, duplicate-order prevention
+- 👥 **Cross-admin sync history**: every admin sees every admin-triggered Square sync, with `Started by` attribution
 
-### **Recent Achievements**
-
-- 🏆 **Project Cleanup**: Organized root folder with 50% reduction in clutter
-- 🏆 **Test Infrastructure**: Comprehensive testing with automated CI/CD
-- 🏆 **Performance**: Optimized database queries and API rate limiting
-- 🏆 **Feature Complete**: Full catering system with image protection
-
-### **Upcoming Enhancements**
-
-- 🔄 **International Shipping**: Customs and duty calculations
-- 📊 **Advanced Analytics**: Customer behavior and business intelligence
-- 🤖 **AI Integration**: Smart product recommendations
-- 📱 **Mobile App**: Native iOS/Android applications
+See [`docs/ROADMAP_2026_Q2.md`](./docs/ROADMAP_2026_Q2.md) for the live roadmap.
 
 ## 🤝 Contributing
 
-### **Development Process**
+### **Branch & PR Workflow**
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Follow TypeScript and ESLint guidelines
-4. Add comprehensive tests for new functionality
-5. Run the full test suite: `pnpm test:coverage`
-6. Submit a pull request with detailed description
+1. Branch off **`development`** (not `main`).
+2. Name the branch by intent: `feat/<scope>`, `fix/<scope>`, `docs/<scope>`, `chore/<scope>`.
+3. Run local validation before pushing: `pnpm validate && pnpm test:critical`.
+4. Open a PR against `development`. PRs to `main` are reserved for releases.
+5. **Always use "Rebase and merge"** in GitHub — never "Squash and merge". Squashing diverges `development` from `main` and accumulates the "X commits ahead" problem (see `CLAUDE.md` §11).
+6. CI on `development`: type-check, lint, test, build, security scan, Lighthouse, accessibility.
+7. CI on `main`: full pre-deployment checklist + E2E + deployment gate.
 
 ### **Code Standards**
 
-- **TypeScript**: Strict mode with comprehensive type coverage
-- **Testing**: Jest for unit/integration, Playwright for E2E
-- **Documentation**: Update relevant docs for new features
-- **Performance**: Maintain 90%+ Lighthouse scores
-- **Accessibility**: WCAG 2.1 AA compliance required
+- **TypeScript**: Strict mode; minimize `any` (warn-level rule)
+- **Testing**: Jest for unit/integration/component, Playwright for E2E
+- **Logging**: `console.error` / `console.warn` only — `console.log` is a lint warning
+- **Performance**: Lighthouse budgets enforced; new routes ship a `loading.tsx` skeleton
+- **Accessibility**: WCAG 2.1 AA target, validated via `tests/e2e/accessibility/`
+- **Admin routes**: every `/api/admin/*` handler must call `verifyAdminAccess()` first
 
 ## 📄 License
 
