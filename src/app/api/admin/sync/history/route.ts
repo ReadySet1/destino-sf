@@ -20,10 +20,12 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const days = parseInt(searchParams.get('days') || '30'); // Last 30 days by default
 
+    // Admins see syncs across all admins; non-admins (defensive — route is already
+    // gated by verifyAdminAccess) only see their own.
+    const scopeWhere: any = user.role === 'ADMIN' ? {} : { userId: user.id };
+
     // 4. Build query filters
-    const where: any = {
-      userId: user.id,
-    };
+    const where: any = { ...scopeWhere };
 
     // Filter by status if provided
     if (status && ['PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED'].includes(status)) {
@@ -63,7 +65,7 @@ export async function GET(request: NextRequest) {
 
     // 6. Calculate summary statistics
     const totalSyncs = await prisma.userSyncLog.count({
-      where: { userId: user.id },
+      where: scopeWhere,
     });
 
     const last7Days = new Date();
@@ -72,7 +74,7 @@ export async function GET(request: NextRequest) {
     const recentStats = await prisma.userSyncLog.groupBy({
       by: ['status'],
       where: {
-        userId: user.id,
+        ...scopeWhere,
         startTime: {
           gte: last7Days,
         },

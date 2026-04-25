@@ -44,6 +44,7 @@ interface SyncRecord {
   endTime?: string;
   duration?: number;
   message?: string;
+  startedBy?: string;
   summary?: {
     syncedProducts: number;
     skippedProducts: number;
@@ -434,6 +435,11 @@ export function SyncHistoryWithDetails({ refreshTrigger }: SyncHistoryProps) {
                     <div className="space-y-1">
                       {record.message && (
                         <div className="text-sm text-gray-600">{record.message}</div>
+                      )}
+                      {record.startedBy && (
+                        <div className="text-xs text-gray-500 font-medium">
+                          Started by: {record.startedBy}
+                        </div>
                       )}
                       {record.duration && (
                         <div className="text-xs text-gray-500 font-medium">
