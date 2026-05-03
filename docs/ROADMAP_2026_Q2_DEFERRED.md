@@ -1,7 +1,7 @@
 # Destino SF — Q2 2026 Deferred Items + Master Maintenance Audit Plan
 
 **Created:** 2026-04-03
-**Last reviewed:** 2026-04-20
+**Last reviewed:** 2026-05-03
 **Based on:** [Q2 2026 Roadmap](./ROADMAP_2026_Q2.md) (deferred items)
 **Goal:** Complete all deferred items from the Q2 audit and establish a recurring maintenance framework.
 **Timeline:** ~12 weeks (6 sprints of 1-2 weeks each)
@@ -18,7 +18,7 @@
 | Sprint 4 — Test Expansion | 🔴 Not started | E2E specs 17/18 not created; `collectCoverage` still `false`; `todo-triage.md` missing. |
 | Sprint 5 — Observability | 🟡 Partial | **Weekly DB backup shipped (PR #148)** — new. Prisma slow-query logging + `check-bundle-size.ts` still pending. |
 | Sprint 6 — Finalization | 🔴 Not started | No Lighthouse thresholds, no `MAINTENANCE_AUDIT_PLAN.md`. |
-| Sprint 7 — Security & Dep Hygiene | 🔴 Not started | **Newly added 2026-04-20.** 52 prod vulns (26 high) + 78 outdated deps uncovered; scripts/ inventory pending. |
+| Sprint 7 — Security & Dep Hygiene | 🟡 In progress | **Newly added 2026-04-20.** 7.1 weekly audit workflow + baseline doc shipped 2026-05-03; 26 highs still open. 7.2-7.4 not started. |
 
 **Next quick wins (≤2h each):**
 1. Flip `collectCoverage` to `process.env.CI === 'true'` (Sprint 4.2)
@@ -172,13 +172,16 @@ Tests live in `src/__tests__/app/api/admin/admin-crud.test.ts`:
 
 Discovered during 2026-04-20 audit. **Not in original plan.**
 
-### 7.1 Production Security Vulnerabilities — 🔴 Urgent
+### 7.1 Production Security Vulnerabilities — 🟡 In progress
 Baseline from `pnpm audit --prod` on 2026-04-20: **52 vulns (26 high, 22 moderate, 4 low)**.
-- [ ] Triage all 26 high-severity advisories; file one tracking issue per advisory or per transitive dep
-- [ ] Patch direct deps where newer versions resolve advisories (e.g. `qs` via `square` SDK)
-- [ ] For transitive vulns with no upstream fix, document accepted risk in `docs/security/accepted-risks.md`
-- [ ] Add `.github/workflows/security-audit.yml` — run `pnpm audit --prod` weekly, open issue on new highs
-- [ ] **Verify:** `pnpm audit --prod` reports 0 high severity
+Re-baseline on 2026-05-03: **57 vulns (26 high, 27 moderate, 4 low)** — see [`docs/security/2026-Q2-audit-baseline.md`](./security/2026-Q2-audit-baseline.md).
+- [x] **2026-05-03:** Captured baseline of 26 highs across 13 modules with direct/transitive classification and triage suggestions.
+- [x] **2026-05-03:** Added `.github/workflows/weekly-security-audit.yml` — runs `pnpm audit --prod` Mondays at 13:00 UTC, opens or updates a `security-audit`-labeled tracking issue when highs are present, and uploads `audit.json` as an artifact.
+- [ ] Bump `next` to `>=15.5.15` (direct dep, kills 2 highs).
+- [ ] Resolve `react-email` / `jest-watch-typeahead` placement — move to devDependencies if confirmed unused at runtime (drops ~7 highs from `--prod`).
+- [ ] `@sentry/nextjs` upgrade — check changelog for a release that bundles current rollup/picomatch/serialize-javascript.
+- [ ] For transitive vulns with no upstream fix, document accepted risk in `docs/security/accepted-risks.md`.
+- [ ] **Verify:** `pnpm audit --prod` reports 0 high severity.
 
 ### 7.2 Dependency Freshness — 🔴 Not started
 Baseline: **78 outdated packages** on 2026-04-20. Notable majors pending: `zustand`, `@tanstack/react-query`, `@supabase/supabase-js`, `framer-motion`, `@playwright/test`.
@@ -194,8 +197,8 @@ Current count: **131 files** — heavy concentration of one-off `fix-*`, `debug-
 - [ ] Document retention policy: deletion after N days or after incident closeout
 
 ### 7.4 Automation Coverage
-Currently only 1 scheduled workflow (`weekly-backup.yml`). Candidates:
-- [ ] `weekly-security-audit.yml` — see 7.1
+Currently 2 scheduled workflows (`weekly-backup.yml`, `weekly-security-audit.yml`). Candidates:
+- [x] `weekly-security-audit.yml` — shipped 2026-05-03 (see 7.1)
 - [ ] `weekly-dep-report.yml` — see 7.2
 - [ ] `stale-branch-cleanup.yml` — delete merged remote branches older than 30 days
 
@@ -275,6 +278,6 @@ Currently only 1 scheduled workflow (`weekly-backup.yml`). Candidates:
 | Sprint 4: Test Expansion | **Not Started** | — | 0% |
 | Sprint 5: Observability | **In Progress** | — | ~25% (5.0 weekly backup done; 5.1/5.2 pending; 5.3 partial) |
 | Sprint 6: Maintenance | **Not Started** | — | 0% |
-| Sprint 7: Security & Dep Hygiene | **Not Started** | — | 0% (added 2026-04-20) |
+| Sprint 7: Security & Dep Hygiene | **In Progress** | — | 7.1 partial (workflow + baseline shipped 2026-05-03); 7.2-7.4 not started |
 
 _Last updated: 2026-04-20_
