@@ -302,12 +302,6 @@ export default withSentryConfig(analyzeBundles(nextConfig), {
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
-
-  // Automatically instrument Vercel cron monitors
-  automaticVercelMonitors: true,
-
   // Hides source maps from generated client bundles
   hideSourceMaps: true,
 
@@ -321,4 +315,14 @@ export default withSentryConfig(analyzeBundles(nextConfig), {
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers
   tunnelRoute: '/monitoring',
+
+  // v10 webpack-scoped options (replace top-level disableLogger / automaticVercelMonitors).
+  webpack: {
+    // Tree-shake Sentry debug-logging statements out of the production bundle.
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    // Auto-instrument Vercel cron monitors as Sentry check-ins.
+    automaticVercelMonitors: true,
+  },
 });
