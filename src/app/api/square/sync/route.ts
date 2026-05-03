@@ -41,13 +41,24 @@ export async function POST(request: Request) {
     }
 
     // Parse request body for options
-    let options = {};
+    let options: {
+      forceImageUpdate?: boolean;
+      skipInactiveProducts?: boolean;
+      validateImages?: boolean;
+      batchSize?: number;
+      enableCleanup?: boolean;
+      restoreCateringPackages?: boolean;
+    } = {};
     try {
       const body = await request.json();
-      options = body.options || {};
+      options = body?.options ?? {};
     } catch {
       // If body parsing fails, use default options
       logger.info('Using default sync options');
+    }
+
+    if (options.forceImageUpdate) {
+      logger.info('⚠️ forceImageUpdate=true — syncLocked products will be overwritten');
     }
 
     // Start the production sync process
