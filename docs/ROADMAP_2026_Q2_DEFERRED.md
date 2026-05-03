@@ -177,7 +177,7 @@ Baseline from `pnpm audit --prod` on 2026-04-20: **52 vulns (26 high, 22 moderat
 Re-baseline on 2026-05-03: **57 vulns (26 high, 27 moderate, 4 low)** — see [`docs/security/2026-Q2-audit-baseline.md`](./security/2026-Q2-audit-baseline.md).
 - [x] **2026-05-03:** Captured baseline of 26 highs across 13 modules with direct/transitive classification and triage suggestions.
 - [x] **2026-05-03:** Added `.github/workflows/weekly-security-audit.yml` — runs `pnpm audit --prod` Mondays at 13:00 UTC, opens or updates a `security-audit`-labeled tracking issue when highs are present, and uploads `audit.json` as an artifact.
-- [ ] Bump `next` to `>=15.5.15` (direct dep, kills 2 highs).
+- [x] **2026-05-03:** Bumped `next` 15.5.9 → 15.5.15. Audit drop: 26 → 24 highs (2 GHSAs closed).
 - [ ] Resolve `react-email` / `jest-watch-typeahead` placement — move to devDependencies if confirmed unused at runtime (drops ~7 highs from `--prod`).
 - [ ] `@sentry/nextjs` upgrade — check changelog for a release that bundles current rollup/picomatch/serialize-javascript.
 - [ ] For transitive vulns with no upstream fix, document accepted risk in `docs/security/accepted-risks.md`.

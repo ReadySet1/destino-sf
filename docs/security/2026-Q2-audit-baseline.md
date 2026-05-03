@@ -4,6 +4,9 @@
 **Scope:** production dependencies only (devDependencies excluded)
 **Roadmap link:** [`docs/ROADMAP_2026_Q2_DEFERRED.md`](../ROADMAP_2026_Q2_DEFERRED.md) — Sprint 7.1
 
+**Updates:**
+- 2026-05-03 — `next` 15.5.9 → 15.5.15 (PR forthcoming). Drops 2 highs (`GHSA-h25m-26qc-wcjf`, `GHSA-q4gf-8mx6-v5v3`). Post-bump audit: **24 high, 24 moderate, 4 low — 52 total**.
+
 This document is the **starting state** of the production vulnerability backlog as of the date above. The new `.github/workflows/weekly-security-audit.yml` will keep an open issue tagged `security-audit` updated against this baseline. When `pnpm audit --prod` reports zero high/critical, the workflow goes silent and we can retire this doc.
 
 ## Severity totals
@@ -24,7 +27,7 @@ This document is the **starting state** of the production vulnerability backlog 
 
 | Module | Current vuln range | Patched in | Action |
 |--------|--------------------|------------|--------|
-| `next` | `>=13.0.0 <15.5.15` (and `>=15.5.1-canary.0 <15.5.10`) | `>=15.5.15` | Bump `next` to `15.5.15+`. Rebuild, run full E2E. Two GHSAs collapse into one upgrade. |
+| ~~`next`~~ | ~~`>=13.0.0 <15.5.15`~~ | ~~`>=15.5.15`~~ | ✅ **Done 2026-05-03** — bumped to `15.5.15`. |
 
 ### Transitive, parent owns the fix — file upstream / wait for next release
 
