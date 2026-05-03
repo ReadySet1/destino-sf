@@ -263,7 +263,7 @@ async function getOrCreateDefaultCategory() {
 }
 
 // Function to check if a category name is a catering category
-function isCateringCategory(name: string): boolean {
+export function isCateringCategory(name: string): boolean {
   // Normalize by trimming spaces and converting to uppercase
   const normalizedName = name.trim().toUpperCase();
   // Detailed logging for debugging
@@ -521,7 +521,9 @@ async function ensureTestCateringCategory(): Promise<void> {
   }
 }
 
-export async function syncSquareProducts(): Promise<SyncResult> {
+export async function syncSquareProducts(
+  options: { forceImageUpdate?: boolean } = {}
+): Promise<SyncResult> {
   const errors: string[] = [];
   let syncedCount = 0;
   const debugInfo: Record<string, unknown> = {};
@@ -733,7 +735,8 @@ export async function syncSquareProducts(): Promise<SyncResult> {
               relatedObjects,
               categoryMap,
               defaultCategory,
-              categoryRemapping
+              categoryRemapping,
+              { forceImageUpdate: options.forceImageUpdate }
             );
             syncedCount++;
             logger.debug(`✅ Processed item: ${squareItem.item_data.name}`);
@@ -967,7 +970,8 @@ async function processSquareItem(
   relatedObjects: SquareCatalogObject[],
   categoryMap: Map<string, SquareCatalogObject>,
   defaultCategory: { id: string; name: string },
-  categoryRemapping: Map<string, string> = new Map()
+  categoryRemapping: Map<string, string> = new Map(),
+  syncOptions: { forceImageUpdate?: boolean } = {}
 ): Promise<void> {
   const itemData = item.item_data!;
   const itemName = itemData.name || '';
@@ -1135,14 +1139,22 @@ async function processSquareItem(
   const existingProduct = await withDatabaseRetry(async () => {
     return await prisma.product.findUnique({
       where: { squareId: item.id },
-      select: { id: true, slug: true, images: true, name: true, active: true },
+      select: {
+        id: true,
+        slug: true,
+        images: true,
+        name: true,
+        active: true,
+        syncLocked: true,
+      },
     });
   });
 
   const finalImages = await determineProductImages(
     item,
     relatedObjects,
-    existingProduct || undefined
+    existingProduct || undefined,
+    { categoryName, forceImageUpdate: syncOptions.forceImageUpdate }
   );
 
   let ordinal: bigint | null = null;
@@ -1821,79 +1833,54 @@ async function fetchRelatedObjects(): Promise<SquareCatalogObject[]> {
   }
 }
 
-// Helper function to determine the best images for a product
-async function determineProductImages(
+// Decide which images to persist for a product.
+// Contract:
+//   1. New product → Square images win.
+//   2. Catering category → existing images always preserved (CLAUDE.md rule #3).
+//   3. syncLocked && !forceImageUpdate → existing images preserved.
+//   4. Square has 0 images AND existing includes a local `/images/...` asset → preserve existing.
+//   5. Otherwise → Square is source of truth and overwrites.
+export async function determineProductImages(
   item: SquareCatalogObject,
   relatedObjects: SquareCatalogObject[],
-  existingProduct?: { id: string; images: string[]; name: string }
+  existingProduct?: { id: string; images: string[]; name: string; syncLocked?: boolean },
+  options?: { categoryName?: string; forceImageUpdate?: boolean }
 ): Promise<string[]> {
   const itemName = item.item_data?.name || '';
+  const { categoryName, forceImageUpdate = false } = options ?? {};
 
-  // Get images from Square
   const imageUrlsFromSquare = await getImageUrls(item, relatedObjects);
   logger.debug(`Square provided ${imageUrlsFromSquare.length} image(s) for ${itemName}`);
 
-  // If this is a new product, use Square images
   if (!existingProduct) {
     logger.debug(`New product ${itemName}: using ${imageUrlsFromSquare.length} images from Square`);
     return imageUrlsFromSquare;
   }
 
-  // For existing products, implement smart image management
   const existingImages = existingProduct.images || [];
 
-  // Check if existing images are manually assigned (not from Square)
-  const hasManualImages = existingImages.some(
-    img =>
-      img.startsWith('/images/') || // Local images
-      img.includes('items-images-production.s3.us-west-2.amazonaws.com') || // Our manually assigned S3 images
-      !img.includes('square-') // Non-Square URLs
-  );
-
-  // If we have manual images and Square doesn't provide better ones, keep manual images
-  if (hasManualImages && imageUrlsFromSquare.length === 0) {
-    logger.debug(
-      `Product ${itemName}: preserving ${existingImages.length} manually assigned images (Square has none)`
+  if (categoryName && isCateringCategory(categoryName)) {
+    logger.info(
+      `Product ${itemName}: preserving images — catering category "${categoryName}" is always protected`
     );
     return existingImages;
   }
 
-  // If we have manual images and Square provides images, prefer manual unless they're clearly better
-  if (hasManualImages && imageUrlsFromSquare.length > 0) {
-    // Check if any existing images are for specific variants (like different alfajores types)
-    const hasVariantSpecificImages = existingImages.some(
-      img =>
-        (itemName.toLowerCase().includes('alfajor') && img.includes('alfajor')) ||
-        (itemName.toLowerCase().includes('platter') && img.includes('platter')) ||
-        (itemName.toLowerCase().includes('classic') && img.includes('classic')) ||
-        (itemName.toLowerCase().includes('chocolate') && img.includes('chocolate')) ||
-        (itemName.toLowerCase().includes('lemon') && img.includes('lemon')) ||
-        (itemName.toLowerCase().includes('gluten') && img.includes('gluten'))
-    );
-
-    if (hasVariantSpecificImages) {
-      logger.debug(
-        `Product ${itemName}: preserving variant-specific manually assigned images over Square images`
-      );
-      return existingImages;
-    }
-
-    // If Square images are significantly better (more images), use those
-    if (imageUrlsFromSquare.length > existingImages.length) {
-      logger.debug(
-        `Product ${itemName}: using ${imageUrlsFromSquare.length} Square images (better than ${existingImages.length} existing)`
-      );
-      return imageUrlsFromSquare;
-    }
-
-    // Otherwise, keep existing manual images
-    logger.debug(
-      `Product ${itemName}: preserving ${existingImages.length} manually assigned images`
+  if (existingProduct.syncLocked && !forceImageUpdate) {
+    logger.info(
+      `Product ${itemName}: preserving images — syncLocked=true (pass forceImageUpdate to override)`
     );
     return existingImages;
   }
 
-  // If no manual images, use Square images (even if empty)
+  const hasLocalAsset = existingImages.some(img => img.startsWith('/images/'));
+  if (imageUrlsFromSquare.length === 0 && hasLocalAsset) {
+    logger.debug(
+      `Product ${itemName}: Square has 0 images and existing includes a local asset — preserving existing`
+    );
+    return existingImages;
+  }
+
   logger.debug(`Product ${itemName}: using ${imageUrlsFromSquare.length} images from Square`);
   return imageUrlsFromSquare;
 }
@@ -2018,8 +2005,10 @@ export async function syncProductOrderingFromSquare(): Promise<{
 }
 
 // Export function with expected name for tests
-export async function syncProductsFromSquare(): Promise<SyncResult> {
-  return await syncSquareProducts();
+export async function syncProductsFromSquare(
+  options: { forceImageUpdate?: boolean } = {}
+): Promise<SyncResult> {
+  return await syncSquareProducts(options);
 }
 
 // Utility function to chunk arrays for batch processing
