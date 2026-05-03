@@ -18,7 +18,7 @@
 | Sprint 4 — Test Expansion | 🔴 Not started | E2E specs 17/18 not created; `collectCoverage` still `false`; `todo-triage.md` missing. |
 | Sprint 5 — Observability | 🟡 Partial | **Weekly DB backup shipped (PR #148)** — new. Prisma slow-query logging + `check-bundle-size.ts` still pending. |
 | Sprint 6 — Finalization | 🔴 Not started | No Lighthouse thresholds, no `MAINTENANCE_AUDIT_PLAN.md`. |
-| Sprint 7 — Security & Dep Hygiene | 🟡 In progress | **Newly added 2026-04-20.** 7.1 weekly audit workflow + baseline doc shipped 2026-05-03; 26 highs still open. 7.2-7.4 not started. |
+| Sprint 7 — Security & Dep Hygiene | 🟡 In progress | **Newly added 2026-04-20.** 7.1 weekly audit workflow + baseline doc + `next` bump shipped 2026-05-03 (24 highs remaining, all transitive). 7.2 Dependabot config shipped 2026-05-03. 7.3-7.4 partial. |
 
 **Next quick wins (≤2h each):**
 1. Flip `collectCoverage` to `process.env.CI === 'true'` (Sprint 4.2)
@@ -183,10 +183,9 @@ Re-baseline on 2026-05-03: **57 vulns (26 high, 27 moderate, 4 low)** — see [`
 - [ ] For transitive vulns with no upstream fix, document accepted risk in `docs/security/accepted-risks.md`.
 - [ ] **Verify:** `pnpm audit --prod` reports 0 high severity.
 
-### 7.2 Dependency Freshness — 🔴 Not started
+### 7.2 Dependency Freshness — 🟡 In progress
 Baseline: **78 outdated packages** on 2026-04-20. Notable majors pending: `zustand`, `@tanstack/react-query`, `@supabase/supabase-js`, `framer-motion`, `@playwright/test`.
-- [ ] Set up Dependabot or Renovate (config in `.github/dependabot.yml` or `renovate.json`)
-- [ ] Group minor/patch updates weekly, majors individually
+- [x] **2026-05-03:** Set up Dependabot — `.github/dependabot.yml` covers npm + github-actions. Weekly Monday 04:00 UTC against `development`. Groups for `@radix-ui/*`, `@types/*`, `@sentry/*`, `@playwright/*`, `@dnd-kit/*`, tailwind, jest. Majors blocked from grouped PRs for `react`/`next`/`prisma`/`zod`/`@tanstack/react-query`/`typescript`/`zustand`/`@supabase/*`/`framer-motion` — those still get their own individual PRs.
 - [ ] Add weekly CI job that posts `pnpm outdated` summary (non-blocking)
 - [ ] Plan major-version upgrades separately (each needs manual smoke + E2E pass)
 
@@ -278,6 +277,6 @@ Currently 2 scheduled workflows (`weekly-backup.yml`, `weekly-security-audit.yml
 | Sprint 4: Test Expansion | **Not Started** | — | 0% |
 | Sprint 5: Observability | **In Progress** | — | ~25% (5.0 weekly backup done; 5.1/5.2 pending; 5.3 partial) |
 | Sprint 6: Maintenance | **Not Started** | — | 0% |
-| Sprint 7: Security & Dep Hygiene | **In Progress** | — | 7.1 partial (workflow + baseline shipped 2026-05-03); 7.2-7.4 not started |
+| Sprint 7: Security & Dep Hygiene | **In Progress** | — | 7.1 partial (workflow + baseline + next bump 2026-05-03); 7.2 Dependabot shipped 2026-05-03; 7.3-7.4 partial |
 
 _Last updated: 2026-04-20_
