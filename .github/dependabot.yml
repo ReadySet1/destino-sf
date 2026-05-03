@@ -1,0 +1,151 @@
+# Dependabot config for destino-sf.
+#
+# Strategy:
+#   - Runs weekly Mondays at 04:00 UTC, targeting `development`. Manually
+#     reviewed PRs land on development; releases promote to main.
+#   - Low-risk packages (UI primitives, types, monitoring SDKs) are grouped
+#     so we approve a single weekly PR per ecosystem.
+#   - Core framework/runtime packages are listed individually with
+#     `version-update:semver-major` ignored at the global level — Dependabot
+#     will still open patch/minor PRs for them, but never bundle a major
+#     into the grouped PRs. Majors require their own PR with full E2E.
+#   - GitHub Actions get their own weekly check (separate ecosystem).
+#
+# Reference:
+#   https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Etc/UTC
+    target-branch: development
+    open-pull-requests-limit: 8
+    labels:
+      - dependencies
+      - automated
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    # Block grouped PRs from sweeping in any major. Majors still get their
+    # own individual PRs (one per dependency) so we can review breaking
+    # changes case-by-case.
+    ignore:
+      - dependency-name: react
+        update-types:
+          - version-update:semver-major
+      - dependency-name: react-dom
+        update-types:
+          - version-update:semver-major
+      - dependency-name: next
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@prisma/client"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: prisma
+        update-types:
+          - version-update:semver-major
+      - dependency-name: zod
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@tanstack/react-query"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      - dependency-name: zustand
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@supabase/supabase-js"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@supabase/ssr"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: framer-motion
+        update-types:
+          - version-update:semver-major
+    groups:
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+        update-types:
+          - minor
+          - patch
+      types:
+        patterns:
+          - "@types/*"
+        update-types:
+          - minor
+          - patch
+      sentry:
+        patterns:
+          - "@sentry/*"
+        update-types:
+          - minor
+          - patch
+      playwright:
+        patterns:
+          - "@playwright/*"
+          - "@axe-core/playwright"
+          - playwright
+        update-types:
+          - minor
+          - patch
+      dnd-kit:
+        patterns:
+          - "@dnd-kit/*"
+        update-types:
+          - minor
+          - patch
+      tailwind:
+        patterns:
+          - tailwindcss
+          - "@tailwindcss/*"
+          - tailwind-merge
+          - tailwindcss-animate
+        update-types:
+          - minor
+          - patch
+      jest:
+        patterns:
+          - jest
+          - "@jest/*"
+          - jest-*
+          - babel-jest
+          - ts-jest
+          - "@types/jest"
+        update-types:
+          - minor
+          - patch
+
+  # Keep workflow actions current too — same cadence, smaller blast radius.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Etc/UTC
+    target-branch: development
+    open-pull-requests-limit: 4
+    labels:
+      - dependencies
+      - automated
+      - github-actions
+    commit-message:
+      prefix: "chore(ci)"
+      include: scope
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
