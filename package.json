@@ -271,7 +271,20 @@
   "pnpm": {
     "overrides": {
       "@types/react": "19.1.2",
-      "@types/react-dom": "19.1.2"
+      "@types/react-dom": "19.1.2",
+      "@isaacs/brace-expansion": ">=5.0.1",
+      "axios": ">=1.13.5",
+      "defu": ">=6.1.5",
+      "effect": ">=3.20.0",
+      "glob@>=11.0.0 <11.1.0": ">=11.1.0",
+      "minimatch@>=10.0.0 <10.2.3": ">=10.2.3",
+      "minimatch@<3.1.4": ">=3.1.4",
+      "picomatch": ">=4.0.4",
+      "playwright@<1.55.1": ">=1.55.1",
+      "rollup@>=4.0.0 <4.59.0": ">=4.59.0",
+      "serialize-javascript": ">=7.0.3",
+      "socket.io-parser": ">=4.2.6",
+      "valibot@>=0.31.0 <1.2.0": ">=1.2.0"
     }
   }
 }
