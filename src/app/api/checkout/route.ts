@@ -117,17 +117,47 @@ export async function POST(request: Request) {
         );
       }
 
-      // Get product information from Sanity or database
-      // This is simplified for this example
+      // Look up real product prices from the DB. The cart only carries id + quantity;
+      // trusting client-supplied prices would let an attacker self-discount, and
+      // referencing a non-existent productId would trip the order_items_productId_fkey
+      // constraint at insert time.
+      const productIds = items.map(item => item.id);
+      const products = await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, price: true },
+      });
+      const productPriceMap = new Map(products.map(p => [p.id, p.price]));
+
+      const missingProductIds = productIds.filter(id => !productPriceMap.has(id));
+      if (missingProductIds.length > 0) {
+        console.error('[Checkout API] Cart contains stale product IDs', {
+          missingProductIds,
+          email: customerInfo.email,
+          userId: user?.id,
+        });
+        return NextResponse.json(
+          {
+            error: 'Stale cart',
+            message:
+              'Some items in your cart are no longer available. Please refresh the page and remove them from your cart, then try again.',
+            staleProductIds: missingProductIds,
+          },
+          { status: 409 }
+        );
+      }
+
       const orderItems = items.map(item => ({
         productId: item.id,
         variantId: item.variantId,
         quantity: item.quantity,
-        price: 0, // You'd calculate this based on your actual product data
+        price: productPriceMap.get(item.id)!,
       }));
 
-      // Calculate total
-      const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      // Calculate total from the DB prices we just resolved.
+      const total = orderItems.reduce(
+        (sum, item) => sum + Number(item.price) * item.quantity,
+        0
+      );
 
       // Create order in database with connection management and idempotency
       let order;
