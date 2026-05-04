@@ -5,7 +5,8 @@
 **Roadmap link:** [`docs/ROADMAP_2026_Q2_DEFERRED.md`](../ROADMAP_2026_Q2_DEFERRED.md) — Sprint 7.1
 
 **Updates:**
-- 2026-05-03 — `next` 15.5.9 → 15.5.15 (PR forthcoming). Drops 2 highs (`GHSA-h25m-26qc-wcjf`, `GHSA-q4gf-8mx6-v5v3`). Post-bump audit: **24 high, 24 moderate, 4 low — 52 total**.
+- 2026-05-03 — `next` 15.5.9 → 15.5.15 (PR #155). Drops 2 highs (`GHSA-h25m-26qc-wcjf`, `GHSA-q4gf-8mx6-v5v3`). Post-bump audit: **24 high, 24 moderate, 4 low — 52 total**.
+- 2026-05-03 — `@sentry/nextjs` 9.46.0 → 10.51.0 + removed unused `@sentry/tracing@7.x`. Sentry's internal `minimatch` family modernized in v10 (now resolves to 10.2.5, satisfying `>=10.2.3` patched ranges). Drops 6 highs total. Post-bump audit: **18 high, 23 moderate, 4 low — 45 total**. Note: `rollup`, `picomatch`, `serialize-javascript` advisories survive — Sentry's `@sentry/webpack-plugin@5.2.1` and `@rollup/plugin-commonjs@28.0.1` still pin older versions; awaiting upstream patch.
 
 This document is the **starting state** of the production vulnerability backlog as of the date above. The new `.github/workflows/weekly-security-audit.yml` will keep an open issue tagged `security-audit` updated against this baseline. When `pnpm audit --prod` reports zero high/critical, the workflow goes silent and we can retire this doc.
 
