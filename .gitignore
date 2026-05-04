@@ -88,3 +88,6 @@ production-monitoring-*.log
 prod_dump.dump
 prod_*.sql
 .gstack/
+
+# supabase CLI local cache (project-ref, service versions, pooler url)
+supabase/.temp/
