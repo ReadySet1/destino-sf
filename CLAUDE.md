@@ -274,11 +274,18 @@ See `.env.example` and `docs/ENV_TEMPLATE_SQUARE.md` for complete setup.
 
 ### 3. Product Sync Protection
 
-**Catering images must never be overwritten during Square sync.**
+**Image overwrite rules for `determineProductImages()` in `src/lib/square/sync.ts`:**
 
-- Check `syncLocked` field before modifying products
-- Catering products have manually curated images
-- Sync logic in `src/lib/square/catalog-api.ts` respects these protections
+- **Catering (category `CATERING` or `CATERING-*`)**: images are ALWAYS preserved, even when `forceImageUpdate` is set.
+- **`syncLocked === true`**: images are preserved unless the sync call passes `forceImageUpdate: true`.
+- **Default**: Square is the source of truth — images from Square overwrite existing images on every sync.
+- **Edge case**: when Square returns 0 images AND the existing array contains a local `/images/...` asset, the existing array is preserved (so we don't blank out a local asset for nothing).
+
+To override a `syncLocked` product:
+- API: `POST /api/square/sync` with body `{ "options": { "forceImageUpdate": true } }`.
+- CLI: `pnpm square-sync --force-images`.
+
+Never hand-roll "manual image" heuristics based on URL patterns — use the `syncLocked` column.
 
 ### 4. Payment Testing
 

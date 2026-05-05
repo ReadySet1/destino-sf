@@ -85,3 +85,9 @@ production-monitoring-*.log
 
 # gstack local artifacts (retros, checkpoints, etc.)
 .context/
+prod_dump.dump
+prod_*.sql
+.gstack/
+
+# supabase CLI local cache (project-ref, service versions, pooler url)
+supabase/.temp/

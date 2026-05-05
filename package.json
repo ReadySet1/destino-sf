@@ -173,8 +173,7 @@
     "@radix-ui/react-toast": "^1.2.15",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-email/components": "^0.0.38",
-    "@sentry/nextjs": "^9.46.0",
-    "@sentry/tracing": "^7.120.4",
+    "@sentry/nextjs": "^10.51.0",
     "@square/web-sdk": "^2.1.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "latest",
@@ -197,7 +196,7 @@
     "jest-junit": "^16.0.0",
     "jest-watch-typeahead": "^3.0.1",
     "lucide-react": "^0.468.0",
-    "next": "15.5.9",
+    "next": "15.5.15",
     "next-themes": "^0.4.6",
     "p-limit": "^7.1.1",
     "prettier": "^3.6.2",
@@ -272,7 +271,20 @@
   "pnpm": {
     "overrides": {
       "@types/react": "19.1.2",
-      "@types/react-dom": "19.1.2"
+      "@types/react-dom": "19.1.2",
+      "@isaacs/brace-expansion": ">=5.0.1",
+      "axios": ">=1.13.5",
+      "defu": ">=6.1.5",
+      "effect": ">=3.20.0",
+      "glob@>=11.0.0 <11.1.0": ">=11.1.0",
+      "minimatch@>=10.0.0 <10.2.3": ">=10.2.3",
+      "minimatch@<3.1.4": ">=3.1.4",
+      "picomatch": ">=4.0.4",
+      "playwright@<1.55.1": ">=1.55.1",
+      "rollup@>=4.0.0 <4.59.0": ">=4.59.0",
+      "serialize-javascript": ">=7.0.3",
+      "socket.io-parser": ">=4.2.6",
+      "valibot@>=0.31.0 <1.2.0": ">=1.2.0"
     }
   }
 }

@@ -619,6 +619,26 @@ export async function createOrderAndGenerateCheckoutUrl(formData: {
   // Create a map for quick lookup
   const productMap = new Map(productsWithCategories.map(p => [p.id, p]));
 
+  // Guard: every cart productId must exist in the products table, otherwise
+  // prisma.order.create will throw a P2003 FK violation on order_items_productId_fkey.
+  // Most common cause: client cart (Zustand + localStorage) carries IDs for products
+  // that were since removed by a Square sync.
+  const missingProductIds = productIds.filter(id => !productMap.has(id));
+  if (missingProductIds.length > 0) {
+    console.error('[Checkout] Cart contains stale product IDs', {
+      missingProductIds,
+      email: customerInfo.email,
+      userId: supabaseUserId,
+    });
+    return {
+      success: false,
+      error:
+        'Some items in your cart are no longer available. Please refresh the page and remove them from your cart, then try again.',
+      checkoutUrl: null,
+      orderId: null,
+    };
+  }
+
   const orderItemsData = items.map(item => {
     const itemPrice = new Decimal(item.price);
     const itemTotal = itemPrice.times(item.quantity);
@@ -1297,6 +1317,23 @@ export async function createManualPaymentOrder(formData: {
 
   // Create a map for quick lookup
   const productMap = new Map(productsWithCategories.map(p => [p.id, p]));
+
+  // Guard: every cart productId must exist in the products table; see equivalent
+  // guard in createOrderAndGenerateCheckoutUrl.
+  const missingProductIds = productIds.filter(id => !productMap.has(id));
+  if (missingProductIds.length > 0) {
+    console.error('[Checkout] Cart contains stale product IDs (manual payment)', {
+      missingProductIds,
+      email: customerInfo.email,
+    });
+    return {
+      success: false,
+      error:
+        'Some items in your cart are no longer available. Please refresh the page and remove them from your cart, then try again.',
+      checkoutUrl: null,
+      orderId: null,
+    };
+  }
 
   const orderItemsData = items.map(item => {
     const itemPrice = new Decimal(item.price);

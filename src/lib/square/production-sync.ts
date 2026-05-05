@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
 import { squareClient } from './client';
 import CategoryMapper from './category-mapper';
+import { isCateringCategory } from './sync';
 import type { Prisma } from '@prisma/client';
 import type {
   SquareItemAvailability,
@@ -321,6 +322,7 @@ export class ProductionSyncManager {
         name: true,
         updatedAt: true,
         active: true, // Include active state for dev-mode preservation
+        syncLocked: true, // Honor manual sync locks during image decisions
         // Visibility fields to check for manual overrides
         visibility: true,
         isAvailable: true,
@@ -334,11 +336,22 @@ export class ProductionSyncManager {
       },
     });
 
+    // Resolve the local category name early so processProductImages can apply
+    // the catering-protection rule before fetching/validating Square images.
+    const squareCategoryId =
+      squareProduct.item_data.category_id || squareProduct.item_data.categories?.[0]?.id;
+    const categoryName = squareCategoryId
+      ? CategoryMapper.getLegacyLocalCategory(squareCategoryId) ||
+        CategoryMapper.getLocalCategory(squareCategoryId) ||
+        undefined
+      : undefined;
+
     // Process images
     const imageResult = await this.processProductImages(
       squareProduct,
       relatedObjects,
-      existingProduct
+      existingProduct,
+      { categoryName }
     );
 
     // Determine category
@@ -467,12 +480,25 @@ export class ProductionSyncManager {
   }
 
   /**
-   * Process product images with validation and fallbacks
+   * Process product images with validation and fallbacks.
+   *
+   * Image-decision contract (mirrors determineProductImages in sync.ts):
+   *   1. New product → Square images win.
+   *   2. Catering category → existing images always preserved (CLAUDE.md rule #3).
+   *   3. syncLocked && !forceImageUpdate → existing images preserved.
+   *   4. Square has 0 images and existing has any images → preserve existing
+   *      (runtime safety net — avoids blanking on transient Square issues).
+   *   5. Otherwise → Square is source of truth and overwrites.
    */
   private async processProductImages(
     product: SquareCatalogObject,
     relatedObjects: SquareCatalogObject[],
-    existingProduct?: { images: string[]; name: string } | null
+    existingProduct?: {
+      images: string[];
+      name: string;
+      syncLocked?: boolean;
+    } | null,
+    imageOptions: { categoryName?: string } = {}
   ): Promise<{
     validUrls: string[];
     totalProcessed: number;
@@ -482,11 +508,38 @@ export class ProductionSyncManager {
     const validUrls: string[] = [];
     let totalProcessed = 0;
     let failed = 0;
+    const productName = product.item_data?.name ?? '<unknown>';
+    const { categoryName } = imageOptions;
+    const forceImageUpdate = this.options.forceImageUpdate;
 
-    // If no image IDs from Square, keep existing images if they exist
+    // Rule 2: catering categories are always preserved, even with forceImageUpdate.
+    if (existingProduct && categoryName && isCateringCategory(categoryName)) {
+      logger.info(
+        `📸 Preserving images for ${productName} — catering category "${categoryName}" is always protected`
+      );
+      return {
+        validUrls: existingProduct.images,
+        totalProcessed: existingProduct.images.length,
+        failed: 0,
+      };
+    }
+
+    // Rule 3: syncLocked products are preserved unless forceImageUpdate is set.
+    if (existingProduct?.syncLocked && !forceImageUpdate) {
+      logger.info(
+        `📸 Preserving images for ${productName} — syncLocked=true (pass forceImageUpdate to override)`
+      );
+      return {
+        validUrls: existingProduct.images,
+        totalProcessed: existingProduct.images.length,
+        failed: 0,
+      };
+    }
+
+    // Rule 4: Square has 0 images → keep existing as a safety net.
     if (imageIds.length === 0) {
       if (existingProduct && existingProduct.images.length > 0) {
-        logger.debug(`📸 No Square images, keeping existing images for ${product.item_data?.name}`);
+        logger.debug(`📸 No Square images, keeping existing images for ${productName}`);
         return {
           validUrls: existingProduct.images,
           totalProcessed: existingProduct.images.length,

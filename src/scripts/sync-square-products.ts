@@ -19,8 +19,13 @@ config({ path: resolve(process.cwd(), '.env') });
 import { syncSquareProducts } from '../lib/square/sync';
 
 async function main() {
+  const forceImageUpdate = process.argv.includes('--force-images');
+
   console.log('🚀 Starting Square Products Sync...');
   console.log('====================================');
+  if (forceImageUpdate) {
+    console.log('⚠️  --force-images: will overwrite images on syncLocked products');
+  }
 
   // Verify environment variables are loaded
   console.log('🔍 Environment Check:');
@@ -34,7 +39,7 @@ async function main() {
   console.log('');
 
   try {
-    const result = await syncSquareProducts();
+    const result = await syncSquareProducts({ forceImageUpdate });
 
     console.log('✅ Sync completed successfully!');
     console.log('📊 Results:');
