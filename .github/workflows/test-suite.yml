@@ -41,7 +41,7 @@ jobs:
         run: echo "key=pnpm-${{ hashFiles('pnpm-lock.yaml') }}" >> $GITHUB_OUTPUT
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.pnpm-store
           key: ${{ steps.cache-key.outputs.key }}
@@ -70,7 +70,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Restore dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.pnpm-store
           key: ${{ needs.setup.outputs.cache-key }}
@@ -104,7 +104,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Restore dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.pnpm-store
           key: ${{ needs.setup.outputs.cache-key }}
@@ -181,7 +181,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Restore dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.pnpm-store
           key: ${{ needs.setup.outputs.cache-key }}
@@ -238,7 +238,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Restore dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.pnpm-store
           key: ${{ needs.setup.outputs.cache-key }}
@@ -459,7 +459,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Restore dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.pnpm-store
           key: ${{ needs.setup.outputs.cache-key }}
