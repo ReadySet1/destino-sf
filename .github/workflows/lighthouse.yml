@@ -208,14 +208,14 @@ jobs:
     if: always()
     steps:
       - name: Download Desktop Report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: lighthouse-desktop-report
           path: desktop-report
         continue-on-error: true
 
       - name: Download Mobile Report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: lighthouse-mobile-report
           path: mobile-report
