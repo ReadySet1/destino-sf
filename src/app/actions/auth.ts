@@ -211,8 +211,10 @@ export const signInAction = async (formData: FormData) => {
     try {
       profile = await withRetry(
         async () => {
-          return await prisma.profile.create({
-            data: {
+          return await prisma.profile.upsert({
+            where: { id: user.id },
+            update: {},
+            create: {
               id: user.id,
               email: user.email || email,
               name: authName || null,
@@ -224,7 +226,7 @@ export const signInAction = async (formData: FormData) => {
           });
         },
         3,
-        'signInAction_createProfile'
+        'signInAction_upsertProfile'
       );
     } catch (createError) {
       console.error(`Failed to create profile for user ${user.id} during sign-in:`, createError);
