@@ -56,48 +56,21 @@ async function syncExistingUsers() {
       try {
         console.log(`🔄 Creating profile for user: ${user.email} (${user.id})`);
 
-        // Use the database function to create profile
-        const profileResult = await prisma.$queryRaw`
-          SELECT public.ensure_user_profile(
-            ${user.id}::uuid, 
-            ${user.email || 'unknown@example.com'}::text, 
-            'CUSTOMER'::text
-          ) as result
-        `;
+        await prisma.profile.create({
+          data: {
+            id: user.id,
+            email: user.email || 'unknown@example.com',
+            role: 'CUSTOMER',
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        });
 
-        const result = (profileResult as any)[0]?.result;
-
-        if (result?.action === 'error') {
-          throw new Error(result.error);
-        }
-
-        if (result?.action === 'profile_created' || result?.action === 'profile_exists') {
-          console.log(`✅ Profile created/ensured for user: ${user.email}`);
-          successCount++;
-        } else {
-          throw new Error('Unexpected result from database function');
-        }
+        console.log(`✅ Profile created for user: ${user.email}`);
+        successCount++;
       } catch (error) {
         console.error(`❌ Failed to create profile for user ${user.email}:`, error);
         errorCount++;
-
-        // Try fallback method
-        try {
-          await prisma.profile.create({
-            data: {
-              id: user.id,
-              email: user.email || 'unknown@example.com',
-              role: 'CUSTOMER',
-              created_at: new Date(),
-              updated_at: new Date(),
-            },
-          });
-          console.log(`✅ Profile created using fallback for user: ${user.email}`);
-          successCount++;
-          errorCount--; // Adjust counts since fallback succeeded
-        } catch (fallbackError) {
-          console.error(`❌ Fallback also failed for user ${user.email}:`, fallbackError);
-        }
       }
     }
 
