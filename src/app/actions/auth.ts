@@ -92,46 +92,30 @@ export const signUpAction = async (formData: FormData) => {
       );
       console.log(`Linked existing profile for ${email} to Supabase user ${userId}`);
     } else {
-      // Use the new database function to ensure profile creation
-      const profileResult = await withRetry(
+      await withRetry(
         async () => {
-          return await prisma.$queryRaw`
-          SELECT public.ensure_user_profile(
-            ${userId}::uuid, 
-            ${email}::text, 
-            'CUSTOMER'::text
-          ) as result
-        `;
+          return await prisma.profile.upsert({
+            where: { id: userId },
+            create: {
+              id: userId,
+              email,
+              name: name || null,
+              phone: phone || null,
+              role: UserRole.CUSTOMER,
+              updated_at: new Date(),
+            },
+            update: {
+              name: name || undefined,
+              phone: phone || undefined,
+              updated_at: new Date(),
+            },
+          });
         },
         3,
-        'signUpAction_ensureProfile'
+        'signUpAction_upsertProfile'
       );
 
-      const result = (profileResult as any)[0]?.result;
-
-      if (result?.action === 'error') {
-        throw new Error(`Profile creation failed: ${result.error}`);
-      }
-
-      // Update profile with additional information if creation was successful
-      if (result?.action === 'profile_created' || result?.action === 'profile_exists') {
-        await withRetry(
-          async () => {
-            return await prisma.profile.update({
-              where: { id: userId },
-              data: {
-                name: name || null,
-                phone: phone,
-                updated_at: new Date(),
-              },
-            });
-          },
-          3,
-          'signUpAction_updateProfile'
-        );
-      }
-
-      console.log(`Profile ensured for ${email} using database function`);
+      console.log(`Profile upserted for ${email}`);
     }
   } catch (profileError: any) {
     const isConnectionError =
@@ -146,10 +130,8 @@ export const signUpAction = async (formData: FormData) => {
       { code: profileError.code, message: profileError.message }
     );
 
-    // If it's a unique constraint error on email, try to handle it
     if (profileError.code === 'P2002' && profileError.meta?.target?.includes('email')) {
       try {
-        // Try to update the existing profile with the new user ID
         await prisma.profile.update({
           where: { email },
           data: {
@@ -157,37 +139,15 @@ export const signUpAction = async (formData: FormData) => {
             updated_at: new Date(),
           },
         });
-        console.log(`Updated existing profile for ${email} with new user ID`);
+        console.log(`Linked existing profile for ${email} with new user ID`);
       } catch (updateError) {
-        console.error('Failed to update existing profile:', updateError);
+        console.error('Failed to link existing profile:', updateError);
         return { error: `Account created, but profile linking failed. Please contact support.` };
       }
     } else {
-      // Fallback: try to create profile directly
-      try {
-        await withRetry(
-          async () => {
-            return await prisma.profile.create({
-              data: {
-                id: userId,
-                email: email,
-                name: name || null,
-                phone: phone,
-                role: UserRole.CUSTOMER,
-                updated_at: new Date(),
-              },
-            });
-          },
-          3,
-          'signUpAction_createProfileFallback'
-        );
-        console.log(`Created profile for ${email} using fallback method`);
-      } catch (fallbackError) {
-        console.error('Fallback profile creation also failed:', fallbackError);
-        return {
-          error: `Account created, but profile setup failed: ${profileError.message}. Please contact support.`,
-        };
-      }
+      return {
+        error: `Account created, but profile setup failed: ${profileError.message}. Please contact support.`,
+      };
     }
   }
 
@@ -242,91 +202,36 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect('error', '/sign-in', 'Database error retrieving user profile.');
   }
 
-  // Handle profile not found case (outside the try...catch)
   if (!profile) {
-    // Log the specific error for tracking
-    console.error(`Sign-in error: Profile not found for user ${user.id}`);
+    console.error(`Sign-in: Profile not found for user ${user.id}, creating one`);
+
+    const authName = user.user_metadata?.name as string | undefined;
+    const authPhone = user.user_metadata?.phone as string | undefined;
 
     try {
-      // Use the new database function to ensure profile creation with robust connection management
-      const profileResult = await withRetry(
+      profile = await withRetry(
         async () => {
-          return await prisma.$queryRaw`
-          SELECT public.ensure_user_profile(
-            ${user.id}::uuid, 
-            ${user.email || email}::text, 
-            'CUSTOMER'::text
-          ) as result
-        `;
+          return await prisma.profile.create({
+            data: {
+              id: user.id,
+              email: user.email || email,
+              name: authName || null,
+              phone: authPhone || null,
+              role: UserRole.CUSTOMER,
+              updated_at: new Date(),
+            },
+            select: { role: true },
+          });
         },
         3,
-        'signInAction_ensureProfile'
+        'signInAction_createProfile'
       );
-
-      const result = (profileResult as any)[0]?.result;
-
-      if (result?.action === 'error') {
-        throw new Error(`Profile creation failed: ${result.error}`);
-      }
-
-      // Fetch the newly created profile
-      if (result?.action === 'profile_created' || result?.action === 'profile_exists') {
-        profile = await withRetry(
-          async () => {
-            return await prisma.profile.findUnique({
-              where: { id: user.id },
-              select: { role: true },
-            });
-          },
-          3,
-          'signInAction_findNewProfile'
-        );
-      }
-
-      // If still no profile, try fallback method
-      if (!profile) {
-        // Auto-create a basic profile for the user with default role
-        const authName = user.user_metadata?.name as string | undefined;
-        const authPhone = user.user_metadata?.phone as string | undefined;
-
-        profile = await withRetry(
-          async () => {
-            return await prisma.profile.create({
-              data: {
-                id: user.id,
-                email: user.email || email,
-                name: authName || null,
-                phone: authPhone || null,
-                role: UserRole.CUSTOMER,
-                updated_at: new Date(),
-              },
-              select: { role: true },
-            });
-          },
-          3,
-          'signInAction_createProfile'
-        );
-
-        console.log(`Created new profile for user ${user.id} during sign-in using fallback`);
-      } else {
-        console.log(`Profile ensured for user ${user.id} using database function`);
-      }
     } catch (createError) {
       console.error(`Failed to create profile for user ${user.id} during sign-in:`, createError);
-      // If profile creation fails, inform the user with a clear error message
       return encodedRedirect(
         'error',
         '/sign-in',
         'User profile could not be created. Please contact support.'
-      );
-    }
-
-    // Double-check that profile was created successfully
-    if (!profile) {
-      return encodedRedirect(
-        'error',
-        '/sign-in',
-        'Unable to create user profile. Please contact support.'
       );
     }
   }

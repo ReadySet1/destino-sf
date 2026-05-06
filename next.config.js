@@ -30,6 +30,10 @@ const nextConfig = {
   // Configure external packages for Prisma compatibility with Next.js 15.3.2
   serverExternalPackages: ['@prisma/client', 'prisma'],
 
+  // Transpile ESM packages so Next handles CJS↔ESM interop in serverless bundles.
+  // Fixes ERR_REQUIRE_ESM from html-encoding-sniffer@4 pulled in via dompurify.
+  transpilePackages: ['isomorphic-dompurify', 'dompurify'],
+
   // Optimize output
   output: 'standalone',
   // Experimental features
