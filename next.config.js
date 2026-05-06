@@ -31,16 +31,14 @@ const nextConfig = {
   serverExternalPackages: ['@prisma/client', 'prisma'],
 
   // Transpile ESM packages so Next handles CJS↔ESM interop in serverless bundles.
-  // Covers the full dompurify → jsdom → html-encoding-sniffer → @exodus/bytes
-  // chain. isomorphic-dompurify@3 pulls in @exodus/bytes (ESM-only), which
-  // html-encoding-sniffer require()s — every package in the chain that does a
-  // raw require() against an ESM target needs to go through Next's compiler.
+  // isomorphic-dompurify@3 pulls in @exodus/bytes (ESM-only); html-encoding-sniffer
+  // does require('@exodus/bytes/encoding-lite') from CJS, which fails at runtime.
+  // Transpiling the package that contains the offending require() (and the ESM
+  // target itself) is enough — adding jsdom blows out the CI build memory.
   transpilePackages: [
     'isomorphic-dompurify',
     'dompurify',
-    'jsdom',
     'html-encoding-sniffer',
-    'whatwg-encoding',
     '@exodus/bytes',
   ],
 
