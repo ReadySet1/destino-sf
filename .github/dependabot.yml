@@ -71,6 +71,11 @@ updates:
       - dependency-name: framer-motion
         update-types:
           - version-update:semver-major
+      # Pinned to exact 2.26.0 in package.json. 2.27.0+ migrated to jsdom@28,
+      # which require()s @exodus/bytes (ESM-only) and crashes the serverless
+      # lambda with ERR_REQUIRE_ESM. Block all updates until upstream
+      # resolves the CJS-requires-ESM chain (jsdom issue tracker).
+      - dependency-name: isomorphic-dompurify
     groups:
       radix-ui:
         patterns:
