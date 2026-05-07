@@ -30,18 +30,6 @@ const nextConfig = {
   // Configure external packages for Prisma compatibility with Next.js 15.3.2
   serverExternalPackages: ['@prisma/client', 'prisma'],
 
-  // Transpile ESM packages so Next handles CJS↔ESM interop in serverless bundles.
-  // isomorphic-dompurify@3 pulls in @exodus/bytes (ESM-only); html-encoding-sniffer
-  // does require('@exodus/bytes/encoding-lite') from CJS, which fails at runtime.
-  // Transpiling the package that contains the offending require() (and the ESM
-  // target itself) is enough — adding jsdom blows out the CI build memory.
-  transpilePackages: [
-    'isomorphic-dompurify',
-    'dompurify',
-    'html-encoding-sniffer',
-    '@exodus/bytes',
-  ],
-
   // Optimize output
   output: 'standalone',
   // Experimental features
