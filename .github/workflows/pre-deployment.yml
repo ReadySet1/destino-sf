@@ -208,14 +208,14 @@ jobs:
 
       - name: Upload Deployment Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deployment-report
           path: deployment-report.md
           retention-days: 30
 
       - name: Upload test failure logs and debugging artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: pre-deployment-failure-logs
@@ -365,7 +365,7 @@ jobs:
 
       - name: Upload E2E test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-results
           path: |
