@@ -95,7 +95,8 @@ function buildOptimizedPoolerUrl(baseUrl: string): string {
 
       // Optimized timeouts for webhook processing and Vercel cold starts
       if (isProduction) {
-        url.searchParams.set('pool_timeout', '300'); // 5 minutes for high load
+        // Fast-fail on pool exhaustion so withRetry can recover instead of stalling 5 min.
+        url.searchParams.set('pool_timeout', '15');
         url.searchParams.set('connection_timeout', String(CONNECTION_TIMEOUT_SECONDS)); // Configurable for cold starts
         url.searchParams.set('statement_timeout', '60000'); // 60 seconds for queries
         url.searchParams.set('idle_in_transaction_session_timeout', '60000');
@@ -103,23 +104,25 @@ function buildOptimizedPoolerUrl(baseUrl: string): string {
 
         if (process.env.DB_DEBUG === 'true') {
           console.log(
-            '🚀 Production Supabase pooler: 300s pool timeout, 60s statement timeout, 120s socket timeout'
+            '🚀 Production Supabase pooler: 15s pool timeout, 60s statement timeout, 120s socket timeout'
           );
         }
       } else {
-        url.searchParams.set('pool_timeout', '120');
+        url.searchParams.set('pool_timeout', '15');
         url.searchParams.set('connection_timeout', '15');
         url.searchParams.set('statement_timeout', '60000');
         url.searchParams.set('idle_in_transaction_session_timeout', '60000');
         url.searchParams.set('socket_timeout', '60');
 
         if (process.env.DB_DEBUG === 'true') {
-          console.log('🔧 Development Supabase pooler: 120s pool timeout, 60s statement timeout');
+          console.log('🔧 Development Supabase pooler: 15s pool timeout, 60s statement timeout');
         }
       }
 
-      // Limit connections per serverless instance to avoid exhausting the Supabase pool
-      url.searchParams.set('connection_limit', '5');
+      // Per-instance connection cap. Raised from 5 to 10: 5 was too tight for an
+      // RSC tree that fans out under Suspense plus concurrent requests on the
+      // same lambda. Stays well under Supabase's per-pooler ceiling.
+      url.searchParams.set('connection_limit', '10');
     } else {
       // Non-Supabase database configuration
       if (isProduction) {
@@ -628,19 +631,21 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
       const isRetryableError = isConnectionError(error as Error);
 
       if (isRetryableError && attempt < maxRetries) {
+        const poolFull = isPoolFullError(error as Error);
         console.warn(`Connection attempt ${attempt}/${maxRetries} failed, retrying...`);
 
         try {
-          // Force client reinitialization on connection errors
-          if (prismaClient) {
-            await prismaClient.$disconnect();
+          // Pool-full retries reuse the existing client; only engine-level
+          // failures justify tearing it down.
+          if (!poolFull) {
+            if (prismaClient) {
+              await prismaClient.$disconnect();
+            }
+            prismaClient = null;
+            globalForPrisma.prisma = undefined;
+            initPromise = null;
           }
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-
-          // Reset client to force reinitialization
-          prismaClient = null;
-          globalForPrisma.prisma = undefined;
-          initPromise = null;
         } catch (reconnectError) {
           console.warn(
             `Reconnection attempt ${attempt} failed:`,
@@ -764,6 +769,22 @@ function isSocketTimeoutError(error: Error): boolean {
 }
 
 /**
+ * Pool-full errors are retryable, but the underlying client is healthy.
+ * Tearing it down on every retry kicks other in-flight queries off the pool
+ * and creates a reconnection storm — exactly the wrong response.
+ *
+ * Exported for testing.
+ */
+export function isPoolFullError(error: Error): boolean {
+  if ((error as any).code === 'P2024') return true;
+  const msg = error.message;
+  return (
+    msg.includes('Timed out fetching a new connection') ||
+    msg.includes('Connection pool timeout')
+  );
+}
+
+/**
  * Check if error is connection-related (including transient pooler errors)
  */
 function isConnectionError(error: Error): boolean {
@@ -856,27 +877,33 @@ export async function withRetry<T>(
       consecutiveFailures++;
 
       if (isConnectionError(lastError) && attempt < maxRetries) {
+        const poolFull = isPoolFullError(lastError);
+
         // Log connection errors with structured data
         console.warn('[DB_OPERATION_RETRY]', {
           operation: operationName,
           attempt,
           maxRetries,
           consecutiveFailures,
+          poolFull,
           error: lastError.message.substring(0, 100),
           errorCode: (lastError as any).code,
         });
 
-        // For connection errors, force client reinitialization
-        try {
-          if (prismaClient) {
-            await prismaClient.$disconnect();
-          }
-          prismaClient = null;
-          globalForPrisma.prisma = undefined;
-          initPromise = null;
-        } catch (cleanupError) {
-          if (process.env.DB_DEBUG === 'true') {
-            console.warn('Error during client cleanup:', cleanupError);
+        // Pool-full means the client is healthy — just back off and retry.
+        // Other connection errors (engine dead, ECONNRESET, etc.) need a fresh client.
+        if (!poolFull) {
+          try {
+            if (prismaClient) {
+              await prismaClient.$disconnect();
+            }
+            prismaClient = null;
+            globalForPrisma.prisma = undefined;
+            initPromise = null;
+          } catch (cleanupError) {
+            if (process.env.DB_DEBUG === 'true') {
+              console.warn('Error during client cleanup:', cleanupError);
+            }
           }
         }
 
