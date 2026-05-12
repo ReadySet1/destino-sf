@@ -265,7 +265,7 @@
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
-    "typescript": "5.7.2",
+    "typescript": "5.9.3",
     "whatwg-url": "^14.2.0"
   },
   "pnpm": {
