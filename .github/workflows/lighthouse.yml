@@ -14,7 +14,6 @@ permissions:
 
 env:
   NODE_VERSION: '20.x'
-  PNPM_VERSION: '10.11.1'
 
 jobs:
   # Desktop Lighthouse Tests
@@ -31,9 +30,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v6
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -127,9 +124,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v6
 
       - name: Get pnpm store directory
         id: pnpm-cache

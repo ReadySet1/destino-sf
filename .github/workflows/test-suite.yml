@@ -13,7 +13,6 @@ permissions:
 
 env:
   NODE_VERSION: '20.x'
-  PNPM_VERSION: '10.11.1'
 
 jobs:
   # Job 1: Setup and cache dependencies
@@ -32,9 +31,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v6
 
       - name: Generate cache key
         id: cache-key
@@ -65,9 +62,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v6
 
       - name: Restore dependencies
         uses: actions/cache@v5
@@ -99,9 +94,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v6
 
       - name: Restore dependencies
         uses: actions/cache@v5
@@ -176,9 +169,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v6
 
       - name: Restore dependencies
         uses: actions/cache@v5
@@ -233,9 +224,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v6
 
       - name: Restore dependencies
         uses: actions/cache@v5
@@ -454,9 +443,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v6
 
       - name: Restore dependencies
         uses: actions/cache@v5
