@@ -87,7 +87,6 @@ jobs:
 
       - name: Run Lighthouse CI (Desktop)
         run: pnpm test:performance:lighthouse
-        continue-on-error: true
         id: lighthouse-desktop
 
       - name: Upload Lighthouse Desktop Report
@@ -181,7 +180,6 @@ jobs:
 
       - name: Run Lighthouse CI (Mobile)
         run: pnpm test:performance:lighthouse:mobile
-        continue-on-error: true
         id: lighthouse-mobile
 
       - name: Upload Lighthouse Mobile Report
