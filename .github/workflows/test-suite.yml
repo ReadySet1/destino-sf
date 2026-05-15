@@ -152,7 +152,12 @@ jobs:
           echo "Listing src/components/store directory:"
           ls -la src/components/store/
           echo "Building application..."
-          pnpm build
+          mkdir -p .next
+          set -o pipefail
+          pnpm build 2>&1 | tee .next/build-output.log
+
+      - name: Check bundle size against baseline
+        run: pnpm tsx scripts/check-bundle-size.ts
 
   # Job 4: Security scan
   security:
