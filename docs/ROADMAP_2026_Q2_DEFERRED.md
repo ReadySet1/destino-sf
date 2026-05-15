@@ -1,29 +1,37 @@
 # Destino SF — Q2 2026 Deferred Items + Master Maintenance Audit Plan
 
 **Created:** 2026-04-03
-**Last reviewed:** 2026-05-03
+**Last reviewed:** 2026-05-15
 **Based on:** [Q2 2026 Roadmap](./ROADMAP_2026_Q2.md) (deferred items)
 **Goal:** Complete all deferred items from the Q2 audit and establish a recurring maintenance framework.
 **Timeline:** ~12 weeks (6 sprints of 1-2 weeks each)
 
 ---
 
-## Status Snapshot (2026-04-20)
+## Status Snapshot (2026-05-15)
 
 | Area | State | Notes |
 |------|-------|-------|
 | Sprint 1 — Quick Wins | ✅ Complete | ISR, Redis cache, `any` cleanup, bundle baseline all shipped. |
 | Sprint 2 — Performance | ✅ Complete | FeaturedProducts + Account page Server Components shipped. |
 | Sprint 3 — Testing Fixes | 🟡 Partial | `shippingUtils.test.ts` fixed; admin CRUD partial (4 of 5 routes, missing `sync-conflicts/rollback`); auth flow tests still skipped. |
-| Sprint 4 — Test Expansion | 🔴 Not started | E2E specs 17/18 not created; `collectCoverage` still `false`; `todo-triage.md` missing. |
-| Sprint 5 — Observability | 🟡 Partial | **Weekly DB backup shipped (PR #148)** — new. Prisma slow-query logging + `check-bundle-size.ts` still pending. |
-| Sprint 6 — Finalization | 🔴 Not started | No Lighthouse thresholds, no `MAINTENANCE_AUDIT_PLAN.md`. |
-| Sprint 7 — Security & Dep Hygiene | 🟡 In progress | **Newly added 2026-04-20.** 7.1 weekly audit workflow + baseline doc + `next` bump shipped 2026-05-03 (24 highs remaining, all transitive). 7.2 Dependabot config shipped 2026-05-03. 7.3-7.4 partial. |
+| Sprint 4 — Test Expansion | 🟡 Partial | `collectCoverage` flipped to `process.env.CI === 'true'` (PR #194, 2026-05-15) — coverage collected in CI, soft gate for 2 weeks. E2E specs 17/18 not created; `todo-triage.md` missing. |
+| Sprint 5 — Observability | 🟡 In progress | Weekly DB backup shipped (PR #148). **Prisma slow-query logging in flight (PR #195, 2026-05-15)** — `query` event routes >500ms to Sentry via `captureMessage`. **Bundle-size budget in flight (PR #196, 2026-05-15)** — `scripts/check-bundle-size.ts` warn 10% / block 20%. |
+| Sprint 6 — Finalization | 🟡 In progress | **Lighthouse best-practices flipped to error (PR #197, 2026-05-15)** for both desktop + mobile; performance and accessibility stay `warn` pending /cart a11y fix. `MAINTENANCE_AUDIT_PLAN.md` still pending. |
+| Sprint 7 — Security & Dep Hygiene | 🟡 In progress | 7.1 weekly audit workflow + baseline + `next` bump shipped 2026-05-03; Sentry v10 + isomorphic-dompurify pin + 18-CVE webpack overrides + many Dependabot bumps merged through 2026-05-13. Production-only `pnpm audit`: 9 high / 12 moderate / 0 critical (was 26 high / 57 total on 2026-04-26). 7.2 Dependabot config shipped 2026-05-03. 7.3-7.4 partial. |
 
-**Next quick wins (≤2h each):**
-1. Flip `collectCoverage` to `process.env.CI === 'true'` (Sprint 4.2)
-2. Create `scripts/check-bundle-size.ts` with 10%/20% thresholds (Sprint 5.2)
-3. Add Prisma `query`-event slow-query logging → Sentry (Sprint 5.1)
+**Recent wins (2026-05-15 — all PRs to development):**
+1. PR #194 — `chore(test): auto-collect coverage in CI` (Sprint 4.2 step 1)
+2. PR #195 — `feat(db): route Prisma slow queries (>500ms) to Sentry` (Sprint 5.1)
+3. PR #196 — `feat(ci): bundle-size budget against docs/bundle-baseline.json` (Sprint 5.2)
+4. PR #197 — `chore(lighthouse): error on best-practices regressions` (Sprint 6.1 step 1)
+
+**Next follow-ups (after #194-197 merge + 2 weeks of baseline data):**
+1. Unskip 44 `describe.skip`/`test.skip` blocks across `src/__tests__/` (Sprint 3.3 + 4.1).
+2. Remove `continue-on-error: true` from coverage step at `.github/workflows/test-suite.yml:327` (Sprint 4.2 step 2).
+3. Fix `/cart` accessibility from 0.89 → 0.90+; then flip `categories:accessibility` to `error` (Sprint 6.1 step 2).
+4. After 2 weeks of green Lighthouse runs, flip `categories:performance` to `error` (Sprint 6.1 step 3).
+5. Author `MAINTENANCE_AUDIT_PLAN.md` (Sprint 6.2).
 
 ---
 
