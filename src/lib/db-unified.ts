@@ -1,6 +1,12 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import * as Sentry from '@sentry/nextjs';
 import { dbCircuitBreaker, getCircuitBreakerStatus } from './db-circuit-breaker';
 import { dbPoolMetrics } from './db-pool-metrics';
+import { performanceMonitor } from './monitoring/performance';
+
+// Sprint 5.1: queries slower than this are reported to Sentry as warnings.
+// Local in-memory tracking via performanceMonitor uses its own (lower) threshold.
+const SLOW_QUERY_THRESHOLD_MS = 500;
 
 /**
  * Unified database client that consolidates all database connection logic
@@ -177,12 +183,11 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
   const databaseUrl = getBestDatabaseUrl();
 
   const client = new PrismaClient({
-    log: isProduction
-      ? ['error']
-      : [
-          { emit: 'event', level: 'error' },
-          { emit: 'event', level: 'warn' },
-        ],
+    log: [
+      { emit: 'event', level: 'query' },
+      { emit: 'event', level: 'error' },
+      { emit: 'event', level: 'warn' },
+    ],
     errorFormat: 'minimal',
     datasources: {
       db: { url: databaseUrl },
@@ -199,6 +204,33 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
       });
     });
   }
+
+  // Sprint 5.1: route slow queries to Sentry. Bypasses the production
+  // breadcrumb filter (sentry.server.config.ts) by using captureMessage —
+  // slow queries are exceptional events, not routine breadcrumbs.
+  client.$on('query' as never, (event: Prisma.QueryEvent) => {
+    void performanceMonitor
+      .trackDatabaseQuery(event.query, event.duration, event.params ? [event.params] : undefined)
+      .catch(() => {
+        /* tracking is best-effort; never block a query path */
+      });
+
+    if (event.duration < SLOW_QUERY_THRESHOLD_MS) return;
+
+    Sentry.captureMessage('Slow database query', {
+      level: 'warning',
+      tags: {
+        slow_query: 'true',
+        duration_ms: String(event.duration),
+      },
+      extra: {
+        query: event.query,
+        params: event.params,
+        target: event.target,
+        timestamp: event.timestamp?.toISOString?.() ?? new Date().toISOString(),
+      },
+    });
+  });
 
   // CRITICAL: Explicitly connect the client to start the engine with enhanced timeout handling
   try {
