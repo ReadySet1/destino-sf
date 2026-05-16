@@ -12,7 +12,6 @@
       ],
       "numberOfRuns": 3,
       "settings": {
-        "preset": "mobile",
         "chromeFlags": ["--no-sandbox", "--disable-gpu", "--headless"],
         "throttling": {
           "rttMs": 150,
