@@ -152,9 +152,10 @@ jobs:
           echo "Listing src/components/store directory:"
           ls -la src/components/store/
           echo "Building application..."
-          mkdir -p .next
+          # Log path lives outside .next/ — Next wipes that dir early in
+          # the build and orphans the tee file handle.
           set -o pipefail
-          pnpm build 2>&1 | tee .next/build-output.log
+          pnpm build 2>&1 | tee bundle-output.log
 
       - name: Check bundle size against baseline
         run: pnpm tsx scripts/check-bundle-size.ts
