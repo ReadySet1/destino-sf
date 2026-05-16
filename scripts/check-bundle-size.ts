@@ -7,11 +7,15 @@
  * - Blocks at >=20% growth (exit 1).
  *
  * Usage:
- *   pnpm build 2>&1 | tee .next/build-output.log
+ *   pnpm build 2>&1 | tee bundle-output.log
  *   pnpm tsx scripts/check-bundle-size.ts
  *
  *   pnpm tsx scripts/check-bundle-size.ts --log path/to/build.log
  *   pnpm tsx scripts/check-bundle-size.ts --update-baseline
+ *
+ * Note: do NOT write the build log under .next/ — Next.js wipes that
+ * directory early in the build, orphaning the tee file handle and
+ * leaving no file on disk by the time this script runs.
  *
  * Sprint 5.2 in docs/ROADMAP_2026_Q2_DEFERRED.md.
  */
@@ -22,7 +26,7 @@ import path from 'node:path';
 const WARN_THRESHOLD = 0.1;
 const BLOCK_THRESHOLD = 0.2;
 const BASELINE_PATH = 'docs/bundle-baseline.json';
-const DEFAULT_LOG_PATH = '.next/build-output.log';
+const DEFAULT_LOG_PATH = 'bundle-output.log';
 
 interface BaselineRoute {
   size?: string;
