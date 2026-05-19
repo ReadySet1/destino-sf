@@ -106,6 +106,19 @@ export default function Footer() {
                         Refund Policy
                       </Link>
                     </li>
+                    <li>
+                      <Link
+                        href="/changelog"
+                        className="text-base text-gray-700 hover:text-gray-900"
+                      >
+                        What&rsquo;s new
+                        {process.env.NEXT_PUBLIC_APP_VERSION && (
+                          <span className="ml-2 text-xs text-gray-600">
+                            v{process.env.NEXT_PUBLIC_APP_VERSION}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
                   </ul>
                 </div>
               </div>

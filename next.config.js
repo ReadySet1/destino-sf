@@ -1,4 +1,11 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+// Read package.json#version once at build time so it can be surfaced to the client.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8'));
 
 // Bundle analyzer — only loaded when ANALYZE=true (dev dependency)
 const analyzeBundles =
@@ -8,6 +15,9 @@ const analyzeBundles =
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: pkg.version ?? '0.0.0',
+  },
   compiler: {
     styledComponents: true,
   },
