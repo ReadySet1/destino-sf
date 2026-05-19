@@ -147,23 +147,27 @@ jobs:
         run: pnpm format --check
 
       # ✅ Checklist Item 2: Unit Tests
+      # NOTE: --coverage=false skips coverage instrumentation for this slice — the
+      # dedicated "Coverage Requirements" step below enforces thresholds on the full
+      # suite. Without this, jest.config.ts's `collectCoverage: process.env.CI === 'true'`
+      # (PR #194) would trigger threshold checks against a <1% slice and fail.
       - name: ✅ Unit Tests - Run All
-        run: pnpm test:unit
+        run: pnpm test:unit -- --coverage=false
 
       # ✅ Checklist Item 3: Critical Path Tests
       # NOTE: Temporarily excluding concurrency tests due to CI database connection issues
       # These tests pass locally but have timing issues with test DB setup in CI
       # TODO: Fix concurrency test database initialization in CI environment
       - name: ✅ Critical Path Tests - Payment & Orders
-        run: pnpm exec jest --selectProjects node integration --testPathPattern='(checkout|orders|square|integration)' --testPathIgnorePatterns='concurrency' --no-cache --runInBand --passWithNoTests
+        run: pnpm exec jest --selectProjects node integration --testPathPattern='(checkout|orders|square|integration)' --testPathIgnorePatterns='concurrency' --no-cache --runInBand --passWithNoTests --coverage=false
 
       # ✅ Checklist Item 4: API Tests
       - name: ✅ API Tests - All Routes
-        run: pnpm test:api
+        run: pnpm test:api -- --coverage=false
 
       # ✅ Checklist Item 5: Component Tests
       - name: ✅ Component Tests - UI Components
-        run: pnpm test:components
+        run: pnpm test:components -- --coverage=false
 
       # ✅ Checklist Item 6: Coverage Requirements
       - name: ✅ Coverage Requirements - Verify Thresholds
