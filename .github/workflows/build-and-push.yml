@@ -46,7 +46,10 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }} # ReadySet1/destino-sf -> ghcr.io/readyset1/destino-sf
+  # Must be lowercase: Docker refs reject "ReadySet1/..." and github.repository
+  # preserves the org's capitalization (metadata-action lowercases, but the
+  # per-arch digest push uses this value directly).
+  IMAGE_NAME: readyset1/destino-sf
 
 jobs:
   build:
