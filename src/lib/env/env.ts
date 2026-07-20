@@ -56,6 +56,11 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'UPSTASH_REDIS_REST_TOKEN is required'),
   UPSTASH_REDIS_REST_URL: z.string().url('UPSTASH_REDIS_REST_URL must be a valid URL'),
 
+  // Cron authentication (Bearer token for /api/cron/* routes). Optional so
+  // local dev keeps working, but several cron routes skip auth when unset —
+  // always set it in deployed environments.
+  CRON_SECRET: z.string().optional(),
+
   // Optional configuration
   BYPASS_RATE_LIMIT: z.string().optional().default('false'),
   NX_DAEMON: z.string().optional().default('false'),
