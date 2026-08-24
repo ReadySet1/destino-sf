@@ -29,6 +29,13 @@ import {
   shutdown,
 } from '@/lib/db-unified';
 
+// Pull the real (un-mocked) helper. The default `jest.mock('@/lib/db-unified', ...)`
+// in setup/prisma.ts replaces the module with stubs; we want to test the actual
+// matcher logic, not the stub. requireActual reaches the real export.
+const { isPoolFullError } = jest.requireActual('@/lib/db-unified') as {
+  isPoolFullError: (error: Error) => boolean;
+};
+
 describe('db-unified.ts - Database Connection Resilience', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -505,6 +512,51 @@ describe('db-unified.ts - Socket Timeout Detection', () => {
  * Tests for Quick Health Check Function
  * Tests the expected behavior and response structure of quickHealthCheck
  */
+describe('db-unified.ts - Pool-Full Error Detection', () => {
+  describe('isPoolFullError() recognizes pool exhaustion', () => {
+    it('recognizes Prisma error code P2024', () => {
+      const error = new Error('some unrelated message') as Error & { code?: string };
+      error.code = 'P2024';
+      expect(isPoolFullError(error)).toBe(true);
+    });
+
+    it('recognizes the "Timed out fetching a new connection" message', () => {
+      const error = new Error(
+        'Timed out fetching a new connection from the connection pool. (timeout: 15, limit: 10)'
+      );
+      expect(isPoolFullError(error)).toBe(true);
+    });
+
+    it('recognizes the "Connection pool timeout" message', () => {
+      const error = new Error('Connection pool timeout while acquiring connection');
+      expect(isPoolFullError(error)).toBe(true);
+    });
+  });
+
+  describe('isPoolFullError() rejects non-pool errors', () => {
+    it('returns false for ECONNRESET', () => {
+      const error = new Error('ECONNRESET: socket hang up');
+      expect(isPoolFullError(error)).toBe(false);
+    });
+
+    it('returns false for engine-not-connected errors (P1001 / engine init)', () => {
+      const error = new Error('Engine is not yet connected') as Error & { code?: string };
+      error.code = 'P1001';
+      expect(isPoolFullError(error)).toBe(false);
+    });
+
+    it('returns false for plain socket timeout (different recovery path)', () => {
+      const error = new Error('Socket timeout: the database failed to respond to a query');
+      expect(isPoolFullError(error)).toBe(false);
+    });
+
+    it('returns false for authentication errors', () => {
+      const error = new Error('FATAL: password authentication failed for user "postgres"');
+      expect(isPoolFullError(error)).toBe(false);
+    });
+  });
+});
+
 describe('db-unified.ts - Quick Health Check', () => {
   describe('quickHealthCheck() expected behavior', () => {
     // Create a mock that matches the expected behavior

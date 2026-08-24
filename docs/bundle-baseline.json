@@ -1,36 +1,38 @@
 {
-  "date": "2026-04-03",
-  "nextVersion": "15.x",
+  "date": "2026-05-15",
+  "nextVersion": "15.5.x",
   "buildTool": "@next/bundle-analyzer",
   "sharedJS": {
-    "total": "218 kB",
+    "total": "226 kB",
     "chunks": {
+      "3448": "130 kB",
       "4bd1b696": "54.4 kB",
-      "52774a7f": "36.6 kB",
-      "6400": "123 kB"
+      "52774a7f": "37.9 kB",
+      "other": "4.11 kB"
     }
   },
-  "middleware": "152 kB",
+  "middleware": "157 kB",
   "keyPages": {
-    "/": { "size": "2.3 kB", "firstLoadJS": "236 kB" },
-    "/products": { "size": "2.54 kB", "firstLoadJS": "275 kB", "revalidate": "1h" },
-    "/products/[slug]": { "size": "9.96 kB", "firstLoadJS": "322 kB", "revalidate": "30m", "type": "SSG" },
-    "/products/category/[slug]": { "size": "5.83 kB", "firstLoadJS": "328 kB", "type": "SSG" },
-    "/menu": { "size": "2.54 kB", "firstLoadJS": "275 kB", "revalidate": "1h" },
-    "/checkout": { "size": "6.73 kB", "firstLoadJS": "312 kB" },
-    "/cart": { "size": "4.09 kB", "firstLoadJS": "276 kB" },
-    "/account": { "size": "6.36 kB", "firstLoadJS": "286 kB" },
-    "/admin/products": { "size": "19.3 kB", "firstLoadJS": "325 kB" },
-    "/admin/orders": { "size": "8.89 kB", "firstLoadJS": "304 kB" },
-    "/admin/products/availability": { "size": "19.4 kB", "firstLoadJS": "356 kB" }
+    "/": { "size": "2.3 kB", "firstLoadJS": "234 kB" },
+    "/products": { "size": "2.56 kB", "firstLoadJS": "283 kB", "revalidate": "1h" },
+    "/products/[slug]": { "size": "10 kB", "firstLoadJS": "331 kB", "type": "SSG" },
+    "/products/category/[slug]": { "size": "5.85 kB", "firstLoadJS": "337 kB", "type": "SSG" },
+    "/menu": { "size": "2.56 kB", "firstLoadJS": "283 kB", "revalidate": "1h" },
+    "/checkout": { "size": "6.73 kB", "firstLoadJS": "413 kB" },
+    "/cart": { "size": "4.09 kB", "firstLoadJS": "265 kB" },
+    "/account": { "size": "6.36 kB", "firstLoadJS": "295 kB" },
+    "/admin/products": { "size": "19.3 kB", "firstLoadJS": "336 kB" },
+    "/admin/orders": { "size": "8.89 kB", "firstLoadJS": "315 kB" },
+    "/admin/products/availability": { "size": "19.4 kB", "firstLoadJS": "367 kB" }
   },
   "largestPages": [
-    { "route": "/admin/products/availability", "firstLoadJS": "356 kB" },
-    { "route": "/admin/products/availability/bulk", "firstLoadJS": "335 kB" },
-    { "route": "/products/category/[slug]", "firstLoadJS": "328 kB" },
-    { "route": "/admin/products", "firstLoadJS": "325 kB" },
-    { "route": "/products/[slug]", "firstLoadJS": "322 kB" },
-    { "route": "/admin/settings", "firstLoadJS": "320 kB" }
+    { "route": "/checkout", "firstLoadJS": "413 kB" },
+    { "route": "/admin/products/availability", "firstLoadJS": "367 kB" },
+    { "route": "/admin/products/availability/bulk", "firstLoadJS": "346 kB" },
+    { "route": "/products/category/[slug]", "firstLoadJS": "337 kB" },
+    { "route": "/admin/products", "firstLoadJS": "336 kB" },
+    { "route": "/products/[slug]", "firstLoadJS": "331 kB" },
+    { "route": "/admin/settings", "firstLoadJS": "330 kB" }
   ],
-  "notes": "First baseline. Shared JS (218 kB) is the minimum loaded on every page. Admin pages are the heaviest due to complex forms and data grids."
+  "notes": "Refreshed 2026-05-15 from CI build on `development`. Six weeks of dependency churn (Next 15.5.x, Sentry v10, isomorphic-dompurify 3, Radix UI bumps) drifted most routes 2-4%, with /checkout up 32% (312 → 413 kB) — partner-API code + Square SDK growth. /checkout is now the largest page; followup investigation could trim it back if needed. Shared JS now 226 kB (was 218); middleware 157 kB (was 152). Admin pages still heaviest among UI routes."
 }

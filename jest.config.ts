@@ -247,7 +247,7 @@ const config: Config = {
       statements: 80,
     },
   },
-  collectCoverage: false, // Enable only when running coverage explicitly
+  collectCoverage: process.env.CI === 'true', // Auto-collect in CI; opt-in locally via `pnpm test:coverage`
   passWithNoTests: false,
   verbose: true,
   maxWorkers: 1, // Run tests serially to avoid DB conflicts
