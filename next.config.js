@@ -292,9 +292,8 @@ const nextConfig = {
     // Configure for better handling of slow S3 images
     loader: 'default',
     formats: ['image/webp', 'image/avif'],
-    // HOTFIX 2026-08-24: Vercel Image Optimization quota exceeded (402 on /_next/image),
-    // so <Image> serves originals directly. Re-enable once self-hosted on Dokploy.
-    unoptimized: true,
+    // Handle failed images gracefully - keep optimization enabled but with better error handling
+    unoptimized: false,
     // Add timeout and quality settings for better performance
     minimumCacheTTL: 3600, // 1 hour
     // Configure image qualities (required for Next.js 16+)
