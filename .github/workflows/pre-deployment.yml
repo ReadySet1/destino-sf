@@ -152,7 +152,7 @@ jobs:
       # suite. Without this, jest.config.ts's `collectCoverage: process.env.CI === 'true'`
       # (PR #194) would trigger threshold checks against a <1% slice and fail.
       - name: ✅ Unit Tests - Run All
-        run: pnpm test:unit -- --coverage=false
+        run: pnpm test:unit --coverage=false
 
       # ✅ Checklist Item 3: Critical Path Tests
       # NOTE: Temporarily excluding concurrency tests due to CI database connection issues
@@ -163,11 +163,11 @@ jobs:
 
       # ✅ Checklist Item 4: API Tests
       - name: ✅ API Tests - All Routes
-        run: pnpm test:api -- --coverage=false
+        run: pnpm test:api --coverage=false
 
       # ✅ Checklist Item 5: Component Tests
       - name: ✅ Component Tests - UI Components
-        run: pnpm test:components -- --coverage=false
+        run: pnpm test:components --coverage=false
 
       # ✅ Checklist Item 6: Coverage Requirements
       - name: ✅ Coverage Requirements - Verify Thresholds
