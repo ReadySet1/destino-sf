@@ -11,7 +11,7 @@ const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8'))
 const analyzeBundles =
   process.env.ANALYZE === 'true'
     ? (await import('@next/bundle-analyzer')).default({ enabled: true })
-    : (config) => config;
+    : config => config;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -295,7 +295,7 @@ const nextConfig = {
     // Handle failed images gracefully - keep optimization enabled but with better error handling
     unoptimized: false,
     // Add timeout and quality settings for better performance
-    minimumCacheTTL: 3600, // 1 hour
+    minimumCacheTTL: 2592000, // 30 days: Square image URLs are content-addressed, a changed image is a new URL
     // Configure image qualities (required for Next.js 16+)
     qualities: [50, 75, 85, 90, 95, 100],
   },
