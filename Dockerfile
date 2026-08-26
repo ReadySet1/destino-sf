@@ -163,6 +163,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# Image optimizer cache. Pre-create it owned by nextjs so a volume mounted at
+# /app/.next/cache (to persist the cache across redeploys) inherits ownership.
+RUN mkdir -p /app/.next/cache/images && chown -R nextjs:nodejs /app/.next/cache
+
 USER nextjs
 EXPOSE 3000
 
