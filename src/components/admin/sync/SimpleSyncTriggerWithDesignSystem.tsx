@@ -6,6 +6,7 @@ import { FormButton } from '@/components/ui/form/FormButton';
 import { FormIcons } from '@/components/ui/form/FormIcons';
 import { FormStack } from '@/components/ui/form/FormStack';
 import { toast } from '@/lib/toast';
+import { verifySyncAfterNetworkError } from '@/lib/sync/verify-sync-completion';
 
 interface SimpleSyncTriggerProps {
   onSyncStarted?: (syncId: string) => void;
@@ -22,6 +23,7 @@ export function SimpleSyncTriggerWithDesignSystem({
 
   const handleSync = async () => {
     setSyncState('starting');
+    const syncTriggeredAt = new Date();
 
     try {
       const response = await fetch('/api/square/unified-sync', {
@@ -80,6 +82,35 @@ export function SimpleSyncTriggerWithDesignSystem({
         throw new Error(data.error || 'Sync failed');
       }
     } catch (error) {
+      // The browser connection can drop while the server finishes the sync
+      // (~35s synchronous POST), so a fetch failure does not mean the sync
+      // failed. Check the sync history before reporting an error, otherwise
+      // admins re-trigger full force-update syncs that already succeeded.
+      if (error instanceof TypeError) {
+        const verification = await verifySyncAfterNetworkError(syncTriggeredAt);
+
+        if (verification.outcome === 'completed') {
+          setSyncState('started');
+          toast.success('Synchronization completed', {
+            description: `The connection dropped, but the sync finished on the server: ${verification.syncedProducts} products synchronized, ${verification.skippedProducts} already up to date.`,
+          });
+          onSyncStarted?.('sync-completed');
+          setTimeout(() => {
+            setSyncState('idle');
+          }, 3000);
+          return;
+        }
+
+        if (verification.outcome === 'running') {
+          setSyncState('idle');
+          toast.info('Synchronization still running', {
+            description:
+              'The connection dropped, but the sync is still running on the server. Check Sync History for the result — do not re-trigger it.',
+          });
+          return;
+        }
+      }
+
       setSyncState('error');
       toast.error('Synchronization error', {
         description: error instanceof Error ? error.message : 'Unknown error',
