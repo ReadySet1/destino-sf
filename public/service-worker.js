@@ -108,13 +108,18 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Skip admin routes, account routes, and sensitive APIs
+  // Skip admin routes, account routes, and sensitive APIs.
+  // /api/admin and /api/square must stay uncached: intercepting them turns
+  // transient network failures into misleading 503 "Offline" responses in the
+  // admin dashboards (post-cutover QA F6).
   if (
     url.pathname.startsWith('/admin') ||
     url.pathname.startsWith('/account') ||
+    url.pathname.startsWith('/api/admin') ||
     url.pathname.startsWith('/api/auth') ||
     url.pathname.startsWith('/api/checkout') ||
-    url.pathname.startsWith('/api/orders')
+    url.pathname.startsWith('/api/orders') ||
+    url.pathname.startsWith('/api/square')
   ) {
     return;
   }
