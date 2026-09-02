@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { logger } from '@/utils/logger';
 import { supabaseAdmin } from '@/lib/supabase/admin'; // Import the admin client
 import { UserRole as PrismaUserRole } from '@prisma/client'; // Use generated Prisma types for roles
+import { setupPasswordCallbackUrl } from '@/lib/auth/invite-links';
 
 // Remove the manually defined UserRole type
 // type UserRole = Parameters<typeof prisma.profile.create>[0]['data']['role'];
@@ -55,7 +56,7 @@ export async function createUserAction(formData: FormData) {
           phone: phone || '',
           // Note: Avoid storing 'role' directly in user_metadata if you manage it in Prisma
         },
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?redirect_to=/setup-password?email=${encodeURIComponent(email)}`,
+        redirectTo: setupPasswordCallbackUrl(email),
       }
     );
 
@@ -303,7 +304,7 @@ export async function resendPasswordSetupAction(
         name: profile.name || '',
         phone: profile.phone || '',
       },
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?redirect_to=/setup-password?email=${encodeURIComponent(profile.email)}`,
+      redirectTo: setupPasswordCallbackUrl(profile.email),
     });
 
     if (inviteError) {
