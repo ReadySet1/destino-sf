@@ -263,12 +263,35 @@ jobs:
             > 💡 **Tip**: Review the HTML reports for detailed optimization suggestions.
             `;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            // Update the existing bot comment in place instead of creating a new
+            // one, so a PR gets a single Lighthouse comment rather than one per push.
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: body
+              issue_number: context.issue.number,
             });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Lighthouse Performance Report')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body,
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
 
       - name: Check Budget Violations (main branch only)
         if: github.base_ref == 'main' && (needs.lighthouse-desktop.result == 'failure' || needs.lighthouse-mobile.result == 'failure')
