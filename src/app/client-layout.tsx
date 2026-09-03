@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { CartAlert } from '@/components/ui/cart-alert';
 import { Toaster } from 'sonner';
-import { AuthHandler } from '@/components/auth-handler';
+import { AuthFragmentHandler } from '@/components/auth/AuthFragmentHandler';
 import { useUmamiPageTracking } from '@/lib/analytics';
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
@@ -35,8 +35,8 @@ export default function ClientLayout({
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-      {/* Auth handler for magic links */}
-      <AuthHandler />
+      {/* Rescues implicit-flow auth links that land with tokens in the URL fragment */}
+      <AuthFragmentHandler />
 
       {/* Analytics tracking with Suspense boundary */}
       <Suspense fallback={null}>
