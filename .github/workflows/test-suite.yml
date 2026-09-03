@@ -570,12 +570,37 @@ jobs:
 
             body += `📊 **Detailed Reports**: Check artifacts for coverage report, test health report, and flaky test analysis.\n`;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            // Update the existing comment in place rather than adding a new one on
+            // every push, which otherwise floods the PR and everyone's inbox.
+            // The marker keeps the emoji: a bare "Test Results" would also match the
+            // "Accessibility Test Results" comment posted by a11y-tests.yml.
+            const marker = '\u{1F9EA} Test Results';
+
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: body
-            })
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes(marker)
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
 
 # Workflow-level settings
 concurrency:
