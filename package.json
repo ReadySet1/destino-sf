@@ -205,7 +205,7 @@
     "react": "19.2.8",
     "react-day-picker": "8.10.1",
     "react-dom": "19.2.8",
-    "react-email": "^4.2.11",
+    "react-email": "^6.9.3",
     "react-hook-form": "^7.62.0",
     "react-markdown": "^9.0.1",
     "react-remove-scroll": "^2.7.1",
