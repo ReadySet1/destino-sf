@@ -269,7 +269,7 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "5.9.3",
-    "whatwg-url": "^14.2.0"
+    "whatwg-url": "^17.1.0"
   },
   "pnpm": {
     "overrides": {
