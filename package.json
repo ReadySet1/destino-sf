@@ -225,7 +225,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@eslint/eslintrc": "^3.3.6",
     "@eslint/js": "^9.35.0",
-    "@faker-js/faker": "^10.4.0",
+    "@faker-js/faker": "^10.6.0",
     "@lhci/cli": "^0.15.1",
     "@next/bundle-analyzer": "^16.2.2",
     "@playwright/test": "^1.62.1",
