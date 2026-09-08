@@ -124,6 +124,11 @@ src/utils/supabase/                  # Supabase client configuration
 - ✅ **Error handling** with user-friendly messages
 - ✅ **Role-based redirects** (Admin → `/admin`, Customer → `/menu`)
 - ✅ **Profile auto-creation** for seamless user experience
+- ✅ **Orphaned profile relink on sign-in**: when a `profiles` row already exists for the auth user's
+  confirmed email under a stale id (seeded or pre-migration data), `signInAction` re-points that row
+  to the live auth user instead of failing with "User profile could not be created". Guards: the
+  email must be confirmed, the row must not be `ADMIN`, and its current id must not still belong to
+  a live auth user (checked through the service-role client; fails closed).
 - ✅ **Security checks** and rate limiting
 
 ---
@@ -195,7 +200,10 @@ src/utils/supabase/                  # Supabase client configuration
 
 ### Seamless Integration
 
-- **Profile Auto-Creation**: Missing profiles created automatically
+- **Profile Auto-Creation**: Missing profiles created automatically; orphaned rows for the same
+  confirmed email are relinked on sign-in (never `ADMIN` rows, never rows still owned by a live user)
+- **Verification links**: `signUpAction` resolves the callback origin from the request headers (same
+  as `forgotPasswordAction`), so the emailed link always points at the site that served the form
 - **Role Management**: Proper ADMIN vs CUSTOMER handling
 - **Error Recovery**: Graceful error handling with clear next steps
 - **Mobile Responsive**: Works perfectly on all devices

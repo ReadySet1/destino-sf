@@ -114,6 +114,7 @@ Business logic and data access patterns:
   - `orders-api.ts`: Order management
 - **Shipping** (`shippingUtils.ts`, `deliveryUtils.ts`): Weight-based calculations via Shippo
 - **Catering** (`catering-api-utils.ts`): Catering order handling
+- **Catering Delivery Zones** (`delivery-zones.ts`): Async, DB-backed zone resolution, minimums and fees from `catering_delivery_zones` (5-minute in-process cache; `clearDeliveryZonesCache()` is called by the admin zones API). `DELIVERY_ZONE_MINIMUMS` in `src/types/catering.ts` is seed data only, never read at runtime.
 - **Security** (`src/lib/security/`): Rate limiting, CSP, webhook verification
 - **Concurrency** (`src/lib/concurrency/`): Race condition prevention, database locking
   - `optimistic-lock.ts`: Version-based concurrency control
@@ -169,7 +170,7 @@ Organized by feature domain:
 
 2. **Catering Cart** (`src/store/catering-cart.ts`):
    - Catering packages and à-la-carte items
-   - Delivery zone-based pricing (SF, South Bay, Peninsula)
+   - Delivery zone-based pricing (zones, minimums and fees are admin-editable in `catering_delivery_zones`; resolve them through `src/lib/delivery-zones.ts`, and validate with `validateCateringOrderWithDeliveryZone({ city, postalCode }, total)`)
    - Minimum order requirements per zone
    - Event date and attendee count tracking
 

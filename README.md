@@ -21,7 +21,7 @@
 
 - **Package Selection**: Appetizer packages (5, 7, 9 items) with per-person pricing
 - **À-la-carte Menu**: Share platters, desserts, and custom selections
-- **Delivery Zones**: San Francisco, South Bay, Peninsula with minimum order requirements
+- **Delivery Zones**: Admin-configurable Bay Area zones (SF, South Bay, Lower Peninsula, East Bay, Marin) with per-zone minimums and delivery fees
 - **Event Management**: Custom quotes, special requests, and lead generation
 - **Image Protection**: Curated catering images preserved during product syncs
 
@@ -237,7 +237,7 @@ pnpm analyze           # Bundle analysis (ANALYZE=true next build)
 
 - **Package System**: Pre-configured appetizer packages with pricing
 - **Image Protection**: Manual images preserved during Square syncs
-- **Delivery Zones**: San Francisco ($250+$50), South Bay ($350+$75), Peninsula ($400+$100)
+- **Delivery Zones**: Minimums, fees, ZIPs and cities per zone edited in Admin > Settings and read from `catering_delivery_zones` (seed defaults: SF $250+$50, South Bay $400+$75, Lower Peninsula $350+$65, East Bay $400+$75, Marin $400+$65)
 - **Lead Generation**: Comprehensive inquiry forms with follow-up automation
 
 ### **Administrative Tools**
@@ -260,6 +260,8 @@ pnpm analyze           # Bundle analysis (ANALYZE=true next build)
 ### **Feature Documentation**
 
 - 🍽️ [Catering System](./docs/features/catering/README.md)
+- 📍 [Catering Delivery Zones & Minimums](./docs/features/catering/delivery-zones.md)
+- 🗺️ [Delivery Systems Overview](./docs/features/delivery/delivery-systems-overview.md)
 - 🚚 [Shipping](./docs/features/shipping/)
 - 💳 [Square Integration](./docs/features/payments/square-integration.md)
 - 🔄 [Square Sync Operations](./docs/operations/product-sync/square-sync.md)

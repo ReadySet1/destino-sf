@@ -107,9 +107,12 @@ The system **automatically determines** which delivery zone system to use:
 const deliveryFee = await calculateDeliveryFee(address, subtotal);
 // Uses: regular_delivery_zones table
 
-// For catering products
-const cateringValidation = await validateCateringDelivery(address, items);
-// Uses: catering_delivery_zones table
+// For catering products (server action in src/actions/catering.ts)
+const cateringValidation = await validateCateringOrderWithDeliveryZone(
+  { city: address.city, postalCode: address.postalCode },
+  totalAmount
+);
+// Uses: catering_delivery_zones table via src/lib/delivery-zones.ts
 ```
 
 ---
@@ -120,10 +123,11 @@ Both systems use the same matching algorithm but query different tables:
 
 1. **Postal Code Match** (Primary)
    - Direct postal code lookup in zone's `postalCodes` array
+   - Input is reduced to its first five digits first (`94110-1234` matches `94110`)
    - Most accurate method
 
 2. **City Name Match** (Fallback)
-   - Case-insensitive city name matching
+   - Case-insensitive, whitespace-trimmed city name matching
    - Used when postal code isn't found
 
 3. **No Match** (Default)
