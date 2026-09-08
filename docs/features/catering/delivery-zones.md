@@ -8,195 +8,190 @@ The Minimum Purchase Requirements system implements zone-based minimum order amo
 
 - **Zone-Based Minimums**: Different minimum amounts for different geographic areas
 - **Consistent Across Pages**: Same minimums apply to lunch, buffet, appetizers, and share plates
-- **Admin Configurable**: James can adjust minimum amounts without code changes
-- **Automatic Zone Detection**: System determines delivery zone from postal code/city
+- **Admin Configurable**: James can adjust minimums, fees, postal codes and cities without code changes
+- **Automatic Zone Detection**: System determines delivery zone from the postal codes and cities stored per zone
 - **Real-Time Validation**: Orders are validated against minimums before submission
 - **Delivery Fee Integration**: Automatic calculation of delivery fees per zone
 
 ## Delivery Zones
 
-### Current Zones
+Zones, minimums, delivery fees and the postal codes / cities that map to each zone live in the
+`catering_delivery_zones` table (Prisma model `CateringDeliveryZone`) and are edited from the admin
+panel. See the [Admin Delivery Zones Guide](../../user-guides/admin-delivery-zones-guide.md) for the
+UI walkthrough. The values below are the seed defaults (DES-52); the live numbers are whatever the
+admin last saved.
+
+### Seed Defaults
 
 | Zone            | Area                                   | Minimum | Delivery Fee | Est. Time |
 | --------------- | -------------------------------------- | ------- | ------------ | --------- |
 | San Francisco   | SF and surrounding                     | $250.00 | $50.00       | 1-2 hours |
-| South Bay       | San José, Santa Clara, Sunnyvale       | $350.00 | $75.00       | 2-3 hours |
-| Lower Peninsula | Redwood City, Palo Alto, Mountain View | $400.00 | $100.00      | 2-3 hours |
-| Peninsula       | San Ramón, Walnut Creek, Far Peninsula | $500.00 | $150.00      | 3-4 hours |
+| South Bay       | San José, Santa Clara, Sunnyvale       | $400.00 | $75.00       | 2-3 hours |
+| Lower Peninsula | Redwood City, Palo Alto, Mountain View | $350.00 | $65.00       | 2-3 hours |
+| East Bay        | Oakland, Berkeley and surrounding      | $400.00 | $75.00       | 2-3 hours |
+| Marin County    | Marin County and surrounding           | $400.00 | $65.00       | 2-3 hours |
+
+`PENINSULA` is still a member of the `DeliveryZone` enum so old orders keep deserializing, but it is
+inactive: it was replaced by `EAST_BAY` and `MARIN_COUNTY`.
 
 ### Zone Configuration
 
-```typescript
-export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
-  [DeliveryZone.SAN_FRANCISCO]: {
-    zone: DeliveryZone.SAN_FRANCISCO,
-    name: 'San Francisco',
-    minimumAmount: 250.0,
-    description: 'San Francisco and surrounding areas',
-    deliveryFee: 50.0,
-    estimatedDeliveryTime: '1-2 hours',
-    isActive: true,
-  },
-  // ... other zones
-};
-```
+`DELIVERY_ZONE_MINIMUMS` in `src/types/catering.ts` holds seed / reference values only. Nothing at
+runtime reads it to resolve a zone, a minimum or a fee. Use the async helpers in
+`src/lib/delivery-zones.ts` instead:
+
+| Helper                                     | What it does                                                                                                           |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `getActiveDeliveryZones()`                 | Active zones from the DB, ordered by `displayOrder`. Pass the result to `DeliveryZoneInfo` / `CateringCheckoutClient`. |
+| `getZoneConfig(zone)`                      | One zone's config, or `null` when it is missing or inactive.                                                           |
+| `determineDeliveryZone(postalCode, city?)` | Resolves a zone from the ZIP first, then the city. `null` when nothing matches or when no zone is active.              |
+| `validateMinimumPurchase(amount, zone)`    | Checks the amount against the zone's minimum; on failure carries `shortfall` and a customer-facing `message`.          |
+| `calculateOrderTotal(subtotal, zone)`      | Subtotal plus the zone's delivery fee.                                                                                 |
+| `getMinimumPurchaseMessage(zone)`          | Display string for the zone's minimum.                                                                                 |
+| `clearDeliveryZonesCache()`                | Drops the in-process cache (see below). The admin zones API calls it after every create / update / delete.             |
+
+All of these are `async` because they read Prisma; they only run on the server (server components,
+server actions, route handlers). Client components get zones as props or call a server action.
+
+Address matching normalizes the input before comparing: the ZIP is reduced to its first five digits
+(`"94110-1234"` and `" 94110"` both match `94110`) and the city is trimmed and compared
+case-insensitively, so a stray suffix or space is not reported as "we don't deliver there". Rows store
+the zone identifier lowercase (`east_bay`); `determineDeliveryZone` returns it as stored and
+`validateCateringOrderWithDeliveryZone` upper-cases it to the `DeliveryZone` enum (`EAST_BAY`) before
+it reaches callers or persisted orders.
+
+**Caching.** The zone list (`getDeliveryZones()`, and everything built on it: `getActiveDeliveryZones`,
+`getZoneConfig`, `validateMinimumPurchase`, `calculateOrderTotal`) is cached in-process for 5 minutes.
+`determineDeliveryZone` queries the table directly. `POST`, `PUT` and `DELETE` on
+`/api/admin/delivery-zones` call `clearDeliveryZonesCache()`, so an admin edit is visible on the next
+checkout load rather than up to 5 minutes later. If the database is unreachable the list falls back to
+the seed defaults.
 
 ## Implementation Guide
 
-### 1. Database Schema Updates
+### 1. Database Schema
 
-Add the following fields to your database schema:
+The zone table is `catering_delivery_zones` (`model CateringDeliveryZone` in `prisma/schema.prisma`):
 
-```sql
--- Add to catering_orders table
-ALTER TABLE catering_orders ADD COLUMN delivery_zone VARCHAR(50);
-ALTER TABLE catering_orders ADD COLUMN delivery_address TEXT;
-ALTER TABLE catering_orders ADD COLUMN delivery_fee DECIMAL(10,2);
+| Column                  | Type       | Notes                                                 |
+| ----------------------- | ---------- | ----------------------------------------------------- |
+| `zone`                  | `String`   | Unique identifier, stored lowercase (`san_francisco`) |
+| `name`                  | `String`   | Customer-facing label                                 |
+| `description`           | `String?`  |                                                       |
+| `minimumAmount`         | `Decimal`  | Minimum order value                                   |
+| `deliveryFee`           | `Decimal`  | Flat fee for the zone                                 |
+| `estimatedDeliveryTime` | `String?`  | Shown to customers                                    |
+| `postalCodes`           | `String[]` | Bare 5-digit ZIPs                                     |
+| `cities`                | `String[]` | Plain city names, matched case-insensitively          |
+| `displayOrder`          | `Int`      | Sort order in the checkout panel                      |
+| `active`                | `Boolean`  | Inactive zones are ignored by every helper            |
 
--- Create delivery_zone_configs table for admin management
-CREATE TABLE delivery_zone_configs (
-  id SERIAL PRIMARY KEY,
-  zone VARCHAR(50) UNIQUE NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  minimum_amount DECIMAL(10,2) NOT NULL,
-  delivery_fee DECIMAL(10,2),
-  estimated_delivery_time VARCHAR(50),
-  description TEXT,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW(),
-  created_by VARCHAR(100)
-);
-
--- Create audit log table for admin changes
-CREATE TABLE zone_config_audit_log (
-  id SERIAL PRIMARY KEY,
-  operation VARCHAR(20) NOT NULL,
-  resource VARCHAR(50) NOT NULL,
-  resource_id VARCHAR(100) NOT NULL,
-  admin_user_id VARCHAR(100),
-  admin_user_email VARCHAR(255),
-  old_values JSONB,
-  new_values JSONB,
-  timestamp TIMESTAMP DEFAULT NOW(),
-  ip_address VARCHAR(45),
-  user_agent TEXT
-);
-```
+Catering orders persist the resolved zone in `catering_orders.deliveryZone` plus `deliveryFee` and
+the structured `deliveryAddressJson`.
 
 ### 2. Frontend Integration
 
 #### Display Minimums on Catering Pages
 
-```tsx
-import { getActiveDeliveryZones, getMinimumPurchaseMessage } from '@/types/catering';
+Fetch zones once in a server component and pass them down. This is what
+`src/app/catering/checkout/page.tsx` does for the "Delivery Zones & Minimums" panel:
 
-function CateringPageHeader() {
-  const activeZones = getActiveDeliveryZones();
+```tsx
+// src/app/catering/checkout/page.tsx (server component)
+import { getActiveDeliveryZones } from '@/lib/delivery-zones';
+import { CateringCheckoutClient } from '@/components/Catering/CateringCheckoutClient';
+
+export default async function CateringCheckoutPage() {
+  const deliveryZones = await getActiveDeliveryZones();
 
   return (
-    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-      <h3 className="font-semibold text-yellow-800 mb-2">Delivery Minimums</h3>
-      <ul className="text-yellow-700 text-sm space-y-1">
-        {activeZones.map(zone => (
-          <li key={zone.zone}>
-            {zone.name}: ${zone.minimumAmount.toFixed(2)} minimum
-          </li>
-        ))}
-      </ul>
-    </div>
+    <CateringCheckoutClient
+      userData={userData}
+      isLoggedIn={isLoggedIn}
+      deliveryZones={deliveryZones}
+    />
   );
+}
+```
+
+`DeliveryZoneInfo` is presentational and takes the same list through its `zones` prop:
+
+```tsx
+import { getActiveDeliveryZones } from '@/lib/delivery-zones';
+import { DeliveryZoneInfo } from '@/components/Catering/DeliveryZoneInfo';
+
+export default async function CateringPage() {
+  const zones = await getActiveDeliveryZones();
+  return <DeliveryZoneInfo zones={zones} compact />;
 }
 ```
 
 #### Order Validation
 
+Client components cannot resolve zones themselves (the helpers read Prisma). Call the
+`validateCateringOrderWithDeliveryZone` server action with the structured address, as
+`CateringCheckoutClient` does:
+
 ```tsx
-import { validateMinimumPurchase, determineDeliveryZone } from '@/types/catering';
+'use client';
+import { validateCateringOrderWithDeliveryZone } from '@/actions/catering';
 
-function CateringOrderForm() {
-  const [orderTotal, setOrderTotal] = useState(0);
-  const [deliveryZone, setDeliveryZone] = useState<DeliveryZone | null>(null);
-  const [validationResult, setValidationResult] = useState<MinimumPurchaseValidation | null>(null);
+const validation = await validateCateringOrderWithDeliveryZone(
+  { city: deliveryAddress.city, postalCode: deliveryAddress.postalCode },
+  totalAmount
+);
 
-  useEffect(() => {
-    if (deliveryZone && orderTotal > 0) {
-      const validation = validateMinimumPurchase(orderTotal, deliveryZone);
-      setValidationResult(validation);
-    }
-  }, [orderTotal, deliveryZone]);
-
-  const handlePostalCodeChange = (postalCode: string) => {
-    const zone = determineDeliveryZone(postalCode);
-    setDeliveryZone(zone);
-  };
-
-  return (
-    <form>
-      {/* Address fields */}
-      <input
-        type="text"
-        placeholder="Postal Code"
-        onChange={e => handlePostalCodeChange(e.target.value)}
-      />
-
-      {/* Minimum validation display */}
-      {validationResult && !validationResult.isValid && (
-        <div className="bg-red-50 border border-red-200 rounded p-3 mt-4">
-          <p className="text-red-800 text-sm">{validationResult.message}</p>
-        </div>
-      )}
-
-      {/* Order summary */}
-      <div className="mt-4">
-        <p>Subtotal: ${orderTotal.toFixed(2)}</p>
-        {deliveryZone && (
-          <>
-            <p>Delivery Fee: ${getZoneConfig(deliveryZone).deliveryFee?.toFixed(2)}</p>
-            <p>Total: ${calculateOrderTotal(orderTotal, deliveryZone).toFixed(2)}</p>
-          </>
-        )}
-      </div>
-    </form>
-  );
+if (!validation.success) {
+  // validation.error: 'Delivery zone not supported' | the minimum-purchase message | ...
+  // validation.minimumPurchase / validation.deliveryFee are present when the zone resolved
+  setError(validation.error);
+} else {
+  setDeliveryZone(validation.deliveryZone); // e.g. DeliveryZone.SAN_FRANCISCO
+  setDeliveryFee(validation.deliveryFee);
 }
 ```
 
 ### 3. Server Actions Integration
 
+`validateCateringOrderWithDeliveryZone` in `src/actions/catering.ts` is the server-side entry point.
+It takes `{ city, postalCode }` (not a free-form address string) and composes the lib helpers:
+
 ```typescript
-// In src/actions/catering.ts
-import { validateMinimumPurchase, determineDeliveryZone } from '@/types/catering';
+// src/actions/catering.ts
+import {
+  determineDeliveryZone,
+  getZoneConfig,
+  validateMinimumPurchase,
+} from '@/lib/delivery-zones';
 
-export async function submitCateringOrder(orderData: CateringFormData) {
-  // Determine delivery zone
-  const deliveryZone = determineDeliveryZone(orderData.postalCode, orderData.city);
+export async function validateCateringOrderWithDeliveryZone(
+  address: { city: string; postalCode: string },
+  totalAmount: number
+) {
+  const resolved = await determineDeliveryZone(address.postalCode, address.city);
+  if (!resolved) return { success: false, error: 'Delivery zone not supported' };
 
-  if (!deliveryZone) {
-    throw new Error('Unable to deliver to this location');
+  const zone = resolved.toUpperCase() as DeliveryZone; // rows store `east_bay`
+  const zoneConfig = await getZoneConfig(zone);
+  if (!zoneConfig) return { success: false, error: 'Delivery zone configuration not found' };
+
+  const minimum = await validateMinimumPurchase(totalAmount, zone);
+  if (!minimum.isValid) {
+    return {
+      success: false,
+      error: minimum.message,
+      deliveryZone: zone,
+      deliveryFee: zoneConfig.deliveryFee,
+      minimumPurchase: zoneConfig.minimumAmount,
+    };
   }
 
-  // Validate minimum purchase
-  const validation = validateMinimumPurchase(orderData.totalAmount, deliveryZone);
-
-  if (!validation.isValid) {
-    throw new Error(validation.message);
-  }
-
-  // Calculate final total with delivery fee
-  const finalTotal = calculateOrderTotal(orderData.totalAmount, deliveryZone);
-
-  // Save order with delivery zone information
-  const order = await prisma.cateringOrder.create({
-    data: {
-      ...orderData,
-      deliveryZone,
-      deliveryFee: getZoneConfig(deliveryZone).deliveryFee,
-      totalAmount: finalTotal,
-    },
-  });
-
-  return order;
+  return {
+    success: true,
+    deliveryZone: zone,
+    deliveryFee: zoneConfig.deliveryFee,
+    minimumPurchase: zoneConfig.minimumAmount,
+  };
 }
 ```
 
@@ -249,42 +244,54 @@ function AdminZoneManagement() {
 
 ## Usage Examples
 
+All helpers are async and server-only. Results depend on what the admin has saved in
+`catering_delivery_zones`; the numbers below assume the seed defaults.
+
 ### Check if Order Meets Minimum
 
 ```typescript
-import { validateMinimumPurchase, DeliveryZone } from '@/types/catering';
+import { validateMinimumPurchase } from '@/lib/delivery-zones';
+import { DeliveryZone } from '@/types/catering';
 
-const orderAmount = 225.0;
-const zone = DeliveryZone.SAN_FRANCISCO;
-
-const validation = validateMinimumPurchase(orderAmount, zone);
+const validation = await validateMinimumPurchase(225.0, DeliveryZone.SAN_FRANCISCO);
 
 if (!validation.isValid) {
   console.log(validation.message);
   // "Minimum order of $250.00 required for San Francisco. You need $25.00 more."
+  // validation.shortfall === 25
 }
 ```
 
 ### Calculate Order Total with Delivery
 
 ```typescript
-import { calculateOrderTotal, DeliveryZone } from '@/types/catering';
+import { calculateOrderTotal } from '@/lib/delivery-zones';
+import { DeliveryZone } from '@/types/catering';
 
-const subtotal = 300.0;
-const zone = DeliveryZone.SOUTH_BAY;
-
-const total = calculateOrderTotal(subtotal, zone);
-// Returns 375.00 (300 + 75 delivery fee)
+const total = await calculateOrderTotal(300.0, DeliveryZone.SOUTH_BAY);
+// 375.00 with the seed defaults (300 + 75 delivery fee)
 ```
 
 ### Determine Zone from Address
 
 ```typescript
-import { determineDeliveryZone } from '@/types/catering';
+import { determineDeliveryZone } from '@/lib/delivery-zones';
 
-const zone1 = determineDeliveryZone('94102'); // Returns SAN_FRANCISCO
-const zone2 = determineDeliveryZone('95110', 'San Jose'); // Returns SOUTH_BAY
-const zone3 = determineDeliveryZone('12345'); // Returns null (unknown area)
+// Matches against the postalCodes / cities arrays of the active zones.
+const zone1 = await determineDeliveryZone('94102'); // 'san_francisco' when 94102 is in the SF zone
+const zone2 = await determineDeliveryZone('94110-1234'); // ZIP+4 is trimmed to '94110' first
+const zone3 = await determineDeliveryZone('00000', ' Oakland '); // falls back to the city match
+const zone4 = await determineDeliveryZone('12345'); // null: no zone lists it
+```
+
+### Bust the Cache After Changing Zones
+
+```typescript
+import { clearDeliveryZonesCache } from '@/lib/delivery-zones';
+
+// Already done by POST / PUT / DELETE /api/admin/delivery-zones. Call it yourself only if you
+// write to catering_delivery_zones through another path (a script, a seed, a test).
+clearDeliveryZonesCache();
 ```
 
 ## Admin Features
@@ -343,26 +350,33 @@ const recommended = calculateRecommendedMinimum(
 
 ### Unit Tests
 
-```typescript
-describe('Minimum Purchase Validation', () => {
-  test('validates minimum purchase correctly', () => {
-    const result = validateMinimumPurchase(200, DeliveryZone.SAN_FRANCISCO);
-    expect(result.isValid).toBe(false);
-    expect(result.shortfall).toBe(50);
-  });
+Existing coverage (mock `prisma.cateringDeliveryZone.findMany` and call `clearDeliveryZonesCache()`
+in `beforeEach` so the 5-minute cache does not leak between cases):
 
-  test('passes validation when minimum is met', () => {
-    const result = validateMinimumPurchase(300, DeliveryZone.SAN_FRANCISCO);
-    expect(result.isValid).toBe(true);
-  });
+- `src/__tests__/lib/delivery-zones.test.ts`: ZIP / city normalization, no-active-rows handling, cache
+  reuse across lookups, minimum validation against DB values, seed fallback when the DB is down
+- `src/__tests__/actions/catering-delivery-zone.test.ts`: `validateCateringOrderWithDeliveryZone` with
+  the `{ city, postalCode }` shape and the lowercase-to-enum zone normalization
+- `src/__tests__/components/Catering/DeliveryZoneInfo.test.tsx`: renders whatever `zones` it is given
+
+```typescript
+import { clearDeliveryZonesCache, validateMinimumPurchase } from '@/lib/delivery-zones';
+import { DeliveryZone } from '@/types/catering';
+
+beforeEach(() => clearDeliveryZonesCache());
+
+test('reports the shortfall against the DB minimum', async () => {
+  const result = await validateMinimumPurchase(200, DeliveryZone.SAN_FRANCISCO);
+  expect(result.isValid).toBe(false);
+  expect(result.shortfall).toBe(50);
 });
 ```
 
 ### Integration Tests
 
 - Test order submission with various amounts and zones
-- Verify admin panel updates are reflected in order validation
-- Test zone detection with various postal codes and cities
+- Verify admin panel updates are reflected in order validation on the next checkout load
+- Test zone detection with ZIP+4, padded ZIPs, and mixed-case / padded city names
 - Validate email notifications mention correct minimums
 
 ## Deployment Checklist

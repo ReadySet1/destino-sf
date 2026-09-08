@@ -169,6 +169,8 @@ Comprehensive guides for each major platform feature:
 
 - [E-commerce Core](features/ecommerce/README.md) - Shopping, cart, checkout, orders
 - [Catering System](features/catering/README.md) - Professional catering management
+- [Catering Delivery Zones & Minimums](features/catering/delivery-zones.md) - DB-backed zones, minimums, fees, caching
+- [Delivery Systems Overview](features/delivery/delivery-systems-overview.md) - Regular vs catering zone matching
 - [Payment Processing](features/payments/README.md) - Square integration details
 - [Shipping & Fulfillment](features/shipping/README.md) - Shippo automation
 
