@@ -29,7 +29,7 @@ import { PaymentMethodSelector } from '@/components/store/PaymentMethodSelector'
 import { toast } from 'sonner';
 import { createCateringOrderAndProcessPayment } from '@/actions/catering';
 import { validateCateringOrderWithDeliveryZone } from '@/actions/catering';
-import { getActiveDeliveryZones, type DeliveryAddress } from '@/types/catering';
+import { type DeliveryAddress, type ZoneMinimumConfig } from '@/types/catering';
 import { US_STATES, CA_ONLY_STATES } from '@/lib/constants/us-states';
 import { PaymentMethod } from '@prisma/client';
 
@@ -40,11 +40,17 @@ const SERVICE_FEE_RATE = 0.035; // 3.5% convenience fee
 interface CateringCheckoutClientProps {
   userData: { id?: string; name?: string; email?: string; phone?: string } | null;
   isLoggedIn: boolean;
+  /** Active zones from the DB; rendered in the "Delivery Zones & Minimums" panel. */
+  deliveryZones: ZoneMinimumConfig[];
 }
 
 type CheckoutStep = 'customer-info' | 'fulfillment' | 'payment' | 'review';
 
-export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckoutClientProps) {
+export function CateringCheckoutClient({
+  userData,
+  isLoggedIn,
+  deliveryZones,
+}: CateringCheckoutClientProps) {
   const router = useRouter();
   const { items, removeItem, clearCart } = useCateringCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -175,7 +181,6 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
     deliveryFee?: number;
   } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
-  const [activeDeliveryZones] = useState(getActiveDeliveryZones());
 
   // Use catering cart items directly instead of filtering
   const cateringItems = items;
@@ -238,8 +243,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
   const updateDeliveryAddress = useCallback(
     (
       newAddress:
-        | typeof deliveryAddress
-        | ((prev: typeof deliveryAddress) => typeof deliveryAddress)
+        typeof deliveryAddress | ((prev: typeof deliveryAddress) => typeof deliveryAddress)
     ) => {
       setDeliveryAddress(prevAddress => {
         const updatedAddress =
@@ -280,7 +284,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
         );
 
         const validation = await validateCateringOrderWithDeliveryZone(
-          `${deliveryAddress.city}, ${deliveryAddress.postalCode}`,
+          { city: deliveryAddress.city, postalCode: deliveryAddress.postalCode },
           totalAmount
         );
 
@@ -982,7 +986,7 @@ export function CateringCheckoutClient({ userData, isLoggedIn }: CateringCheckou
                         Delivery Zones & Minimums
                       </h4>
                       <div className="grid gap-2 text-sm">
-                        {activeDeliveryZones.map(zone => (
+                        {deliveryZones.map(zone => (
                           <div key={zone.zone} className="flex justify-between">
                             <span className="text-blue-700">{zone.name}:</span>
                             <span className="font-medium text-blue-800">

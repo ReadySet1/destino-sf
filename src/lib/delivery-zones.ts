@@ -71,6 +71,12 @@ export async function determineDeliveryZone(
   postalCode: string,
   city?: string
 ): Promise<DeliveryZone | null> {
+  // Rows store bare 5-digit ZIPs and plain city names; customers type
+  // "94110-1234", " 94110", "Oakland ". Normalize before matching so a stray
+  // suffix or space is not reported as "we don't deliver there".
+  const zip = postalCode.replace(/\D/g, '').slice(0, 5);
+  const cityKey = city?.trim().toLowerCase() || '';
+
   try {
     const zones = await prisma.cateringDeliveryZone.findMany({
       where: {
@@ -78,17 +84,22 @@ export async function determineDeliveryZone(
       },
     });
 
+    if (zones.length === 0) {
+      console.error('determineDeliveryZone: catering_delivery_zones has no active rows');
+      return null;
+    }
+
     // Find zone that matches postal code
-    const postalMatch = zones.find(zone => zone.postalCodes.includes(postalCode));
+    const postalMatch = zip ? zones.find(zone => zone.postalCodes.includes(zip)) : undefined;
 
     if (postalMatch) {
       return postalMatch.zone as DeliveryZone;
     }
 
     // Find zone that matches city (case-insensitive)
-    if (city) {
+    if (cityKey) {
       const cityMatch = zones.find(zone =>
-        zone.cities.some(zoneCity => zoneCity.toLowerCase() === city.toLowerCase())
+        zone.cities.some(zoneCity => zoneCity.trim().toLowerCase() === cityKey)
       );
 
       if (cityMatch) {
