@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma, withTransaction } from '@/lib/db-unified';
 import { requireAdminAccess } from '@/lib/auth/admin-guard';
 import { setAuditContext } from '@/lib/audit/delivery-zone-audit';
+import { clearDeliveryZonesCache } from '@/lib/delivery-zones';
 import {
   DeliveryZoneRequestSchema,
   DeliveryZoneUpdateSchema,
@@ -161,6 +162,9 @@ export async function POST(request: NextRequest) {
 
       const message = isUpdate ? 'Zone updated successfully' : 'Zone created successfully';
 
+      // Checkout reads minimums/fees through a 5-minute in-process cache.
+      clearDeliveryZonesCache();
+
       return NextResponse.json({
         message,
         zone: processedResult,
@@ -263,6 +267,8 @@ export async function PUT(request: NextRequest) {
       isActive: result.active, // Map database active back to frontend isActive
     }));
 
+    clearDeliveryZonesCache();
+
     return NextResponse.json({
       message: 'Delivery zones updated successfully',
       zones: processedResults,
@@ -318,6 +324,8 @@ export async function DELETE(request: NextRequest) {
     if (!existingZone) {
       return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
     }
+
+    clearDeliveryZonesCache();
 
     return NextResponse.json({
       message: `Delivery zone \"${existingZone.name}\" deleted successfully`,
