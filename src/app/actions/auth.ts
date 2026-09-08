@@ -28,8 +28,9 @@ async function isLiveAuthUser(userId: string): Promise<boolean> {
     const { supabaseAdmin } = await import('@/lib/supabase/admin');
     const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
     if (error) {
-      // Supabase reports an unknown id as an error; anything else is unknown state.
-      return error.status !== 404;
+      // Only Supabase's own "no such user" answer proves absence. Any other
+      // 404 (a misrouted NEXT_PUBLIC_SUPABASE_URL) is unknown state.
+      return !(error.status === 404 && error.code === 'user_not_found');
     }
     return Boolean(data?.user);
   } catch (error) {
@@ -37,6 +38,26 @@ async function isLiveAuthUser(userId: string): Promise<boolean> {
     return true;
   }
 }
+
+/**
+ * Whether an existing `profiles` row may be re-pointed at `userId`.
+ * Never an ADMIN row (those are linked by an admin tool, not by whoever
+ * registers the address), and never a row whose current id is still a live
+ * auth user (someone who changed their login email and left the row behind).
+ */
+async function canAdoptProfile(
+  row: { id: string; role: UserRole },
+  userId: string
+): Promise<boolean> {
+  if (row.role === UserRole.ADMIN) return false;
+  if (row.id === userId) return true;
+  return !(await isLiveAuthUser(row.id));
+}
+
+const EMAIL_ALREADY_REGISTERED_MESSAGE =
+  'This email is already registered. Please sign in instead.';
+const PROFILE_LINK_REFUSED_MESSAGE =
+  'This email is already associated with an existing account. Please contact support.';
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get('email') as string;
@@ -103,15 +124,29 @@ export const signUpAction = async (formData: FormData) => {
     return { error: 'Sign up process failed unexpectedly. Could not retrieve user information.' };
   }
 
+  // With email confirmation on, Supabase answers a sign-up for an address that
+  // is already registered with HTTP 200 and a placeholder user: a fresh random
+  // id and no identities. Linking a profile to that id would orphan the real
+  // owner, so stop here.
+  if (!signUpData.user.identities || signUpData.user.identities.length === 0) {
+    return { error: EMAIL_ALREADY_REGISTERED_MESSAGE };
+  }
+
   const userId = signUpData.user.id;
 
   try {
     if (existingProfile) {
+      if (!(await canAdoptProfile(existingProfile, userId))) {
+        console.error(
+          `Sign-up: refusing to link existing profile ${existingProfile.id} to ${userId}`
+        );
+        return { error: PROFILE_LINK_REFUSED_MESSAGE };
+      }
       // Update existing profile to link it with the new Supabase user ID
       await withRetry(
         async () => {
           return await prisma.profile.update({
-            where: { email },
+            where: { id: existingProfile.id },
             data: {
               id: userId,
               name: name || existingProfile.email.split('@')[0], // Use provided name or email prefix
@@ -165,8 +200,16 @@ export const signUpAction = async (formData: FormData) => {
 
     if (isEmailUniqueViolation(profileError)) {
       try {
-        await prisma.profile.update({
+        const collided = await prisma.profile.findUnique({
           where: { email },
+          select: { id: true, role: true },
+        });
+        if (!collided || !(await canAdoptProfile(collided, userId))) {
+          console.error(`Sign-up: refusing to link colliding profile for user ${userId}`);
+          return { error: PROFILE_LINK_REFUSED_MESSAGE };
+        }
+        await prisma.profile.update({
+          where: { id: collided.id },
           data: {
             id: userId,
             updated_at: new Date(),
@@ -289,37 +332,49 @@ export const signInAction = async (formData: FormData) => {
           select: { id: true, role: true },
         });
 
-        if (!orphan || orphan.role === UserRole.ADMIN) {
-          console.error(
-            `Sign-in: refusing profile relink for ${user.id}: ${orphan ? 'existing row is ADMIN' : 'no row found by email'}`
-          );
+        if (!orphan) {
+          console.error(`Sign-in: refusing profile relink for ${user.id}: no row found by email`);
           return encodedRedirect('error', '/sign-in', PROFILE_SETUP_FAILED_MESSAGE);
         }
 
-        // "Orphaned" must be proven, not assumed: if the row's current id is
-        // still a live auth user (someone who changed their login email and
-        // left this profile behind), relinking would hand their order history
-        // to whoever holds the address now.
-        if (await isLiveAuthUser(orphan.id)) {
-          console.error(
-            `Sign-in: refusing profile relink for ${user.id}: existing row belongs to a live auth user`
-          );
-          return encodedRedirect('error', '/sign-in', PROFILE_SETUP_FAILED_MESSAGE);
-        }
+        if (orphan.id === user.id) {
+          // A concurrent sign-in already relinked it.
+          profile = { role: orphan.role };
+        } else {
+          if (!(await canAdoptProfile(orphan, user.id))) {
+            console.error(
+              `Sign-in: refusing profile relink for ${user.id}: row ${orphan.id} is ADMIN or still owned`
+            );
+            return encodedRedirect('error', '/sign-in', PROFILE_SETUP_FAILED_MESSAGE);
+          }
 
-        // Idempotent under concurrency: two simultaneous sign-ins both set the
-        // same id, so the second update is a no-op rather than a conflict.
-        profile = await withRetry(
-          async () =>
-            prisma.profile.update({
-              where: { id: orphan.id },
-              data: { id: user.id, updated_at: new Date() },
-              select: { role: true },
-            }),
-          3,
-          'signInAction_relinkProfile'
-        );
-        console.warn(`Sign-in: relinked orphaned profile ${orphan.id} to auth user ${user.id}`);
+          try {
+            profile = await withRetry(
+              async () =>
+                prisma.profile.update({
+                  where: { id: orphan.id },
+                  data: { id: user.id, updated_at: new Date() },
+                  select: { role: true },
+                }),
+              3,
+              'signInAction_relinkProfile'
+            );
+            console.warn(`Sign-in: relinked orphaned profile ${orphan.id} to auth user ${user.id}`);
+          } catch (updateError) {
+            // P2025: the row vanished under its old id because a concurrent
+            // sign-in relinked it first. Re-read under the new id.
+            const code = (updateError as { code?: string } | null)?.code;
+            const relinked =
+              code === 'P2025'
+                ? await prisma.profile.findUnique({
+                    where: { id: user.id },
+                    select: { role: true },
+                  })
+                : null;
+            if (!relinked) throw updateError;
+            profile = relinked;
+          }
+        }
       } catch (relinkError) {
         console.error(`Failed to relink profile for user ${user.id} during sign-in:`, relinkError);
         return encodedRedirect('error', '/sign-in', PROFILE_SETUP_FAILED_MESSAGE);

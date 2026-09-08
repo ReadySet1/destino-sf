@@ -67,15 +67,20 @@ const emailUniqueViolation = Object.assign(new Error('Unique constraint failed')
   meta: { target: ['email'] },
 });
 
+const notFound = { status: 404, code: 'user_not_found' };
+
 describe('signUpAction (E2 leftover)', () => {
   const originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  // A genuinely new Supabase user carries at least one identity.
+  const newUser = { id: 'auth-user-1', identities: [{ id: 'identity-1' }] };
 
   beforeEach(() => {
     jest.clearAllMocks();
     profileMock.findUnique.mockResolvedValue(null);
     profileMock.upsert.mockResolvedValue({ id: 'auth-user-1' });
     mockSignInWithPassword.mockResolvedValue({ error: { message: 'Invalid login credentials' } });
-    mockSignUp.mockResolvedValue({ data: { user: { id: 'auth-user-1' } }, error: null });
+    mockSignUp.mockResolvedValue({ data: { user: newUser }, error: null });
+    mockGetUserById.mockResolvedValue({ data: { user: null }, error: notFound });
   });
 
   afterEach(() => {
@@ -95,6 +100,85 @@ describe('signUpAction (E2 leftover)', () => {
         options: { emailRedirectTo: 'https://www.destinosf.com/auth/callback' },
       })
     );
+  });
+
+  it('treats the placeholder user Supabase returns for a registered email as "already registered"', async () => {
+    // With email confirmation on, GoTrue answers a duplicate sign-up with 200,
+    // a fresh random id and NO identities. Nothing may be linked to that id.
+    mockSignUp.mockResolvedValue({
+      data: { user: { id: 'placeholder-id', identities: [] } },
+      error: null,
+    });
+    profileMock.findUnique.mockResolvedValue({ id: 'real-owner', role: 'CUSTOMER', email: 'x' });
+
+    const result = await signUpAction(
+      formDataFrom({ email: 'taken@example.com', password: 'secret123' })
+    );
+
+    expect(result).toEqual({ error: expect.stringMatching(/already registered/i) });
+    expect(profileMock.update).not.toHaveBeenCalled();
+    expect(profileMock.upsert).not.toHaveBeenCalled();
+  });
+
+  describe('linking an existing profile row', () => {
+    const seeded = { id: 'seed-row-id', role: 'CUSTOMER', email: 'seed@example.com' };
+
+    it('adopts a CUSTOMER row whose id is not a live auth user, by its id', async () => {
+      profileMock.findUnique.mockResolvedValue(seeded);
+      profileMock.update.mockResolvedValue({ id: newUser.id });
+
+      const result = await signUpAction(
+        formDataFrom({ email: seeded.email, password: 'secret123', name: 'Seed' })
+      );
+
+      expect(result).toEqual({ success: expect.any(String) });
+      expect(mockGetUserById).toHaveBeenCalledWith(seeded.id);
+      expect(profileMock.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: seeded.id },
+          data: expect.objectContaining({ id: newUser.id, name: 'Seed' }),
+        })
+      );
+    });
+
+    it('never adopts an ADMIN row during sign-up', async () => {
+      profileMock.findUnique.mockResolvedValue({ ...seeded, role: 'ADMIN' });
+
+      const result = await signUpAction(
+        formDataFrom({ email: seeded.email, password: 'secret123' })
+      );
+
+      expect(profileMock.update).not.toHaveBeenCalled();
+      expect(profileMock.upsert).not.toHaveBeenCalled();
+      expect(result).toEqual({ error: expect.stringMatching(/contact support/i) });
+    });
+
+    it('never adopts a row whose id still belongs to a live auth user', async () => {
+      profileMock.findUnique.mockResolvedValue(seeded);
+      mockGetUserById.mockResolvedValue({ data: { user: { id: seeded.id } }, error: null });
+
+      const result = await signUpAction(
+        formDataFrom({ email: seeded.email, password: 'secret123' })
+      );
+
+      expect(profileMock.update).not.toHaveBeenCalled();
+      expect(result).toEqual({ error: expect.stringMatching(/contact support/i) });
+    });
+
+    it('applies the same guards on the P2002 fallback path', async () => {
+      // Pre-check saw nothing (row created between check and upsert), upsert collides.
+      profileMock.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ ...seeded, role: 'ADMIN' });
+      profileMock.upsert.mockRejectedValue(emailUniqueViolation);
+
+      const result = await signUpAction(
+        formDataFrom({ email: seeded.email, password: 'secret123' })
+      );
+
+      expect(profileMock.update).not.toHaveBeenCalled();
+      expect(result).toEqual({ error: expect.stringMatching(/contact support/i) });
+    });
   });
 
   it('falls back to NEXT_PUBLIC_SITE_URL when the origin header is absent', async () => {
@@ -136,7 +220,7 @@ describe('signInAction (E3 orphaned profile relink)', () => {
     // The upsert-by-id collides with the orphan row's unique email...
     profileMock.upsert.mockRejectedValue(emailUniqueViolation);
     // ...and the row's old id no longer exists in auth.users.
-    mockGetUserById.mockResolvedValue({ data: { user: null }, error: { status: 404 } });
+    mockGetUserById.mockResolvedValue({ data: { user: null }, error: notFound });
   });
 
   it('relinks the orphaned row (by its old id) to the auth user id on P2002(email)', async () => {
@@ -186,6 +270,41 @@ describe('signInAction (E3 orphaned profile relink)', () => {
 
     expect(profileMock.update).not.toHaveBeenCalled();
     expect(mockRedirect).toHaveBeenCalledWith(lockoutRedirect);
+  });
+
+  it('fails closed on a 404 that is not user_not_found (misrouted Supabase URL)', async () => {
+    mockGetUserById.mockResolvedValue({ data: { user: null }, error: { status: 404 } });
+
+    await signInAction(formDataFrom({ email: authUser.email, password: 'secret123' }));
+
+    expect(profileMock.update).not.toHaveBeenCalled();
+    expect(mockRedirect).toHaveBeenCalledWith(lockoutRedirect);
+  });
+
+  it('treats a row already carrying the auth user id as linked (concurrent sign-in)', async () => {
+    seedOrphan({ id: authUser.id, role: 'CUSTOMER' });
+
+    await signInAction(formDataFrom({ email: authUser.email, password: 'secret123' }));
+
+    expect(profileMock.update).not.toHaveBeenCalled();
+    expect(mockGetUserById).not.toHaveBeenCalled();
+    expect(mockRedirect).toHaveBeenCalledWith('/menu');
+  });
+
+  it('recovers when a concurrent sign-in relinked the row first (P2025)', async () => {
+    profileMock.update.mockRejectedValue(
+      Object.assign(new Error('Record to update not found'), { code: 'P2025' })
+    );
+    // After the race, the row is found under the auth user's id.
+    profileMock.findUnique.mockImplementation(async (args: { where: { id?: string } }) =>
+      args.where.id === authUser.id ? { role: 'CUSTOMER' } : args.where.id ? null : orphanRow
+    );
+    // First lookup by id (before upsert) must still return null to enter the branch.
+    profileMock.findUnique.mockImplementationOnce(async () => null);
+
+    await signInAction(formDataFrom({ email: authUser.email, password: 'secret123' }));
+
+    expect(mockRedirect).toHaveBeenCalledWith('/menu');
   });
 
   it('fails closed when the admin lookup itself errors', async () => {
