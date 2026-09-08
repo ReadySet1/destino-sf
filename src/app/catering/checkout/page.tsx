@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LogInIcon, UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { getAuthenticatedUserProfile } from '@/app/actions/auth';
+import { getActiveDeliveryZones } from '@/lib/delivery-zones';
 import { measurePerformance } from '@/utils/performance';
 import { PageErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -18,6 +19,10 @@ export default async function CateringCheckoutPage() {
   );
 
   console.log('📊 Auth profile fetch result:', { isLoggedIn, userData, error });
+
+  // Zones, minimums and fees come from `catering_delivery_zones` (admin-editable),
+  // the same source the server validates against.
+  const deliveryZones = await getActiveDeliveryZones();
 
   return (
     <PageErrorBoundary>
@@ -46,7 +51,11 @@ export default async function CateringCheckoutPage() {
             </Alert>
           )}
 
-          <CateringCheckoutClient userData={userData} isLoggedIn={isLoggedIn} />
+          <CateringCheckoutClient
+            userData={userData}
+            isLoggedIn={isLoggedIn}
+            deliveryZones={deliveryZones}
+          />
         </div>
       </div>
     </PageErrorBoundary>

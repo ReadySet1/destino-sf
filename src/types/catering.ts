@@ -58,7 +58,9 @@ export interface ZoneMinimumConfig {
   active: boolean;
 }
 
-// Default Zone Minimums Configuration (updated pricing - DES-52)
+// Default Zone Minimums Configuration (updated pricing - DES-52).
+// Seed/reference values only. Runtime zone resolution, minimums, fees and the
+// public zone list come from `catering_delivery_zones` via `@/lib/delivery-zones`.
 export const DELIVERY_ZONE_MINIMUMS: Record<DeliveryZone, ZoneMinimumConfig> = {
   [DeliveryZone.SAN_FRANCISCO]: {
     zone: DeliveryZone.SAN_FRANCISCO,
@@ -562,141 +564,6 @@ export const BOXED_LUNCH_ADD_ONS: Record<AddOnOption, BoxedLunchAddOn> = {
 };
 
 // Utility Functions for Delivery Zones and Minimum Purchase Requirements
-
-/**
- * Get zone configuration by zone enum
- */
-export function getZoneConfig(zone: DeliveryZone): ZoneMinimumConfig {
-  return DELIVERY_ZONE_MINIMUMS[zone];
-}
-
-/**
- * Get all active delivery zones
- */
-export function getActiveDeliveryZones(): ZoneMinimumConfig[] {
-  return Object.values(DELIVERY_ZONE_MINIMUMS).filter(zone => zone.active);
-}
-
-/**
- * Validate minimum purchase amount for a given zone
- */
-export function validateMinimumPurchase(
-  orderAmount: number,
-  zone: DeliveryZone
-): MinimumPurchaseValidation {
-  const zoneConfig = getZoneConfig(zone);
-  const isValid = orderAmount >= zoneConfig.minimumAmount;
-
-  const validation: MinimumPurchaseValidation = {
-    isValid,
-    currentAmount: orderAmount,
-    minimumRequired: zoneConfig.minimumAmount,
-    zone,
-  };
-
-  if (!isValid) {
-    validation.shortfall = zoneConfig.minimumAmount - orderAmount;
-    validation.message = `Minimum order of $${zoneConfig.minimumAmount.toFixed(2)} required for ${zoneConfig.name}. You need $${validation.shortfall.toFixed(2)} more.`;
-  }
-
-  return validation;
-}
-
-/**
- * Calculate total order amount including delivery fee
- */
-export function calculateOrderTotal(
-  subtotal: number,
-  zone: DeliveryZone,
-  includeDeliveryFee: boolean = true
-): number {
-  const zoneConfig = getZoneConfig(zone);
-  const deliveryFee = includeDeliveryFee ? zoneConfig.deliveryFee || 0 : 0;
-  return subtotal + deliveryFee;
-}
-
-/**
- * Get minimum purchase message for display
- */
-export function getMinimumPurchaseMessage(zone: DeliveryZone): string {
-  const zoneConfig = getZoneConfig(zone);
-  return `Minimum order: $${zoneConfig.minimumAmount.toFixed(2)} for ${zoneConfig.name}`;
-}
-
-/**
- * Determine delivery zone based on postal code or city
- * This is a simplified implementation - in production you'd use a more sophisticated
- * geocoding service or ZIP code database
- */
-export function determineDeliveryZone(postalCode: string, city?: string): DeliveryZone | null {
-  const zipCode = postalCode.replace(/\D/g, '').substring(0, 5);
-  const zipNumber = parseInt(zipCode);
-
-  // San Francisco ZIP codes: 94102-94199
-  if (zipNumber >= 94102 && zipNumber <= 94199) {
-    return DeliveryZone.SAN_FRANCISCO;
-  }
-
-  // South Bay ZIP codes (San José area): 95110-95199
-  if (zipNumber >= 95110 && zipNumber <= 95199) {
-    return DeliveryZone.SOUTH_BAY;
-  }
-
-  // Lower Peninsula ZIP codes: 94000-94099 and 94301-94399
-  // This includes San Carlos (94070), Belmont, Burlingame, Daly City, Menlo Park,
-  // Redwood City, San Bruno, South San Francisco, and other San Mateo County cities
-  if ((zipNumber >= 94000 && zipNumber <= 94099) || (zipNumber >= 94301 && zipNumber <= 94399)) {
-    return DeliveryZone.LOWER_PENINSULA;
-  }
-
-  // Peninsula ZIP codes: 94500-94599 (Far Peninsula, East Bay)
-  if (zipNumber >= 94500 && zipNumber <= 94599) {
-    return DeliveryZone.PENINSULA;
-  }
-
-  // If we can't determine from ZIP, try city name matching
-  if (city) {
-    const cityLower = city.toLowerCase();
-
-    if (cityLower.includes('san francisco') || cityLower.includes('sf')) {
-      return DeliveryZone.SAN_FRANCISCO;
-    }
-
-    if (
-      cityLower.includes('san jose') ||
-      cityLower.includes('san josé') ||
-      cityLower.includes('santa clara') ||
-      cityLower.includes('sunnyvale')
-    ) {
-      return DeliveryZone.SOUTH_BAY;
-    }
-
-    if (
-      cityLower.includes('palo alto') ||
-      cityLower.includes('mountain view') ||
-      cityLower.includes('redwood city') ||
-      cityLower.includes('san carlos') ||
-      cityLower.includes('belmont') ||
-      cityLower.includes('burlingame') ||
-      cityLower.includes('menlo park') ||
-      cityLower.includes('san bruno') ||
-      cityLower.includes('south san francisco') ||
-      cityLower.includes('daly city')
-    ) {
-      return DeliveryZone.LOWER_PENINSULA;
-    }
-
-    if (
-      cityLower.includes('san ramon') ||
-      cityLower.includes('san ramón') ||
-      cityLower.includes('walnut creek')
-    ) {
-      return DeliveryZone.PENINSULA;
-    }
-  }
-
-  return null; // Unable to determine zone
-}
 
 // Smart Override System for Square vs Local Items (matches Prisma schema)
 export interface CateringItemOverrides {

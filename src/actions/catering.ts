@@ -1,6 +1,12 @@
 'use server';
 
-import { prisma as db, withRetry, ensureConnection, warmConnection, withServerComponentDb } from '@/lib/db-unified';
+import {
+  prisma as db,
+  withRetry,
+  ensureConnection,
+  warmConnection,
+  withServerComponentDb,
+} from '@/lib/db-unified';
 import { isBuildTime, safeBuildTimeOperation } from '@/lib/build-time-utils';
 import { syncCustomerToProfile } from '@/lib/profile-sync';
 import {
@@ -8,11 +14,13 @@ import {
   CateringPackageType,
   CateringItemCategory,
   DeliveryZone,
-  determineDeliveryZone,
-  validateMinimumPurchase,
-  getZoneConfig,
   type DeliveryAddress,
 } from '@/types/catering';
+import {
+  determineDeliveryZone,
+  getZoneConfig,
+  validateMinimumPurchase,
+} from '@/lib/delivery-zones';
 import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
 import { PaymentMethod, CateringStatus, PaymentStatus } from '@prisma/client';
@@ -1269,7 +1277,7 @@ export async function initializeBoxedLunchData(): Promise<{
 }
 
 export async function validateCateringOrderWithDeliveryZone(
-  deliveryAddress: string,
+  address: { city: string; postalCode: string },
   totalAmount: number
 ): Promise<{
   success: boolean;
@@ -1279,16 +1287,20 @@ export async function validateCateringOrderWithDeliveryZone(
   minimumPurchase?: number;
 }> {
   try {
-    const zone = determineDeliveryZone(deliveryAddress);
+    // Zones live in `catering_delivery_zones` (admin-editable). The rows store
+    // the identifier lowercase (`east_bay`); normalize to the enum so callers
+    // and persisted orders always see `EAST_BAY`.
+    const resolved = await determineDeliveryZone(address.postalCode, address.city);
 
-    if (!zone) {
+    if (!resolved) {
       return {
         success: false,
         error: 'Delivery zone not supported',
       };
     }
 
-    const zoneConfig = getZoneConfig(zone);
+    const zone = resolved.toUpperCase() as DeliveryZone;
+    const zoneConfig = await getZoneConfig(zone);
 
     if (!zoneConfig) {
       return {
@@ -1297,7 +1309,7 @@ export async function validateCateringOrderWithDeliveryZone(
       };
     }
 
-    const minimumPurchaseValidation = validateMinimumPurchase(totalAmount, zone);
+    const minimumPurchaseValidation = await validateMinimumPurchase(totalAmount, zone);
 
     if (!minimumPurchaseValidation.isValid) {
       return {

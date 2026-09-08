@@ -3,20 +3,23 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Clock, DollarSign } from 'lucide-react';
-import { getActiveDeliveryZones, type ZoneMinimumConfig } from '@/types/catering';
+import { type ZoneMinimumConfig } from '@/types/catering';
 
 interface DeliveryZoneInfoProps {
+  /** Active zones from `catering_delivery_zones`; pass the result of `getActiveDeliveryZones()` from `@/lib/delivery-zones`. */
+  zones: ZoneMinimumConfig[];
   className?: string;
   showTitle?: boolean;
   compact?: boolean;
 }
 
 export function DeliveryZoneInfo({
+  zones,
   className = '',
   showTitle = true,
   compact = false,
 }: DeliveryZoneInfoProps) {
-  const activeZones = getActiveDeliveryZones();
+  const activeZones = zones;
 
   if (compact) {
     return (
