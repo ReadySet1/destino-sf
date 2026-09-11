@@ -4,7 +4,6 @@ import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
-import { createProductAction } from '../actions';
 import { Category } from '@/types/product';
 import { logger } from '@/utils/logger';
 
@@ -291,6 +290,7 @@ export default async function NewProductPage() {
                 <p className="text-sm text-gray-600 max-w-prose mx-auto">
                   Square is the source of truth for product images. Add or replace the image on the
                   matching item in the Square catalog, then run a catalog sync to pull it in.
+                  Catering and sync-locked products keep the images they already have.
                 </p>
                 <input type="hidden" name="imageUrls" value="[]" />
               </div>
