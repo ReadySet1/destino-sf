@@ -98,18 +98,20 @@ Understand how products work in Destino SF! This guide explains how products are
 
 ### Product Images
 
+**Square is the source of truth for product images.** The admin product screens have no image
+upload: there is no file picker and no drag-and-drop. To add or replace a photo, edit the matching
+item in the Square catalog, then run a catalog sync to pull it in.
+
 **Image Sources**:
 
-- **Square Images**: Photos uploaded to Square POS
-- **Manual Upload**: Additional images can be added manually
-- **Image Protection**: System preserves custom images during sync
+- **Square Images**: Photos uploaded to Square POS, pulled in on every sync
+- **Image Protection**: Catering products and sync-locked products keep the images they already have, so a Square-side image change does not reach them
 
-**Managing Images**:
+**What the admin screens can do**:
 
-- **View Current Images**: See all product photos
-- **Add Additional Images**: Upload supplementary photos
-- **Image Quality**: Ensure high-quality food photography
-- **Update Process**: Changes may require manual intervention
+- **View Current Images**: See the photos synced from Square for a product
+- **Remove an Image**: Drop a photo from the product's list and save. This only changes Destino SF, never Square. For a normal product the next sync pulls the photo back; for catering and sync-locked products the removal sticks
+- **Image Quality**: Ensure high-quality food photography — set it in Square
 
 ### Image Troubleshooting
 
@@ -122,8 +124,8 @@ Understand how products work in Destino SF! This guide explains how products are
 **Solutions**:
 
 - **Upload in Square**: Add images to Square POS first
-- **Manual Addition**: Add images through admin interface
 - **Sync Again**: Re-sync to pull updated images
+- **Photo Did Not Change?**: Catering and sync-locked products keep their existing images by design. Ask an engineer to run a forced image sync (`pnpm square-sync --force-images`) for a sync-locked product; catering images are always preserved
 
 ## ⚙️ Product Settings
 
