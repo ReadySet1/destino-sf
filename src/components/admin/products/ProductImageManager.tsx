@@ -28,8 +28,6 @@ export function ProductImageManager({
     setImageErrors(prev => new Set(prev).add(url));
   };
 
-  const canAddMore = images.length < maxImages;
-
   return (
     <div className="space-y-6">
       {/* Existing Images Grid */}
@@ -86,40 +84,16 @@ export function ProductImageManager({
         </div>
       )}
 
-      {/* Upload Area Placeholder */}
-      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50">
-        <div className="space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gray-200 rounded-xl flex items-center justify-center">
-            <svg
-              className="w-8 h-8 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-gray-900 mb-1">Add New Images</h3>
-            <p className="text-sm text-gray-600 mb-3">Upload functionality coming soon</p>
-            <div className="flex items-center justify-center gap-2 text-sm">
-              <span className="text-gray-500">
-                Current: {images.length} / {maxImages}
-              </span>
-              {canAddMore && (
-                <span className="text-green-600 font-medium">
-                  ({maxImages - images.length} slots available)
-                </span>
-              )}
-              {!canAddMore && <span className="text-amber-600 font-medium">(Maximum reached)</span>}
-            </div>
-          </div>
-        </div>
+      {/* Images are owned by the Square catalog; this screen can only remove them. */}
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center">
+        <h3 className="text-base font-semibold text-gray-900 mb-1">Images come from Square</h3>
+        <p className="text-sm text-gray-600 mb-3 max-w-prose mx-auto">
+          To add or replace an image, update the matching item in the Square catalog and run a
+          catalog sync.
+        </p>
+        <span className="text-sm text-gray-500">
+          Current: {images.length} / {maxImages}
+        </span>
       </div>
 
       {/* Image Count Badge */}
