@@ -288,6 +288,14 @@ To override a `syncLocked` product:
 
 Never hand-roll "manual image" heuristics based on URL patterns — use the `syncLocked` column.
 
+**There is no image upload in the admin product screens** (`/admin/products/new` and
+`/admin/products/[id]`). Square is the only way an image gets in. `ProductImageManager` can
+display synced images and remove one from the product's list; it has no file input and no upload
+handler. Do not add an upload affordance, real or placeholder — the screens state Square ownership
+instead. A removal made there changes Destino SF only: the next sync restores the image for a
+normal product, while catering and `syncLocked` products keep the removal because
+`determineProductImages()` returns `existingImages` for them.
+
 ### 4. Payment Testing
 
 **Use Square Sandbox for payment testing, never test with production payments.**
