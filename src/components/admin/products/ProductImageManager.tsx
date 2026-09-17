@@ -7,14 +7,9 @@ import { X } from 'lucide-react';
 interface ProductImageManagerProps {
   initialImages: string[];
   onImagesChange: (images: string[]) => void;
-  maxImages?: number;
 }
 
-export function ProductImageManager({
-  initialImages,
-  onImagesChange,
-  maxImages = 10,
-}: ProductImageManagerProps) {
+export function ProductImageManager({ initialImages, onImagesChange }: ProductImageManagerProps) {
   const [images, setImages] = useState<string[]>(initialImages);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
@@ -27,8 +22,6 @@ export function ProductImageManager({
   const handleImageError = (url: string) => {
     setImageErrors(prev => new Set(prev).add(url));
   };
-
-  const canAddMore = images.length < maxImages;
 
   return (
     <div className="space-y-6">
@@ -73,12 +66,12 @@ export function ProductImageManager({
               <button
                 type="button"
                 onClick={() => handleRemoveImage(index)}
-                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
-                aria-label="Remove image"
+                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                aria-label={`Remove image ${index + 1}`}
               >
                 <X className="h-4 w-4" />
               </button>
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs py-1 px-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
                 Image {index + 1}
               </div>
             </div>
@@ -86,40 +79,13 @@ export function ProductImageManager({
         </div>
       )}
 
-      {/* Upload Area Placeholder */}
-      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50">
-        <div className="space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gray-200 rounded-xl flex items-center justify-center">
-            <svg
-              className="w-8 h-8 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-gray-900 mb-1">Add New Images</h3>
-            <p className="text-sm text-gray-600 mb-3">Upload functionality coming soon</p>
-            <div className="flex items-center justify-center gap-2 text-sm">
-              <span className="text-gray-500">
-                Current: {images.length} / {maxImages}
-              </span>
-              {canAddMore && (
-                <span className="text-green-600 font-medium">
-                  ({maxImages - images.length} slots available)
-                </span>
-              )}
-              {!canAddMore && <span className="text-amber-600 font-medium">(Maximum reached)</span>}
-            </div>
-          </div>
-        </div>
+      {/* Images are owned by the Square catalog; this screen can only remove them. */}
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center">
+        <h3 className="text-base font-semibold text-gray-900 mb-1">Images come from Square</h3>
+        <p className="text-sm text-gray-600 max-w-prose mx-auto">
+          To add or replace an image, update the matching item in the Square catalog and run a
+          catalog sync. Catering and sync-locked products keep the images they already have.
+        </p>
       </div>
 
       {/* Image Count Badge */}
@@ -134,7 +100,7 @@ export function ProductImageManager({
               />
             </svg>
             <span className="text-sm font-medium text-blue-900">
-              {images.length} {images.length === 1 ? 'image' : 'images'} selected
+              {images.length} {images.length === 1 ? 'image' : 'images'} synced from Square
             </span>
           </div>
           <button

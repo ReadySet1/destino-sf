@@ -474,7 +474,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
                 <div className="ml-3">
                   <h2 className="text-xl font-semibold text-gray-900 mb-1">Product Images</h2>
                   <p className="text-sm text-gray-600">
-                    Upload high-quality images to showcase your product
+                    Managed in the Square catalog and synced automatically
                   </p>
                 </div>
               </div>

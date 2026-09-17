@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processWebhookQueue } from '@/lib/webhook-queue-fix';
-import { ensureConnection, shutdown } from '@/lib/db-unified';
+import { ensureConnection } from '@/lib/db-unified';
 
-// Vercel cron job configuration
 export const runtime = 'nodejs';
-export const maxDuration = 60; // 60 seconds max (Vercel limit)
+export const maxDuration = 60;
 
 /**
- * FIXED Webhook Queue Processor
+ * Webhook Queue Processor
  *
- * This runs as a Vercel cron job every minute to process queued webhooks
- * Designed for reliability and performance in serverless environment
+ * Triggered by the Dokploy schedule every 30 minutes to process queued webhooks.
+ *
+ * This handler runs inside a long-lived Node process that serves every other
+ * request with the same shared Prisma client. It must not tear that client
+ * down when it finishes: on 2026-09-16 a `shutdown()` call in `finally` ran
+ * while an admin catalog sync had queries in flight, which left the Prisma
+ * engine permanently reporting "Engine is not yet connected" until the
+ * container was restarted. (db-unified's own retry paths may still recycle the
+ * client on connection errors; that is a separate concern.)
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   console.log('🔄 Starting webhook queue processing cron job');
 
-  // Verify cron secret for security (optional but recommended)
+  // Fail closed: without a configured secret nothing may trigger the queue,
+  // matching the sibling cron routes.
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     console.warn('⚠️ Invalid cron authorization');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -38,7 +45,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Process queue with timeout protection
     stats = await processWebhookQueue({
       maxItems: 50, // Process up to 50 webhooks per run
-      timeout: 55000, // 55 seconds (5 second buffer for Vercel)
+      timeout: 55000, // per-item timeout, kept under maxDuration
     });
 
     const duration = Date.now() - startTime;
@@ -65,15 +72,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       },
       { status: 500 }
     );
-  } finally {
-    // CRITICAL: Clean up database connections to prevent leaks
-    console.log('🧹 Cleaning up database connections...');
-    try {
-      await shutdown();
-      console.log('✅ Database connections cleaned up');
-    } catch (cleanupError) {
-      console.warn('⚠️ Error during database cleanup:', cleanupError);
-    }
   }
 }
 

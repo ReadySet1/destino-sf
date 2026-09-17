@@ -236,7 +236,7 @@ pnpm analyze           # Bundle analysis (ANALYZE=true next build)
 ### **Catering Management**
 
 - **Package System**: Pre-configured appetizer packages with pricing
-- **Image Protection**: Manual images preserved during Square syncs
+- **Image Protection**: Catering and sync-locked products keep their existing images during Square syncs
 - **Delivery Zones**: Minimums, fees, ZIPs and cities per zone edited in Admin > Settings and read from `catering_delivery_zones` (seed defaults: SF $250+$50, South Bay $400+$75, Lower Peninsula $350+$65, East Bay $400+$75, Marin $400+$65)
 - **Lead Generation**: Comprehensive inquiry forms with follow-up automation
 
