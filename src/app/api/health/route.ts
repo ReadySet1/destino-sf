@@ -11,6 +11,11 @@ import { quickHealthCheck, getConnectionDiagnostics } from '@/lib/db-unified';
 export async function GET() {
   const healthResult = await quickHealthCheck(5000); // 5 second timeout for health checks
 
+  // Discarded clients whose disconnect never settled leak engine pools even
+  // while the app is otherwise healthy, so the counter is reported on both
+  // branches.
+  const diagnostics = getConnectionDiagnostics();
+
   if (healthResult.healthy) {
     return NextResponse.json(
       {
@@ -19,13 +24,11 @@ export async function GET() {
         version: process.env.npm_package_version || '1.0.0',
         environment: process.env.NODE_ENV || 'development',
         latencyMs: healthResult.latencyMs,
+        pendingBackgroundDisconnects: diagnostics.pendingBackgroundDisconnects,
       },
       { status: 200 }
     );
   }
-
-  // Get diagnostics for debugging when unhealthy
-  const diagnostics = getConnectionDiagnostics();
 
   return NextResponse.json(
     {
@@ -35,6 +38,7 @@ export async function GET() {
       version: process.env.npm_package_version || '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       latencyMs: healthResult.latencyMs,
+      pendingBackgroundDisconnects: diagnostics.pendingBackgroundDisconnects,
       diagnostics: {
         circuitBreakerState: diagnostics.circuitBreakerState,
         consecutiveFailures: diagnostics.consecutiveFailures,

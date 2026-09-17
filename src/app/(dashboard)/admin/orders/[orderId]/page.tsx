@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { prisma, forceResetConnection } from '@/lib/db';
 import { notFound, redirect } from 'next/navigation';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -316,8 +316,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
 
         // Attempt one retry with a fresh connection
         try {
-          await prisma.$disconnect();
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await forceResetConnection();
 
           order = await prisma.order.findUnique({
             where: { id: orderId },
@@ -380,8 +379,7 @@ const OrderDetailsPage = async ({ params }: PageProps) => {
 
           // Attempt one retry with a fresh connection
           try {
-            await prisma.$disconnect();
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await forceResetConnection();
 
             cateringOrder = await prisma.cateringOrder.findUnique({
               where: { id: orderId },
