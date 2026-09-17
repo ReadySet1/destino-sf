@@ -52,9 +52,7 @@ These errors were occurring in Vercel's serverless environment when using Supaba
 
 ```typescript
 // Synchronous client creation without explicit connection
-const client = new PrismaClient({
-  /* config */
-});
+const client = new PrismaClient({/* config */});
 export const prisma = client;
 ```
 
@@ -63,9 +61,7 @@ export const prisma = client;
 ```typescript
 // Async client creation with explicit connection and verification
 async function createPrismaClient(): Promise<PrismaClient> {
-  const client = new PrismaClient({
-    /* config */
-  });
+  const client = new PrismaClient({/* config */});
 
   // CRITICAL: Explicitly connect and verify
   await client.$connect();
@@ -128,3 +124,7 @@ Monitor Vercel function logs for:
 - Any remaining connection errors
 
 The fix addresses the serverless environment challenges while maintaining backward compatibility and improving overall database connection resilience.
+
+## Follow-up (2026-09)
+
+The recovery paths above still reset the client on connection errors, but the reset used to `await $disconnect()` before clearing the singleton. On 2026-09-16 that call never settled on a wedged engine, so the dead client stayed published and every query failed with "Engine is not yet connected" until the container was restarted. `src/lib/db-unified.ts` now unpublishes the client first (`discardSharedClient()`), disconnects it in the background with a 150 s watchdog, and exposes `pendingBackgroundDisconnects` on `getConnectionDiagnostics()` and `/api/health`. Application code must not call `$disconnect()` on the shared client; use `forceResetConnection()`. See `docs/troubleshooting/database-issues.md`.

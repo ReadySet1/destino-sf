@@ -119,7 +119,9 @@ await CacheInvalidation.invalidateProduct(productId);
 ```bash
 # Basic health check (uptime monitoring)
 GET /api/health
-# Response: { status: 'healthy', timestamp: '...', uptime: 12345 }
+# Response: { status: 'healthy', timestamp: '...', version: '...', environment: '...', latencyMs: 12, pendingBackgroundDisconnects: 0 }
+# 503 with status: 'unhealthy', error, and diagnostics { circuitBreakerState, consecutiveFailures, isStale } when the DB check fails.
+# pendingBackgroundDisconnects counts discarded Prisma clients whose disconnect has not settled; non-zero and not dropping means leaked engine pools.
 
 # Detailed health check (comprehensive monitoring)
 GET /api/health/detailed
