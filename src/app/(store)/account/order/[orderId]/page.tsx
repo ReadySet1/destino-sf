@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
-import { prisma } from '@/lib/db';
+import { prisma, forceResetConnection } from '@/lib/db';
 import { formatDistance, format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -204,8 +204,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
 
       // Attempt one retry with a fresh connection
       try {
-        await prisma.$disconnect();
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await forceResetConnection();
 
         regularOrder = await prisma.order.findUnique({
           where: {
@@ -294,8 +293,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
 
         // Attempt one retry with a fresh connection
         try {
-          await prisma.$disconnect();
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await forceResetConnection();
 
           cateringOrder = await prisma.cateringOrder.findUnique({
             where: {

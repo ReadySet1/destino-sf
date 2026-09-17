@@ -380,6 +380,7 @@ jest.mock('@/lib/db-unified', () => {
       consecutiveFailures: 0,
       isStale: false,
       circuitBreakerState: 'CLOSED',
+      pendingBackgroundDisconnects: 0,
     })),
   };
 });

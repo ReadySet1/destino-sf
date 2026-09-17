@@ -235,7 +235,9 @@ async function createPrismaClient(retryAttempt: number = 0): Promise<PrismaClien
   // CRITICAL: Explicitly connect the client to start the engine with enhanced timeout handling
   try {
     if (process.env.DB_DEBUG === 'true') {
-      console.log(`🔌 Connecting Prisma client... (attempt ${retryAttempt + 1}/${MAX_CONNECTION_RETRIES})`);
+      console.log(
+        `🔌 Connecting Prisma client... (attempt ${retryAttempt + 1}/${MAX_CONNECTION_RETRIES})`
+      );
     }
 
     // Progressive timeout: Start with 15s for faster failure detection, increase for retries, max 45s
@@ -406,6 +408,98 @@ let prismaClient: PrismaClient | null = null;
 let isInitializing = false;
 let initPromise: Promise<PrismaClient> | null = null;
 
+// A discarded client whose $disconnect never settles keeps its engine and
+// pooled connections alive for the life of the process. Count them so the
+// leak is visible in diagnostics and /api/health, and report each one once
+// the watchdog window passes. Prisma's $disconnect waits for the client's
+// in-flight query first, so the window must outlast the pooler's
+// socket_timeout (120 s) or a slow query would look like a leak.
+const BACKGROUND_DISCONNECT_WATCHDOG_MS = 150_000;
+let pendingBackgroundDisconnects = 0;
+
+/**
+ * Disconnect a client that is no longer published, without awaiting it.
+ *
+ * `$disconnect()` on a wedged engine can reject or never settle. Nothing in
+ * the recovery path may depend on it finishing, so it runs detached and only
+ * logs on failure.
+ */
+function disconnectInBackground(client: PrismaClient, reason: string): void {
+  pendingBackgroundDisconnects++;
+  let settled = false;
+
+  const watchdog = setTimeout(() => {
+    if (settled) return;
+    console.warn(
+      `[DB_CLIENT] Discarded client did not settle its disconnect within ${BACKGROUND_DISCONNECT_WATCHDOG_MS}ms (${reason}); ` +
+        `its engine and pooled connections stay open until it does`,
+      { pendingBackgroundDisconnects }
+    );
+    Sentry.captureMessage('Discarded Prisma client did not disconnect', {
+      level: 'warning',
+      tags: { db_client_leak: 'true' },
+      extra: { reason, pendingBackgroundDisconnects },
+    });
+  }, BACKGROUND_DISCONNECT_WATCHDOG_MS);
+  watchdog.unref?.();
+
+  Promise.resolve()
+    .then(() => client.$disconnect())
+    .catch(error => {
+      console.warn(
+        `[DB_CLIENT] Failed to disconnect discarded client (${reason}):`,
+        (error as Error).message
+      );
+    })
+    .finally(() => {
+      settled = true;
+      pendingBackgroundDisconnects--;
+      clearTimeout(watchdog);
+    });
+}
+
+/**
+ * Unpublish `stale` from the singleton slots, then disconnect it in the
+ * background.
+ *
+ * Order matters. On 2026-09-16 the recovery paths reset the slots only AFTER
+ * `await $disconnect()`; that call never settled on the wedged engine, so the
+ * dead client stayed published and every query failed with "Engine is not
+ * yet connected" until the container was restarted. Publishing the empty slot
+ * first guarantees the next `getPrismaClient()` builds a fresh client no
+ * matter what the old one does.
+ *
+ * Compare-and-swap: when `stale` is no longer the published client, another
+ * caller already replaced it. Leave the fresh client alone so concurrent
+ * failures do not keep tearing down each other's recovery.
+ *
+ * `initPromise` / `isInitializing` belong to `initializePrismaClient()` and
+ * are deliberately left untouched: nulling `initPromise` while an init is in
+ * flight lets a second init start and orphans the first client.
+ */
+function discardSharedClient(stale: PrismaClient | null, reason: string): void {
+  if (!stale) return;
+
+  const wasLocal = prismaClient === stale;
+  const wasGlobal = globalForPrisma.prisma === stale;
+  if (!wasLocal && !wasGlobal) return;
+
+  if (wasLocal) prismaClient = null;
+  if (wasGlobal) {
+    globalForPrisma.prisma = undefined;
+    globalForPrisma.prismaVersion = undefined;
+  }
+
+  // Logged at the discard, not only when the watchdog fires: this is the
+  // line an operator greps for after an "Engine is not yet connected" burst.
+  console.warn('[DB_CLIENT] Discarded the shared Prisma client', {
+    reason,
+    pendingBackgroundDisconnects: pendingBackgroundDisconnects + 1,
+  });
+
+  disconnectInBackground(stale, reason);
+}
+
 async function initializePrismaClient(): Promise<PrismaClient> {
   if (isInitializing && initPromise) {
     return initPromise;
@@ -421,21 +515,24 @@ async function initializePrismaClient(): Promise<PrismaClient> {
   isInitializing = true;
   initPromise = (async () => {
     try {
-      // Disconnect old client if it exists
-      if (globalForPrisma.prisma) {
-        try {
-          await globalForPrisma.prisma.$disconnect();
-        } catch (error) {
-          console.warn('Error disconnecting old Prisma client:', error);
-        }
-      }
-
       const client = await createPrismaClient();
+
+      // Whatever is published at swap time is what gets replaced. Read it
+      // here, not before the await: while the connect was pending, the
+      // synchronous proxy path may have published a basic client into the
+      // same slots, and capturing earlier would orphan it with a live pool.
+      // The replacement is disconnected only after the new client is live,
+      // and never awaited: a wedged engine's $disconnect can hang forever.
+      const previous = globalForPrisma.prisma ?? prismaClient;
 
       // Store in global and local references
       globalForPrisma.prisma = client;
       globalForPrisma.prismaVersion = CURRENT_PRISMA_VERSION;
       prismaClient = client;
+
+      if (previous && previous !== client) {
+        disconnectInBackground(previous, 'replaced during initialization');
+      }
 
       if (process.env.DB_DEBUG === 'true') {
         console.log('✅ Unified Prisma client initialized successfully');
@@ -650,9 +747,10 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let client: PrismaClient | null = null;
     try {
       // Ensure we have a properly initialized client
-      const client = await getPrismaClient();
+      client = await getPrismaClient();
 
       // Test the connection directly with the client (not through proxy)
       await client.$queryRaw`SELECT 1 as health_check`;
@@ -662,27 +760,19 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
 
       const isRetryableError = isConnectionError(error as Error);
 
-      if (isRetryableError && attempt < maxRetries) {
+      if (isRetryableError) {
         const poolFull = isPoolFullError(error as Error);
-        console.warn(`Connection attempt ${attempt}/${maxRetries} failed, retrying...`);
 
-        try {
-          // Pool-full retries reuse the existing client; only engine-level
-          // failures justify tearing it down.
-          if (!poolFull) {
-            if (prismaClient) {
-              await prismaClient.$disconnect();
-            }
-            prismaClient = null;
-            globalForPrisma.prisma = undefined;
-            initPromise = null;
-          }
+        // Pool-full retries reuse the existing client; only engine-level
+        // failures justify tearing it down. Do it even on the last attempt so
+        // the next caller starts from a fresh client, not the dead one.
+        if (!poolFull) {
+          discardSharedClient(client, `ensureConnection attempt ${attempt}`);
+        }
+
+        if (attempt < maxRetries) {
+          console.warn(`Connection attempt ${attempt}/${maxRetries} failed, retrying...`);
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        } catch (reconnectError) {
-          console.warn(
-            `Reconnection attempt ${attempt} failed:`,
-            (reconnectError as Error).message
-          );
         }
       }
     }
@@ -722,10 +812,7 @@ function isAuthenticationError(error: Error): boolean {
  * - Temporary connection pool exhaustion
  */
 function isTransientPoolerError(error: Error): boolean {
-  const transientErrors = [
-    'Tenant or user not found',
-    'FATAL: Tenant or user not found',
-  ];
+  const transientErrors = ['Tenant or user not found', 'FATAL: Tenant or user not found'];
 
   const message = error.message;
   return transientErrors.some(msg => message.toLowerCase().includes(msg.toLowerCase()));
@@ -811,8 +898,7 @@ export function isPoolFullError(error: Error): boolean {
   if ((error as any).code === 'P2024') return true;
   const msg = error.message;
   return (
-    msg.includes('Timed out fetching a new connection') ||
-    msg.includes('Connection pool timeout')
+    msg.includes('Timed out fetching a new connection') || msg.includes('Connection pool timeout')
   );
 }
 
@@ -867,9 +953,10 @@ export async function withRetry<T>(
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let client: PrismaClient | null = null;
     try {
       // Ensure we have a properly initialized client before each attempt
-      const client = await getPrismaClient();
+      client = await getPrismaClient();
 
       // On retry attempts, verify connection using the actual client
       if (attempt > 1) {
@@ -908,8 +995,24 @@ export async function withRetry<T>(
       // Track consecutive failures for connection health monitoring
       consecutiveFailures++;
 
-      if (isConnectionError(lastError) && attempt < maxRetries) {
+      if (isConnectionError(lastError)) {
         const poolFull = isPoolFullError(lastError);
+
+        // Pool-full means the client is healthy — just back off and retry.
+        // Other connection errors (engine dead, ECONNRESET, etc.) need a fresh
+        // client. Discard it even when this was the last attempt: leaving a
+        // proven-dead client published makes every later caller pay a failed
+        // attempt and a backoff before its own recovery kicks in.
+        if (!poolFull) {
+          discardSharedClient(client, `${operationName} attempt ${attempt}`);
+        }
+
+        // Out of retries: fall through to the exhausted-retries handling
+        // below the loop so transient pooler errors keep their actionable
+        // message.
+        if (attempt >= maxRetries) {
+          break;
+        }
 
         // Log connection errors with structured data
         console.warn('[DB_OPERATION_RETRY]', {
@@ -922,23 +1025,6 @@ export async function withRetry<T>(
           errorCode: (lastError as any).code,
         });
 
-        // Pool-full means the client is healthy — just back off and retry.
-        // Other connection errors (engine dead, ECONNRESET, etc.) need a fresh client.
-        if (!poolFull) {
-          try {
-            if (prismaClient) {
-              await prismaClient.$disconnect();
-            }
-            prismaClient = null;
-            globalForPrisma.prisma = undefined;
-            initPromise = null;
-          } catch (cleanupError) {
-            if (process.env.DB_DEBUG === 'true') {
-              console.warn('Error during client cleanup:', cleanupError);
-            }
-          }
-        }
-
         // Progressive backoff with jitter
         const baseDelay = 1000 * Math.pow(2, attempt - 1);
         const jitter = Math.random() * 500; // Add 0-500ms jitter
@@ -948,19 +1034,8 @@ export async function withRetry<T>(
         continue;
       }
 
-      // Don't retry non-connection errors or if max retries reached
-      // For transient pooler errors that exhausted retries, provide actionable message
-      if (isTransientPoolerError(lastError)) {
-        const actionableMessage = getTransientPoolerErrorMessage(lastError, maxRetries);
-        console.error(`${operationName} failed with transient pooler error after ${maxRetries} retries:`);
-        console.error(actionableMessage);
-
-        const poolerError = new Error(actionableMessage);
-        (poolerError as any).code = 'TRANSIENT_POOLER_ERROR';
-        (poolerError as any).originalError = error;
-        (poolerError as any).retryAttempts = maxRetries;
-        throw poolerError;
-      }
+      // Non-connection errors are not retried. (Transient pooler errors are
+      // connection errors and reach the exhausted-retries handling below.)
       throw error;
     }
   }
@@ -968,6 +1043,10 @@ export async function withRetry<T>(
   // Final error handling for exhausted retries
   if (lastError && isTransientPoolerError(lastError)) {
     const actionableMessage = getTransientPoolerErrorMessage(lastError, maxRetries);
+    console.error(
+      `${operationName} failed with transient pooler error after ${maxRetries} retries:`
+    );
+    console.error(actionableMessage);
     const poolerError = new Error(actionableMessage);
     (poolerError as any).code = 'TRANSIENT_POOLER_ERROR';
     (poolerError as any).originalError = lastError;
@@ -1180,6 +1259,7 @@ export function getConnectionDiagnostics(): {
   consecutiveFailures: number;
   isStale: boolean;
   circuitBreakerState: string;
+  pendingBackgroundDisconnects: number;
 } {
   const circuitStatus = getCircuitBreakerStatus();
   return {
@@ -1188,6 +1268,7 @@ export function getConnectionDiagnostics(): {
     consecutiveFailures,
     isStale: isConnectionStale(),
     circuitBreakerState: circuitStatus.state,
+    pendingBackgroundDisconnects,
   };
 }
 
@@ -1256,38 +1337,45 @@ export async function getHealthStatus(): Promise<{
  * Graceful shutdown
  */
 export async function shutdown(): Promise<void> {
-  try {
-    if (prismaClient) {
-      await prismaClient.$disconnect();
-      console.log('✅ Database client disconnected gracefully');
+  // Unpublish first so any later use builds a fresh client instead of
+  // reusing a disconnected one; then wait for the real teardown. The local
+  // and global slots can hold different clients (another module instance may
+  // have replaced the global one), so tear down every distinct one.
+  const clients = [...new Set([prismaClient, globalForPrisma.prisma])].filter(
+    (client): client is PrismaClient => Boolean(client)
+  );
+  prismaClient = null;
+  globalForPrisma.prisma = undefined;
+  globalForPrisma.prismaVersion = undefined;
+
+  if (clients.length === 0) return;
+
+  // One failing teardown must not stop the others.
+  const results = await Promise.allSettled(clients.map(client => client.$disconnect()));
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.error('Error during database shutdown:', result.reason);
     }
-  } catch (error) {
-    console.error('Error during database shutdown:', error);
+  }
+  if (results.every(result => result.status === 'fulfilled')) {
+    console.log('✅ Database client disconnected gracefully');
   }
 }
 
 /**
- * Force reset database connection to clear cached plans
- * This is useful after schema changes that cause "cached plan must not change result type" errors
+ * Unpublish the shared client and build a fresh one.
+ *
+ * The recovery primitive for callers that observed a dead engine or a pooler
+ * prepared-statement error (42P05 / 26000), and for schema changes that leave
+ * "cached plan must not change result type" errors behind. Never call
+ * `$disconnect()` on the shared client directly; use this.
  */
 export async function forceResetConnection(): Promise<void> {
-  console.log('🔄 Forcing database connection reset to clear cached query plans...');
+  console.log('[DB_CLIENT] Resetting the shared Prisma client...');
 
-  if (prismaClient) {
-    try {
-      await prismaClient.$disconnect();
-      console.log('✅ Old database connection closed');
-    } catch (error) {
-      console.warn('Error disconnecting old client:', error);
-    }
-  }
-
-  // Force recreation of the client by clearing the global reference
-  globalForPrisma.prisma = undefined;
-  globalForPrisma.prismaVersion = undefined;
-
-  // Wait a moment for cleanup
-  await new Promise(resolve => setTimeout(resolve, 100));
+  // Unpublish the current client first; its $disconnect runs in the
+  // background so a wedged engine cannot block the reset.
+  discardSharedClient(prismaClient ?? globalForPrisma.prisma ?? null, 'forceResetConnection');
 
   // Get a fresh client instance
   prismaClient = await getPrismaClient();

@@ -8,7 +8,9 @@ jest.mock('@/lib/db-unified', () => ({
 }));
 
 const mockQuickHealthCheck = quickHealthCheck as jest.MockedFunction<typeof quickHealthCheck>;
-const mockGetConnectionDiagnostics = getConnectionDiagnostics as jest.MockedFunction<typeof getConnectionDiagnostics>;
+const mockGetConnectionDiagnostics = getConnectionDiagnostics as jest.MockedFunction<
+  typeof getConnectionDiagnostics
+>;
 
 describe('/api/health', () => {
   beforeEach(() => {
@@ -20,6 +22,7 @@ describe('/api/health', () => {
       consecutiveFailures: 0,
       isStale: false,
       circuitBreakerState: 'CLOSED',
+      pendingBackgroundDisconnects: 0,
     });
   });
 
@@ -35,6 +38,7 @@ describe('/api/health', () => {
 
       expect(response.status).toBe(200);
       expect(data.status).toBe('healthy');
+      expect(data.pendingBackgroundDisconnects).toBe(0);
       expect(data.timestamp).toBeDefined();
       expect(data.environment).toBeDefined();
       expect(data.latencyMs).toBe(15);
@@ -111,6 +115,7 @@ describe('/api/health', () => {
         consecutiveFailures: 3,
         isStale: true,
         circuitBreakerState: 'HALF_OPEN',
+        pendingBackgroundDisconnects: 0,
       });
 
       const response = await GET();
@@ -121,6 +126,7 @@ describe('/api/health', () => {
       expect(data.diagnostics.circuitBreakerState).toBe('HALF_OPEN');
       expect(data.diagnostics.consecutiveFailures).toBe(3);
       expect(data.diagnostics.isStale).toBe(true);
+      expect(data.pendingBackgroundDisconnects).toBe(0);
     });
   });
 
@@ -137,6 +143,7 @@ describe('/api/health', () => {
         consecutiveFailures: 5,
         isStale: false,
         circuitBreakerState: 'OPEN',
+        pendingBackgroundDisconnects: 0,
       });
 
       const response = await GET();

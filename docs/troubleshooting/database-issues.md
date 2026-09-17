@@ -2,10 +2,10 @@
 
 ## Current Supabase Project IDs
 
-| Environment | Project ID                | Region     |
-| ----------- | ------------------------- | ---------- |
-| Development | `drrejylrcjbeldnzodjd`    | us-west-1  |
-| Production  | `ocusztulyiegeawqptrs`    | us-west-1  |
+| Environment | Project ID             | Region    |
+| ----------- | ---------------------- | --------- |
+| Development | `drrejylrcjbeldnzodjd` | us-west-1 |
+| Production  | `ocusztulyiegeawqptrs` | us-west-1 |
 
 > **WARNING**: The old project ID `avfiuivgvkgaovkqjnup` is DEPRECATED and should not be used.
 
@@ -22,11 +22,13 @@ This PostgreSQL authentication error occurs when the DATABASE_URL has an incorre
 The Supabase pooler requires the username to be `postgres.PROJECT_ID`, not just `postgres`.
 
 **Incorrect:**
+
 ```
 postgresql://postgres:PASSWORD@aws-0-us-west-1.pooler.supabase.com:6543/postgres
 ```
 
 **Correct:**
+
 ```
 postgresql://postgres.ocusztulyiegeawqptrs:PASSWORD@aws-0-us-west-1.pooler.supabase.com:6543/postgres
 ```
@@ -38,6 +40,7 @@ postgresql://postgres.PROJECT_ID:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/
 ```
 
 **Components:**
+
 - **Username**: `postgres.PROJECT_ID` (e.g., `postgres.ocusztulyiegeawqptrs`)
 - **Password**: Your database password (from Supabase Dashboard)
 - **Host**: `aws-0-REGION.pooler.supabase.com` (e.g., `aws-0-us-west-1.pooler.supabase.com`)
@@ -51,11 +54,13 @@ postgresql://postgres.PROJECT_ID:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/
 ### Environment-Specific Examples
 
 **Production:**
+
 ```
 postgresql://postgres.ocusztulyiegeawqptrs:YOUR_PASSWORD@aws-1-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&prepared_statements=false&statement_cache_size=0
 ```
 
 **Development:**
+
 ```
 postgresql://postgres.drrejylrcjbeldnzodjd:YOUR_PASSWORD@aws-0-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&prepared_statements=false&statement_cache_size=0
 ```
@@ -65,16 +70,19 @@ postgresql://postgres.drrejylrcjbeldnzodjd:YOUR_PASSWORD@aws-0-us-west-1.pooler.
 ### How to Fix in Vercel
 
 1. **Check current DATABASE_URL:**
+
    ```bash
    vercel env ls production
    ```
 
 2. **Remove incorrect variable:**
+
    ```bash
    vercel env rm DATABASE_URL production
    ```
 
 3. **Add correct variable:**
+
    ```bash
    vercel env add DATABASE_URL production
    # Paste the correct URL format when prompted
@@ -104,11 +112,13 @@ Before deploying, verify your DATABASE_URL:
 ### "Can't reach database server" (P1001)
 
 **Causes:**
+
 - Supabase project is paused
 - Network connectivity issues
 - Incorrect host/region in DATABASE_URL
 
 **Solutions:**
+
 1. Check Supabase status: https://status.supabase.com
 2. Verify project is not paused in Supabase Dashboard
 3. Confirm host and region are correct
@@ -116,14 +126,36 @@ Before deploying, verify your DATABASE_URL:
 ### "Connection pool timeout" (P2024)
 
 **Causes:**
+
 - Too many concurrent connections
 - Long-running queries blocking connections
 - Connection pool exhaustion
 
 **Solutions:**
+
 1. Review connection pool settings in `src/lib/db-unified.ts`
 2. Check for long-running queries
 3. Consider increasing pool size in Supabase Dashboard
+
+The app treats P2024 as a healthy client under load: `withRetry()` backs off and retries without replacing the shared Prisma client.
+
+### "Engine is not yet connected"
+
+**Causes:**
+
+- The shared Prisma client's engine died (pooler restart, ECONNRESET, container network blip)
+- Application code called `$disconnect()` on the shared client while other requests were using it
+
+**What the app does now:**
+
+- `withRetry()` and `ensureConnection()` in `src/lib/db-unified.ts` discard the dead client on any non-pool-full connection error, including the final attempt. The discard unpublishes the client first, so the next caller builds a fresh one, then disconnects the old client in the background. A wedged engine can no longer block recovery.
+- The log line to grep for is `[DB_CLIENT] Discarded the shared Prisma client` (with `reason`). If the old client's disconnect has not settled after 150 s you also get `[DB_CLIENT] Discarded client did not settle its disconnect` and a Sentry warning tagged `db_client_leak`.
+
+**What to check:**
+
+1. `GET /api/health` returns `pendingBackgroundDisconnects`. `0` is normal. A value that stays above `0` means discarded clients are holding engine pools open; restart the container if it keeps climbing.
+2. Look for the `[DB_CLIENT]` lines above in the container logs to see when and why the client was replaced.
+3. Make sure no code path disconnects the shared client directly. `src/__tests__/lib/shared-client-disconnect-guard.test.ts` fails on any `prisma.$disconnect()` (any alias) against `@/lib/db` / `@/lib/db-unified`. Use `forceResetConnection()` for a caller-side reset and `shutdown()` for process teardown.
 
 ---
 
@@ -152,7 +184,8 @@ console.log(formatDiagnosticsReport(diagnostics));
 
 ## Related Files
 
-- `src/lib/db-unified.ts` - Primary database client
+- `src/lib/db-unified.ts` - Primary database client, self-heal (`discardSharedClient`), `forceResetConnection()`, `shutdown()`
+- `src/lib/db-utils.ts` - `withDatabaseConnection()` backoff wrapper and `gracefulDatabaseShutdown()`
 - `src/lib/db-environment-validator.ts` - Environment validation
 - `src/lib/db-diagnostics.ts` - Diagnostic utilities
 - `src/lib/db-connection-manager.ts` - Connection management

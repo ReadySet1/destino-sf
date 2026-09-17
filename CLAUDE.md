@@ -50,6 +50,7 @@ pnpm test:performance:lighthouse:mobile # Mobile Lighthouse tests
 ```
 
 Lighthouse CI runs against key pages (homepage, product pages, cart, checkout) and enforces performance budgets. See `docs/PERFORMANCE_GUIDELINES.md` for:
+
 - Performance budgets and thresholds
 - Optimization guidelines
 - CI integration details
@@ -106,7 +107,7 @@ pnpm backup-db                 # Backup database
 
 Business logic and data access patterns:
 
-- **`db-unified.ts`**: Centralized database client (use this for all DB operations)
+- **`db-unified.ts`**: Centralized database client (use this for all DB operations). Never call `$disconnect()` on it from application code; `forceResetConnection()` is the caller-side reset primitive and `shutdown()` is for process teardown (see rule 13).
 - **`db-connection-manager.ts`**: Connection pooling and management
 - **Square Integration** (`src/lib/square/`):
   - `catalog-api.ts`: Product catalog sync
@@ -283,6 +284,7 @@ See `.env.example` and `docs/ENV_TEMPLATE_SQUARE.md` for complete setup.
 - **Edge case**: when Square returns 0 images AND the existing array contains a local `/images/...` asset, the existing array is preserved (so we don't blank out a local asset for nothing).
 
 To override a `syncLocked` product:
+
 - API: `POST /api/square/sync` with body `{ "options": { "forceImageUpdate": true } }`.
 - CLI: `pnpm square-sync --force-images`.
 
@@ -481,6 +483,16 @@ if (!health.healthy) {
 
 **See:** `docs/CONCURRENCY_PATTERNS.md` for complete documentation.
 
+### 13. Shared Prisma Client Ownership
+
+**Never call `prisma.$disconnect()` on the shared client** exported by `@/lib/db` / `@/lib/db-unified` (any alias, including the legacy `db` and `unifiedPrisma` exports). It is one process-wide singleton used by every request; disconnecting it from one code path wedged the Prisma engine for the whole container on 2026-09-16 ("Engine is not yet connected" until restart). `src/__tests__/lib/shared-client-disconnect-guard.test.ts` scans `src/` and fails on any direct disconnect.
+
+- Need a fresh connection after a dead engine, a pooler prepared-statement error, or a "cached plan must not change result type" error? Call `forceResetConnection()` from `@/lib/db-unified`.
+- Real process teardown? Call `shutdown()` (or `gracefulDatabaseShutdown()` in `db-utils.ts`, which delegates to it).
+- `withRetry()` / `ensureConnection()` self-heal on their own: on a non-pool-full connection error they call `discardSharedClient()`, which unpublishes the client first and disconnects it in the background (a 150 s watchdog logs and reports to Sentry if the disconnect never settles). Pool-full errors (P2024) keep the healthy client and only back off.
+- `db-utils.withDatabaseConnection()` only adds a longer backoff around `withRetry()`; it does not touch the client.
+- `getConnectionDiagnostics().pendingBackgroundDisconnects` (also on `/api/health`, healthy and unhealthy branches) counts discarded clients whose disconnect has not settled. A non-zero value that never drops means leaked engine pools.
+
 ## Common Workflows
 
 ### Adding a New Product Feature
@@ -614,11 +626,13 @@ pnpm test:components
 The following architectural changes were made during the Q2 2026 audit (see `docs/ROADMAP_2026_Q2.md` for full details):
 
 ### Rate Limiting
+
 - **In-memory rate limiter deleted** (`src/lib/security/rate-limiter.ts` no longer exists)
 - All rate limiting now uses the distributed Redis-based implementation in `src/lib/rate-limit.ts` (Upstash)
 - Contact form and webhook rate limiting both use `checkRateLimit()` from `src/lib/rate-limit.ts`
 
 ### Admin Route Security
+
 - **All admin API routes require `verifyAdminAccess()`** from `src/lib/auth/admin-guard.ts`
 - When adding new admin routes, always include the guard at the top of every handler:
   ```typescript
@@ -629,15 +643,18 @@ The following architectural changes were made during the Q2 2026 audit (see `doc
   ```
 
 ### Test/Debug Routes
+
 - All `/api/debug/*`, `/api/test-*`, `/test-*` routes have been deleted from production
 - Do NOT create test routes in the app directory — use Jest tests instead
 
 ### ESLint Rules
+
 - `@typescript-eslint/no-explicit-any`: warn (avoid `any` types)
 - `no-console`: warn (use `console.error`/`console.warn` only, not `console.log`)
 - `@typescript-eslint/no-unused-vars`: warn
 
 ### Performance Patterns
+
 - New routes should include a `loading.tsx` skeleton for better perceived performance
 - Use `animate-pulse` Tailwind class for skeleton placeholders
 - Static pages should export `revalidate` for ISR (e.g., `export const revalidate = 86400`)
@@ -659,6 +676,7 @@ tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
 The skill has specialized workflows that produce better results than ad-hoc answers.
 
 Key routing rules:
+
 - Product ideas, "is this worth building", brainstorming → invoke office-hours
 - Bugs, errors, "why is this broken", 500 errors → invoke investigate
 - Ship, deploy, push, create PR → invoke ship
