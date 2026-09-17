@@ -11,6 +11,10 @@
 import { prisma, forceResetConnection, shutdown } from '@/lib/db-unified';
 import { withDatabaseConnection, gracefulDatabaseShutdown } from '@/lib/db-utils';
 
+// Keep the fallback-value branch deterministic: build-time detection must not
+// short-circuit the retry loop under NODE_ENV=test.
+jest.mock('@/lib/build-time-utils', () => ({ isBuildTime: () => false }));
+
 const mockedReset = forceResetConnection as jest.MockedFunction<typeof forceResetConnection>;
 const mockedShutdown = shutdown as jest.MockedFunction<typeof shutdown>;
 const mockedDisconnect = prisma.$disconnect as jest.MockedFunction<typeof prisma.$disconnect>;
@@ -30,7 +34,12 @@ describe('db-utils and the shared Prisma client', () => {
   });
 
   describe('withDatabaseConnection()', () => {
-    it('recovers from a connection error through forceResetConnection, not a direct $disconnect', async () => {
+    // The inner withRetry() already discards a dead client and backs off on
+    // engine-level errors, and deliberately keeps the client on pool-full
+    // errors. This outer loop must only add a longer backoff: resetting the
+    // shared client here doubled connection pressure exactly when the pooler
+    // was already exhausted.
+    it('retries a connection error with backoff without touching the shared client', async () => {
       const connectionError = Object.assign(new Error("Can't reach database server"), {
         code: 'P1001',
       });
@@ -46,7 +55,7 @@ describe('db-utils and the shared Prisma client', () => {
 
       await expect(result).resolves.toBe('ok');
       expect(operation).toHaveBeenCalledTimes(2);
-      expect(mockedReset).toHaveBeenCalledTimes(1);
+      expect(mockedReset).not.toHaveBeenCalled();
       expect(mockedDisconnect).not.toHaveBeenCalled();
     });
 
@@ -59,11 +68,37 @@ describe('db-utils and the shared Prisma client', () => {
       expect(mockedReset).not.toHaveBeenCalled();
       expect(mockedDisconnect).not.toHaveBeenCalled();
     });
+
+    it('returns the fallback after every retry fails with a connection error', async () => {
+      const poolTimeout = Object.assign(new Error('Timed out fetching a new connection'), {
+        code: 'P2024',
+      });
+      const operation = jest.fn<Promise<string>, []>().mockRejectedValue(poolTimeout);
+
+      const result = withDatabaseConnection(operation, 3, 'fallback');
+
+      // Backoff is 2 s after attempt 1 and 4 s after attempt 2.
+      await jest.advanceTimersByTimeAsync(6_500);
+
+      await expect(result).resolves.toBe('fallback');
+      expect(operation).toHaveBeenCalledTimes(3);
+      expect(mockedReset).not.toHaveBeenCalled();
+      expect(mockedDisconnect).not.toHaveBeenCalled();
+    });
   });
 
   describe('gracefulDatabaseShutdown()', () => {
     it('delegates to db-unified shutdown so the singleton is unpublished', async () => {
       await expect(gracefulDatabaseShutdown()).resolves.toBeUndefined();
+
+      expect(mockedShutdown).toHaveBeenCalledTimes(1);
+      expect(mockedDisconnect).not.toHaveBeenCalled();
+    });
+
+    it('rethrows when db-unified shutdown fails', async () => {
+      mockedShutdown.mockRejectedValueOnce(new Error('teardown failed'));
+
+      await expect(gracefulDatabaseShutdown()).rejects.toThrow('teardown failed');
 
       expect(mockedShutdown).toHaveBeenCalledTimes(1);
       expect(mockedDisconnect).not.toHaveBeenCalled();
