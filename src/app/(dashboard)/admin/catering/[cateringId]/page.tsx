@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { prisma } from '@/lib/db-unified';
+import { prisma, forceResetConnection } from '@/lib/db-unified';
 import { formatDistance, format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -193,8 +193,7 @@ export default async function AdminCateringOrderPage({ params }: PageProps) {
 
         // Attempt one retry with a fresh connection
         try {
-          await prisma.$disconnect();
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await forceResetConnection();
 
           cateringOrder = await prisma.cateringOrder.findUnique({
             where: { id: cateringId },

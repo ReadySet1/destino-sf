@@ -1,4 +1,4 @@
-import { prisma, withRetry } from '@/lib/db-unified';
+import { prisma, forceResetConnection, shutdown, withRetry } from '@/lib/db-unified';
 import { isBuildTime } from '@/lib/build-time-utils';
 import { logger } from '@/utils/logger';
 
@@ -33,12 +33,10 @@ export async function withDatabaseConnection<T>(
       if (isConnectionError && attempt < retries) {
         logger.warn(`🔄 Database connection attempt ${attempt} failed, retrying...`);
 
-        // Disconnect and wait before retry
-        try {
-          await prisma.$disconnect();
-        } catch (disconnectError) {
-          logger.warn('Disconnect error (non-fatal):', disconnectError);
-        }
+        // Reset the shared client through db-unified (it unpublishes the
+        // client before disconnecting it); never call $disconnect on the
+        // singleton from here.
+        await forceResetConnection();
 
         // Exponential backoff: 1s, 2s, 4s
         const backoffDelay = Math.pow(2, attempt) * 1000;
@@ -171,7 +169,7 @@ export async function checkDatabaseHealth(): Promise<{
 export async function gracefulDatabaseShutdown(): Promise<void> {
   try {
     console.log('🔄 Initiating graceful database shutdown...');
-    await prisma.$disconnect();
+    await shutdown();
     console.log('✅ Database connection closed successfully');
   } catch (error) {
     console.error('❌ Error during database shutdown:', error);
