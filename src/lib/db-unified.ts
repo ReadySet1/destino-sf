@@ -408,6 +408,13 @@ let prismaClient: PrismaClient | null = null;
 let isInitializing = false;
 let initPromise: Promise<PrismaClient> | null = null;
 
+// A discarded client whose $disconnect never settles keeps its engine and
+// pooled connections alive for the life of the process. Count them so the
+// leak is visible in diagnostics, and report each one once the watchdog
+// window passes.
+const BACKGROUND_DISCONNECT_WATCHDOG_MS = 30_000;
+let pendingBackgroundDisconnects = 0;
+
 /**
  * Disconnect a client that is no longer published, without awaiting it.
  *
@@ -416,6 +423,24 @@ let initPromise: Promise<PrismaClient> | null = null;
  * logs on failure.
  */
 function disconnectInBackground(client: PrismaClient, reason: string): void {
+  pendingBackgroundDisconnects++;
+  let settled = false;
+
+  const watchdog = setTimeout(() => {
+    if (settled) return;
+    console.warn(
+      `[DB_CLIENT] Discarded client did not settle its disconnect within ${BACKGROUND_DISCONNECT_WATCHDOG_MS}ms (${reason}); ` +
+        `its engine and pooled connections stay open until the process restarts`,
+      { pendingBackgroundDisconnects }
+    );
+    Sentry.captureMessage('Discarded Prisma client did not disconnect', {
+      level: 'warning',
+      tags: { db_client_leak: 'true' },
+      extra: { reason, pendingBackgroundDisconnects },
+    });
+  }, BACKGROUND_DISCONNECT_WATCHDOG_MS);
+  watchdog.unref?.();
+
   Promise.resolve()
     .then(() => client.$disconnect())
     .catch(error => {
@@ -423,6 +448,11 @@ function disconnectInBackground(client: PrismaClient, reason: string): void {
         `[DB_CLIENT] Failed to disconnect discarded client (${reason}):`,
         (error as Error).message
       );
+    })
+    .finally(() => {
+      settled = true;
+      pendingBackgroundDisconnects--;
+      clearTimeout(watchdog);
     });
 }
 
@@ -476,13 +506,15 @@ async function initializePrismaClient(): Promise<PrismaClient> {
   isInitializing = true;
   initPromise = (async () => {
     try {
-      // The previous client (if any) stays published while the new one is
-      // built, so concurrent callers never see an empty slot. It is
-      // disconnected only after the replacement is live, and never awaited:
-      // a wedged engine's $disconnect can hang forever.
-      const previous = globalForPrisma.prisma ?? prismaClient;
-
       const client = await createPrismaClient();
+
+      // Whatever is published at swap time is what gets replaced. Read it
+      // here, not before the await: while the connect was pending, the
+      // synchronous proxy path may have published a basic client into the
+      // same slots, and capturing earlier would orphan it with a live pool.
+      // The replacement is disconnected only after the new client is live,
+      // and never awaited: a wedged engine's $disconnect can hang forever.
+      const previous = globalForPrisma.prisma ?? prismaClient;
 
       // Store in global and local references
       globalForPrisma.prisma = client;
@@ -1213,6 +1245,7 @@ export function getConnectionDiagnostics(): {
   consecutiveFailures: number;
   isStale: boolean;
   circuitBreakerState: string;
+  pendingBackgroundDisconnects: number;
 } {
   const circuitStatus = getCircuitBreakerStatus();
   return {
@@ -1221,6 +1254,7 @@ export function getConnectionDiagnostics(): {
     consecutiveFailures,
     isStale: isConnectionStale(),
     circuitBreakerState: circuitStatus.state,
+    pendingBackgroundDisconnects,
   };
 }
 
@@ -1290,16 +1324,20 @@ export async function getHealthStatus(): Promise<{
  */
 export async function shutdown(): Promise<void> {
   // Unpublish first so any later use builds a fresh client instead of
-  // reusing a disconnected one; then wait for the real teardown.
-  const client = prismaClient ?? globalForPrisma.prisma ?? null;
+  // reusing a disconnected one; then wait for the real teardown. The local
+  // and global slots can hold different clients (another module instance may
+  // have replaced the global one), so tear down every distinct one.
+  const clients = [...new Set([prismaClient, globalForPrisma.prisma])].filter(
+    (client): client is PrismaClient => Boolean(client)
+  );
   prismaClient = null;
   globalForPrisma.prisma = undefined;
   globalForPrisma.prismaVersion = undefined;
 
-  if (!client) return;
+  if (clients.length === 0) return;
 
   try {
-    await client.$disconnect();
+    await Promise.all(clients.map(client => client.$disconnect()));
     console.log('✅ Database client disconnected gracefully');
   } catch (error) {
     console.error('Error during database shutdown:', error);
@@ -1307,11 +1345,15 @@ export async function shutdown(): Promise<void> {
 }
 
 /**
- * Force reset database connection to clear cached plans
- * This is useful after schema changes that cause "cached plan must not change result type" errors
+ * Unpublish the shared client and build a fresh one.
+ *
+ * The recovery primitive for callers that observed a dead engine or a pooler
+ * prepared-statement error (42P05 / 26000), and for schema changes that leave
+ * "cached plan must not change result type" errors behind. Never call
+ * `$disconnect()` on the shared client directly; use this.
  */
 export async function forceResetConnection(): Promise<void> {
-  console.log('🔄 Forcing database connection reset to clear cached query plans...');
+  console.log('[DB_CLIENT] Resetting the shared Prisma client...');
 
   // Unpublish the current client first; its $disconnect runs in the
   // background so a wedged engine cannot block the reset.

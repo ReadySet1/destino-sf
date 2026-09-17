@@ -8,7 +8,9 @@ jest.mock('@/lib/db-unified', () => ({
 }));
 
 const mockQuickHealthCheck = quickHealthCheck as jest.MockedFunction<typeof quickHealthCheck>;
-const mockGetConnectionDiagnostics = getConnectionDiagnostics as jest.MockedFunction<typeof getConnectionDiagnostics>;
+const mockGetConnectionDiagnostics = getConnectionDiagnostics as jest.MockedFunction<
+  typeof getConnectionDiagnostics
+>;
 
 describe('/api/health', () => {
   beforeEach(() => {
@@ -20,6 +22,7 @@ describe('/api/health', () => {
       consecutiveFailures: 0,
       isStale: false,
       circuitBreakerState: 'CLOSED',
+      pendingBackgroundDisconnects: 0,
     });
   });
 
@@ -111,6 +114,7 @@ describe('/api/health', () => {
         consecutiveFailures: 3,
         isStale: true,
         circuitBreakerState: 'HALF_OPEN',
+        pendingBackgroundDisconnects: 0,
       });
 
       const response = await GET();
@@ -137,6 +141,7 @@ describe('/api/health', () => {
         consecutiveFailures: 5,
         isStale: false,
         circuitBreakerState: 'OPEN',
+        pendingBackgroundDisconnects: 0,
       });
 
       const response = await GET();

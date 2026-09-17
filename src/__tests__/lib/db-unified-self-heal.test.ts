@@ -138,6 +138,7 @@ describe('db-unified self-heal: the dead client must be unpublished before it is
 
   afterEach(() => {
     mutableEnv.NODE_ENV = 'test';
+    delete mutableEnv.DB_MAX_RETRIES;
     delete globalSlots.prisma;
     delete globalSlots.prismaVersion;
     jest.useRealTimers();
@@ -232,6 +233,121 @@ describe('db-unified self-heal: the dead client must be unpublished before it is
       await expect(p2).resolves.toBe('two');
       expect(mockConstructed).toHaveLength(2);
       expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
+      expect(mockConstructed[1].$disconnect).not.toHaveBeenCalled();
+    });
+
+    it('leaves an already-published replacement alone when a late failure arrives', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const secondFailure = deferred<void>();
+      const first = jest
+        .fn<Promise<string>, []>()
+        .mockImplementationOnce(async () => {
+          throw engineDeadError();
+        })
+        .mockResolvedValueOnce('one');
+      const second = jest
+        .fn<Promise<string>, []>()
+        .mockImplementationOnce(async () => {
+          await secondFailure.promise;
+          throw engineDeadError();
+        })
+        .mockResolvedValueOnce('two');
+
+      const p1 = db.withRetry(first, 3, 'late-1');
+      const p2 = db.withRetry(second, 3, 'late-2');
+
+      // op1 fails, backs off, and attempt 2 publishes replacement client #1.
+      await jest.advanceTimersByTimeAsync(2_000);
+      await expect(p1).resolves.toBe('one');
+      expect(mockConstructed).toHaveLength(2);
+      expect(globalSlots.prisma).toBe(mockConstructed[1]);
+
+      // op2 now fails against the long-gone client #0: the compare-and-swap
+      // must not tear down client #1.
+      secondFailure.resolve();
+      await jest.advanceTimersByTimeAsync(2_000);
+
+      await expect(p2).resolves.toBe('two');
+      expect(mockConstructed).toHaveLength(2);
+      expect(mockConstructed[1].$disconnect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('initialization while the proxy already published a fallback client', () => {
+    it('disconnects the client published mid-init instead of orphaning it', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      // Init builds client #0 and parks on $connect. Meanwhile the synchronous
+      // proxy path publishes a basic client #1 into the same slots.
+      const connectGate = deferred<void>();
+      mockOnConstruct[0] = client => client.$connect.mockReturnValue(connectGate.promise);
+
+      const result = db.withRetry(async () => 'ready', 1, 'cold-start');
+      await jest.advanceTimersByTimeAsync(10);
+      expect(mockConstructed).toHaveLength(1);
+
+      // Property access on the proxy runs getCurrentPrismaClient() synchronously.
+      void db.prisma.$queryRaw;
+      expect(mockConstructed).toHaveLength(2);
+      expect(globalSlots.prisma).toBe(mockConstructed[1]);
+
+      connectGate.resolve();
+      await jest.advanceTimersByTimeAsync(10);
+
+      await expect(result).resolves.toBe('ready');
+      expect(globalSlots.prisma).toBe(mockConstructed[0]);
+      expect(mockConstructed[1].$disconnect).toHaveBeenCalledTimes(1);
+      expect(mockConstructed[0].$disconnect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('background disconnect watchdog', () => {
+    it('counts a pending background disconnect and reports it when it never settles', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const operation = jest
+        .fn<Promise<string>, []>()
+        .mockImplementationOnce(async () => {
+          mockConstructed[0].$disconnect.mockReturnValue(neverSettles());
+          throw engineDeadError();
+        })
+        .mockResolvedValueOnce('recovered');
+
+      const result = db.withRetry(operation, 3, 'watchdog');
+      await jest.advanceTimersByTimeAsync(2_000);
+      await expect(result).resolves.toBe('recovered');
+
+      expect(db.getConnectionDiagnostics().pendingBackgroundDisconnects).toBe(1);
+
+      await jest.advanceTimersByTimeAsync(30_000);
+
+      expect(console.warn).toHaveBeenCalledWith(
+        expect.stringContaining('did not settle'),
+        expect.anything()
+      );
+    });
+
+    it('counts a settled background disconnect back down', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const operation = jest
+        .fn<Promise<string>, []>()
+        .mockImplementationOnce(async () => {
+          throw engineDeadError();
+        })
+        .mockResolvedValueOnce('recovered');
+
+      const result = db.withRetry(operation, 3, 'watchdog-settled');
+      await jest.advanceTimersByTimeAsync(2_000);
+      await expect(result).resolves.toBe('recovered');
+
+      expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
+      expect(db.getConnectionDiagnostics().pendingBackgroundDisconnects).toBe(0);
     });
   });
 
@@ -336,6 +452,300 @@ describe('db-unified self-heal: the dead client must be unpublished before it is
       await expect(result).resolves.toBe('fresh');
       expect(stale.$disconnect).toHaveBeenCalledTimes(1);
       expect(mockConstructed).toHaveLength(1);
+    });
+
+    it('keeps the previous client published when the replacement cannot connect', async () => {
+      // One connect attempt per createPrismaClient() so the failure surfaces immediately.
+      mutableEnv.DB_MAX_RETRIES = '1';
+      const db = loadRealDbUnified();
+
+      const stale = mockBuildFakeClient();
+      globalSlots.prisma = stale;
+      globalSlots.prismaVersion = 'previous-deploy';
+
+      useRuntimeEnv();
+      // A synchronous throw from $connect: the module's own connect-timeout
+      // wiring (`connectPromise.finally(...)`) would otherwise surface an
+      // unhandled rejection for an async one.
+      mockOnConstruct[0] = client =>
+        client.$connect.mockImplementation(() => {
+          throw new Error('ECONNREFUSED');
+        });
+
+      const result = db.withRetry(async () => 'never', 1, 'init-failure');
+      const status = track(result);
+      await jest.advanceTimersByTimeAsync(50);
+
+      expect(status.settled).toBe(true);
+      await expect(result).rejects.toThrow('ECONNREFUSED');
+      // The stale client is only torn down once a replacement is live.
+      expect(stale.$disconnect).not.toHaveBeenCalled();
+      expect(globalSlots.prisma).toBe(stale);
+    });
+  });
+
+  describe('background disconnect of a discarded client', () => {
+    it("recovers when the dead client's $disconnect throws synchronously", async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const operation = jest
+        .fn<Promise<string>, []>()
+        .mockImplementationOnce(async () => {
+          mockConstructed[0].$disconnect.mockImplementation(() => {
+            throw new Error('sync disconnect boom');
+          });
+          throw engineDeadError();
+        })
+        .mockResolvedValueOnce('recovered');
+
+      const result = db.withRetry(operation, 3, 'self-heal sync-throw');
+      await jest.advanceTimersByTimeAsync(2_000);
+
+      await expect(result).resolves.toBe('recovered');
+      expect(mockConstructed).toHaveLength(2);
+      expect(console.warn).toHaveBeenCalledWith(
+        '[DB_CLIENT] Failed to disconnect discarded client (self-heal sync-throw attempt 1):',
+        'sync disconnect boom'
+      );
+    });
+
+    it('logs a rejected background disconnect with the recovery reason', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const operation = jest
+        .fn<Promise<string>, []>()
+        .mockImplementationOnce(async () => {
+          mockConstructed[0].$disconnect.mockRejectedValue(new Error('disconnect exploded'));
+          throw engineDeadError();
+        })
+        .mockResolvedValueOnce('recovered');
+
+      const result = db.withRetry(operation, 3, 'self-heal reason');
+      await jest.advanceTimersByTimeAsync(2_000);
+
+      await expect(result).resolves.toBe('recovered');
+      expect(console.warn).toHaveBeenCalledWith(
+        '[DB_CLIENT] Failed to disconnect discarded client (self-heal reason attempt 1):',
+        'disconnect exploded'
+      );
+    });
+  });
+
+  describe('pool-full errors keep the healthy client', () => {
+    function poolFullError(): Error {
+      return Object.assign(
+        new Error('Timed out fetching a new connection from the connection pool'),
+        { code: 'P2024' }
+      );
+    }
+
+    it('withRetry() retries on the same client without discarding it', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const operation = jest
+        .fn<Promise<string>, []>()
+        .mockRejectedValueOnce(poolFullError())
+        .mockResolvedValueOnce('recovered');
+
+      const result = db.withRetry(operation, 3, 'pool-full');
+      await jest.advanceTimersByTimeAsync(2_000);
+
+      await expect(result).resolves.toBe('recovered');
+      expect(operation).toHaveBeenCalledTimes(2);
+      expect(mockConstructed).toHaveLength(1);
+      expect(mockConstructed[0].$disconnect).not.toHaveBeenCalled();
+    });
+
+    it('ensureConnection() retries on the same client without discarding it', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      mockOnConstruct[0] = client => {
+        let healthChecks = 0;
+        client.$queryRaw.mockImplementation((strings: TemplateStringsArray) =>
+          strings.join('').includes('health_check') && healthChecks++ === 0
+            ? Promise.reject(poolFullError())
+            : Promise.resolve([{ ok: 1 }])
+        );
+      };
+
+      const result = db.ensureConnection(3);
+      await jest.advanceTimersByTimeAsync(2_000);
+
+      await expect(result).resolves.toBeUndefined();
+      expect(mockConstructed).toHaveLength(1);
+      expect(mockConstructed[0].$disconnect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('exhausted and pre-init failures', () => {
+    it('ensureConnection() throws the last error after building a fresh client for every retry', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      mockOnConstruct[0] = failOnHealthCheck;
+      mockOnConstruct[1] = failOnHealthCheck;
+      mockOnConstruct[2] = failOnHealthCheck;
+
+      const result = db.ensureConnection(3);
+      const status = track(result);
+
+      // Attempt 1 sleeps 1000 ms, attempt 2 sleeps 2000 ms.
+      await jest.advanceTimersByTimeAsync(5_000);
+
+      expect(status.settled).toBe(true);
+      await expect(result).rejects.toThrow(ENGINE_DEAD_MESSAGE);
+      expect(mockConstructed).toHaveLength(3);
+      expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
+      expect(mockConstructed[1].$disconnect).toHaveBeenCalledTimes(1);
+    });
+
+    it('withRetry() retries with a fresh client when the first client cannot connect', async () => {
+      mutableEnv.DB_MAX_RETRIES = '1';
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      mockOnConstruct[0] = client =>
+        client.$connect.mockImplementation(() => {
+          throw new Error('ECONNREFUSED');
+        });
+
+      const result = db.withRetry(async () => 'recovered', 3, 'connect-failure');
+      await jest.advanceTimersByTimeAsync(2_000);
+
+      await expect(result).resolves.toBe('recovered');
+      expect(mockConstructed).toHaveLength(2);
+      // createPrismaClient() tears down its own failed client exactly once;
+      // the never-published client is not discarded a second time by withRetry.
+      expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
+      expect(mockConstructed[1].$disconnect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('shutdown() edge cases', () => {
+    it('is a no-op when no client was ever published', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      await expect(db.shutdown()).resolves.toBeUndefined();
+
+      expect(mockConstructed).toHaveLength(0);
+      expect(console.log).not.toHaveBeenCalledWith('✅ Database client disconnected gracefully');
+    });
+
+    it('disconnects a client that only lives in the global slot and clears both slots', async () => {
+      const db = loadRealDbUnified();
+
+      const stale = mockBuildFakeClient();
+      globalSlots.prisma = stale;
+      globalSlots.prismaVersion = 'previous-deploy';
+
+      useRuntimeEnv();
+
+      await expect(db.shutdown()).resolves.toBeUndefined();
+
+      expect(stale.$disconnect).toHaveBeenCalledTimes(1);
+      expect(globalSlots.prisma).toBeUndefined();
+      expect(globalSlots.prismaVersion).toBeUndefined();
+      expect(console.log).toHaveBeenCalledWith('✅ Database client disconnected gracefully');
+
+      await expect(db.withRetry(async () => 'after', 1, 'after-shutdown')).resolves.toBe('after');
+      expect(mockConstructed).toHaveLength(1);
+      expect(stale.$disconnect).toHaveBeenCalledTimes(1);
+    });
+
+    it('disconnects both the local and the global client when they diverged', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      await expect(db.withRetry(async () => 'warm', 1, 'warm-up')).resolves.toBe('warm');
+
+      // Another module instance replaced the global slot behind our back.
+      const foreign = mockBuildFakeClient();
+      globalSlots.prisma = foreign;
+
+      await expect(db.shutdown()).resolves.toBeUndefined();
+
+      expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
+      expect(foreign.$disconnect).toHaveBeenCalledTimes(1);
+      expect(globalSlots.prisma).toBeUndefined();
+    });
+
+    it("does not block later work while the client's $disconnect never settles", async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      await expect(db.withRetry(async () => 'warm', 1, 'warm-up')).resolves.toBe('warm');
+      mockConstructed[0].$disconnect.mockReturnValue(neverSettles());
+
+      const pendingShutdown = db.shutdown();
+      const status = track(pendingShutdown);
+      await jest.advanceTimersByTimeAsync(50);
+
+      // shutdown() deliberately awaits the real teardown ...
+      expect(status.settled).toBe(false);
+
+      // ... but the slot was already unpublished, so new work is not blocked.
+      await expect(db.withRetry(async () => 'after', 1, 'after-shutdown')).resolves.toBe('after');
+      expect(mockConstructed).toHaveLength(2);
+      expect(mockConstructed[1].$disconnect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('forceResetConnection() edge cases', () => {
+    it('builds the first client when nothing was published yet', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const reset = db.forceResetConnection();
+      await jest.advanceTimersByTimeAsync(500);
+
+      await expect(reset).resolves.toBeUndefined();
+      expect(mockConstructed).toHaveLength(1);
+      expect(mockConstructed[0].$disconnect).not.toHaveBeenCalled();
+    });
+
+    it('unpublishes a client that only lives in the global slot before disconnecting it', async () => {
+      const db = loadRealDbUnified();
+
+      const stale = mockBuildFakeClient();
+      stale.$disconnect.mockReturnValue(neverSettles());
+      globalSlots.prisma = stale;
+      globalSlots.prismaVersion = 'previous-deploy';
+
+      useRuntimeEnv();
+
+      const reset = db.forceResetConnection();
+      const status = track(reset);
+      await jest.advanceTimersByTimeAsync(500);
+
+      expect(status.settled).toBe(true);
+      expect(stale.$disconnect).toHaveBeenCalledTimes(1);
+      expect(mockConstructed).toHaveLength(1);
+      expect(globalSlots.prisma).toBe(mockConstructed[0]);
+    });
+
+    it('concurrent resets share one replacement client and disconnect the old one once', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      await expect(db.withRetry(async () => 'warm', 1, 'warm-up')).resolves.toBe('warm');
+
+      const resetA = db.forceResetConnection();
+      const resetB = db.forceResetConnection();
+      await jest.advanceTimersByTimeAsync(500);
+
+      await expect(resetA).resolves.toBeUndefined();
+      await expect(resetB).resolves.toBeUndefined();
+      expect(mockConstructed).toHaveLength(2);
+      expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
+      expect(mockConstructed[1].$disconnect).not.toHaveBeenCalled();
+
+      await expect(db.withRetry(async () => 'after', 1, 'after-reset')).resolves.toBe('after');
+      expect(mockConstructed).toHaveLength(2);
     });
   });
 });
