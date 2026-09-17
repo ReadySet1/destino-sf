@@ -57,13 +57,27 @@ jest.mock('@prisma/client', () => ({
   },
 }));
 
-jest.mock('@sentry/nextjs', () => ({
-  captureMessage: jest.fn(),
-  captureException: jest.fn(),
-  addBreadcrumb: jest.fn(),
-  withScope: jest.fn((fn: (scope: unknown) => void) => fn({})),
-  startSpan: jest.fn((_opts: unknown, fn: () => unknown) => fn()),
-}));
+// Each isolated module registry gets its own Sentry mock; keep the newest so
+// tests can assert on the instance the module under test actually imported.
+const mockSentryInstances: Array<{ captureMessage: jest.Mock }> = [];
+jest.mock('@sentry/nextjs', () => {
+  const instance = {
+    captureMessage: jest.fn(),
+    captureException: jest.fn(),
+    addBreadcrumb: jest.fn(),
+    withScope: jest.fn((fn: (scope: unknown) => void) => fn({})),
+    startSpan: jest.fn((_opts: unknown, fn: () => unknown) => fn()),
+  };
+  mockSentryInstances.push(instance);
+  return instance;
+});
+function currentSentry(): { captureMessage: jest.Mock } {
+  return mockSentryInstances[mockSentryInstances.length - 1];
+}
+
+// Longer than the pooler's socket_timeout (120 s): a disconnect that is merely
+// waiting on a slow query must not be reported as a leak.
+const WATCHDOG_MS = 150_000;
 
 type DbUnified = typeof import('@/lib/db-unified');
 
@@ -169,6 +183,12 @@ describe('db-unified self-heal: the dead client must be unpublished before it is
       expect(mockConstructed).toHaveLength(2);
       expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
       expect(mockConstructed[1].$disconnect).not.toHaveBeenCalled();
+      // The discard itself is logged so an operator can find it in the
+      // container logs without waiting for the watchdog.
+      expect(console.warn).toHaveBeenCalledWith(
+        '[DB_CLIENT] Discarded the shared Prisma client',
+        expect.objectContaining({ reason: 'self-heal hang attempt 1' })
+      );
     });
 
     it("recovers on a fresh client when the dead client's $disconnect rejects", async () => {
@@ -323,12 +343,50 @@ describe('db-unified self-heal: the dead client must be unpublished before it is
 
       expect(db.getConnectionDiagnostics().pendingBackgroundDisconnects).toBe(1);
 
-      await jest.advanceTimersByTimeAsync(30_000);
+      // Still quiet while a slow query could legitimately hold the disconnect.
+      await jest.advanceTimersByTimeAsync(120_000);
+      expect(console.warn).not.toHaveBeenCalledWith(
+        expect.stringContaining('did not settle'),
+        expect.anything()
+      );
+
+      await jest.advanceTimersByTimeAsync(WATCHDOG_MS - 120_000);
 
       expect(console.warn).toHaveBeenCalledWith(
         expect.stringContaining('did not settle'),
         expect.anything()
       );
+      expect(currentSentry().captureMessage).toHaveBeenCalledWith(
+        'Discarded Prisma client did not disconnect',
+        expect.objectContaining({ tags: expect.objectContaining({ db_client_leak: 'true' }) })
+      );
+      expect(db.getConnectionDiagnostics().pendingBackgroundDisconnects).toBe(1);
+    });
+
+    it('stays quiet when the background disconnect rejects, and counts it back down', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const operation = jest
+        .fn<Promise<string>, []>()
+        .mockImplementationOnce(async () => {
+          mockConstructed[0].$disconnect.mockRejectedValue(new Error('disconnect exploded'));
+          throw engineDeadError();
+        })
+        .mockResolvedValueOnce('recovered');
+
+      const result = db.withRetry(operation, 3, 'watchdog-rejected');
+      await jest.advanceTimersByTimeAsync(2_000);
+      await expect(result).resolves.toBe('recovered');
+
+      expect(db.getConnectionDiagnostics().pendingBackgroundDisconnects).toBe(0);
+
+      await jest.advanceTimersByTimeAsync(WATCHDOG_MS);
+      expect(console.warn).not.toHaveBeenCalledWith(
+        expect.stringContaining('did not settle'),
+        expect.anything()
+      );
+      expect(currentSentry().captureMessage).not.toHaveBeenCalled();
     });
 
     it('counts a settled background disconnect back down', async () => {
@@ -348,6 +406,75 @@ describe('db-unified self-heal: the dead client must be unpublished before it is
 
       expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
       expect(db.getConnectionDiagnostics().pendingBackgroundDisconnects).toBe(0);
+
+      await jest.advanceTimersByTimeAsync(WATCHDOG_MS);
+      expect(console.warn).not.toHaveBeenCalledWith(
+        expect.stringContaining('did not settle'),
+        expect.anything()
+      );
+      expect(currentSentry().captureMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('a dead client is discarded even when there is no retry left', () => {
+    it('withRetry() unpublishes the client that failed its final attempt', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const operation = jest.fn<Promise<string>, []>().mockRejectedValue(engineDeadError());
+
+      await expect(db.withRetry(operation, 1, 'last-attempt')).rejects.toThrow(ENGINE_DEAD_MESSAGE);
+      expect(mockConstructed).toHaveLength(1);
+      expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
+
+      // The next caller must not pay a failed attempt on the known-dead client.
+      await expect(db.withRetry(async () => 'after', 1, 'after-failure')).resolves.toBe('after');
+      expect(mockConstructed).toHaveLength(2);
+    });
+
+    it('ensureConnection() unpublishes the client that failed its final attempt', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      mockOnConstruct[0] = failOnHealthCheck;
+
+      await expect(db.ensureConnection(1)).rejects.toThrow(ENGINE_DEAD_MESSAGE);
+      expect(mockConstructed).toHaveLength(1);
+      expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
+
+      await expect(db.withRetry(async () => 'after', 1, 'after-failure')).resolves.toBe('after');
+      expect(mockConstructed).toHaveLength(2);
+    });
+
+    it('still wraps a transient pooler error with the actionable message after the final attempt', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const tenantError = new Error('FATAL: Tenant or user not found');
+      const operation = jest.fn<Promise<string>, []>().mockRejectedValue(tenantError);
+
+      await expect(db.withRetry(operation, 1, 'pooler-last')).rejects.toMatchObject({
+        code: 'TRANSIENT_POOLER_ERROR',
+        originalError: tenantError,
+      });
+      expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining('failed with transient pooler error after 1 retries')
+      );
+    });
+
+    it('keeps the client when the final attempt failed on a full pool', async () => {
+      const db = loadRealDbUnified();
+      useRuntimeEnv();
+
+      const poolFull = Object.assign(new Error('Timed out fetching a new connection'), {
+        code: 'P2024',
+      });
+      const operation = jest.fn<Promise<string>, []>().mockRejectedValue(poolFull);
+
+      await expect(db.withRetry(operation, 1, 'pool-full-last')).rejects.toThrow();
+      expect(mockConstructed).toHaveLength(1);
+      expect(mockConstructed[0].$disconnect).not.toHaveBeenCalled();
     });
   });
 
@@ -420,7 +547,7 @@ describe('db-unified self-heal: the dead client must be unpublished before it is
       const reset = db.forceResetConnection();
       const status = track(reset);
 
-      // forceResetConnection waits 100 ms before creating the new client.
+      // Let the replacement client's mocked $connect and verification query settle.
       await jest.advanceTimersByTimeAsync(500);
 
       expect(status.settled).toBe(true);
@@ -663,8 +790,10 @@ describe('db-unified self-heal: the dead client must be unpublished before it is
 
       await expect(db.withRetry(async () => 'warm', 1, 'warm-up')).resolves.toBe('warm');
 
-      // Another module instance replaced the global slot behind our back.
+      // Another module instance replaced the global slot behind our back, and
+      // that client's teardown fails: the other one must still be torn down.
       const foreign = mockBuildFakeClient();
+      foreign.$disconnect.mockRejectedValue(new Error('foreign teardown failed'));
       globalSlots.prisma = foreign;
 
       await expect(db.shutdown()).resolves.toBeUndefined();
@@ -672,6 +801,10 @@ describe('db-unified self-heal: the dead client must be unpublished before it is
       expect(mockConstructed[0].$disconnect).toHaveBeenCalledTimes(1);
       expect(foreign.$disconnect).toHaveBeenCalledTimes(1);
       expect(globalSlots.prisma).toBeUndefined();
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining('shutdown'),
+        expect.anything()
+      );
     });
 
     it("does not block later work while the client's $disconnect never settles", async () => {

@@ -38,6 +38,7 @@ describe('/api/health', () => {
 
       expect(response.status).toBe(200);
       expect(data.status).toBe('healthy');
+      expect(data.pendingBackgroundDisconnects).toBe(0);
       expect(data.timestamp).toBeDefined();
       expect(data.environment).toBeDefined();
       expect(data.latencyMs).toBe(15);
@@ -125,6 +126,7 @@ describe('/api/health', () => {
       expect(data.diagnostics.circuitBreakerState).toBe('HALF_OPEN');
       expect(data.diagnostics.consecutiveFailures).toBe(3);
       expect(data.diagnostics.isStale).toBe(true);
+      expect(data.pendingBackgroundDisconnects).toBe(0);
     });
   });
 

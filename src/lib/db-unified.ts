@@ -410,9 +410,11 @@ let initPromise: Promise<PrismaClient> | null = null;
 
 // A discarded client whose $disconnect never settles keeps its engine and
 // pooled connections alive for the life of the process. Count them so the
-// leak is visible in diagnostics, and report each one once the watchdog
-// window passes.
-const BACKGROUND_DISCONNECT_WATCHDOG_MS = 30_000;
+// leak is visible in diagnostics and /api/health, and report each one once
+// the watchdog window passes. Prisma's $disconnect waits for the client's
+// in-flight query first, so the window must outlast the pooler's
+// socket_timeout (120 s) or a slow query would look like a leak.
+const BACKGROUND_DISCONNECT_WATCHDOG_MS = 150_000;
 let pendingBackgroundDisconnects = 0;
 
 /**
@@ -430,7 +432,7 @@ function disconnectInBackground(client: PrismaClient, reason: string): void {
     if (settled) return;
     console.warn(
       `[DB_CLIENT] Discarded client did not settle its disconnect within ${BACKGROUND_DISCONNECT_WATCHDOG_MS}ms (${reason}); ` +
-        `its engine and pooled connections stay open until the process restarts`,
+        `its engine and pooled connections stay open until it does`,
       { pendingBackgroundDisconnects }
     );
     Sentry.captureMessage('Discarded Prisma client did not disconnect', {
@@ -487,6 +489,13 @@ function discardSharedClient(stale: PrismaClient | null, reason: string): void {
     globalForPrisma.prisma = undefined;
     globalForPrisma.prismaVersion = undefined;
   }
+
+  // Logged at the discard, not only when the watchdog fires: this is the
+  // line an operator greps for after an "Engine is not yet connected" burst.
+  console.warn('[DB_CLIENT] Discarded the shared Prisma client', {
+    reason,
+    pendingBackgroundDisconnects: pendingBackgroundDisconnects + 1,
+  });
 
   disconnectInBackground(stale, reason);
 }
@@ -751,16 +760,20 @@ export async function ensureConnection(maxRetries: number = 3): Promise<void> {
 
       const isRetryableError = isConnectionError(error as Error);
 
-      if (isRetryableError && attempt < maxRetries) {
+      if (isRetryableError) {
         const poolFull = isPoolFullError(error as Error);
-        console.warn(`Connection attempt ${attempt}/${maxRetries} failed, retrying...`);
 
         // Pool-full retries reuse the existing client; only engine-level
-        // failures justify tearing it down.
+        // failures justify tearing it down. Do it even on the last attempt so
+        // the next caller starts from a fresh client, not the dead one.
         if (!poolFull) {
           discardSharedClient(client, `ensureConnection attempt ${attempt}`);
         }
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+
+        if (attempt < maxRetries) {
+          console.warn(`Connection attempt ${attempt}/${maxRetries} failed, retrying...`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
       }
     }
   }
@@ -982,8 +995,24 @@ export async function withRetry<T>(
       // Track consecutive failures for connection health monitoring
       consecutiveFailures++;
 
-      if (isConnectionError(lastError) && attempt < maxRetries) {
+      if (isConnectionError(lastError)) {
         const poolFull = isPoolFullError(lastError);
+
+        // Pool-full means the client is healthy — just back off and retry.
+        // Other connection errors (engine dead, ECONNRESET, etc.) need a fresh
+        // client. Discard it even when this was the last attempt: leaving a
+        // proven-dead client published makes every later caller pay a failed
+        // attempt and a backoff before its own recovery kicks in.
+        if (!poolFull) {
+          discardSharedClient(client, `${operationName} attempt ${attempt}`);
+        }
+
+        // Out of retries: fall through to the exhausted-retries handling
+        // below the loop so transient pooler errors keep their actionable
+        // message.
+        if (attempt >= maxRetries) {
+          break;
+        }
 
         // Log connection errors with structured data
         console.warn('[DB_OPERATION_RETRY]', {
@@ -996,12 +1025,6 @@ export async function withRetry<T>(
           errorCode: (lastError as any).code,
         });
 
-        // Pool-full means the client is healthy — just back off and retry.
-        // Other connection errors (engine dead, ECONNRESET, etc.) need a fresh client.
-        if (!poolFull) {
-          discardSharedClient(client, `${operationName} attempt ${attempt}`);
-        }
-
         // Progressive backoff with jitter
         const baseDelay = 1000 * Math.pow(2, attempt - 1);
         const jitter = Math.random() * 500; // Add 0-500ms jitter
@@ -1011,21 +1034,8 @@ export async function withRetry<T>(
         continue;
       }
 
-      // Don't retry non-connection errors or if max retries reached
-      // For transient pooler errors that exhausted retries, provide actionable message
-      if (isTransientPoolerError(lastError)) {
-        const actionableMessage = getTransientPoolerErrorMessage(lastError, maxRetries);
-        console.error(
-          `${operationName} failed with transient pooler error after ${maxRetries} retries:`
-        );
-        console.error(actionableMessage);
-
-        const poolerError = new Error(actionableMessage);
-        (poolerError as any).code = 'TRANSIENT_POOLER_ERROR';
-        (poolerError as any).originalError = error;
-        (poolerError as any).retryAttempts = maxRetries;
-        throw poolerError;
-      }
+      // Non-connection errors are not retried. (Transient pooler errors are
+      // connection errors and reach the exhausted-retries handling below.)
       throw error;
     }
   }
@@ -1033,6 +1043,10 @@ export async function withRetry<T>(
   // Final error handling for exhausted retries
   if (lastError && isTransientPoolerError(lastError)) {
     const actionableMessage = getTransientPoolerErrorMessage(lastError, maxRetries);
+    console.error(
+      `${operationName} failed with transient pooler error after ${maxRetries} retries:`
+    );
+    console.error(actionableMessage);
     const poolerError = new Error(actionableMessage);
     (poolerError as any).code = 'TRANSIENT_POOLER_ERROR';
     (poolerError as any).originalError = lastError;
@@ -1336,11 +1350,15 @@ export async function shutdown(): Promise<void> {
 
   if (clients.length === 0) return;
 
-  try {
-    await Promise.all(clients.map(client => client.$disconnect()));
+  // One failing teardown must not stop the others.
+  const results = await Promise.allSettled(clients.map(client => client.$disconnect()));
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.error('Error during database shutdown:', result.reason);
+    }
+  }
+  if (results.every(result => result.status === 'fulfilled')) {
     console.log('✅ Database client disconnected gracefully');
-  } catch (error) {
-    console.error('Error during database shutdown:', error);
   }
 }
 
@@ -1358,9 +1376,6 @@ export async function forceResetConnection(): Promise<void> {
   // Unpublish the current client first; its $disconnect runs in the
   // background so a wedged engine cannot block the reset.
   discardSharedClient(prismaClient ?? globalForPrisma.prisma ?? null, 'forceResetConnection');
-
-  // Wait a moment for cleanup
-  await new Promise(resolve => setTimeout(resolve, 100));
 
   // Get a fresh client instance
   prismaClient = await getPrismaClient();
